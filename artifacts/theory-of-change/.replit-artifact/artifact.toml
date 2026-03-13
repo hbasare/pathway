@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Theory of Change"
+version = "1.0.0"
+id = "artifacts/theory-of-change"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+localPort = 22412
+name = "web"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/theory-of-change run dev"
+
+[services.env]
+PORT = "22412"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/theory-of-change", "run", "build"]
+publicDir = "artifacts/theory-of-change/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"

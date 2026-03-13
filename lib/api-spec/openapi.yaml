@@ -1,15 +1,20 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Theory of Change API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: theories
+    description: Theory of Change operations
+  - name: components
+    description: Theory of Change components
+  - name: connections
+    description: Component connections
 paths:
   /healthz:
     get:
@@ -24,6 +29,252 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /theories:
+    get:
+      operationId: listTheories
+      tags: [theories]
+      summary: List all theories of change
+      responses:
+        "200":
+          description: List of theories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Theory"
+    post:
+      operationId: createTheory
+      tags: [theories]
+      summary: Create a new theory of change
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTheory"
+      responses:
+        "201":
+          description: Created theory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Theory"
+
+  /theories/{id}:
+    get:
+      operationId: getTheory
+      tags: [theories]
+      summary: Get a theory of change
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Theory details with components
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TheoryDetail"
+        "404":
+          description: Not found
+    put:
+      operationId: updateTheory
+      tags: [theories]
+      summary: Update a theory of change
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTheory"
+      responses:
+        "200":
+          description: Updated theory
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Theory"
+    delete:
+      operationId: deleteTheory
+      tags: [theories]
+      summary: Delete a theory of change
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /theories/{theoryId}/components:
+    get:
+      operationId: listComponents
+      tags: [components]
+      summary: List components for a theory
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of components
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Component"
+    post:
+      operationId: createComponent
+      tags: [components]
+      summary: Create a component in a theory
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateComponent"
+      responses:
+        "201":
+          description: Created component
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Component"
+
+  /theories/{theoryId}/components/{id}:
+    put:
+      operationId: updateComponent
+      tags: [components]
+      summary: Update a component
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateComponent"
+      responses:
+        "200":
+          description: Updated component
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Component"
+    delete:
+      operationId: deleteComponent
+      tags: [components]
+      summary: Delete a component
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /theories/{theoryId}/connections:
+    get:
+      operationId: listConnections
+      tags: [connections]
+      summary: List connections between components
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Connection"
+    post:
+      operationId: createConnection
+      tags: [connections]
+      summary: Create a connection between components
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateConnection"
+      responses:
+        "201":
+          description: Created connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
+
+  /theories/{theoryId}/connections/{id}:
+    delete:
+      operationId: deleteConnection
+      tags: [connections]
+      summary: Delete a connection
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +285,169 @@ components:
       required:
         - status
 
+    Theory:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - description
+        - createdAt
+        - updatedAt
+
+    TheoryDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        components:
+          type: array
+          items:
+            $ref: "#/components/schemas/Component"
+        connections:
+          type: array
+          items:
+            $ref: "#/components/schemas/Connection"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - description
+        - components
+        - connections
+        - createdAt
+        - updatedAt
+
+    CreateTheory:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+      required:
+        - title
+        - description
+
+    Component:
+      type: object
+      properties:
+        id:
+          type: integer
+        theoryId:
+          type: integer
+        type:
+          type: string
+          enum: [input, activity, output, outcome, impact]
+        title:
+          type: string
+        description:
+          type: string
+        indicators:
+          type: string
+        assumptions:
+          type: string
+        positionX:
+          type: number
+        positionY:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - theoryId
+        - type
+        - title
+        - description
+        - indicators
+        - assumptions
+        - positionX
+        - positionY
+        - createdAt
+        - updatedAt
+
+    CreateComponent:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [input, activity, output, outcome, impact]
+        title:
+          type: string
+        description:
+          type: string
+        indicators:
+          type: string
+        assumptions:
+          type: string
+        positionX:
+          type: number
+        positionY:
+          type: number
+      required:
+        - type
+        - title
+        - description
+
+    Connection:
+      type: object
+      properties:
+        id:
+          type: integer
+        theoryId:
+          type: integer
+        fromComponentId:
+          type: integer
+        toComponentId:
+          type: integer
+        label:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - theoryId
+        - fromComponentId
+        - toComponentId
+        - label
+        - createdAt
+
+    CreateConnection:
+      type: object
+      properties:
+        fromComponentId:
+          type: integer
+        toComponentId:
+          type: integer
+        label:
+          type: string
+      required:
+        - fromComponentId
+        - toComponentId
+        - label

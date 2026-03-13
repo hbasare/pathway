@@ -1,0 +1,14 @@
+packages:
+  "react-xarrows": "Drawing SVG connection lines between theory of change components"
+  "framer-motion": "Smooth entry animations and micro-interactions"
+  "@hookform/resolvers": "Zod validation integration for forms"
+  "date-fns": "Formatting timestamps"
+
+images:
+  - path: "artifacts/theory-of-change/public/images/logo.png"
+    description: "Minimal geometric logo mark representing a structured network or connected nodes, clean professional style, deep indigo"
+    aspect_ratio: "1:1"
+
+notes:
+  - API schemas and React Query hooks are already imported from @workspace/api-client-react
+  - wouter is used for routing
