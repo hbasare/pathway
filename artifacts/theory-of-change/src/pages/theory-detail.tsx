@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useDeleteTheory, getListTheoriesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings, Trash2, ArrowLeft, Loader2 } from "lucide-react";
+import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TheoryCanvas } from "@/components/theory/theory-canvas";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
@@ -77,6 +77,15 @@ export default function TheoryDetail() {
         </div>
         
         <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLocation(`/theory/${id}/measurement-plan`)}
+            className="gap-2"
+          >
+            <ClipboardList className="w-4 h-4" />
+            Measurement Plan
+          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="icon" className="h-9 w-9">

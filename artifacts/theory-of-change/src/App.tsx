@@ -8,6 +8,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 // Pages
 import Dashboard from "@/pages/dashboard";
 import TheoryDetail from "@/pages/theory-detail";
+import MeasurementPlan from "@/pages/measurement-plan";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -23,6 +24,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/theory/:id/measurement-plan" component={MeasurementPlan} />
       <Route path="/theory/:id" component={TheoryDetail} />
       <Route component={NotFound} />
     </Switch>

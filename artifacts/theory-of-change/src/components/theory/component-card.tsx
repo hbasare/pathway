@@ -17,31 +17,35 @@ import { ComponentForm } from "@/components/forms/component-form";
 
 interface ComponentCardProps {
   component: Component;
+  boxNumber: number;
   onConnectStart: (id: number) => void;
   onConnectEnd: (id: number) => void;
   isConnectingFrom: boolean;
   isConnectingMode: boolean;
 }
 
-const TYPE_CONFIG: Record<ComponentType, { border: string; bg: string; accent: string; icon: React.ElementType }> = {
-  input: { border: "border-blue-200", bg: "bg-blue-50/50", accent: "bg-blue-400", icon: FileText },
-  activity: { border: "border-purple-200", bg: "bg-purple-50/50", accent: "bg-purple-400", icon: Activity },
-  output: { border: "border-teal-200", bg: "bg-teal-50/50", accent: "bg-teal-400", icon: Zap },
-  outcome: { border: "border-orange-200", bg: "bg-orange-50/50", accent: "bg-orange-400", icon: Target },
-  impact: { border: "border-rose-200", bg: "bg-rose-50/50", accent: "bg-rose-400", icon: Globe },
+const TYPE_CONFIG: Record<ComponentType, { border: string; accent: string; icon: React.ElementType }> = {
+  input:    { border: "border-blue-200",   accent: "bg-blue-400",   icon: FileText },
+  activity: { border: "border-purple-200", accent: "bg-purple-400", icon: Activity },
+  output:   { border: "border-teal-200",   accent: "bg-teal-400",   icon: Zap },
+  outcome:  { border: "border-orange-200", accent: "bg-orange-400", icon: Target },
+  impact:   { border: "border-rose-200",   accent: "bg-rose-400",   icon: Globe },
 };
 
 function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return null;
   try {
     const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
   } catch {
     return dateStr;
   }
 }
 
-export function ComponentCard({ component, onConnectStart, onConnectEnd, isConnectingFrom, isConnectingMode }: ComponentCardProps) {
+export function ComponentCard({
+  component, boxNumber, onConnectStart, onConnectEnd, isConnectingFrom, isConnectingMode
+}: ComponentCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -58,14 +62,11 @@ export function ComponentCard({ component, onConnectStart, onConnectEnd, isConne
 
   const config = TYPE_CONFIG[component.type];
   const Icon = config.icon;
-
-  const hasTarget = component.targetDate || component.targetFigure;
-  const hasActual = component.actualDate || component.actualFigure;
+  const hasTarget = !!(component.targetDate || component.targetFigure);
+  const hasActual = !!(component.actualDate || component.actualFigure);
 
   const handleCardClick = () => {
-    if (isConnectingMode && !isConnectingFrom) {
-      onConnectEnd(component.id);
-    }
+    if (isConnectingMode && !isConnectingFrom) onConnectEnd(component.id);
   };
 
   return (
@@ -85,17 +86,23 @@ export function ComponentCard({ component, onConnectStart, onConnectEnd, isConne
         <div className={`h-1 w-full ${config.accent} opacity-70`} />
 
         <div className="p-4">
-          {/* Header row */}
-          <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <Icon className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">{component.type}</span>
+          {/* Header row: box number + type label + menu */}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              {/* Box number badge */}
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold shrink-0">
+                {boxNumber}
+              </span>
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <Icon className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold uppercase tracking-widest">{component.type}</span>
+              </div>
             </div>
 
             {!isConnectingMode && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 text-muted-foreground hover:text-foreground">
+                  <Button variant="ghost" size="icon" className="h-6 w-6 -mr-1 text-muted-foreground hover:text-foreground">
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -125,8 +132,10 @@ export function ComponentCard({ component, onConnectStart, onConnectEnd, isConne
             )}
           </div>
 
-          {/* Title & description */}
+          {/* Title */}
           <h4 className="font-bold text-foreground text-sm leading-snug mb-1.5">{component.title}</h4>
+
+          {/* Description */}
           <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
             {component.description}
           </p>
@@ -166,7 +175,6 @@ export function ComponentCard({ component, onConnectStart, onConnectEnd, isConne
                   </div>
                 </div>
               )}
-
               {hasActual && (
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-500" />
@@ -188,11 +196,7 @@ export function ComponentCard({ component, onConnectStart, onConnectEnd, isConne
         </div>
       </div>
 
-      <DialogWrapper
-        open={isEditOpen}
-        onOpenChange={setIsEditOpen}
-        title="Edit Component"
-      >
+      <DialogWrapper open={isEditOpen} onOpenChange={setIsEditOpen} title="Edit Component">
         <ComponentForm
           theoryId={component.theoryId}
           initialData={{

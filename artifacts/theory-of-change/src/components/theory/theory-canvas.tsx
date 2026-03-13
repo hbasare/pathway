@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Xarrow, { Xwrapper } from "react-xarrows";
 import { TheoryDetail, ComponentType, useCreateConnection, useDeleteConnection, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, X } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ComponentCard } from "./component-card";
@@ -22,19 +22,26 @@ const COLUMNS: { type: ComponentType; label: string; description: string }[] = [
   { type: "impact", label: "Impact", description: "Long term systemic change" },
 ];
 
+const COLUMN_INDEX: Record<ComponentType, number> = {
+  input: 0,
+  activity: 1,
+  output: 2,
+  outcome: 3,
+  impact: 4,
+};
+
 export function TheoryCanvas({ theory }: TheoryCanvasProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [connectingFrom, setConnectingFrom] = useState<number | null>(null);
   const [isAddComponentOpen, setIsAddComponentOpen] = useState(false);
   const [selectedColumnType, setSelectedColumnType] = useState<ComponentType>("activity");
-  
-  // Forces re-render of Xarrows when layout might have shifted
+
   const [, setTick] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const timer = setTimeout(() => setTick(t => t + 1), 100);
+    const timer = setTimeout(() => setTick(t => t + 1), 150);
     return () => clearTimeout(timer);
   }, [theory.components.length]);
 
@@ -58,32 +65,22 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
     }
   });
 
-  const handleConnectStart = (id: number) => {
-    setConnectingFrom(id);
-  };
+  const handleConnectStart = (id: number) => setConnectingFrom(id);
 
   const handleConnectEnd = (id: number) => {
     if (!connectingFrom || connectingFrom === id) return;
-    
-    // Check if connection already exists
-    const exists = theory.connections.some(c => 
+    const exists = theory.connections.some(c =>
       (c.fromComponentId === connectingFrom && c.toComponentId === id) ||
       (c.fromComponentId === id && c.toComponentId === connectingFrom)
     );
-
     if (exists) {
       toast({ title: "These components are already connected", variant: "destructive" });
       setConnectingFrom(null);
       return;
     }
-
     createConnectionMutation.mutate({
       theoryId: theory.id,
-      data: {
-        fromComponentId: connectingFrom,
-        toComponentId: id,
-        label: ""
-      }
+      data: { fromComponentId: connectingFrom, toComponentId: id, label: "" }
     });
   };
 
@@ -94,6 +91,22 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
     if (window.confirm("Remove this connection?")) {
       deleteConnectionMutation.mutate({ theoryId: theory.id, id: connId });
     }
+  };
+
+  // Assign stable sequential box numbers by component ID order
+  const sortedIds = [...theory.components].sort((a, b) => a.id - b.id).map(c => c.id);
+  const boxNumber = (compId: number) => sortedIds.indexOf(compId) + 1;
+
+  // Determine smart anchors so arrows route through column gaps, not through cards
+  const getAnchors = (fromId: number, toId: number) => {
+    const from = theory.components.find(c => c.id === fromId);
+    const to = theory.components.find(c => c.id === toId);
+    if (!from || !to) return { start: "auto" as const, end: "auto" as const };
+    const fromCol = COLUMN_INDEX[from.type as ComponentType] ?? 0;
+    const toCol = COLUMN_INDEX[to.type as ComponentType] ?? 0;
+    if (fromCol < toCol) return { start: "right" as const, end: "left" as const };
+    if (fromCol > toCol) return { start: "left" as const, end: "right" as const };
+    return { start: "bottom" as const, end: "top" as const };
   };
 
   return (
@@ -107,42 +120,44 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
         </div>
       )}
 
-      <div 
+      <div
         ref={canvasRef}
         className="flex-1 overflow-auto p-8"
         onScroll={() => setTick(t => t + 1)}
       >
         <Xwrapper>
-          <div className="flex gap-8 min-w-max pb-32">
+          <div className="flex gap-10 min-w-max pb-32">
             {COLUMNS.map((col) => {
               const columnComponents = theory.components.filter((c) => c.type === col.type);
-              
+
               return (
                 <div key={col.type} className="flex flex-col w-[280px] shrink-0">
-                  <div className="mb-6 sticky top-0 bg-slate-50/90 backdrop-blur-sm pt-2 pb-4 z-10 border-b border-border/50">
-                    <div className="flex items-center justify-between mb-1">
-                      <h3 className="font-display text-lg font-bold text-foreground">{col.label}</h3>
-                      <Badge variant="secondary" className="rounded-full px-2 py-0.5">
+                  {/* Column header */}
+                  <div className="mb-5 sticky top-0 bg-slate-50/95 backdrop-blur-sm pt-2 pb-3 z-10 border-b border-border/50">
+                    <div className="flex items-center justify-between mb-0.5">
+                      <h3 className="font-bold text-base text-foreground">{col.label}</h3>
+                      <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
                         {columnComponents.length}
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">{col.description}</p>
                   </div>
 
-                  <div className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-5">
                     {columnComponents.map((comp) => (
                       <ComponentCard
                         key={comp.id}
                         component={comp}
+                        boxNumber={boxNumber(comp.id)}
                         onConnectStart={handleConnectStart}
                         onConnectEnd={handleConnectEnd}
                         isConnectingFrom={connectingFrom === comp.id}
                         isConnectingMode={!!connectingFrom}
                       />
                     ))}
-                    
-                    <Button 
-                      variant="outline" 
+
+                    <Button
+                      variant="outline"
                       className="border-dashed border-2 py-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                       onClick={() => {
                         setSelectedColumnType(col.type);
@@ -158,22 +173,28 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
             })}
           </div>
 
-          {theory.connections.map((conn) => (
-            <Xarrow
-              key={conn.id}
-              start={`comp-${conn.fromComponentId}`}
-              end={`comp-${conn.toComponentId}`}
-              color="#94a3b8" // slate-400
-              strokeWidth={2}
-              path="smooth"
-              headSize={4}
-              curveness={0.8}
-              passProps={{
-                onClick: (e: React.MouseEvent) => handleDeleteConnection(conn.id, e),
-                className: "cursor-pointer hover:stroke-destructive transition-colors drop-shadow-sm",
-              }}
-            />
-          ))}
+          {theory.connections.map((conn) => {
+            const { start, end } = getAnchors(conn.fromComponentId, conn.toComponentId);
+            return (
+              <Xarrow
+                key={conn.id}
+                start={`comp-${conn.fromComponentId}`}
+                end={`comp-${conn.toComponentId}`}
+                startAnchor={start}
+                endAnchor={end}
+                color="#94a3b8"
+                strokeWidth={1.8}
+                path="grid"
+                gridBreak="60%"
+                headSize={5}
+                passProps={{
+                  onClick: (e: React.MouseEvent) => handleDeleteConnection(conn.id, e),
+                  className: "cursor-pointer hover:stroke-destructive transition-colors",
+                  style: { zIndex: 0 },
+                }}
+              />
+            );
+          })}
         </Xwrapper>
       </div>
 
@@ -182,10 +203,10 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
         onOpenChange={setIsAddComponentOpen}
         title="Add New Component"
       >
-        <ComponentForm 
-          theoryId={theory.id} 
+        <ComponentForm
+          theoryId={theory.id}
           defaultType={selectedColumnType}
-          onSuccess={() => setIsAddComponentOpen(false)} 
+          onSuccess={() => setIsAddComponentOpen(false)}
         />
       </DialogWrapper>
     </div>
