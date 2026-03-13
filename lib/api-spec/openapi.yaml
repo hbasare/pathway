@@ -376,6 +376,10 @@ components:
           type: string
         actualFigure:
           type: string
+        qualitativeQuestions:
+          type: string
+        quantitativeQuestions:
+          type: string
         positionX:
           type: number
         positionY:
@@ -398,6 +402,8 @@ components:
         - targetFigure
         - actualDate
         - actualFigure
+        - qualitativeQuestions
+        - quantitativeQuestions
         - positionX
         - positionY
         - createdAt
@@ -424,6 +430,10 @@ components:
         actualDate:
           type: string
         actualFigure:
+          type: string
+        qualitativeQuestions:
+          type: string
+        quantitativeQuestions:
           type: string
         positionX:
           type: number

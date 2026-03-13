@@ -39,6 +39,8 @@ export interface Component {
   targetFigure: string;
   actualDate: string;
   actualFigure: string;
+  qualitativeQuestions: string;
+  quantitativeQuestions: string;
   positionX: number;
   positionY: number;
   createdAt: string;
@@ -90,6 +92,8 @@ export interface CreateComponent {
   targetFigure?: string;
   actualDate?: string;
   actualFigure?: string;
+  qualitativeQuestions?: string;
+  quantitativeQuestions?: string;
   positionX?: number;
   positionY?: number;
 }

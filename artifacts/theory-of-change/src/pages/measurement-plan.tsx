@@ -1,8 +1,11 @@
+import React from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory } from "@workspace/api-client-react";
-import { ArrowLeft, Printer, CalendarClock, CheckCircle2, Clock, AlertCircle, MinusCircle } from "lucide-react";
+import {
+  ArrowLeft, Printer, CalendarClock, CheckCircle2, Clock,
+  AlertCircle, MinusCircle, MessageSquare, BarChart3,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
 
 const TYPE_COLORS: Record<string, string> = {
@@ -74,13 +77,11 @@ export default function MeasurementPlan() {
     );
   }
 
-  // Sort components by column order then by ID for stable numbering
   const sorted = [...theory.components].sort((a, b) => {
     const colDiff = (COLUMN_ORDER[a.type] ?? 99) - (COLUMN_ORDER[b.type] ?? 99);
     return colDiff !== 0 ? colDiff : a.id - b.id;
   });
 
-  // Box numbers by creation order (same as canvas)
   const sortedById = [...theory.components].sort((a, b) => a.id - b.id);
   const boxNum = (id: number) => sortedById.findIndex(c => c.id === id) + 1;
 
@@ -88,15 +89,10 @@ export default function MeasurementPlan() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Toolbar - hidden on print */}
+      {/* Toolbar */}
       <header className="print:hidden flex-none flex items-center justify-between px-6 py-4 border-b bg-card shadow-sm">
         <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLocation(`/theory/${id}`)}
-            className="gap-2"
-          >
+          <Button variant="ghost" size="sm" onClick={() => setLocation(`/theory/${id}`)} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
             Back to Canvas
           </Button>
@@ -111,9 +107,8 @@ export default function MeasurementPlan() {
         </Button>
       </header>
 
-      {/* Printable content */}
       <div className="flex-1 overflow-auto">
-        <div className="max-w-6xl mx-auto px-6 py-8 print:px-4 print:py-6">
+        <div className="max-w-7xl mx-auto px-6 py-8 print:px-4 print:py-6">
 
           {/* Document header */}
           <div className="mb-8 print:mb-6">
@@ -145,21 +140,29 @@ export default function MeasurementPlan() {
             ))}
           </div>
 
+          {/* Column guide */}
+          <div className="print:hidden mb-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span>Qualitative questions are open-ended;</span>
+            <BarChart3 className="w-3.5 h-3.5 ml-1" />
+            <span>Quantitative questions are measurable/numeric. Edit any component to add questions.</span>
+          </div>
+
           {/* Main table */}
-          <div className="rounded-xl border border-border overflow-hidden shadow-sm print:shadow-none print:border print:rounded-none">
-            <table className="w-full text-sm border-collapse">
+          <div className="rounded-xl border border-border overflow-hidden shadow-sm print:shadow-none print:border print:rounded-none overflow-x-auto">
+            <table className="w-full text-sm border-collapse" style={{ minWidth: "900px" }}>
               <thead>
                 <tr className="bg-muted/60 border-b border-border">
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground w-10 text-xs">#</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground w-20 text-xs">Type</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">Component / Title</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">Indicators & Metrics</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">Assumptions</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs w-28">Target Date</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs w-36">Target Figure</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs w-28">Actual Date</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs w-36">Actual Figure</th>
-                  <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs w-24">Status</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground w-10 text-xs">#</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground w-20 text-xs">Type</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "160px" }}>Component / Title</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "130px" }}>Indicators & Metrics</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "120px" }}>Assumptions</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Target Date</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-28">Target Figure</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Actual Date</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-28">Actual Figure</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-22">Status</th>
                 </tr>
               </thead>
               <tbody>
@@ -167,79 +170,101 @@ export default function MeasurementPlan() {
                   const status = getStatus(comp.targetDate, comp.targetFigure, comp.actualFigure);
                   const StatusIcon = status.icon;
                   const isEven = idx % 2 === 0;
+                  const hasQual = comp.qualitativeQuestions && comp.qualitativeQuestions.trim();
+                  const hasQuant = comp.quantitativeQuestions && comp.quantitativeQuestions.trim();
+                  const hasQuestions = hasQual || hasQuant;
+                  const rowBg = isEven ? "bg-background" : "bg-muted/20";
+
                   return (
-                    <tr
-                      key={comp.id}
-                      className={`border-b border-border/50 last:border-0 ${isEven ? "bg-background" : "bg-muted/20"}`}
-                    >
-                      {/* Box number */}
-                      <td className="px-4 py-3 align-top">
-                        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
-                          {boxNum(comp.id)}
-                        </span>
-                      </td>
+                    <React.Fragment key={comp.id}>
+                      {/* Main data row */}
+                      <tr
+                        className={`${hasQuestions ? "" : "border-b border-border/50 last:border-0"} ${rowBg}`}
+                      >
+                        <td className="px-3 py-3 align-top">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
+                            {boxNum(comp.id)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
+                            {comp.type}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <p className="font-semibold text-foreground leading-snug mb-0.5">{comp.title}</p>
+                          {comp.description && (
+                            <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 align-top text-xs text-muted-foreground leading-relaxed">
+                          {comp.indicators || <span className="italic text-muted-foreground/50">—</span>}
+                        </td>
+                        <td className="px-3 py-3 align-top text-xs text-muted-foreground leading-relaxed">
+                          {comp.assumptions || <span className="italic text-muted-foreground/50">—</span>}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          {comp.targetDate ? (
+                            <span className="text-xs font-medium text-amber-700">{formatDate(comp.targetDate)}</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/50 italic">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 align-top text-xs text-foreground font-medium">
+                          {comp.targetFigure || <span className="italic text-muted-foreground/50">—</span>}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          {comp.actualDate ? (
+                            <span className="text-xs font-medium text-emerald-700">{formatDate(comp.actualDate)}</span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground/50 italic">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 align-top text-xs text-emerald-700 font-medium">
+                          {comp.actualFigure || <span className="italic text-muted-foreground/50 font-normal">—</span>}
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${status.color}`}>
+                            <StatusIcon className="w-3 h-3" />
+                            {status.label}
+                          </span>
+                        </td>
+                      </tr>
 
-                      {/* Type */}
-                      <td className="px-4 py-3 align-top">
-                        <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
-                          {comp.type}
-                        </span>
-                      </td>
-
-                      {/* Title + description */}
-                      <td className="px-4 py-3 align-top">
-                        <p className="font-semibold text-foreground leading-snug mb-0.5">{comp.title}</p>
-                        {comp.description && (
-                          <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>
-                        )}
-                      </td>
-
-                      {/* Indicators */}
-                      <td className="px-4 py-3 align-top text-xs text-muted-foreground leading-relaxed">
-                        {comp.indicators || <span className="italic text-muted-foreground/50">—</span>}
-                      </td>
-
-                      {/* Assumptions */}
-                      <td className="px-4 py-3 align-top text-xs text-muted-foreground leading-relaxed">
-                        {comp.assumptions || <span className="italic text-muted-foreground/50">—</span>}
-                      </td>
-
-                      {/* Target date */}
-                      <td className="px-4 py-3 align-top">
-                        {comp.targetDate ? (
-                          <span className="text-xs font-medium text-amber-700">{formatDate(comp.targetDate)}</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground/50 italic">—</span>
-                        )}
-                      </td>
-
-                      {/* Target figure */}
-                      <td className="px-4 py-3 align-top text-xs text-foreground font-medium">
-                        {comp.targetFigure || <span className="italic text-muted-foreground/50">—</span>}
-                      </td>
-
-                      {/* Actual date */}
-                      <td className="px-4 py-3 align-top">
-                        {comp.actualDate ? (
-                          <span className="text-xs font-medium text-emerald-700">{formatDate(comp.actualDate)}</span>
-                        ) : (
-                          <span className="text-xs text-muted-foreground/50 italic">—</span>
-                        )}
-                      </td>
-
-                      {/* Actual figure */}
-                      <td className="px-4 py-3 align-top text-xs text-emerald-700 font-medium">
-                        {comp.actualFigure || <span className="italic text-muted-foreground/50 font-normal">—</span>}
-                      </td>
-
-                      {/* Status */}
-                      <td className="px-4 py-3 align-top">
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${status.color}`}>
-                          <StatusIcon className="w-3 h-3" />
-                          {status.label}
-                        </span>
-                      </td>
-                    </tr>
+                      {/* Measurement questions sub-row */}
+                      {hasQuestions && (
+                        <tr className={`border-b border-border/50 last:border-0 ${rowBg}`}>
+                          <td colSpan={2} />
+                          <td colSpan={8} className="px-3 pb-4 pt-0">
+                            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-3">
+                              <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                Measurement Questions for Respondents
+                              </p>
+                              <div className={`grid gap-3 ${hasQual && hasQuant ? "grid-cols-2" : "grid-cols-1"}`}>
+                                {hasQual && (
+                                  <div>
+                                    <div className="flex items-center gap-1.5 mb-1.5">
+                                      <MessageSquare className="w-3 h-3 text-violet-600 shrink-0" />
+                                      <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-700">Qualitative Questions</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{comp.qualitativeQuestions}</p>
+                                  </div>
+                                )}
+                                {hasQuant && (
+                                  <div>
+                                    <div className="flex items-center gap-1.5 mb-1.5">
+                                      <BarChart3 className="w-3 h-3 text-blue-600 shrink-0" />
+                                      <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-700">Quantitative Questions</span>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{comp.quantitativeQuestions}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
 

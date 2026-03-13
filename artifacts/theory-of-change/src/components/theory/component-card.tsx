@@ -207,6 +207,8 @@ export function ComponentCard({
             targetFigure: component.targetFigure ?? undefined,
             actualDate: component.actualDate ?? undefined,
             actualFigure: component.actualFigure ?? undefined,
+            qualitativeQuestions: component.qualitativeQuestions ?? undefined,
+            quantitativeQuestions: component.quantitativeQuestions ?? undefined,
           }}
           onSuccess={() => setIsEditOpen(false)}
         />

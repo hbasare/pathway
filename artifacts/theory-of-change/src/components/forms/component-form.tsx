@@ -28,6 +28,8 @@ const formSchema = z.object({
   targetFigure: z.string().optional(),
   actualDate: z.string().optional(),
   actualFigure: z.string().optional(),
+  qualitativeQuestions: z.string().optional(),
+  quantitativeQuestions: z.string().optional(),
   positionX: z.number().default(0),
   positionY: z.number().default(0),
 });
@@ -58,6 +60,8 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
       targetFigure: initialData?.targetFigure || "",
       actualDate: initialData?.actualDate || "",
       actualFigure: initialData?.actualFigure || "",
+      qualitativeQuestions: initialData?.qualitativeQuestions || "",
+      quantitativeQuestions: initialData?.quantitativeQuestions || "",
       positionX: initialData?.positionX || 0,
       positionY: initialData?.positionY || 0,
     },
@@ -250,6 +254,49 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   <FormLabel>Actual Figure</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. 423 participants, $47,200" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <p className="text-sm font-semibold text-foreground mb-1">Measurement Questions</p>
+          <p className="text-xs text-muted-foreground mb-3">Questions to ask respondents when measuring this indicator</p>
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="qualitativeQuestions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Qualitative Questions (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="e.g. How has this programme affected your daily life? What changes have you noticed since participating?"
+                      className="min-h-[80px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="quantitativeQuestions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Quantitative Questions (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="e.g. How many sessions did you attend? Rate your skill level from 1-10 before and after."
+                      className="min-h-[80px]"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
