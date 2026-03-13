@@ -13,6 +13,10 @@ export interface CreateComponent {
   description: string;
   indicators?: string;
   assumptions?: string;
+  targetDate?: string;
+  targetFigure?: string;
+  actualDate?: string;
+  actualFigure?: string;
   positionX?: number;
   positionY?: number;
 }

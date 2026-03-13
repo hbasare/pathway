@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { format } from "date-fns";
 import { Component, ComponentType, useDeleteComponent, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MoreVertical, Edit2, Trash2, ArrowRight, Activity, Zap, FileText, Target, Globe } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, ArrowRight, Activity, Zap, FileText, Target, Globe, CalendarClock, CheckCircle2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,13 +23,23 @@ interface ComponentCardProps {
   isConnectingMode: boolean;
 }
 
-const TYPE_CONFIG: Record<ComponentType, { border: string; bg: string; icon: React.ElementType }> = {
-  input: { border: "border-blue-200", bg: "bg-blue-50/50", icon: FileText },
-  activity: { border: "border-purple-200", bg: "bg-purple-50/50", icon: Activity },
-  output: { border: "border-teal-200", bg: "bg-teal-50/50", icon: Zap },
-  outcome: { border: "border-orange-200", bg: "bg-orange-50/50", icon: Target },
-  impact: { border: "border-rose-200", bg: "bg-rose-50/50", icon: Globe },
+const TYPE_CONFIG: Record<ComponentType, { border: string; bg: string; accent: string; icon: React.ElementType }> = {
+  input: { border: "border-blue-200", bg: "bg-blue-50/50", accent: "bg-blue-400", icon: FileText },
+  activity: { border: "border-purple-200", bg: "bg-purple-50/50", accent: "bg-purple-400", icon: Activity },
+  output: { border: "border-teal-200", bg: "bg-teal-50/50", accent: "bg-teal-400", icon: Zap },
+  outcome: { border: "border-orange-200", bg: "bg-orange-50/50", accent: "bg-orange-400", icon: Target },
+  impact: { border: "border-rose-200", bg: "bg-rose-50/50", accent: "bg-rose-400", icon: Globe },
 };
+
+function formatDate(dateStr: string | null | undefined) {
+  if (!dateStr) return null;
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  } catch {
+    return dateStr;
+  }
+}
 
 export function ComponentCard({ component, onConnectStart, onConnectEnd, isConnectingFrom, isConnectingMode }: ComponentCardProps) {
   const { toast } = useToast();
@@ -50,6 +59,9 @@ export function ComponentCard({ component, onConnectStart, onConnectEnd, isConne
   const config = TYPE_CONFIG[component.type];
   const Icon = config.icon;
 
+  const hasTarget = component.targetDate || component.targetFigure;
+  const hasActual = component.actualDate || component.actualFigure;
+
   const handleCardClick = () => {
     if (isConnectingMode && !isConnectingFrom) {
       onConnectEnd(component.id);
@@ -62,73 +74,118 @@ export function ComponentCard({ component, onConnectStart, onConnectEnd, isConne
         id={`comp-${component.id}`}
         onClick={handleCardClick}
         className={`
-          relative w-[280px] rounded-xl border p-4 shadow-sm bg-card
+          relative w-[280px] rounded-xl border shadow-sm bg-card overflow-hidden
           transition-all duration-200 cursor-pointer
-          ${isConnectingMode ? 'hover:ring-2 hover:ring-primary hover:border-primary' : 'hover:shadow-md'}
-          ${isConnectingFrom ? 'ring-2 ring-primary border-primary shadow-md scale-[1.02]' : ''}
+          ${isConnectingMode ? "hover:ring-2 hover:ring-primary hover:border-primary" : "hover:shadow-md"}
+          ${isConnectingFrom ? "ring-2 ring-primary border-primary shadow-md scale-[1.02]" : ""}
           ${config.border}
         `}
       >
-        <div className={`absolute top-0 left-0 w-full h-1.5 rounded-t-xl opacity-80 ${config.bg}`} />
-        
-        <div className="flex items-start justify-between mb-3 mt-1">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Icon className="w-4 h-4" />
-            <span className="text-xs font-semibold uppercase tracking-wider">{component.type}</span>
+        {/* Accent top bar */}
+        <div className={`h-1 w-full ${config.accent} opacity-70`} />
+
+        <div className="p-4">
+          {/* Header row */}
+          <div className="flex items-start justify-between mb-2">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <Icon className="w-3.5 h-3.5" />
+              <span className="text-[10px] font-bold uppercase tracking-widest">{component.type}</span>
+            </div>
+
+            {!isConnectingMode && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 text-muted-foreground hover:text-foreground">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={() => onConnectStart(component.id)}>
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                    Connect To...
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="text-destructive focus:text-destructive"
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to delete this component?")) {
+                        deleteMutation.mutate({ theoryId: component.theoryId, id: component.id });
+                      }
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
-          
-          {!isConnectingMode && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 -mr-2 text-muted-foreground hover:text-foreground">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem onClick={() => onConnectStart(component.id)}>
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Connect To...
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  className="text-destructive focus:text-destructive"
-                  onClick={() => {
-                    if (window.confirm("Are you sure you want to delete this component?")) {
-                      deleteMutation.mutate({ theoryId: component.theoryId, id: component.id });
-                    }
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+
+          {/* Title & description */}
+          <h4 className="font-bold text-foreground text-sm leading-snug mb-1.5">{component.title}</h4>
+          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
+            {component.description}
+          </p>
+
+          {/* Indicator / assumption badges */}
+          {(component.indicators || component.assumptions) && (
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              {component.indicators && (
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-sm font-medium">
+                  Indicators
+                </Badge>
+              )}
+              {component.assumptions && (
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm font-medium">
+                  Assumptions
+                </Badge>
+              )}
+            </div>
+          )}
+
+          {/* Target / Actual section */}
+          {(hasTarget || hasActual) && (
+            <div className="mt-3 pt-3 border-t border-border/60 space-y-2">
+              {hasTarget && (
+                <div className="flex items-start gap-2">
+                  <CalendarClock className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 mb-0.5">Target</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                      {component.targetDate && (
+                        <span className="text-xs text-foreground font-medium">{formatDate(component.targetDate)}</span>
+                      )}
+                      {component.targetFigure && (
+                        <span className="text-xs text-muted-foreground">{component.targetFigure}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {hasActual && (
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-500" />
+                  <div className="min-w-0">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 mb-0.5">Actual</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                      {component.actualDate && (
+                        <span className="text-xs text-foreground font-medium">{formatDate(component.actualDate)}</span>
+                      )}
+                      {component.actualFigure && (
+                        <span className="text-xs text-muted-foreground">{component.actualFigure}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
-
-        <h4 className="font-display font-bold text-foreground text-base leading-tight mb-2">{component.title}</h4>
-        <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mb-4">
-          {component.description}
-        </p>
-
-        {(component.indicators || component.assumptions) && (
-          <div className="flex flex-wrap gap-2 mt-auto">
-            {component.indicators && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-sm font-medium">
-                Indicators
-              </Badge>
-            )}
-            {component.assumptions && (
-              <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm font-medium">
-                Assumptions
-              </Badge>
-            )}
-          </div>
-        )}
       </div>
 
       <DialogWrapper
@@ -136,14 +193,18 @@ export function ComponentCard({ component, onConnectStart, onConnectEnd, isConne
         onOpenChange={setIsEditOpen}
         title="Edit Component"
       >
-        <ComponentForm 
-          theoryId={component.theoryId} 
+        <ComponentForm
+          theoryId={component.theoryId}
           initialData={{
             ...component,
             indicators: component.indicators ?? undefined,
-            assumptions: component.assumptions ?? undefined
+            assumptions: component.assumptions ?? undefined,
+            targetDate: component.targetDate ?? undefined,
+            targetFigure: component.targetFigure ?? undefined,
+            actualDate: component.actualDate ?? undefined,
+            actualFigure: component.actualFigure ?? undefined,
           }}
-          onSuccess={() => setIsEditOpen(false)} 
+          onSuccess={() => setIsEditOpen(false)}
         />
       </DialogWrapper>
     </>

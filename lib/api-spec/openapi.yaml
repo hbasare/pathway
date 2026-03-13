@@ -368,6 +368,14 @@ components:
           type: string
         assumptions:
           type: string
+        targetDate:
+          type: string
+        targetFigure:
+          type: string
+        actualDate:
+          type: string
+        actualFigure:
+          type: string
         positionX:
           type: number
         positionY:
@@ -386,6 +394,10 @@ components:
         - description
         - indicators
         - assumptions
+        - targetDate
+        - targetFigure
+        - actualDate
+        - actualFigure
         - positionX
         - positionY
         - createdAt
@@ -404,6 +416,14 @@ components:
         indicators:
           type: string
         assumptions:
+          type: string
+        targetDate:
+          type: string
+        targetFigure:
+          type: string
+        actualDate:
+          type: string
+        actualFigure:
           type: string
         positionX:
           type: number

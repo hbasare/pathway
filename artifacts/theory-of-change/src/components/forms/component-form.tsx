@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({
   type: z.enum(["input", "activity", "output", "outcome", "impact"] as const),
@@ -23,6 +24,10 @@ const formSchema = z.object({
   description: z.string().min(1, "Description is required"),
   indicators: z.string().optional(),
   assumptions: z.string().optional(),
+  targetDate: z.string().optional(),
+  targetFigure: z.string().optional(),
+  actualDate: z.string().optional(),
+  actualFigure: z.string().optional(),
   positionX: z.number().default(0),
   positionY: z.number().default(0),
 });
@@ -49,6 +54,10 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
       description: initialData?.description || "",
       indicators: initialData?.indicators || "",
       assumptions: initialData?.assumptions || "",
+      targetDate: initialData?.targetDate || "",
+      targetFigure: initialData?.targetFigure || "",
+      actualDate: initialData?.actualDate || "",
+      actualFigure: initialData?.actualFigure || "",
       positionX: initialData?.positionX || 0,
       positionY: initialData?.positionY || 0,
     },
@@ -113,7 +122,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="title"
@@ -127,7 +136,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
             </FormItem>
           )}
         />
-        
+
         <FormField
           control={form.control}
           name="description"
@@ -135,10 +144,10 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Detail what this component entails..." 
+                <Textarea
+                  placeholder="Detail what this component entails..."
                   className="min-h-[80px]"
-                  {...field} 
+                  {...field}
                 />
               </FormControl>
               <FormMessage />
@@ -154,10 +163,10 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
               <FormItem>
                 <FormLabel>Indicators (Optional)</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    placeholder="e.g. Number of participants trained" 
-                    className="min-h-[80px]"
-                    {...field} 
+                  <Textarea
+                    placeholder="e.g. Number of participants trained"
+                    className="min-h-[70px]"
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
@@ -171,10 +180,10 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
               <FormItem>
                 <FormLabel>Assumptions (Optional)</FormLabel>
                 <FormControl>
-                  <Textarea 
-                    placeholder="e.g. Participants have access to internet" 
-                    className="min-h-[80px]"
-                    {...field} 
+                  <Textarea
+                    placeholder="e.g. Participants have access to internet"
+                    className="min-h-[70px]"
+                    {...field}
                   />
                 </FormControl>
                 <FormMessage />
@@ -183,7 +192,73 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
           />
         </div>
 
-        <div className="flex justify-end pt-4">
+        <Separator />
+
+        <div>
+          <p className="text-sm font-semibold text-foreground mb-3">Projection / Target</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="targetDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="targetFigure"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Figure</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 500 participants, $50,000" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <div>
+          <p className="text-sm font-semibold text-foreground mb-3">Actual Results</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="actualDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Actual Date</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="actualFigure"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Actual Figure</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g. 423 participants, $47,200" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end pt-2">
           <Button type="submit" disabled={isPending} className="font-semibold shadow-md">
             {isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Component"}
           </Button>
