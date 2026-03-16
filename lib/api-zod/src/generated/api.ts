@@ -37,6 +37,7 @@ export const ListTheoriesResponseItem = zod.object({
   climateSmart: zod.string().optional(),
   displacement: zod.string().optional(),
   contributionOfOtherProjects: zod.string().optional(),
+  businessModelImagePath: zod.string().optional(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -63,6 +64,7 @@ export const CreateTheoryBody = zod.object({
   climateSmart: zod.string().optional(),
   displacement: zod.string().optional(),
   contributionOfOtherProjects: zod.string().optional(),
+  businessModelImagePath: zod.string().optional(),
 });
 
 /**
@@ -91,6 +93,7 @@ export const GetTheoryResponse = zod.object({
   climateSmart: zod.string().optional(),
   displacement: zod.string().optional(),
   contributionOfOtherProjects: zod.string().optional(),
+  businessModelImagePath: zod.string().optional(),
   components: zod.array(
     zod.object({
       id: zod.number(),
@@ -151,6 +154,7 @@ export const UpdateTheoryBody = zod.object({
   climateSmart: zod.string().optional(),
   displacement: zod.string().optional(),
   contributionOfOtherProjects: zod.string().optional(),
+  businessModelImagePath: zod.string().optional(),
 });
 
 export const UpdateTheoryResponse = zod.object({
@@ -172,6 +176,7 @@ export const UpdateTheoryResponse = zod.object({
   climateSmart: zod.string().optional(),
   displacement: zod.string().optional(),
   contributionOfOtherProjects: zod.string().optional(),
+  businessModelImagePath: zod.string().optional(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -322,4 +327,88 @@ export const CreateConnectionBody = zod.object({
 export const DeleteConnectionParams = zod.object({
   theoryId: zod.coerce.number(),
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary List business model actors
+ */
+export const ListBusinessModelActorsParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const ListBusinessModelActorsResponseItem = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  position: zod.number(),
+  actorName: zod.string(),
+  currentBehaviour: zod.string(),
+  expectedBehaviourChange: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListBusinessModelActorsResponse = zod.array(
+  ListBusinessModelActorsResponseItem,
+);
+
+/**
+ * @summary Create a business model actor
+ */
+export const CreateBusinessModelActorParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const CreateBusinessModelActorBody = zod.object({
+  actorName: zod.string(),
+  currentBehaviour: zod.string(),
+  expectedBehaviourChange: zod.string(),
+  position: zod.number().optional(),
+});
+
+/**
+ * @summary Update a business model actor
+ */
+export const UpdateBusinessModelActorParams = zod.object({
+  theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+export const UpdateBusinessModelActorBody = zod.object({
+  actorName: zod.string(),
+  currentBehaviour: zod.string(),
+  expectedBehaviourChange: zod.string(),
+  position: zod.number().optional(),
+});
+
+export const UpdateBusinessModelActorResponse = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  position: zod.number(),
+  actorName: zod.string(),
+  currentBehaviour: zod.string(),
+  expectedBehaviourChange: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Delete a business model actor
+ */
+export const DeleteBusinessModelActorParams = zod.object({
+  theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary Generate AI image for business model
+ */
+export const GenerateBusinessModelImageParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const GenerateBusinessModelImageBody = zod.object({
+  prompt: zod.string(),
+});
+
+export const GenerateBusinessModelImageResponse = zod.object({
+  imageUrl: zod.string(),
 });

@@ -2,10 +2,11 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useDeleteTheory, getListTheoriesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, LayoutList, Network, Info } from "lucide-react";
+import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, LayoutList, Network, Info, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TheoryCanvas } from "@/components/theory/theory-canvas";
 import { AboutIntervention } from "@/components/theory/about-intervention";
+import { BusinessModel } from "@/components/theory/business-model";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
 import { TheoryForm } from "@/components/forms/theory-form";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type ActiveTab = "canvas" | "about";
+type ActiveTab = "canvas" | "about" | "business-model";
 
 export default function TheoryDetail() {
   const [, params] = useRoute("/theory/:id");
@@ -135,12 +136,19 @@ export default function TheoryDetail() {
           icon={<Info className="w-4 h-4" />}
           label="About Intervention"
         />
+        <TabButton
+          active={activeTab === "business-model"}
+          onClick={() => setActiveTab("business-model")}
+          icon={<Briefcase className="w-4 h-4" />}
+          label="Business Model"
+        />
       </div>
 
       {/* ── Tab content ── */}
       <main className="flex-1 overflow-hidden relative">
         {activeTab === "canvas" && <TheoryCanvas theory={theory} />}
         {activeTab === "about" && <AboutIntervention theory={theory} />}
+        {activeTab === "business-model" && <BusinessModel theory={theory} />}
       </main>
 
       <DialogWrapper

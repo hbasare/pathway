@@ -275,6 +275,128 @@ paths:
         "204":
           description: Deleted
 
+  /theories/{theoryId}/business-model/actors:
+    get:
+      operationId: listBusinessModelActors
+      tags: [business-model]
+      summary: List business model actors
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of actors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BusinessModelActor"
+    post:
+      operationId: createBusinessModelActor
+      tags: [business-model]
+      summary: Create a business model actor
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBusinessModelActor"
+      responses:
+        "201":
+          description: Created actor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessModelActor"
+
+  /theories/{theoryId}/business-model/actors/{id}:
+    put:
+      operationId: updateBusinessModelActor
+      tags: [business-model]
+      summary: Update a business model actor
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBusinessModelActor"
+      responses:
+        "200":
+          description: Updated actor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessModelActor"
+    delete:
+      operationId: deleteBusinessModelActor
+      tags: [business-model]
+      summary: Delete a business model actor
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /theories/{theoryId}/business-model/generate-image:
+    post:
+      operationId: generateBusinessModelImage
+      tags: [business-model]
+      summary: Generate AI image for business model
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                prompt:
+                  type: string
+              required:
+                - prompt
+      responses:
+        "200":
+          description: Generated image URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GenerateBusinessModelImageResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -323,6 +445,8 @@ components:
         displacement:
           type: string
         contributionOfOtherProjects:
+          type: string
+        businessModelImagePath:
           type: string
         createdAt:
           type: string
@@ -375,6 +499,8 @@ components:
         displacement:
           type: string
         contributionOfOtherProjects:
+          type: string
+        businessModelImagePath:
           type: string
         components:
           type: array
@@ -436,9 +562,66 @@ components:
           type: string
         contributionOfOtherProjects:
           type: string
+        businessModelImagePath:
+          type: string
       required:
         - title
         - description
+
+    BusinessModelActor:
+      type: object
+      properties:
+        id:
+          type: integer
+        theoryId:
+          type: integer
+        position:
+          type: integer
+        actorName:
+          type: string
+        currentBehaviour:
+          type: string
+        expectedBehaviourChange:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - theoryId
+        - position
+        - actorName
+        - currentBehaviour
+        - expectedBehaviourChange
+        - createdAt
+        - updatedAt
+
+    CreateBusinessModelActor:
+      type: object
+      properties:
+        actorName:
+          type: string
+        currentBehaviour:
+          type: string
+        expectedBehaviourChange:
+          type: string
+        position:
+          type: integer
+      required:
+        - actorName
+        - currentBehaviour
+        - expectedBehaviourChange
+
+    GenerateBusinessModelImageResponse:
+      type: object
+      properties:
+        imageUrl:
+          type: string
+      required:
+        - imageUrl
 
     Component:
       type: object

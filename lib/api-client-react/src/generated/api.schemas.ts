@@ -28,6 +28,7 @@ export interface Theory {
   climateSmart?: string;
   displacement?: string;
   contributionOfOtherProjects?: string;
+  businessModelImagePath?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -90,6 +91,7 @@ export interface TheoryDetail {
   climateSmart?: string;
   displacement?: string;
   contributionOfOtherProjects?: string;
+  businessModelImagePath?: string;
   components: Component[];
   connections: Connection[];
   createdAt: string;
@@ -114,6 +116,29 @@ export interface CreateTheory {
   climateSmart?: string;
   displacement?: string;
   contributionOfOtherProjects?: string;
+  businessModelImagePath?: string;
+}
+
+export interface BusinessModelActor {
+  id: number;
+  theoryId: number;
+  position: number;
+  actorName: string;
+  currentBehaviour: string;
+  expectedBehaviourChange: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBusinessModelActor {
+  actorName: string;
+  currentBehaviour: string;
+  expectedBehaviourChange: string;
+  position?: number;
+}
+
+export interface GenerateBusinessModelImageResponse {
+  imageUrl: string;
 }
 
 export type CreateComponentType =
@@ -148,3 +173,7 @@ export interface CreateConnection {
   toComponentId: number;
   label: string;
 }
+
+export type GenerateBusinessModelImageBody = {
+  prompt: string;
+};

@@ -6,13 +6,17 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./businessModelActor";
 export * from "./component";
 export * from "./componentType";
 export * from "./connection";
+export * from "./createBusinessModelActor";
 export * from "./createComponent";
 export * from "./createComponentType";
 export * from "./createConnection";
 export * from "./createTheory";
+export * from "./generateBusinessModelImageBody";
+export * from "./generateBusinessModelImageResponse";
 export * from "./healthStatus";
 export * from "./theory";
 export * from "./theoryDetail";

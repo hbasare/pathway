@@ -17,11 +17,15 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  BusinessModelActor,
   Component,
   Connection,
+  CreateBusinessModelActor,
   CreateComponent,
   CreateConnection,
   CreateTheory,
+  GenerateBusinessModelImageBody,
+  GenerateBusinessModelImageResponse,
   HealthStatus,
   Theory,
   TheoryDetail,
@@ -1135,4 +1139,464 @@ export const useDeleteConnection = <
   TContext
 > => {
   return useMutation(getDeleteConnectionMutationOptions(options));
+};
+
+/**
+ * @summary List business model actors
+ */
+export const getListBusinessModelActorsUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/business-model/actors`;
+};
+
+export const listBusinessModelActors = async (
+  theoryId: number,
+  options?: RequestInit,
+): Promise<BusinessModelActor[]> => {
+  return customFetch<BusinessModelActor[]>(
+    getListBusinessModelActorsUrl(theoryId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListBusinessModelActorsQueryKey = (theoryId: number) => {
+  return [`/api/theories/${theoryId}/business-model/actors`] as const;
+};
+
+export const getListBusinessModelActorsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBusinessModelActors>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBusinessModelActors>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListBusinessModelActorsQueryKey(theoryId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listBusinessModelActors>>
+  > = ({ signal }) =>
+    listBusinessModelActors(theoryId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!theoryId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listBusinessModelActors>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListBusinessModelActorsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBusinessModelActors>>
+>;
+export type ListBusinessModelActorsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List business model actors
+ */
+
+export function useListBusinessModelActors<
+  TData = Awaited<ReturnType<typeof listBusinessModelActors>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBusinessModelActors>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListBusinessModelActorsQueryOptions(
+    theoryId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a business model actor
+ */
+export const getCreateBusinessModelActorUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/business-model/actors`;
+};
+
+export const createBusinessModelActor = async (
+  theoryId: number,
+  createBusinessModelActor: CreateBusinessModelActor,
+  options?: RequestInit,
+): Promise<BusinessModelActor> => {
+  return customFetch<BusinessModelActor>(
+    getCreateBusinessModelActorUrl(theoryId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createBusinessModelActor),
+    },
+  );
+};
+
+export const getCreateBusinessModelActorMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBusinessModelActor>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateBusinessModelActor> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBusinessModelActor>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateBusinessModelActor> },
+  TContext
+> => {
+  const mutationKey = ["createBusinessModelActor"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBusinessModelActor>>,
+    { theoryId: number; data: BodyType<CreateBusinessModelActor> }
+  > = (props) => {
+    const { theoryId, data } = props ?? {};
+
+    return createBusinessModelActor(theoryId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBusinessModelActorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBusinessModelActor>>
+>;
+export type CreateBusinessModelActorMutationBody =
+  BodyType<CreateBusinessModelActor>;
+export type CreateBusinessModelActorMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a business model actor
+ */
+export const useCreateBusinessModelActor = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBusinessModelActor>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateBusinessModelActor> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBusinessModelActor>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateBusinessModelActor> },
+  TContext
+> => {
+  return useMutation(getCreateBusinessModelActorMutationOptions(options));
+};
+
+/**
+ * @summary Update a business model actor
+ */
+export const getUpdateBusinessModelActorUrl = (
+  theoryId: number,
+  id: number,
+) => {
+  return `/api/theories/${theoryId}/business-model/actors/${id}`;
+};
+
+export const updateBusinessModelActor = async (
+  theoryId: number,
+  id: number,
+  createBusinessModelActor: CreateBusinessModelActor,
+  options?: RequestInit,
+): Promise<BusinessModelActor> => {
+  return customFetch<BusinessModelActor>(
+    getUpdateBusinessModelActorUrl(theoryId, id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createBusinessModelActor),
+    },
+  );
+};
+
+export const getUpdateBusinessModelActorMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBusinessModelActor>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<CreateBusinessModelActor> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateBusinessModelActor>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<CreateBusinessModelActor> },
+  TContext
+> => {
+  const mutationKey = ["updateBusinessModelActor"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateBusinessModelActor>>,
+    { theoryId: number; id: number; data: BodyType<CreateBusinessModelActor> }
+  > = (props) => {
+    const { theoryId, id, data } = props ?? {};
+
+    return updateBusinessModelActor(theoryId, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateBusinessModelActorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateBusinessModelActor>>
+>;
+export type UpdateBusinessModelActorMutationBody =
+  BodyType<CreateBusinessModelActor>;
+export type UpdateBusinessModelActorMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a business model actor
+ */
+export const useUpdateBusinessModelActor = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBusinessModelActor>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<CreateBusinessModelActor> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateBusinessModelActor>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<CreateBusinessModelActor> },
+  TContext
+> => {
+  return useMutation(getUpdateBusinessModelActorMutationOptions(options));
+};
+
+/**
+ * @summary Delete a business model actor
+ */
+export const getDeleteBusinessModelActorUrl = (
+  theoryId: number,
+  id: number,
+) => {
+  return `/api/theories/${theoryId}/business-model/actors/${id}`;
+};
+
+export const deleteBusinessModelActor = async (
+  theoryId: number,
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteBusinessModelActorUrl(theoryId, id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteBusinessModelActorMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBusinessModelActor>>,
+    TError,
+    { theoryId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteBusinessModelActor>>,
+  TError,
+  { theoryId: number; id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteBusinessModelActor"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteBusinessModelActor>>,
+    { theoryId: number; id: number }
+  > = (props) => {
+    const { theoryId, id } = props ?? {};
+
+    return deleteBusinessModelActor(theoryId, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteBusinessModelActorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteBusinessModelActor>>
+>;
+
+export type DeleteBusinessModelActorMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a business model actor
+ */
+export const useDeleteBusinessModelActor = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBusinessModelActor>>,
+    TError,
+    { theoryId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteBusinessModelActor>>,
+  TError,
+  { theoryId: number; id: number },
+  TContext
+> => {
+  return useMutation(getDeleteBusinessModelActorMutationOptions(options));
+};
+
+/**
+ * @summary Generate AI image for business model
+ */
+export const getGenerateBusinessModelImageUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/business-model/generate-image`;
+};
+
+export const generateBusinessModelImage = async (
+  theoryId: number,
+  generateBusinessModelImageBody: GenerateBusinessModelImageBody,
+  options?: RequestInit,
+): Promise<GenerateBusinessModelImageResponse> => {
+  return customFetch<GenerateBusinessModelImageResponse>(
+    getGenerateBusinessModelImageUrl(theoryId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(generateBusinessModelImageBody),
+    },
+  );
+};
+
+export const getGenerateBusinessModelImageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBusinessModelImage>>,
+    TError,
+    { theoryId: number; data: BodyType<GenerateBusinessModelImageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof generateBusinessModelImage>>,
+  TError,
+  { theoryId: number; data: BodyType<GenerateBusinessModelImageBody> },
+  TContext
+> => {
+  const mutationKey = ["generateBusinessModelImage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof generateBusinessModelImage>>,
+    { theoryId: number; data: BodyType<GenerateBusinessModelImageBody> }
+  > = (props) => {
+    const { theoryId, data } = props ?? {};
+
+    return generateBusinessModelImage(theoryId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GenerateBusinessModelImageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof generateBusinessModelImage>>
+>;
+export type GenerateBusinessModelImageMutationBody =
+  BodyType<GenerateBusinessModelImageBody>;
+export type GenerateBusinessModelImageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate AI image for business model
+ */
+export const useGenerateBusinessModelImage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof generateBusinessModelImage>>,
+    TError,
+    { theoryId: number; data: BodyType<GenerateBusinessModelImageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof generateBusinessModelImage>>,
+  TError,
+  { theoryId: number; data: BodyType<GenerateBusinessModelImageBody> },
+  TContext
+> => {
+  return useMutation(getGenerateBusinessModelImageMutationOptions(options));
 };

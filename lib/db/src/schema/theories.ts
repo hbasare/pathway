@@ -22,6 +22,8 @@ export const theoriesTable = pgTable("theories", {
   climateSmart: text("climate_smart").default(""),
   displacement: text("displacement").default(""),
   contributionOfOtherProjects: text("contribution_of_other_projects").default(""),
+  // Business model
+  businessModelImagePath: text("business_model_image_path").default(""),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -66,3 +68,18 @@ export const connectionsTable = pgTable("connections", {
 export const insertConnectionSchema = createInsertSchema(connectionsTable).omit({ id: true, createdAt: true });
 export type InsertConnection = z.infer<typeof insertConnectionSchema>;
 export type Connection = typeof connectionsTable.$inferSelect;
+
+export const businessModelActorsTable = pgTable("business_model_actors", {
+  id: serial("id").primaryKey(),
+  theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  position: integer("position").notNull().default(0),
+  actorName: text("actor_name").notNull().default(""),
+  currentBehaviour: text("current_behaviour").notNull().default(""),
+  expectedBehaviourChange: text("expected_behaviour_change").notNull().default(""),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertBusinessModelActorSchema = createInsertSchema(businessModelActorsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertBusinessModelActor = z.infer<typeof insertBusinessModelActorSchema>;
+export type BusinessModelActor = typeof businessModelActorsTable.$inferSelect;
