@@ -13,6 +13,21 @@ export interface Theory {
   id: number;
   title: string;
   description: string;
+  market?: string;
+  interventionCode?: string;
+  interventionTitle?: string;
+  manager?: string;
+  mrmResponsible?: string;
+  targetBeneficiary?: string;
+  privateSectorPartners?: string;
+  publicSectorPartners?: string;
+  serviceProviders?: string;
+  strategy?: string;
+  interventionStory?: string;
+  womenEconomicEmpowerment?: string;
+  climateSmart?: string;
+  displacement?: string;
+  contributionOfOtherProjects?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -60,6 +75,21 @@ export interface TheoryDetail {
   id: number;
   title: string;
   description: string;
+  market?: string;
+  interventionCode?: string;
+  interventionTitle?: string;
+  manager?: string;
+  mrmResponsible?: string;
+  targetBeneficiary?: string;
+  privateSectorPartners?: string;
+  publicSectorPartners?: string;
+  serviceProviders?: string;
+  strategy?: string;
+  interventionStory?: string;
+  womenEconomicEmpowerment?: string;
+  climateSmart?: string;
+  displacement?: string;
+  contributionOfOtherProjects?: string;
   components: Component[];
   connections: Connection[];
   createdAt: string;
@@ -69,6 +99,21 @@ export interface TheoryDetail {
 export interface CreateTheory {
   title: string;
   description: string;
+  market?: string;
+  interventionCode?: string;
+  interventionTitle?: string;
+  manager?: string;
+  mrmResponsible?: string;
+  targetBeneficiary?: string;
+  privateSectorPartners?: string;
+  publicSectorPartners?: string;
+  serviceProviders?: string;
+  strategy?: string;
+  interventionStory?: string;
+  womenEconomicEmpowerment?: string;
+  climateSmart?: string;
+  displacement?: string;
+  contributionOfOtherProjects?: string;
 }
 
 export type CreateComponentType =

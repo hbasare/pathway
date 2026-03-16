@@ -294,6 +294,36 @@ components:
           type: string
         description:
           type: string
+        market:
+          type: string
+        interventionCode:
+          type: string
+        interventionTitle:
+          type: string
+        manager:
+          type: string
+        mrmResponsible:
+          type: string
+        targetBeneficiary:
+          type: string
+        privateSectorPartners:
+          type: string
+        publicSectorPartners:
+          type: string
+        serviceProviders:
+          type: string
+        strategy:
+          type: string
+        interventionStory:
+          type: string
+        womenEconomicEmpowerment:
+          type: string
+        climateSmart:
+          type: string
+        displacement:
+          type: string
+        contributionOfOtherProjects:
+          type: string
         createdAt:
           type: string
           format: date-time
@@ -315,6 +345,36 @@ components:
         title:
           type: string
         description:
+          type: string
+        market:
+          type: string
+        interventionCode:
+          type: string
+        interventionTitle:
+          type: string
+        manager:
+          type: string
+        mrmResponsible:
+          type: string
+        targetBeneficiary:
+          type: string
+        privateSectorPartners:
+          type: string
+        publicSectorPartners:
+          type: string
+        serviceProviders:
+          type: string
+        strategy:
+          type: string
+        interventionStory:
+          type: string
+        womenEconomicEmpowerment:
+          type: string
+        climateSmart:
+          type: string
+        displacement:
+          type: string
+        contributionOfOtherProjects:
           type: string
         components:
           type: array
@@ -345,6 +405,36 @@ components:
         title:
           type: string
         description:
+          type: string
+        market:
+          type: string
+        interventionCode:
+          type: string
+        interventionTitle:
+          type: string
+        manager:
+          type: string
+        mrmResponsible:
+          type: string
+        targetBeneficiary:
+          type: string
+        privateSectorPartners:
+          type: string
+        publicSectorPartners:
+          type: string
+        serviceProviders:
+          type: string
+        strategy:
+          type: string
+        interventionStory:
+          type: string
+        womenEconomicEmpowerment:
+          type: string
+        climateSmart:
+          type: string
+        displacement:
+          type: string
+        contributionOfOtherProjects:
           type: string
       required:
         - title

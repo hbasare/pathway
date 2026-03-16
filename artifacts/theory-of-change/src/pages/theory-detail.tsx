@@ -2,9 +2,10 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useDeleteTheory, getListTheoriesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, LayoutList } from "lucide-react";
+import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, LayoutList, Network, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TheoryCanvas } from "@/components/theory/theory-canvas";
+import { AboutIntervention } from "@/components/theory/about-intervention";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
 import { TheoryForm } from "@/components/forms/theory-form";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +16,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+type ActiveTab = "canvas" | "about";
 
 export default function TheoryDetail() {
   const [, params] = useRoute("/theory/:id");
@@ -28,6 +31,7 @@ export default function TheoryDetail() {
   });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("canvas");
 
   const deleteMutation = useDeleteTheory({
     mutation: {
@@ -66,6 +70,7 @@ export default function TheoryDetail() {
 
   return (
     <div className="flex flex-col h-full w-full bg-background animate-in fade-in duration-300">
+      {/* ── Header ── */}
       <header className="flex-none flex items-center justify-between px-6 py-4 border-b bg-card z-10 shadow-sm">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground leading-tight tracking-tight">
@@ -75,7 +80,7 @@ export default function TheoryDetail() {
             {theory.description}
           </p>
         </div>
-        
+
         <div className="flex items-center gap-3">
           <Button
             variant="outline"
@@ -116,8 +121,26 @@ export default function TheoryDetail() {
         </div>
       </header>
 
+      {/* ── Tab bar ── */}
+      <div className="flex-none flex items-center gap-1 px-6 pt-3 pb-0 border-b bg-card">
+        <TabButton
+          active={activeTab === "canvas"}
+          onClick={() => setActiveTab("canvas")}
+          icon={<Network className="w-4 h-4" />}
+          label="Theory Canvas"
+        />
+        <TabButton
+          active={activeTab === "about"}
+          onClick={() => setActiveTab("about")}
+          icon={<Info className="w-4 h-4" />}
+          label="About Intervention"
+        />
+      </div>
+
+      {/* ── Tab content ── */}
       <main className="flex-1 overflow-hidden relative">
-        <TheoryCanvas theory={theory} />
+        {activeTab === "canvas" && <TheoryCanvas theory={theory} />}
+        {activeTab === "about" && <AboutIntervention theory={theory} />}
       </main>
 
       <DialogWrapper
@@ -126,11 +149,40 @@ export default function TheoryDetail() {
         title="Theory Settings"
         description="Update the title and description for this theory."
       >
-        <TheoryForm 
-          initialData={theory} 
-          onSuccess={() => setIsEditOpen(false)} 
+        <TheoryForm
+          initialData={theory}
+          onSuccess={() => setIsEditOpen(false)}
         />
       </DialogWrapper>
     </div>
+  );
+}
+
+// ─── TabButton ───────────────────────────────────────────────────────────────
+function TabButton({
+  active,
+  onClick,
+  icon,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-md border-b-2 transition-colors
+        ${active
+          ? "border-primary text-primary bg-primary/5"
+          : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50"
+        }
+      `}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
