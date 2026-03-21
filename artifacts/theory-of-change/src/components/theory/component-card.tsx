@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Component, ComponentType, useDeleteComponent, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MoreVertical, Edit2, Trash2, ArrowRight, Activity, Zap, FileText, Target, Globe, CalendarClock, CheckCircle2, Lightbulb, BarChart3 } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, ArrowRight, Activity, Zap, FileText, Target, Globe, Lightbulb, BarChart3 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -162,44 +162,68 @@ export function ComponentCard({
                 </span>
               </div>
               {indicators.map((ind, idx) => {
-                const hasTarget = !!(ind.targetDate || ind.targetFigure);
-                const hasActual = !!(ind.actualDate || ind.actualFigure);
+                const groups = [
+                  {
+                    key: "target",
+                    label: "Target",
+                    date: ind.targetDate,
+                    figure: ind.targetFigure,
+                    labelCls: "text-amber-700",
+                    bgCls: "bg-amber-50 border-amber-200",
+                    dotCls: "bg-amber-400",
+                  },
+                  {
+                    key: "actual",
+                    label: "Actual",
+                    date: ind.actualDate,
+                    figure: ind.actualFigure,
+                    labelCls: "text-emerald-700",
+                    bgCls: "bg-emerald-50 border-emerald-200",
+                    dotCls: "bg-emerald-400",
+                  },
+                  {
+                    key: "baseline",
+                    label: "Baseline",
+                    date: ind.baselineDate,
+                    figure: ind.baselineFigure,
+                    labelCls: "text-blue-700",
+                    bgCls: "bg-blue-50 border-blue-200",
+                    dotCls: "bg-blue-400",
+                  },
+                ];
+
                 return (
                   <div key={ind.id} className="rounded-md bg-muted/30 border border-border/50 px-2.5 py-2">
-                    <p className="text-[11px] font-semibold text-foreground leading-snug mb-1.5 line-clamp-2">
+                    <p className="text-[11px] font-semibold text-foreground leading-snug mb-2 line-clamp-2">
                       {idx + 1}. {ind.name || <span className="italic text-muted-foreground">Unnamed indicator</span>}
                     </p>
-                    <div className="space-y-1">
-                      {hasTarget && (
-                        <div className="flex items-center gap-1.5">
-                          <CalendarClock className="w-3 h-3 shrink-0 text-amber-500" />
-                          <span className="text-[10px] font-semibold text-amber-600 mr-1">Target:</span>
-                          {ind.targetDate && (
-                            <span className="text-[10px] text-foreground font-medium">{formatDate(ind.targetDate)}</span>
-                          )}
-                          {ind.targetDate && ind.targetFigure && (
-                            <span className="text-[10px] text-muted-foreground">·</span>
-                          )}
-                          {ind.targetFigure && (
-                            <span className="text-[10px] text-muted-foreground line-clamp-1">{ind.targetFigure}</span>
-                          )}
-                        </div>
-                      )}
-                      {hasActual && (
-                        <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3 h-3 shrink-0 text-emerald-500" />
-                          <span className="text-[10px] font-semibold text-emerald-600 mr-1">Actual:</span>
-                          {ind.actualDate && (
-                            <span className="text-[10px] text-foreground font-medium">{formatDate(ind.actualDate)}</span>
-                          )}
-                          {ind.actualDate && ind.actualFigure && (
-                            <span className="text-[10px] text-muted-foreground">·</span>
-                          )}
-                          {ind.actualFigure && (
-                            <span className="text-[10px] text-muted-foreground line-clamp-1">{ind.actualFigure}</span>
-                          )}
-                        </div>
-                      )}
+                    <div className="space-y-1.5">
+                      {groups.map(g => {
+                        const hasData = !!(g.date || g.figure);
+                        return (
+                          <div key={g.key} className={`rounded border px-2 py-1 ${g.bgCls}`}>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${g.dotCls}`} />
+                              <span className={`text-[10px] font-bold uppercase tracking-wide ${g.labelCls}`}>{g.label}</span>
+                            </div>
+                            {hasData ? (
+                              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-3">
+                                {g.date && (
+                                  <span className="text-[10px] text-foreground font-medium">{formatDate(g.date)}</span>
+                                )}
+                                {g.date && g.figure && (
+                                  <span className="text-[10px] text-muted-foreground">·</span>
+                                )}
+                                {g.figure && (
+                                  <span className="text-[10px] text-muted-foreground">{g.figure}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 );
