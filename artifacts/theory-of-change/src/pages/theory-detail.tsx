@@ -2,11 +2,12 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useDeleteTheory, getListTheoriesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, LayoutList, Network, Info, Briefcase } from "lucide-react";
+import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, LayoutList, Network, Info, Briefcase, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TheoryCanvas } from "@/components/theory/theory-canvas";
 import { AboutIntervention } from "@/components/theory/about-intervention";
 import { BusinessModel } from "@/components/theory/business-model";
+import { NotesUpdates } from "@/components/theory/notes-updates";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
 import { TheoryForm } from "@/components/forms/theory-form";
 import { useToast } from "@/hooks/use-toast";
@@ -18,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type ActiveTab = "about" | "business-model" | "canvas";
+type ActiveTab = "about" | "business-model" | "canvas" | "notes";
 
 export default function TheoryDetail() {
   const [, params] = useRoute("/theory/:id");
@@ -142,6 +143,12 @@ export default function TheoryDetail() {
           icon={<Network className="w-4 h-4" />}
           label="Theory of Change"
         />
+        <TabButton
+          active={activeTab === "notes"}
+          onClick={() => setActiveTab("notes")}
+          icon={<StickyNote className="w-4 h-4" />}
+          label="Notes and Updates"
+        />
       </div>
 
       {/* ── Tab content ── */}
@@ -149,6 +156,11 @@ export default function TheoryDetail() {
         {activeTab === "about" && <AboutIntervention theory={theory} />}
         {activeTab === "business-model" && <BusinessModel theory={theory} />}
         {activeTab === "canvas" && <TheoryCanvas theory={theory} />}
+        {activeTab === "notes" && (
+          <div className="h-full overflow-y-auto">
+            <NotesUpdates theoryId={theory.id} />
+          </div>
+        )}
       </main>
 
       <DialogWrapper

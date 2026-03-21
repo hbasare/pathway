@@ -278,6 +278,28 @@ export interface CreateConnection {
   label: string;
 }
 
+export interface TheoryNoteUpdate {
+  id: number;
+  theoryId: number;
+  activityChange: string;
+  date: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTheoryNoteUpdate {
+  activityChange: string;
+  date?: string;
+  position?: number;
+}
+
+export interface UpdateTheoryNoteUpdate {
+  activityChange?: string;
+  date?: string;
+  position?: number;
+}
+
 export type GenerateBusinessModelImageBody = {
   prompt: string;
 };

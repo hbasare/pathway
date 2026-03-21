@@ -733,3 +733,68 @@ export const GenerateBusinessModelImageBody = zod.object({
 export const GenerateBusinessModelImageResponse = zod.object({
   imageUrl: zod.string(),
 });
+
+/**
+ * @summary List notes and updates for a theory
+ */
+export const ListTheoryNotesUpdatesParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const ListTheoryNotesUpdatesResponseItem = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  activityChange: zod.string(),
+  date: zod.string(),
+  position: zod.number(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListTheoryNotesUpdatesResponse = zod.array(
+  ListTheoryNotesUpdatesResponseItem,
+);
+
+/**
+ * @summary Create a note or update
+ */
+export const CreateTheoryNoteUpdateParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const CreateTheoryNoteUpdateBody = zod.object({
+  activityChange: zod.string(),
+  date: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+/**
+ * @summary Update a note or update entry
+ */
+export const UpdateTheoryNoteUpdateParams = zod.object({
+  theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+export const UpdateTheoryNoteUpdateBody = zod.object({
+  activityChange: zod.string().optional(),
+  date: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+export const UpdateTheoryNoteUpdateResponse = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  activityChange: zod.string(),
+  date: zod.string(),
+  position: zod.number(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Delete a note or update entry
+ */
+export const DeleteTheoryNoteUpdateParams = zod.object({
+  theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});

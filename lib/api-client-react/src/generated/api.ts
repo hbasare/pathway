@@ -26,12 +26,15 @@ import type {
   CreateComponentIndicator,
   CreateConnection,
   CreateTheory,
+  CreateTheoryNoteUpdate,
   GenerateBusinessModelImageBody,
   GenerateBusinessModelImageResponse,
   HealthStatus,
   Theory,
   TheoryDetail,
+  TheoryNoteUpdate,
   UpdateComponentIndicator,
+  UpdateTheoryNoteUpdate,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2054,4 +2057,361 @@ export const useGenerateBusinessModelImage = <
   TContext
 > => {
   return useMutation(getGenerateBusinessModelImageMutationOptions(options));
+};
+
+/**
+ * @summary List notes and updates for a theory
+ */
+export const getListTheoryNotesUpdatesUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/notes-updates`;
+};
+
+export const listTheoryNotesUpdates = async (
+  theoryId: number,
+  options?: RequestInit,
+): Promise<TheoryNoteUpdate[]> => {
+  return customFetch<TheoryNoteUpdate[]>(
+    getListTheoryNotesUpdatesUrl(theoryId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListTheoryNotesUpdatesQueryKey = (theoryId: number) => {
+  return [`/api/theories/${theoryId}/notes-updates`] as const;
+};
+
+export const getListTheoryNotesUpdatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTheoryNotesUpdates>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTheoryNotesUpdates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListTheoryNotesUpdatesQueryKey(theoryId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTheoryNotesUpdates>>
+  > = ({ signal }) =>
+    listTheoryNotesUpdates(theoryId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!theoryId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTheoryNotesUpdates>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTheoryNotesUpdatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTheoryNotesUpdates>>
+>;
+export type ListTheoryNotesUpdatesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List notes and updates for a theory
+ */
+
+export function useListTheoryNotesUpdates<
+  TData = Awaited<ReturnType<typeof listTheoryNotesUpdates>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTheoryNotesUpdates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTheoryNotesUpdatesQueryOptions(theoryId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a note or update
+ */
+export const getCreateTheoryNoteUpdateUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/notes-updates`;
+};
+
+export const createTheoryNoteUpdate = async (
+  theoryId: number,
+  createTheoryNoteUpdate: CreateTheoryNoteUpdate,
+  options?: RequestInit,
+): Promise<TheoryNoteUpdate> => {
+  return customFetch<TheoryNoteUpdate>(getCreateTheoryNoteUpdateUrl(theoryId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createTheoryNoteUpdate),
+  });
+};
+
+export const getCreateTheoryNoteUpdateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTheoryNoteUpdate>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateTheoryNoteUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createTheoryNoteUpdate>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateTheoryNoteUpdate> },
+  TContext
+> => {
+  const mutationKey = ["createTheoryNoteUpdate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createTheoryNoteUpdate>>,
+    { theoryId: number; data: BodyType<CreateTheoryNoteUpdate> }
+  > = (props) => {
+    const { theoryId, data } = props ?? {};
+
+    return createTheoryNoteUpdate(theoryId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateTheoryNoteUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTheoryNoteUpdate>>
+>;
+export type CreateTheoryNoteUpdateMutationBody =
+  BodyType<CreateTheoryNoteUpdate>;
+export type CreateTheoryNoteUpdateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a note or update
+ */
+export const useCreateTheoryNoteUpdate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTheoryNoteUpdate>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateTheoryNoteUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createTheoryNoteUpdate>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateTheoryNoteUpdate> },
+  TContext
+> => {
+  return useMutation(getCreateTheoryNoteUpdateMutationOptions(options));
+};
+
+/**
+ * @summary Update a note or update entry
+ */
+export const getUpdateTheoryNoteUpdateUrl = (theoryId: number, id: number) => {
+  return `/api/theories/${theoryId}/notes-updates/${id}`;
+};
+
+export const updateTheoryNoteUpdate = async (
+  theoryId: number,
+  id: number,
+  updateTheoryNoteUpdate: UpdateTheoryNoteUpdate,
+  options?: RequestInit,
+): Promise<TheoryNoteUpdate> => {
+  return customFetch<TheoryNoteUpdate>(
+    getUpdateTheoryNoteUpdateUrl(theoryId, id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateTheoryNoteUpdate),
+    },
+  );
+};
+
+export const getUpdateTheoryNoteUpdateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTheoryNoteUpdate>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<UpdateTheoryNoteUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateTheoryNoteUpdate>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<UpdateTheoryNoteUpdate> },
+  TContext
+> => {
+  const mutationKey = ["updateTheoryNoteUpdate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateTheoryNoteUpdate>>,
+    { theoryId: number; id: number; data: BodyType<UpdateTheoryNoteUpdate> }
+  > = (props) => {
+    const { theoryId, id, data } = props ?? {};
+
+    return updateTheoryNoteUpdate(theoryId, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateTheoryNoteUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateTheoryNoteUpdate>>
+>;
+export type UpdateTheoryNoteUpdateMutationBody =
+  BodyType<UpdateTheoryNoteUpdate>;
+export type UpdateTheoryNoteUpdateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a note or update entry
+ */
+export const useUpdateTheoryNoteUpdate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTheoryNoteUpdate>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<UpdateTheoryNoteUpdate> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateTheoryNoteUpdate>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<UpdateTheoryNoteUpdate> },
+  TContext
+> => {
+  return useMutation(getUpdateTheoryNoteUpdateMutationOptions(options));
+};
+
+/**
+ * @summary Delete a note or update entry
+ */
+export const getDeleteTheoryNoteUpdateUrl = (theoryId: number, id: number) => {
+  return `/api/theories/${theoryId}/notes-updates/${id}`;
+};
+
+export const deleteTheoryNoteUpdate = async (
+  theoryId: number,
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteTheoryNoteUpdateUrl(theoryId, id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteTheoryNoteUpdateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTheoryNoteUpdate>>,
+    TError,
+    { theoryId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteTheoryNoteUpdate>>,
+  TError,
+  { theoryId: number; id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteTheoryNoteUpdate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteTheoryNoteUpdate>>,
+    { theoryId: number; id: number }
+  > = (props) => {
+    const { theoryId, id } = props ?? {};
+
+    return deleteTheoryNoteUpdate(theoryId, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteTheoryNoteUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteTheoryNoteUpdate>>
+>;
+
+export type DeleteTheoryNoteUpdateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a note or update entry
+ */
+export const useDeleteTheoryNoteUpdate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTheoryNoteUpdate>>,
+    TError,
+    { theoryId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteTheoryNoteUpdate>>,
+  TError,
+  { theoryId: number; id: number },
+  TContext
+> => {
+  return useMutation(getDeleteTheoryNoteUpdateMutationOptions(options));
 };

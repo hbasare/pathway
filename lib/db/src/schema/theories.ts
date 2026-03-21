@@ -117,6 +117,20 @@ export const insertComponentIndicatorSchema = createInsertSchema(componentIndica
 export type InsertComponentIndicator = z.infer<typeof insertComponentIndicatorSchema>;
 export type ComponentIndicator = typeof componentIndicatorsTable.$inferSelect;
 
+export const theoryNotesUpdatesTable = pgTable("theory_notes_updates", {
+  id: serial("id").primaryKey(),
+  theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  activityChange: text("activity_change").notNull().default(""),
+  date: text("date").notNull().default(""),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertTheoryNoteUpdateSchema = createInsertSchema(theoryNotesUpdatesTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertTheoryNoteUpdate = z.infer<typeof insertTheoryNoteUpdateSchema>;
+export type TheoryNoteUpdate = typeof theoryNotesUpdatesTable.$inferSelect;
+
 export const businessModelActorsTable = pgTable("business_model_actors", {
   id: serial("id").primaryKey(),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),

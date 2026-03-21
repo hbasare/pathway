@@ -5,10 +5,12 @@ import {
   componentsTable,
   connectionsTable,
   componentIndicatorsTable,
+  theoryNotesUpdatesTable,
   insertTheorySchema,
   insertComponentSchema,
   insertConnectionSchema,
   insertComponentIndicatorSchema,
+  insertTheoryNoteUpdateSchema,
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
@@ -188,6 +190,50 @@ router.post("/theories/:theoryId/connections", async (req, res) => {
 router.delete("/theories/:theoryId/connections/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(connectionsTable).where(eq(connectionsTable.id, id));
+  res.status(204).send();
+});
+
+// ─── Notes & Updates ─────────────────────────────────────────────────────────
+
+router.get("/theories/:theoryId/notes-updates", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const rows = await db
+    .select()
+    .from(theoryNotesUpdatesTable)
+    .where(eq(theoryNotesUpdatesTable.theoryId, theoryId))
+    .orderBy(theoryNotesUpdatesTable.position, theoryNotesUpdatesTable.id);
+  res.json(rows);
+});
+
+router.post("/theories/:theoryId/notes-updates", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const parsed = insertTheoryNoteUpdateSchema.safeParse({ ...req.body, theoryId });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues });
+    return;
+  }
+  const [row] = await db.insert(theoryNotesUpdatesTable).values(parsed.data).returning();
+  res.status(201).json(row);
+});
+
+router.patch("/theories/:theoryId/notes-updates/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const theoryId = Number(req.params.theoryId);
+  const [row] = await db
+    .update(theoryNotesUpdatesTable)
+    .set({ ...req.body, updatedAt: new Date() })
+    .where(and(eq(theoryNotesUpdatesTable.id, id), eq(theoryNotesUpdatesTable.theoryId, theoryId)))
+    .returning();
+  if (!row) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  res.json(row);
+});
+
+router.delete("/theories/:theoryId/notes-updates/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  await db.delete(theoryNotesUpdatesTable).where(eq(theoryNotesUpdatesTable.id, id));
   res.status(204).send();
 });
 

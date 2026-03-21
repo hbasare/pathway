@@ -509,6 +509,98 @@ paths:
               schema:
                 $ref: "#/components/schemas/GenerateBusinessModelImageResponse"
 
+  /theories/{theoryId}/notes-updates:
+    get:
+      operationId: listTheoryNotesUpdates
+      tags: [theories]
+      summary: List notes and updates for a theory
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of notes and updates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TheoryNoteUpdate"
+    post:
+      operationId: createTheoryNoteUpdate
+      tags: [theories]
+      summary: Create a note or update
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTheoryNoteUpdate"
+      responses:
+        "201":
+          description: Created note/update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TheoryNoteUpdate"
+
+  /theories/{theoryId}/notes-updates/{id}:
+    patch:
+      operationId: updateTheoryNoteUpdate
+      tags: [theories]
+      summary: Update a note or update entry
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTheoryNoteUpdate"
+      responses:
+        "200":
+          description: Updated note/update
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TheoryNoteUpdate"
+    delete:
+      operationId: deleteTheoryNoteUpdate
+      tags: [theories]
+      summary: Delete a note or update entry
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -1099,3 +1191,53 @@ components:
         - fromComponentId
         - toComponentId
         - label
+
+    TheoryNoteUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+        theoryId:
+          type: integer
+        activityChange:
+          type: string
+        date:
+          type: string
+        position:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - theoryId
+        - activityChange
+        - date
+        - position
+        - createdAt
+        - updatedAt
+
+    CreateTheoryNoteUpdate:
+      type: object
+      properties:
+        activityChange:
+          type: string
+        date:
+          type: string
+        position:
+          type: integer
+      required:
+        - activityChange
+
+    UpdateTheoryNoteUpdate:
+      type: object
+      properties:
+        activityChange:
+          type: string
+        date:
+          type: string
+        position:
+          type: integer
