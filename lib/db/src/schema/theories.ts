@@ -47,6 +47,8 @@ export const componentsTable = pgTable("components", {
   targetFigure: text("target_figure").default(""),
   actualDate: text("actual_date").default(""),
   actualFigure: text("actual_figure").default(""),
+  baselineDate: text("baseline_date").default(""),
+  baselineFigure: text("baseline_figure").default(""),
   qualitativeQuestions: text("qualitative_questions").default(""),
   quantitativeQuestions: text("quantitative_questions").default(""),
   willBeAddressed: boolean("will_be_addressed").notNull().default(false),

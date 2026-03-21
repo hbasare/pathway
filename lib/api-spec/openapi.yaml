@@ -973,6 +973,18 @@ components:
           type: string
         assumptions:
           type: string
+        targetDate:
+          type: string
+        targetFigure:
+          type: string
+        actualDate:
+          type: string
+        actualFigure:
+          type: string
+        baselineDate:
+          type: string
+        baselineFigure:
+          type: string
         qualitativeQuestions:
           type: string
         quantitativeQuestions:
@@ -1030,6 +1042,10 @@ components:
         actualDate:
           type: string
         actualFigure:
+          type: string
+        baselineDate:
+          type: string
+        baselineFigure:
           type: string
         qualitativeQuestions:
           type: string

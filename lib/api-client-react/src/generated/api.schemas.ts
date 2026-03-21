@@ -85,6 +85,12 @@ export interface Component {
   title: string;
   description: string;
   assumptions: string;
+  targetDate?: string;
+  targetFigure?: string;
+  actualDate?: string;
+  actualFigure?: string;
+  baselineDate?: string;
+  baselineFigure?: string;
   qualitativeQuestions: string;
   quantitativeQuestions: string;
   willBeAddressed: boolean;
@@ -257,6 +263,8 @@ export interface CreateComponent {
   targetFigure?: string;
   actualDate?: string;
   actualFigure?: string;
+  baselineDate?: string;
+  baselineFigure?: string;
   qualitativeQuestions?: string;
   quantitativeQuestions?: string;
   willBeAddressed?: boolean;

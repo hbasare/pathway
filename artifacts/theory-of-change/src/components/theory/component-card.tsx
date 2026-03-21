@@ -152,9 +152,69 @@ export function ComponentCard({
             </div>
           )}
 
+          {/* Target / Actual / Baseline — component-level summary */}
+          <div className="mt-2 pt-3 border-t border-border/60">
+            <div className="space-y-1.5">
+              {[
+                {
+                  key: "target",
+                  label: "Target",
+                  date: (component as any).targetDate,
+                  figure: (component as any).targetFigure,
+                  labelCls: "text-amber-700",
+                  bgCls: "bg-amber-50 border-amber-200",
+                  dotCls: "bg-amber-400",
+                },
+                {
+                  key: "actual",
+                  label: "Actual",
+                  date: (component as any).actualDate,
+                  figure: (component as any).actualFigure,
+                  labelCls: "text-emerald-700",
+                  bgCls: "bg-emerald-50 border-emerald-200",
+                  dotCls: "bg-emerald-400",
+                },
+                {
+                  key: "baseline",
+                  label: "Baseline",
+                  date: (component as any).baselineDate,
+                  figure: (component as any).baselineFigure,
+                  labelCls: "text-blue-700",
+                  bgCls: "bg-blue-50 border-blue-200",
+                  dotCls: "bg-blue-400",
+                },
+              ].map(g => {
+                const hasData = !!(g.date || g.figure);
+                return (
+                  <div key={g.key} className={`rounded border px-2 py-1 ${g.bgCls}`}>
+                    <div className="flex items-center gap-1 mb-0.5">
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${g.dotCls}`} />
+                      <span className={`text-[10px] font-bold uppercase tracking-wide ${g.labelCls}`}>{g.label}</span>
+                    </div>
+                    {hasData ? (
+                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-3">
+                        {g.date && (
+                          <span className="text-[10px] text-foreground font-medium">{formatDate(g.date)}</span>
+                        )}
+                        {g.date && g.figure && (
+                          <span className="text-[10px] text-muted-foreground">·</span>
+                        )}
+                        {g.figure && (
+                          <span className="text-[10px] text-muted-foreground">{g.figure}</span>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Per-indicator rows */}
           {indicators.length > 0 && (
-            <div className="mt-2 pt-3 border-t border-border/60 space-y-2.5">
+            <div className="mt-3 pt-3 border-t border-border/60 space-y-2.5">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <BarChart3 className="w-3 h-3 text-muted-foreground" />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -193,7 +253,7 @@ export function ComponentCard({
                 ];
 
                 return (
-                  <div key={ind.id} className="rounded-md bg-muted/30 border border-border/50 px-2.5 py-2">
+                  <div key={ind.id ?? ind.name} className="rounded-md bg-muted/30 border border-border/50 px-2.5 py-2">
                     <p className="text-[11px] font-semibold text-foreground leading-snug mb-2 line-clamp-2">
                       {idx + 1}. {ind.name || <span className="italic text-muted-foreground">Unnamed indicator</span>}
                     </p>
