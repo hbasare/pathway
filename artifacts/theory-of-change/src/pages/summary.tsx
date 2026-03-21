@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 const TYPE_COLORS: Record<string, string> = {
+  opportunity: "bg-emerald-50 text-emerald-800 border-emerald-200",
   input:    "bg-blue-50 text-blue-800 border-blue-200",
   activity: "bg-purple-50 text-purple-800 border-purple-200",
   output:   "bg-teal-50 text-teal-800 border-teal-200",
@@ -16,6 +17,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 const TYPE_HEADER: Record<string, string> = {
+  opportunity: "bg-emerald-500",
   input:    "bg-blue-500",
   activity: "bg-purple-500",
   output:   "bg-teal-500",
@@ -24,6 +26,7 @@ const TYPE_HEADER: Record<string, string> = {
 };
 
 const TYPE_DESCRIPTIONS: Record<string, string> = {
+  opportunity: "Context & enabling factors",
   input:    "Resources & investments",
   activity: "Actions & processes",
   output:   "Direct products",
@@ -32,10 +35,10 @@ const TYPE_DESCRIPTIONS: Record<string, string> = {
 };
 
 const COLUMN_ORDER: Record<string, number> = {
-  input: 0, activity: 1, output: 2, outcome: 3, impact: 4,
+  opportunity: 0, input: 1, activity: 2, output: 3, outcome: 4, impact: 5,
 };
 
-const TYPES = ["input", "activity", "output", "outcome", "impact"] as const;
+const TYPES = ["opportunity", "input", "activity", "output", "outcome", "impact"] as const;
 
 function formatDate(dateStr: string | null | undefined) {
   if (!dateStr) return null;

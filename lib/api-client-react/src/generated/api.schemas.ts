@@ -36,6 +36,7 @@ export interface Theory {
 export type ComponentType = (typeof ComponentType)[keyof typeof ComponentType];
 
 export const ComponentType = {
+  opportunity: "opportunity",
   input: "input",
   activity: "activity",
   output: "output",
@@ -145,6 +146,7 @@ export type CreateComponentType =
   (typeof CreateComponentType)[keyof typeof CreateComponentType];
 
 export const CreateComponentType = {
+  opportunity: "opportunity",
   input: "input",
   activity: "activity",
   output: "output",

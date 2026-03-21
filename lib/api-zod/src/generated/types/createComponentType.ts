@@ -10,6 +10,7 @@ export type CreateComponentType =
   (typeof CreateComponentType)[keyof typeof CreateComponentType];
 
 export const CreateComponentType = {
+  opportunity: "opportunity",
   input: "input",
   activity: "activity",
   output: "output",

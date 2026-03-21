@@ -9,6 +9,7 @@
 export type ComponentType = (typeof ComponentType)[keyof typeof ComponentType];
 
 export const ComponentType = {
+  opportunity: "opportunity",
   input: "input",
   activity: "activity",
   output: "output",

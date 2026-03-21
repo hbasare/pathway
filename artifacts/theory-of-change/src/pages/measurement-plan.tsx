@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
 const TYPE_COLORS: Record<string, string> = {
+  opportunity: "bg-emerald-100 text-emerald-800 border-emerald-200",
   input:    "bg-blue-100 text-blue-800 border-blue-200",
   activity: "bg-purple-100 text-purple-800 border-purple-200",
   output:   "bg-teal-100 text-teal-800 border-teal-200",
@@ -17,7 +18,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 const COLUMN_ORDER: Record<string, number> = {
-  input: 0, activity: 1, output: 2, outcome: 3, impact: 4,
+  opportunity: 0, input: 1, activity: 2, output: 3, outcome: 4, impact: 5,
 };
 
 function formatDate(dateStr: string | null | undefined) {
@@ -281,8 +282,8 @@ export default function MeasurementPlan() {
 
           {/* Summary counts */}
           {sorted.length > 0 && (
-            <div className="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-3 print:mt-4">
-              {["input","activity","output","outcome","impact"].map(type => {
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-6 gap-3 print:mt-4">
+              {["opportunity","input","activity","output","outcome","impact"].map(type => {
                 const count = sorted.filter(c => c.type === type).length;
                 return (
                   <div key={type} className={`rounded-lg border px-4 py-3 ${TYPE_COLORS[type]}`}>

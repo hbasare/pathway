@@ -98,7 +98,14 @@ export const GetTheoryResponse = zod.object({
     zod.object({
       id: zod.number(),
       theoryId: zod.number(),
-      type: zod.enum(["input", "activity", "output", "outcome", "impact"]),
+      type: zod.enum([
+        "opportunity",
+        "input",
+        "activity",
+        "output",
+        "outcome",
+        "impact",
+      ]),
       title: zod.string(),
       description: zod.string(),
       indicators: zod.string(),
@@ -198,7 +205,14 @@ export const ListComponentsParams = zod.object({
 export const ListComponentsResponseItem = zod.object({
   id: zod.number(),
   theoryId: zod.number(),
-  type: zod.enum(["input", "activity", "output", "outcome", "impact"]),
+  type: zod.enum([
+    "opportunity",
+    "input",
+    "activity",
+    "output",
+    "outcome",
+    "impact",
+  ]),
   title: zod.string(),
   description: zod.string(),
   indicators: zod.string(),
@@ -224,7 +238,14 @@ export const CreateComponentParams = zod.object({
 });
 
 export const CreateComponentBody = zod.object({
-  type: zod.enum(["input", "activity", "output", "outcome", "impact"]),
+  type: zod.enum([
+    "opportunity",
+    "input",
+    "activity",
+    "output",
+    "outcome",
+    "impact",
+  ]),
   title: zod.string(),
   description: zod.string(),
   indicators: zod.string().optional(),
@@ -248,7 +269,14 @@ export const UpdateComponentParams = zod.object({
 });
 
 export const UpdateComponentBody = zod.object({
-  type: zod.enum(["input", "activity", "output", "outcome", "impact"]),
+  type: zod.enum([
+    "opportunity",
+    "input",
+    "activity",
+    "output",
+    "outcome",
+    "impact",
+  ]),
   title: zod.string(),
   description: zod.string(),
   indicators: zod.string().optional(),
@@ -266,7 +294,14 @@ export const UpdateComponentBody = zod.object({
 export const UpdateComponentResponse = zod.object({
   id: zod.number(),
   theoryId: zod.number(),
-  type: zod.enum(["input", "activity", "output", "outcome", "impact"]),
+  type: zod.enum([
+    "opportunity",
+    "input",
+    "activity",
+    "output",
+    "outcome",
+    "impact",
+  ]),
   title: zod.string(),
   description: zod.string(),
   indicators: zod.string(),

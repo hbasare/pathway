@@ -14,20 +14,22 @@ interface TheoryCanvasProps {
   theory: TheoryDetail;
 }
 
-const COLUMNS: { type: ComponentType; label: string; description: string }[] = [
-  { type: "input", label: "Inputs", description: "Resources invested" },
-  { type: "activity", label: "Activities", description: "Actions taken" },
-  { type: "output", label: "Outputs", description: "Direct products" },
-  { type: "outcome", label: "Outcomes", description: "Short/medium term changes" },
-  { type: "impact", label: "Impact", description: "Long term systemic change" },
+const COLUMNS: { type: ComponentType; label: string; description: string; addLabel: string }[] = [
+  { type: "opportunity", label: "Opportunities / Constraints", description: "Context & enabling factors", addLabel: "Opportunity / Constraint" },
+  { type: "input",       label: "Inputs",      description: "Resources invested",            addLabel: "Input" },
+  { type: "activity",   label: "Activities",   description: "Actions taken",                 addLabel: "Activity" },
+  { type: "output",     label: "Outputs",      description: "Direct products",               addLabel: "Output" },
+  { type: "outcome",    label: "Outcomes",     description: "Short/medium term changes",     addLabel: "Outcome" },
+  { type: "impact",     label: "Impact",       description: "Long term systemic change",     addLabel: "Impact" },
 ];
 
 const COLUMN_INDEX: Record<ComponentType, number> = {
-  input: 0,
-  activity: 1,
-  output: 2,
-  outcome: 3,
-  impact: 4,
+  opportunity: 0,
+  input: 1,
+  activity: 2,
+  output: 3,
+  outcome: 4,
+  impact: 5,
 };
 
 export function TheoryCanvas({ theory }: TheoryCanvasProps) {
@@ -165,7 +167,7 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
                       }}
                     >
                       <Plus className="w-4 h-4 mr-2" />
-                      Add {col.label.slice(0, -1)}
+                      Add {col.addLabel}
                     </Button>
                   </div>
                 </div>

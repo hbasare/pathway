@@ -632,7 +632,7 @@ components:
           type: integer
         type:
           type: string
-          enum: [input, activity, output, outcome, impact]
+          enum: [opportunity, input, activity, output, outcome, impact]
         title:
           type: string
         description:
@@ -687,7 +687,7 @@ components:
       properties:
         type:
           type: string
-          enum: [input, activity, output, outcome, impact]
+          enum: [opportunity, input, activity, output, outcome, impact]
         title:
           type: string
         description:

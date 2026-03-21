@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Component, ComponentType, useDeleteComponent, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MoreVertical, Edit2, Trash2, ArrowRight, Activity, Zap, FileText, Target, Globe, CalendarClock, CheckCircle2 } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, ArrowRight, Activity, Zap, FileText, Target, Globe, CalendarClock, CheckCircle2, Lightbulb } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,6 +25,7 @@ interface ComponentCardProps {
 }
 
 const TYPE_CONFIG: Record<ComponentType, { border: string; accent: string; icon: React.ElementType }> = {
+  opportunity: { border: "border-emerald-200", accent: "bg-emerald-400", icon: Lightbulb },
   input:    { border: "border-blue-200",   accent: "bg-blue-400",   icon: FileText },
   activity: { border: "border-purple-200", accent: "bg-purple-400", icon: Activity },
   output:   { border: "border-teal-200",   accent: "bg-teal-400",   icon: Zap },

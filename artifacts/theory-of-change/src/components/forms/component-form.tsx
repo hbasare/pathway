@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 
 const formSchema = z.object({
-  type: z.enum(["input", "activity", "output", "outcome", "impact"] as const),
+  type: z.enum(["opportunity", "input", "activity", "output", "outcome", "impact"] as const),
   title: z.string().min(1, "Title is required").max(100),
   description: z.string().min(1, "Description is required"),
   indicators: z.string().optional(),
@@ -115,6 +115,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
+                  <SelectItem value="opportunity">Opportunity / Constraint (Context, enabling factors)</SelectItem>
                   <SelectItem value="input">Input (Resources, investments)</SelectItem>
                   <SelectItem value="activity">Activity (Actions, processes)</SelectItem>
                   <SelectItem value="output">Output (Direct products, deliverables)</SelectItem>
