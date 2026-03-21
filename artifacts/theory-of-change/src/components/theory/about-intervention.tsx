@@ -40,6 +40,9 @@ const FIELD_CONFIG: FieldDef[] = [
   { key: "publicSectorPartners",   label: "Public Sector Partner(s)",     type: "textarea", section: "Beneficiaries & Partners", placeholder: "List government or public sector bodies involved" },
   { key: "serviceProviders",       label: "Service Provider(s)",          type: "textarea", section: "Beneficiaries & Partners", placeholder: "List organisations delivering services" },
 
+  // Strategic Context
+  { key: "interventionStory", label: "Intervention Story", type: "textarea", section: "Strategic Context", placeholder: "Narrative describing the intervention's journey and context" },
+
   // Cross-cutting Themes
   { key: "womenEconomicEmpowerment",    label: "Women's Economic Empowerment",    type: "textarea", section: "Cross-cutting Themes", placeholder: "How does this intervention advance women's economic empowerment?" },
   { key: "climateSmart",                label: "Climate Smart",                   type: "textarea", section: "Cross-cutting Themes", placeholder: "How does this intervention integrate climate-smart approaches?" },
@@ -75,21 +78,25 @@ function FieldSection({
   theory,
   isEditing,
   form,
+  hideHeader = false,
 }: {
   sectionName: string;
   theory: TheoryDetail;
   isEditing: boolean;
   form: ReturnType<typeof useForm<FormValues>>;
+  hideHeader?: boolean;
 }) {
   const fields = fieldsBySection(sectionName);
   if (fields.length === 0) return null;
   return (
     <section>
-      <div className="mb-4">
-        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-2">
-          {sectionName}
-        </h3>
-      </div>
+      {!hideHeader && (
+        <div className="mb-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-2">
+            {sectionName}
+          </h3>
+        </div>
+      )}
       <div className="grid gap-5">
         {fields.map(field => {
           const value = (theory[field.key as keyof typeof theory] as string) ?? "";
@@ -329,14 +336,28 @@ export function AboutIntervention({ theory }: AboutInterventionProps) {
           />
         ))}
 
-        {/* ── Opportunities / Constraints — sourced from Theory of Change ── */}
+        {/* ── Strategic Context — editable fields + linked O/C from ToC ── */}
         <section>
           <div className="mb-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-2">
-              Strategic Context — Opportunities / Constraints
+              Strategic Context
             </h3>
           </div>
-          <OpportunitiesSection theory={theory} />
+          <div className="space-y-6">
+            <FieldSection
+              sectionName="Strategic Context"
+              theory={theory}
+              isEditing={isEditing}
+              form={form}
+              hideHeader
+            />
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+                Opportunities / Constraints
+              </p>
+              <OpportunitiesSection theory={theory} />
+            </div>
+          </div>
         </section>
 
         {(["Cross-cutting Themes"] as const).map(sectionName => (
