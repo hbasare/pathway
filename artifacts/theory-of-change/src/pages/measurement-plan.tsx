@@ -152,42 +152,68 @@ export default function MeasurementPlan() {
 
           {/* Main table */}
           <div className="rounded-xl border border-border overflow-hidden shadow-sm print:shadow-none print:border print:rounded-none overflow-x-auto">
-            <table className="w-full text-sm border-collapse" style={{ minWidth: "1400px" }}>
+            <table className="w-full text-sm border-collapse" style={{ minWidth: "2200px" }}>
               <thead>
-                <tr className="bg-muted/60 border-b border-border">
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground w-10 text-xs">#</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground w-20 text-xs">Type</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "140px" }}>Component / Title</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "130px" }}>Indicator</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "140px" }}>
-                    <div className="flex items-center gap-1">
-                      <FileText className="w-3 h-3" /> Explanation / Assumption
-                    </div>
+                {/* Row 1 — group headers */}
+                <tr className="bg-muted/80 border-b border-border">
+                  <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground w-10 text-xs border-r border-border/40">#</th>
+                  <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground w-20 text-xs border-r border-border/40">Type</th>
+                  <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground text-xs border-r border-border/40" style={{ minWidth: "140px" }}>Component</th>
+                  <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground text-xs border-r border-border/40" style={{ minWidth: "130px" }}>Indicator</th>
+                  <th colSpan={6} className="text-center px-3 py-2 font-bold text-amber-800 text-xs bg-amber-50 border-r border-amber-200">TARGET</th>
+                  <th colSpan={6} className="text-center px-3 py-2 font-bold text-emerald-800 text-xs bg-emerald-50 border-r border-emerald-200">ACTUAL</th>
+                  <th colSpan={6} className="text-center px-3 py-2 font-bold text-blue-800 text-xs bg-blue-50 border-r border-blue-200">BASELINE</th>
+                  <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground text-xs border-r border-border/40 w-24">Status</th>
+                  <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground text-xs" style={{ minWidth: "130px" }}>
+                    <div className="flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Meas. Questions</div>
                   </th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "120px" }}>
-                    <div className="flex items-center gap-1">
-                      <Database className="w-3 h-3" /> Source
-                    </div>
+                </tr>
+                {/* Row 2 — sub-column headers */}
+                <tr className="border-b border-border">
+                  {/* Target sub-cols */}
+                  <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60 w-24">Date</th>
+                  <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60 w-24">Figure</th>
+                  <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60" style={{ minWidth: "130px" }}>
+                    <div className="flex items-center gap-0.5"><FileText className="w-2.5 h-2.5" /> Explanation</div>
                   </th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">
-                    <div className="flex items-center gap-1">
-                      <CalendarCheck className="w-3 h-3" /> Last Reviewed
-                    </div>
+                  <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60" style={{ minWidth: "110px" }}>
+                    <div className="flex items-center gap-0.5"><Database className="w-2.5 h-2.5" /> Source</div>
                   </th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Target Date</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Target Figure</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Actual Date</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Actual Figure</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-22">Status</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "120px" }}>
-                    <div className="flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3" /> Meas. Questions
-                    </div>
+                  <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60 w-24">
+                    <div className="flex items-center gap-0.5"><CalendarCheck className="w-2.5 h-2.5" /> Reviewed</div>
                   </th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "110px" }}>
-                    <div className="flex items-center gap-1">
-                      <StickyNote className="w-3 h-3" /> Notes
-                    </div>
+                  <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60 border-r border-amber-200" style={{ minWidth: "100px" }}>
+                    <div className="flex items-center gap-0.5"><StickyNote className="w-2.5 h-2.5" /> Notes</div>
+                  </th>
+                  {/* Actual sub-cols */}
+                  <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60 w-24">Date</th>
+                  <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60 w-24">Figure</th>
+                  <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60" style={{ minWidth: "130px" }}>
+                    <div className="flex items-center gap-0.5"><FileText className="w-2.5 h-2.5" /> Explanation</div>
+                  </th>
+                  <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60" style={{ minWidth: "110px" }}>
+                    <div className="flex items-center gap-0.5"><Database className="w-2.5 h-2.5" /> Source</div>
+                  </th>
+                  <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60 w-24">
+                    <div className="flex items-center gap-0.5"><CalendarCheck className="w-2.5 h-2.5" /> Reviewed</div>
+                  </th>
+                  <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60 border-r border-emerald-200" style={{ minWidth: "100px" }}>
+                    <div className="flex items-center gap-0.5"><StickyNote className="w-2.5 h-2.5" /> Notes</div>
+                  </th>
+                  {/* Baseline sub-cols */}
+                  <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60 w-24">Date</th>
+                  <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60 w-24">Figure</th>
+                  <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60" style={{ minWidth: "130px" }}>
+                    <div className="flex items-center gap-0.5"><FileText className="w-2.5 h-2.5" /> Explanation</div>
+                  </th>
+                  <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60" style={{ minWidth: "110px" }}>
+                    <div className="flex items-center gap-0.5"><Database className="w-2.5 h-2.5" /> Source</div>
+                  </th>
+                  <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60 w-24">
+                    <div className="flex items-center gap-0.5"><CalendarCheck className="w-2.5 h-2.5" /> Reviewed</div>
+                  </th>
+                  <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60 border-r border-blue-200" style={{ minWidth: "100px" }}>
+                    <div className="flex items-center gap-0.5"><StickyNote className="w-2.5 h-2.5" /> Notes</div>
                   </th>
                 </tr>
               </thead>
@@ -199,29 +225,32 @@ export default function MeasurementPlan() {
 
                   const dash = <span className="text-xs text-muted-foreground/40 italic">—</span>;
 
+                  const tdText = (val: string | null | undefined, colorClass = "text-muted-foreground") =>
+                    val?.trim() ? <span className={`text-xs ${colorClass} leading-relaxed`}>{val}</span> : dash;
+
+                  const tdDate = (val: string | null | undefined, colorClass = "text-foreground") =>
+                    val?.trim() ? <span className={`text-xs font-medium ${colorClass}`}>{formatDate(val)}</span> : dash;
+
                   if (indicators.length === 0) {
                     return (
                       <tr key={comp.id} className={`border-b border-border/50 last:border-0 ${rowBg}`}>
-                        <td className="px-3 py-3 align-top">
+                        <td className="px-3 py-3 align-top border-r border-border/20">
                           <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
                             {boxNum(comp.id)}
                           </span>
                         </td>
-                        <td className="px-3 py-3 align-top">
+                        <td className="px-3 py-3 align-top border-r border-border/20">
                           <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
                             {comp.type}
                           </span>
                         </td>
-                        <td className="px-3 py-3 align-top">
+                        <td className="px-3 py-3 align-top border-r border-border/20">
                           <p className="font-semibold text-foreground leading-snug mb-0.5">{comp.title}</p>
-                          {comp.description && (
-                            <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>
-                          )}
+                          {comp.description && <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>}
                         </td>
-                        <td className="px-3 py-3 align-top text-xs text-muted-foreground italic">No indicators</td>
-                        {/* explanation, source, reviewed, target date, target fig, actual date, actual fig, status, questions, notes */}
-                        {Array.from({ length: 10 }).map((_, i) => (
-                          <td key={i} className="px-3 py-3 align-top">{dash}</td>
+                        <td className="px-3 py-3 align-top text-xs text-muted-foreground italic border-r border-border/20">No indicators</td>
+                        {Array.from({ length: 20 }).map((_, i) => (
+                          <td key={i} className="px-2 py-3 align-top">{dash}</td>
                         ))}
                       </tr>
                     );
@@ -234,46 +263,34 @@ export default function MeasurementPlan() {
                         const StatusIcon = status.icon;
 
                         return (
-                          <tr
-                            key={ind.id}
-                            className={`border-b border-border/50 last:border-0 ${rowBg}`}
-                          >
-                            {/* Box number */}
-                            <td className="px-3 py-3 align-top">
+                          <tr key={ind.id} className={`border-b border-border/50 last:border-0 ${rowBg}`}>
+                            {/* # */}
+                            <td className="px-3 py-3 align-top border-r border-border/20">
                               {indIdx === 0 ? (
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
-                                  {boxNum(comp.id)}
-                                </span>
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">{boxNum(comp.id)}</span>
                               ) : (
-                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-border/40 text-muted-foreground/50 text-[10px]">
-                                  ↳
-                                </span>
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-border/40 text-muted-foreground/50 text-[10px]">↳</span>
                               )}
                             </td>
-
                             {/* Type */}
-                            <td className="px-3 py-3 align-top">
+                            <td className="px-3 py-3 align-top border-r border-border/20">
                               {indIdx === 0 && (
                                 <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
                                   {comp.type}
                                 </span>
                               )}
                             </td>
-
-                            {/* Component info */}
-                            <td className="px-3 py-3 align-top">
-                              {indIdx === 0 ? (
+                            {/* Component */}
+                            <td className="px-3 py-3 align-top border-r border-border/20">
+                              {indIdx === 0 && (
                                 <>
                                   <p className="font-semibold text-foreground leading-snug mb-0.5">{comp.title}</p>
-                                  {comp.description && (
-                                    <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>
-                                  )}
+                                  {comp.description && <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>}
                                 </>
-                              ) : null}
+                              )}
                             </td>
-
                             {/* Indicator name */}
-                            <td className="px-3 py-3 align-top">
+                            <td className="px-3 py-3 align-top border-r border-border/20">
                               <div className="flex items-start gap-1.5">
                                 <span className="text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">{indIdx + 1}.</span>
                                 <p className="text-xs text-foreground leading-relaxed">
@@ -281,60 +298,34 @@ export default function MeasurementPlan() {
                                 </p>
                               </div>
                             </td>
-
-                            {/* Explanation / Assumption */}
-                            <td className="px-3 py-3 align-top text-xs text-muted-foreground leading-relaxed">
-                              {ind.explanation?.trim() || dash}
-                            </td>
-
-                            {/* Source of Information */}
-                            <td className="px-3 py-3 align-top text-xs text-muted-foreground leading-relaxed">
-                              {ind.sourceOfInformation?.trim() || dash}
-                            </td>
-
-                            {/* Date Last Reviewed */}
-                            <td className="px-3 py-3 align-top">
-                              {ind.dateLastReviewed?.trim() ? (
-                                <span className="text-xs font-medium text-foreground">{formatDate(ind.dateLastReviewed)}</span>
-                              ) : dash}
-                            </td>
-
-                            {/* Target date */}
-                            <td className="px-3 py-3 align-top">
-                              {ind.targetDate ? (
-                                <span className="text-xs font-medium text-amber-700">{formatDate(ind.targetDate)}</span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground/50 italic">—</span>
-                              )}
-                            </td>
-
-                            {/* Target figure */}
-                            <td className="px-3 py-3 align-top text-xs text-foreground font-medium">
-                              {ind.targetFigure || <span className="italic text-muted-foreground/50">—</span>}
-                            </td>
-
-                            {/* Actual date */}
-                            <td className="px-3 py-3 align-top">
-                              {ind.actualDate ? (
-                                <span className="text-xs font-medium text-emerald-700">{formatDate(ind.actualDate)}</span>
-                              ) : (
-                                <span className="text-xs text-muted-foreground/50 italic">—</span>
-                              )}
-                            </td>
-
-                            {/* Actual figure */}
-                            <td className="px-3 py-3 align-top text-xs text-emerald-700 font-medium">
-                              {ind.actualFigure || <span className="italic text-muted-foreground/50 font-normal">—</span>}
-                            </td>
-
+                            {/* TARGET group */}
+                            <td className="px-2 py-3 align-top bg-amber-50/20">{tdDate(ind.targetDate, "text-amber-700")}</td>
+                            <td className="px-2 py-3 align-top bg-amber-50/20">{tdText(ind.targetFigure, "text-amber-800 font-medium")}</td>
+                            <td className="px-2 py-3 align-top bg-amber-50/20">{tdText(ind.targetExplanation)}</td>
+                            <td className="px-2 py-3 align-top bg-amber-50/20">{tdText(ind.targetSourceOfInformation)}</td>
+                            <td className="px-2 py-3 align-top bg-amber-50/20">{tdDate(ind.targetDateLastReviewed)}</td>
+                            <td className="px-2 py-3 align-top bg-amber-50/20 border-r border-amber-100">{tdText(ind.targetNotes)}</td>
+                            {/* ACTUAL group */}
+                            <td className="px-2 py-3 align-top bg-emerald-50/20">{tdDate(ind.actualDate, "text-emerald-700")}</td>
+                            <td className="px-2 py-3 align-top bg-emerald-50/20">{tdText(ind.actualFigure, "text-emerald-800 font-medium")}</td>
+                            <td className="px-2 py-3 align-top bg-emerald-50/20">{tdText(ind.actualExplanation)}</td>
+                            <td className="px-2 py-3 align-top bg-emerald-50/20">{tdText(ind.actualSourceOfInformation)}</td>
+                            <td className="px-2 py-3 align-top bg-emerald-50/20">{tdDate(ind.actualDateLastReviewed)}</td>
+                            <td className="px-2 py-3 align-top bg-emerald-50/20 border-r border-emerald-100">{tdText(ind.actualNotes)}</td>
+                            {/* BASELINE group */}
+                            <td className="px-2 py-3 align-top bg-blue-50/20">{tdDate(ind.baselineDate, "text-blue-700")}</td>
+                            <td className="px-2 py-3 align-top bg-blue-50/20">{tdText(ind.baselineFigure, "text-blue-800 font-medium")}</td>
+                            <td className="px-2 py-3 align-top bg-blue-50/20">{tdText(ind.baselineExplanation)}</td>
+                            <td className="px-2 py-3 align-top bg-blue-50/20">{tdText(ind.baselineSourceOfInformation)}</td>
+                            <td className="px-2 py-3 align-top bg-blue-50/20">{tdDate(ind.baselineDateLastReviewed)}</td>
+                            <td className="px-2 py-3 align-top bg-blue-50/20 border-r border-blue-100">{tdText(ind.baselineNotes)}</td>
                             {/* Status */}
-                            <td className="px-3 py-3 align-top">
+                            <td className="px-3 py-3 align-top border-r border-border/20">
                               <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${status.color}`}>
                                 <StatusIcon className="w-3 h-3" />
                                 {status.label}
                               </span>
                             </td>
-
                             {/* Measurement questions */}
                             <td className="px-3 py-3 align-top">
                               {(ind.qualitativeQuestion?.trim() || ind.quantitativeQuestion?.trim()) ? (
@@ -360,11 +351,6 @@ export default function MeasurementPlan() {
                                 </div>
                               ) : dash}
                             </td>
-
-                            {/* Notes */}
-                            <td className="px-3 py-3 align-top text-xs text-muted-foreground leading-relaxed">
-                              {ind.notes?.trim() || dash}
-                            </td>
                           </tr>
                         );
                       })}
@@ -374,7 +360,7 @@ export default function MeasurementPlan() {
 
                 {sorted.length === 0 && (
                   <tr>
-                    <td colSpan={14} className="px-4 py-12 text-center text-muted-foreground italic text-sm">
+                    <td colSpan={24} className="px-4 py-12 text-center text-muted-foreground italic text-sm">
                       No components added yet. Go back to the canvas and add components to your theory.
                     </td>
                   </tr>

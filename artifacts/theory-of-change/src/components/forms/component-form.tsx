@@ -63,16 +63,30 @@ interface IndicatorRow {
   localKey: string;
   id?: number;
   name: string;
+  // Target group
   targetDate: string;
   targetFigure: string;
+  targetExplanation: string;
+  targetSourceOfInformation: string;
+  targetDateLastReviewed: string;
+  targetNotes: string;
+  // Actual group
   actualDate: string;
   actualFigure: string;
+  actualExplanation: string;
+  actualSourceOfInformation: string;
+  actualDateLastReviewed: string;
+  actualNotes: string;
+  // Baseline group
+  baselineDate: string;
+  baselineFigure: string;
+  baselineExplanation: string;
+  baselineSourceOfInformation: string;
+  baselineDateLastReviewed: string;
+  baselineNotes: string;
+  // Measurement questions
   qualitativeQuestion: string;
   quantitativeQuestion: string;
-  explanation: string;
-  sourceOfInformation: string;
-  dateLastReviewed: string;
-  notes: string;
 }
 
 function makeKey() {
@@ -80,7 +94,14 @@ function makeKey() {
 }
 
 function emptyIndicator(): IndicatorRow {
-  return { localKey: makeKey(), name: "", targetDate: "", targetFigure: "", actualDate: "", actualFigure: "", qualitativeQuestion: "", quantitativeQuestion: "", explanation: "", sourceOfInformation: "", dateLastReviewed: "", notes: "" };
+  return {
+    localKey: makeKey(),
+    name: "",
+    targetDate: "", targetFigure: "", targetExplanation: "", targetSourceOfInformation: "", targetDateLastReviewed: "", targetNotes: "",
+    actualDate: "", actualFigure: "", actualExplanation: "", actualSourceOfInformation: "", actualDateLastReviewed: "", actualNotes: "",
+    baselineDate: "", baselineFigure: "", baselineExplanation: "", baselineSourceOfInformation: "", baselineDateLastReviewed: "", baselineNotes: "",
+    qualitativeQuestion: "", quantitativeQuestion: "",
+  };
 }
 
 function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
@@ -90,14 +111,24 @@ function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
     name: ind.name ?? "",
     targetDate: ind.targetDate ?? "",
     targetFigure: ind.targetFigure ?? "",
+    targetExplanation: ind.targetExplanation ?? "",
+    targetSourceOfInformation: ind.targetSourceOfInformation ?? "",
+    targetDateLastReviewed: ind.targetDateLastReviewed ?? "",
+    targetNotes: ind.targetNotes ?? "",
     actualDate: ind.actualDate ?? "",
     actualFigure: ind.actualFigure ?? "",
+    actualExplanation: ind.actualExplanation ?? "",
+    actualSourceOfInformation: ind.actualSourceOfInformation ?? "",
+    actualDateLastReviewed: ind.actualDateLastReviewed ?? "",
+    actualNotes: ind.actualNotes ?? "",
+    baselineDate: ind.baselineDate ?? "",
+    baselineFigure: ind.baselineFigure ?? "",
+    baselineExplanation: ind.baselineExplanation ?? "",
+    baselineSourceOfInformation: ind.baselineSourceOfInformation ?? "",
+    baselineDateLastReviewed: ind.baselineDateLastReviewed ?? "",
+    baselineNotes: ind.baselineNotes ?? "",
     qualitativeQuestion: ind.qualitativeQuestion ?? "",
     quantitativeQuestion: ind.quantitativeQuestion ?? "",
-    explanation: ind.explanation ?? "",
-    sourceOfInformation: ind.sourceOfInformation ?? "",
-    dateLastReviewed: ind.dateLastReviewed ?? "",
-    notes: ind.notes ?? "",
   };
 }
 
@@ -121,6 +152,100 @@ interface ComponentFormProps {
   defaultType?: ComponentType;
 }
 
+// Shared sub-field block for each measurement group
+interface MeasurementGroupProps {
+  ind: IndicatorRow;
+  prefix: "target" | "actual" | "baseline";
+  label: string;
+  color: { border: string; header: string; label: string; dateBg: string };
+  update: (key: string, field: keyof Omit<IndicatorRow, "localKey" | "id">, val: string) => void;
+}
+
+function MeasurementGroup({ ind, prefix, label, color, update }: MeasurementGroupProps) {
+  const dateField = `${prefix}Date` as keyof IndicatorRow;
+  const figureField = `${prefix}Figure` as keyof IndicatorRow;
+  const explanationField = `${prefix}Explanation` as keyof IndicatorRow;
+  const sourceField = `${prefix}SourceOfInformation` as keyof IndicatorRow;
+  const reviewedField = `${prefix}DateLastReviewed` as keyof IndicatorRow;
+  const notesField = `${prefix}Notes` as keyof IndicatorRow;
+
+  return (
+    <div className={`rounded-md border ${color.border} overflow-hidden`}>
+      <div className={`px-3 py-1.5 ${color.header}`}>
+        <span className={`text-[11px] font-bold uppercase tracking-wider ${color.label}`}>{label}</span>
+      </div>
+      <div className="p-3 space-y-2.5">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className={`text-xs font-medium mb-1 block ${color.label}`}>Date</label>
+            <Input
+              type="date"
+              value={ind[dateField] as string}
+              onChange={e => update(ind.localKey, dateField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value)}
+              className="text-xs"
+            />
+          </div>
+          <div>
+            <label className={`text-xs font-medium mb-1 block ${color.label}`}>Figure</label>
+            <Input
+              value={ind[figureField] as string}
+              onChange={e => update(ind.localKey, figureField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value)}
+              placeholder="e.g. 500 educators"
+              className="text-xs"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+            <FileText className="w-3 h-3" /> Explanation / Assumption
+          </label>
+          <Textarea
+            value={ind[explanationField] as string}
+            onChange={e => update(ind.localKey, explanationField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value)}
+            placeholder="e.g. Assumes trained educators apply skills within 3 months."
+            className="text-xs min-h-[52px]"
+          />
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+            <Database className="w-3 h-3" /> Source of Information
+          </label>
+          <Input
+            value={ind[sourceField] as string}
+            onChange={e => update(ind.localKey, sourceField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value)}
+            placeholder="e.g. Monitoring surveys, admin records"
+            className="text-xs"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+              <CalendarCheck className="w-3 h-3" /> Date Last Reviewed
+            </label>
+            <Input
+              type="date"
+              value={ind[reviewedField] as string}
+              onChange={e => update(ind.localKey, reviewedField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value)}
+              className="text-xs"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+            <StickyNote className="w-3 h-3" /> Notes
+          </label>
+          <Textarea
+            value={ind[notesField] as string}
+            onChange={e => update(ind.localKey, notesField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value)}
+            placeholder="Any additional context, caveats or observations…"
+            className="text-xs min-h-[48px]"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = "activity" }: ComponentFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -132,7 +257,6 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
       : []
   );
 
-  // Track ids of indicators that were removed during editing
   const [deletedIds, setDeletedIds] = useState<number[]>([]);
 
   const form = useForm<FormValues>({
@@ -165,7 +289,6 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
   const selectedType = form.watch("type") as ComponentType;
   const descGuidance = DESCRIPTION_GUIDANCE[selectedType] ?? DESCRIPTION_GUIDANCE.activity;
 
-  // Indicator field helpers
   const addIndicator = useCallback(() => {
     setIndicators(prev => [...prev, emptyIndicator()]);
   }, []);
@@ -183,28 +306,36 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
   );
 
   const saveIndicators = async (componentId: number) => {
-    // Delete removed indicators
     await Promise.all(
       deletedIds.map(id =>
         deleteIndicator.mutateAsync({ theoryId, componentId, id })
       )
     );
 
-    // Create or update each indicator
     await Promise.all(
       indicators.map((ind, idx) => {
         const payload = {
           name: ind.name || "",
           targetDate: ind.targetDate || undefined,
           targetFigure: ind.targetFigure || undefined,
+          targetExplanation: ind.targetExplanation || undefined,
+          targetSourceOfInformation: ind.targetSourceOfInformation || undefined,
+          targetDateLastReviewed: ind.targetDateLastReviewed || undefined,
+          targetNotes: ind.targetNotes || undefined,
           actualDate: ind.actualDate || undefined,
           actualFigure: ind.actualFigure || undefined,
+          actualExplanation: ind.actualExplanation || undefined,
+          actualSourceOfInformation: ind.actualSourceOfInformation || undefined,
+          actualDateLastReviewed: ind.actualDateLastReviewed || undefined,
+          actualNotes: ind.actualNotes || undefined,
+          baselineDate: ind.baselineDate || undefined,
+          baselineFigure: ind.baselineFigure || undefined,
+          baselineExplanation: ind.baselineExplanation || undefined,
+          baselineSourceOfInformation: ind.baselineSourceOfInformation || undefined,
+          baselineDateLastReviewed: ind.baselineDateLastReviewed || undefined,
+          baselineNotes: ind.baselineNotes || undefined,
           qualitativeQuestion: ind.qualitativeQuestion?.trim() || undefined,
           quantitativeQuestion: ind.quantitativeQuestion?.trim() || undefined,
-          explanation: ind.explanation || undefined,
-          sourceOfInformation: ind.sourceOfInformation || undefined,
-          dateLastReviewed: ind.dateLastReviewed || undefined,
-          notes: ind.notes || undefined,
           position: idx,
         };
         if (ind.id !== undefined) {
@@ -326,7 +457,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-sm font-semibold text-foreground">Indicators</p>
-              <p className="text-xs text-muted-foreground">Each indicator tracks its own target and actual result</p>
+              <p className="text-xs text-muted-foreground">Track target, actual and baseline data for each indicator</p>
             </div>
             <Button
               type="button"
@@ -342,7 +473,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
 
           {indicators.length === 0 && (
             <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-5 text-center text-xs text-muted-foreground">
-              No indicators yet. Click "Add Indicator" to track targets and results.
+              No indicators yet. Click "Add Indicator" to track targets, actuals and baselines.
             </div>
           )}
 
@@ -372,98 +503,47 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs font-medium text-amber-700 mb-1 block">Target Date</label>
-                    <Input
-                      type="date"
-                      value={ind.targetDate}
-                      onChange={e => updateIndicatorField(ind.localKey, "targetDate", e.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-amber-700 mb-1 block">Target Figure</label>
-                    <Input
-                      value={ind.targetFigure}
-                      onChange={e => updateIndicatorField(ind.localKey, "targetFigure", e.target.value)}
-                      placeholder="e.g. 500 educators"
-                      className="text-xs"
-                    />
-                  </div>
-                </div>
+                {/* Target group */}
+                <MeasurementGroup
+                  ind={ind}
+                  prefix="target"
+                  label="Target"
+                  color={{
+                    border: "border-amber-200",
+                    header: "bg-amber-50",
+                    label: "text-amber-700",
+                    dateBg: "bg-amber-50",
+                  }}
+                  update={updateIndicatorField}
+                />
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs font-medium text-emerald-700 mb-1 block">Actual Date</label>
-                    <Input
-                      type="date"
-                      value={ind.actualDate}
-                      onChange={e => updateIndicatorField(ind.localKey, "actualDate", e.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-emerald-700 mb-1 block">Actual Figure</label>
-                    <Input
-                      value={ind.actualFigure}
-                      onChange={e => updateIndicatorField(ind.localKey, "actualFigure", e.target.value)}
-                      placeholder="e.g. 423 educators"
-                      className="text-xs"
-                    />
-                  </div>
-                </div>
+                {/* Actual group */}
+                <MeasurementGroup
+                  ind={ind}
+                  prefix="actual"
+                  label="Actual"
+                  color={{
+                    border: "border-emerald-200",
+                    header: "bg-emerald-50",
+                    label: "text-emerald-700",
+                    dateBg: "bg-emerald-50",
+                  }}
+                  update={updateIndicatorField}
+                />
 
-                {/* Additional tracking fields */}
-                <div className="pt-2 border-t border-border/40 space-y-3">
-                  <p className="text-xs font-medium text-foreground">Additional Details</p>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
-                      <FileText className="w-3 h-3" /> Explanation / Assumption
-                    </label>
-                    <Textarea
-                      value={ind.explanation}
-                      onChange={e => updateIndicatorField(ind.localKey, "explanation", e.target.value)}
-                      placeholder="e.g. Assumes that trained educators will apply skills within 3 months of graduation."
-                      className="text-xs min-h-[60px]"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
-                      <Database className="w-3 h-3" /> Source of Information
-                    </label>
-                    <Input
-                      value={ind.sourceOfInformation}
-                      onChange={e => updateIndicatorField(ind.localKey, "sourceOfInformation", e.target.value)}
-                      placeholder="e.g. Monitoring surveys, partner MIS, admin records"
-                      className="text-xs"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
-                        <CalendarCheck className="w-3 h-3" /> Date Last Reviewed
-                      </label>
-                      <Input
-                        type="date"
-                        value={ind.dateLastReviewed}
-                        onChange={e => updateIndicatorField(ind.localKey, "dateLastReviewed", e.target.value)}
-                        className="text-xs"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
-                      <StickyNote className="w-3 h-3" /> Notes
-                    </label>
-                    <Textarea
-                      value={ind.notes}
-                      onChange={e => updateIndicatorField(ind.localKey, "notes", e.target.value)}
-                      placeholder="Any additional context, caveats or observations…"
-                      className="text-xs min-h-[56px]"
-                    />
-                  </div>
-                </div>
+                {/* Baseline group */}
+                <MeasurementGroup
+                  ind={ind}
+                  prefix="baseline"
+                  label="Baseline"
+                  color={{
+                    border: "border-blue-200",
+                    header: "bg-blue-50",
+                    label: "text-blue-700",
+                    dateBg: "bg-blue-50",
+                  }}
+                  update={updateIndicatorField}
+                />
 
                 {/* Linked measurement questions */}
                 <div className="pt-2 border-t border-border/40 space-y-3">

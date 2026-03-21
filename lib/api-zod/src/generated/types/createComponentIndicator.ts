@@ -10,13 +10,23 @@ export interface CreateComponentIndicator {
   name: string;
   targetDate?: string;
   targetFigure?: string;
+  targetExplanation?: string;
+  targetSourceOfInformation?: string;
+  targetDateLastReviewed?: string;
+  targetNotes?: string;
   actualDate?: string;
   actualFigure?: string;
+  actualExplanation?: string;
+  actualSourceOfInformation?: string;
+  actualDateLastReviewed?: string;
+  actualNotes?: string;
+  baselineDate?: string;
+  baselineFigure?: string;
+  baselineExplanation?: string;
+  baselineSourceOfInformation?: string;
+  baselineDateLastReviewed?: string;
+  baselineNotes?: string;
   qualitativeQuestion?: string;
   quantitativeQuestion?: string;
-  explanation?: string;
-  sourceOfInformation?: string;
-  dateLastReviewed?: string;
-  notes?: string;
   position?: number;
 }

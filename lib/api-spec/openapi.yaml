@@ -760,28 +760,58 @@ components:
         targetFigure:
           type: string
           nullable: true
+        targetExplanation:
+          type: string
+          nullable: true
+        targetSourceOfInformation:
+          type: string
+          nullable: true
+        targetDateLastReviewed:
+          type: string
+          nullable: true
+        targetNotes:
+          type: string
+          nullable: true
         actualDate:
           type: string
           nullable: true
         actualFigure:
           type: string
           nullable: true
+        actualExplanation:
+          type: string
+          nullable: true
+        actualSourceOfInformation:
+          type: string
+          nullable: true
+        actualDateLastReviewed:
+          type: string
+          nullable: true
+        actualNotes:
+          type: string
+          nullable: true
+        baselineDate:
+          type: string
+          nullable: true
+        baselineFigure:
+          type: string
+          nullable: true
+        baselineExplanation:
+          type: string
+          nullable: true
+        baselineSourceOfInformation:
+          type: string
+          nullable: true
+        baselineDateLastReviewed:
+          type: string
+          nullable: true
+        baselineNotes:
+          type: string
+          nullable: true
         qualitativeQuestion:
           type: string
           nullable: true
         quantitativeQuestion:
-          type: string
-          nullable: true
-        explanation:
-          type: string
-          nullable: true
-        sourceOfInformation:
-          type: string
-          nullable: true
-        dateLastReviewed:
-          type: string
-          nullable: true
-        notes:
           type: string
           nullable: true
         position:
@@ -810,21 +840,41 @@ components:
           type: string
         targetFigure:
           type: string
+        targetExplanation:
+          type: string
+        targetSourceOfInformation:
+          type: string
+        targetDateLastReviewed:
+          type: string
+        targetNotes:
+          type: string
         actualDate:
           type: string
         actualFigure:
           type: string
+        actualExplanation:
+          type: string
+        actualSourceOfInformation:
+          type: string
+        actualDateLastReviewed:
+          type: string
+        actualNotes:
+          type: string
+        baselineDate:
+          type: string
+        baselineFigure:
+          type: string
+        baselineExplanation:
+          type: string
+        baselineSourceOfInformation:
+          type: string
+        baselineDateLastReviewed:
+          type: string
+        baselineNotes:
+          type: string
         qualitativeQuestion:
           type: string
         quantitativeQuestion:
-          type: string
-        explanation:
-          type: string
-        sourceOfInformation:
-          type: string
-        dateLastReviewed:
-          type: string
-        notes:
           type: string
         position:
           type: integer
@@ -840,21 +890,41 @@ components:
           type: string
         targetFigure:
           type: string
+        targetExplanation:
+          type: string
+        targetSourceOfInformation:
+          type: string
+        targetDateLastReviewed:
+          type: string
+        targetNotes:
+          type: string
         actualDate:
           type: string
         actualFigure:
           type: string
+        actualExplanation:
+          type: string
+        actualSourceOfInformation:
+          type: string
+        actualDateLastReviewed:
+          type: string
+        actualNotes:
+          type: string
+        baselineDate:
+          type: string
+        baselineFigure:
+          type: string
+        baselineExplanation:
+          type: string
+        baselineSourceOfInformation:
+          type: string
+        baselineDateLastReviewed:
+          type: string
+        baselineNotes:
+          type: string
         qualitativeQuestion:
           type: string
         quantitativeQuestion:
-          type: string
-        explanation:
-          type: string
-        sourceOfInformation:
-          type: string
-        dateLastReviewed:
-          type: string
-        notes:
           type: string
         position:
           type: integer
