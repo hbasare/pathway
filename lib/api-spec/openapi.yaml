@@ -653,6 +653,8 @@ components:
           type: string
         quantitativeQuestions:
           type: string
+        willBeAddressed:
+          type: boolean
         positionX:
           type: number
         positionY:
@@ -677,6 +679,7 @@ components:
         - actualFigure
         - qualitativeQuestions
         - quantitativeQuestions
+        - willBeAddressed
         - positionX
         - positionY
         - createdAt
@@ -708,6 +711,8 @@ components:
           type: string
         quantitativeQuestions:
           type: string
+        willBeAddressed:
+          type: boolean
         positionX:
           type: number
         positionY:

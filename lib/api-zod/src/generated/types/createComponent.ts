@@ -19,6 +19,7 @@ export interface CreateComponent {
   actualFigure?: string;
   qualitativeQuestions?: string;
   quantitativeQuestions?: string;
+  willBeAddressed?: boolean;
   positionX?: number;
   positionY?: number;
 }

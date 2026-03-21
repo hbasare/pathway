@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, real, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -46,6 +46,7 @@ export const componentsTable = pgTable("components", {
   actualFigure: text("actual_figure").default(""),
   qualitativeQuestions: text("qualitative_questions").default(""),
   quantitativeQuestions: text("quantitative_questions").default(""),
+  willBeAddressed: boolean("will_be_addressed").notNull().default(false),
   positionX: real("position_x").notNull().default(0),
   positionY: real("position_y").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),

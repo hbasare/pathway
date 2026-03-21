@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import Xarrow, { Xwrapper } from "react-xarrows";
 import { TheoryDetail, ComponentType, useCreateConnection, useDeleteConnection, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ComponentCard } from "./component-card";
@@ -130,7 +130,11 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
         <Xwrapper>
           <div className="flex gap-10 min-w-max pb-32">
             {COLUMNS.map((col) => {
-              const columnComponents = theory.components.filter((c) => c.type === col.type);
+              const isOpportunityCol = col.type === "opportunity";
+              // Opportunities: only show those marked willBeAddressed; others: show all
+              const columnComponents = isOpportunityCol
+                ? theory.components.filter(c => c.type === "opportunity" && c.willBeAddressed)
+                : theory.components.filter(c => c.type === col.type);
 
               return (
                 <div key={col.type} className="flex flex-col w-[280px] shrink-0">
@@ -158,17 +162,28 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
                       />
                     ))}
 
-                    <Button
-                      variant="outline"
-                      className="border-dashed border-2 py-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                      onClick={() => {
-                        setSelectedColumnType(col.type);
-                        setIsAddComponentOpen(true);
-                      }}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add {col.addLabel}
-                    </Button>
+                    {isOpportunityCol ? (
+                      <div className="rounded-xl border-2 border-dashed border-border/60 bg-muted/10 p-4 text-center flex flex-col items-center gap-2">
+                        <Info className="w-4 h-4 text-muted-foreground/50" />
+                        <p className="text-xs text-muted-foreground leading-snug">
+                          Manage opportunities & constraints in the{" "}
+                          <span className="font-semibold">About Intervention</span> tab.
+                          Toggle <span className="font-semibold">"Will be addressed"</span> to include them here.
+                        </p>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="border-dashed border-2 py-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                        onClick={() => {
+                          setSelectedColumnType(col.type);
+                          setIsAddComponentOpen(true);
+                        }}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add {col.addLabel}
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

@@ -2,14 +2,15 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useUpdateTheory, getGetTheoryQueryKey } from "@workspace/api-client-react";
+import { useUpdateTheory, useCreateComponent, useUpdateComponent, useDeleteComponent, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import type { TheoryDetail } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Pencil, X, Save, Lightbulb, ArrowRight, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Pencil, X, Save, Lightbulb, Plus, Trash2, AlertCircle, ArrowRight, Check } from "lucide-react";
 
 // ─── Field configuration ─────────────────────────────────────────────────────
 // To add, remove, or reorder fields simply edit this array.
@@ -149,100 +150,209 @@ function FieldSection({
 
 // ─── OpportunitiesSection ─────────────────────────────────────────────────────
 function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(theory.id) });
+
   const opportunities = theory.components.filter(c => c.type === "opportunity");
 
-  if (opportunities.length === 0) {
-    return (
-      <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center py-10 text-center gap-2">
-        <AlertCircle className="w-6 h-6 text-muted-foreground/40" />
-        <p className="text-sm font-medium text-muted-foreground">No opportunities or constraints defined yet</p>
-        <p className="text-xs text-muted-foreground/60 max-w-xs">
-          Go to the <span className="font-semibold">Theory of Change</span> tab and add items under the
-          "Opportunities / Constraints" column to see them here.
-        </p>
-      </div>
-    );
-  }
+  // New-entry draft state
+  const [showAdd, setShowAdd] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
+  const [draftDesc, setDraftDesc] = useState("");
+
+  const createMutation = useCreateComponent({
+    mutation: {
+      onSuccess: () => { invalidate(); setShowAdd(false); setDraftTitle(""); setDraftDesc(""); },
+      onError: () => toast({ title: "Failed to add", variant: "destructive" }),
+    },
+  });
+
+  const updateMutation = useUpdateComponent({
+    mutation: {
+      onSuccess: invalidate,
+      onError: () => toast({ title: "Failed to update", variant: "destructive" }),
+    },
+  });
+
+  const deleteMutation = useDeleteComponent({
+    mutation: {
+      onSuccess: invalidate,
+      onError: () => toast({ title: "Failed to delete", variant: "destructive" }),
+    },
+  });
+
+  const handleAdd = () => {
+    if (!draftTitle.trim()) return;
+    createMutation.mutate({
+      theoryId: theory.id,
+      data: {
+        type: "opportunity",
+        title: draftTitle.trim(),
+        description: draftDesc.trim(),
+        willBeAddressed: false,
+      },
+    });
+  };
+
+  const toggleWillBeAddressed = (opp: TheoryDetail["components"][number]) => {
+    updateMutation.mutate({
+      theoryId: theory.id,
+      id: opp.id,
+      data: {
+        type: opp.type as "opportunity",
+        title: opp.title,
+        description: opp.description,
+        indicators: opp.indicators,
+        assumptions: opp.assumptions,
+        targetDate: opp.targetDate ?? "",
+        targetFigure: opp.targetFigure ?? "",
+        actualDate: opp.actualDate ?? "",
+        actualFigure: opp.actualFigure ?? "",
+        qualitativeQuestions: opp.qualitativeQuestions ?? "",
+        quantitativeQuestions: opp.quantitativeQuestions ?? "",
+        willBeAddressed: !opp.willBeAddressed,
+        positionX: opp.positionX,
+        positionY: opp.positionY,
+      },
+    });
+  };
+
+  const handleDelete = (opp: TheoryDetail["components"][number]) => {
+    if (!window.confirm(`Delete "${opp.title}"? This cannot be undone.`)) return;
+    deleteMutation.mutate({ theoryId: theory.id, id: opp.id });
+  };
+
+  // Connections for showing linked ToC components (only for addressed ones)
+  const getLinkedComponents = (oppId: number) => {
+    const linkedIds = new Set([
+      ...theory.connections.filter(c => c.fromComponentId === oppId).map(c => c.toComponentId),
+      ...theory.connections.filter(c => c.toComponentId === oppId).map(c => c.fromComponentId),
+    ]);
+    return theory.components.filter(c => linkedIds.has(c.id) && c.type !== "opportunity");
+  };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <p className="text-sm text-muted-foreground leading-relaxed">
-        The following opportunities and constraints were identified for this intervention.
-        Each must be addressed through the Theory of Change — the connections show which components directly respond to them.
+        List the opportunities and constraints relevant to this intervention. Toggle <span className="font-semibold text-emerald-700">Will be addressed</span> for each one that the intervention will respond to — only those will appear in the Theory of Change canvas.
       </p>
 
+      {opportunities.length === 0 && !showAdd && (
+        <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center py-8 text-center gap-2">
+          <AlertCircle className="w-5 h-5 text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">No opportunities or constraints added yet</p>
+        </div>
+      )}
+
       {opportunities.map(opp => {
-        // Find what this opportunity connects to (outgoing connections)
-        const connectedToIds = theory.connections
-          .filter(c => c.fromComponentId === opp.id)
-          .map(c => c.toComponentId);
-        // Also find components connecting to this opportunity (incoming)
-        const connectedFromIds = theory.connections
-          .filter(c => c.toComponentId === opp.id)
-          .map(c => c.fromComponentId);
-
-        const allLinkedIds = Array.from(new Set([...connectedToIds, ...connectedFromIds]));
-        const linkedComponents = theory.components.filter(c => allLinkedIds.includes(c.id));
-
-        const isAddressed = linkedComponents.length > 0;
-
+        const linked = getLinkedComponents(opp.id);
         return (
           <div
             key={opp.id}
-            className={`rounded-xl border ${isAddressed ? "border-emerald-200 bg-emerald-50/50" : "border-amber-200 bg-amber-50/50"} p-5`}
+            className={`rounded-xl border p-4 transition-colors ${opp.willBeAddressed ? "border-emerald-200 bg-emerald-50/40" : "border-border bg-muted/20"}`}
           >
             <div className="flex items-start gap-3">
-              <div className={`mt-0.5 p-1.5 rounded-lg ${isAddressed ? "bg-emerald-100" : "bg-amber-100"}`}>
-                <Lightbulb className={`w-4 h-4 ${isAddressed ? "text-emerald-600" : "text-amber-600"}`} />
+              <div className={`mt-0.5 p-1.5 rounded-lg shrink-0 ${opp.willBeAddressed ? "bg-emerald-100" : "bg-muted"}`}>
+                <Lightbulb className={`w-4 h-4 ${opp.willBeAddressed ? "text-emerald-600" : "text-muted-foreground"}`} />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="text-sm font-bold text-foreground">{opp.title}</h4>
-                  {isAddressed ? (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200">
-                      Addressed in ToC
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 border border-amber-200">
-                      Not yet linked
-                    </span>
-                  )}
-                </div>
 
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground leading-snug">{opp.title}</p>
                 {opp.description && (
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-3">{opp.description}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5 leading-relaxed">{opp.description}</p>
                 )}
 
-                {linkedComponents.length > 0 && (
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                      Connected Theory of Change Components
+                {/* Will be addressed toggle */}
+                <div className="flex items-center gap-2 mt-3">
+                  <Switch
+                    id={`wba-${opp.id}`}
+                    checked={!!opp.willBeAddressed}
+                    onCheckedChange={() => toggleWillBeAddressed(opp)}
+                    disabled={updateMutation.isPending}
+                  />
+                  <label htmlFor={`wba-${opp.id}`} className="text-xs font-medium cursor-pointer select-none">
+                    {opp.willBeAddressed ? (
+                      <span className="text-emerald-700 flex items-center gap-1">
+                        <Check className="w-3 h-3" /> Will be addressed — included in Theory of Change
+                      </span>
+                    ) : (
+                      <span className="text-muted-foreground">Will be addressed by this intervention?</span>
+                    )}
+                  </label>
+                </div>
+
+                {/* Linked ToC components (only shown if addressed and connected) */}
+                {opp.willBeAddressed && linked.length > 0 && (
+                  <div className="mt-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+                      Connected in Theory of Change
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {linkedComponents.map(comp => (
-                        <div
+                    <div className="flex flex-wrap gap-1.5">
+                      {linked.map(comp => (
+                        <span
                           key={comp.id}
-                          className="flex items-center gap-1.5 text-xs bg-white border border-border rounded-md px-2.5 py-1.5 shadow-sm"
+                          className="inline-flex items-center gap-1 text-xs bg-white border border-border rounded-md px-2 py-1 shadow-sm"
                         >
-                          <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />
-                          <span className="font-medium text-foreground">{comp.title}</span>
+                          <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                          <span className="font-medium">{comp.title}</span>
                           <span className="text-muted-foreground/60 capitalize">({comp.type})</span>
-                        </div>
+                        </span>
                       ))}
                     </div>
                   </div>
                 )}
-
-                {!isAddressed && (
-                  <p className="text-xs text-amber-700 mt-2 italic">
-                    Connect this to an Input, Activity, or other component in the Theory of Change tab to show how it is being addressed.
-                  </p>
-                )}
               </div>
+
+              <button
+                onClick={() => handleDelete(opp)}
+                className="shrink-0 p-1 rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                title="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
         );
       })}
+
+      {/* Add new entry inline form */}
+      {showAdd ? (
+        <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 space-y-3">
+          <Input
+            autoFocus
+            placeholder="Title — e.g. Limited access to finance"
+            value={draftTitle}
+            onChange={e => setDraftTitle(e.target.value)}
+            className="text-sm"
+            onKeyDown={e => e.key === "Enter" && handleAdd()}
+          />
+          <Textarea
+            placeholder="Description (optional) — elaborate on this opportunity or constraint"
+            value={draftDesc}
+            onChange={e => setDraftDesc(e.target.value)}
+            className="text-sm min-h-[70px]"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleAdd} disabled={!draftTitle.trim() || createMutation.isPending}>
+              <Plus className="w-3.5 h-3.5 mr-1" /> Add
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => { setShowAdd(false); setDraftTitle(""); setDraftDesc(""); }}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-dashed border-2 w-full py-5 text-muted-foreground hover:text-foreground"
+          onClick={() => setShowAdd(true)}
+        >
+          <Plus className="w-4 h-4 mr-2" />
+          Add Opportunity / Constraint
+        </Button>
+      )}
     </div>
   );
 }
