@@ -500,6 +500,10 @@ components:
           type: string
         contributionOfOtherProjects:
           type: string
+        strategyDocumentPath:
+          type: string
+        strategyDocumentName:
+          type: string
         businessModelImagePath:
           type: string
         components:
@@ -561,6 +565,10 @@ components:
         displacement:
           type: string
         contributionOfOtherProjects:
+          type: string
+        strategyDocumentPath:
+          type: string
+        strategyDocumentName:
           type: string
         businessModelImagePath:
           type: string

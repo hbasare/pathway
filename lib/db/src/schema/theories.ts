@@ -22,6 +22,9 @@ export const theoriesTable = pgTable("theories", {
   climateSmart: text("climate_smart").default(""),
   displacement: text("displacement").default(""),
   contributionOfOtherProjects: text("contribution_of_other_projects").default(""),
+  // Strategy document
+  strategyDocumentPath: text("strategy_document_path").default(""),
+  strategyDocumentName: text("strategy_document_name").default(""),
   // Business model
   businessModelImagePath: text("business_model_image_path").default(""),
   createdAt: timestamp("created_at").notNull().defaultNow(),

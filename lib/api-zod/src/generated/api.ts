@@ -64,6 +64,8 @@ export const CreateTheoryBody = zod.object({
   climateSmart: zod.string().optional(),
   displacement: zod.string().optional(),
   contributionOfOtherProjects: zod.string().optional(),
+  strategyDocumentPath: zod.string().optional(),
+  strategyDocumentName: zod.string().optional(),
   businessModelImagePath: zod.string().optional(),
 });
 
@@ -93,6 +95,8 @@ export const GetTheoryResponse = zod.object({
   climateSmart: zod.string().optional(),
   displacement: zod.string().optional(),
   contributionOfOtherProjects: zod.string().optional(),
+  strategyDocumentPath: zod.string().optional(),
+  strategyDocumentName: zod.string().optional(),
   businessModelImagePath: zod.string().optional(),
   components: zod.array(
     zod.object({
@@ -162,6 +166,8 @@ export const UpdateTheoryBody = zod.object({
   climateSmart: zod.string().optional(),
   displacement: zod.string().optional(),
   contributionOfOtherProjects: zod.string().optional(),
+  strategyDocumentPath: zod.string().optional(),
+  strategyDocumentName: zod.string().optional(),
   businessModelImagePath: zod.string().optional(),
 });
 

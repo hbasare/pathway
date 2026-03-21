@@ -24,5 +24,7 @@ export interface CreateTheory {
   climateSmart?: string;
   displacement?: string;
   contributionOfOtherProjects?: string;
+  strategyDocumentPath?: string;
+  strategyDocumentName?: string;
   businessModelImagePath?: string;
 }

@@ -13,7 +13,11 @@ const router: IRouter = Router();
 const IMAGES_DIR = path.join(process.cwd(), "public", "business-model-images");
 if (!fs.existsSync(IMAGES_DIR)) fs.mkdirSync(IMAGES_DIR, { recursive: true });
 
-// ── Multer upload config ──────────────────────────────────────────────────────
+// ── Strategy documents directory ─────────────────────────────────────────────
+const DOCS_DIR = path.join(process.cwd(), "public", "strategy-documents");
+if (!fs.existsSync(DOCS_DIR)) fs.mkdirSync(DOCS_DIR, { recursive: true });
+
+// ── Multer upload config (images) ─────────────────────────────────────────────
 const upload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => cb(null, IMAGES_DIR),
@@ -27,6 +31,63 @@ const upload = multer({
     if (file.mimetype.startsWith("image/")) cb(null, true);
     else cb(new Error("Only image files are allowed"));
   },
+});
+
+// ── Multer upload config (strategy documents) ─────────────────────────────────
+const ALLOWED_DOC_MIMES = new Set([
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+]);
+
+const uploadDoc = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, DOCS_DIR),
+    filename: (req, file, cb) => {
+      const theoryId = req.params.theoryId ?? "unknown";
+      const ext = path.extname(file.originalname) || ".pdf";
+      cb(null, `strategy-${theoryId}-${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_DOC_MIMES.has(file.mimetype)) cb(null, true);
+    else cb(new Error("Only PDF, Word (.doc/.docx) or plain text files are allowed"));
+  },
+});
+
+// ── Strategy Document Upload ──────────────────────────────────────────────────
+router.post(
+  "/theories/:theoryId/strategy-document/upload",
+  uploadDoc.single("document"),
+  async (req, res) => {
+    const theoryId = Number(req.params.theoryId);
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({ error: "No document file provided" });
+      return;
+    }
+    const docUrl = `/api/strategy-documents/${file.filename}`;
+    await db.update(theoriesTable)
+      .set({ strategyDocumentPath: docUrl, strategyDocumentName: file.originalname, updatedAt: new Date() })
+      .where(eq(theoriesTable.id, theoryId));
+    res.json({ documentUrl: docUrl, documentName: file.originalname });
+  },
+);
+
+router.delete("/theories/:theoryId/strategy-document", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const [theory] = await db.select().from(theoriesTable).where(eq(theoriesTable.id, theoryId));
+  if (theory?.strategyDocumentPath) {
+    const filename = path.basename(theory.strategyDocumentPath);
+    const filePath = path.join(DOCS_DIR, filename);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  }
+  await db.update(theoriesTable)
+    .set({ strategyDocumentPath: "", strategyDocumentName: "", updatedAt: new Date() })
+    .where(eq(theoriesTable.id, theoryId));
+  res.status(204).send();
 });
 
 // ── Actors CRUD ──────────────────────────────────────────────────────────────

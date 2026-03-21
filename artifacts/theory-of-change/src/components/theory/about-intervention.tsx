@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Pencil, X, Save, Lightbulb, Plus, Trash2, AlertCircle, ArrowRight, Check } from "lucide-react";
+import { Pencil, X, Save, Lightbulb, Plus, Trash2, AlertCircle, ArrowRight, Check, FileText, Upload, Download } from "lucide-react";
 
 // ─── Field configuration ─────────────────────────────────────────────────────
 // To add, remove, or reorder fields simply edit this array.
@@ -145,6 +145,148 @@ function FieldSection({
         })}
       </div>
     </section>
+  );
+}
+
+// ─── StrategyDocumentUpload ───────────────────────────────────────────────────
+function StrategyDocumentUpload({ theory }: { theory: TheoryDetail }) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(theory.id) });
+
+  const [uploading, setUploading] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const hasDoc = !!theory.strategyDocumentPath;
+  const docPath = theory.strategyDocumentPath ?? "";
+  const docName = theory.strategyDocumentName ?? "Strategy Document";
+  const docUrl = hasDoc ? `${window.location.origin}${docPath}` : "";
+
+  const handleUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("document", file);
+      const res = await fetch(
+        `${window.location.origin}/api/theories/${theory.id}/strategy-document/upload`,
+        { method: "POST", body: formData }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error((err as { error?: string }).error ?? "Upload failed");
+      }
+      await invalidate();
+      toast({ title: "Document uploaded successfully" });
+    } catch (err) {
+      toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
+  const handleRemove = async () => {
+    if (!window.confirm("Remove the uploaded strategy document?")) return;
+    setRemoving(true);
+    try {
+      const res = await fetch(
+        `${window.location.origin}/api/theories/${theory.id}/strategy-document`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Remove failed");
+      await invalidate();
+      toast({ title: "Document removed" });
+    } catch {
+      toast({ title: "Failed to remove document", variant: "destructive" });
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) handleUpload(file);
+  };
+
+  return (
+    <div>
+      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+        Strategy Document
+      </p>
+
+      {hasDoc ? (
+        <div className="rounded-xl border border-border bg-muted/20 p-4 flex items-center gap-3">
+          <div className="p-2.5 rounded-lg bg-primary/10 shrink-0">
+            <FileText className="w-5 h-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">{docName}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Intervention strategy document</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <a
+              href={docUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+            >
+              <Download className="w-3.5 h-3.5" />
+              Open
+            </a>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 px-2"
+              onClick={handleRemove}
+              disabled={removing}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="rounded-xl border-2 border-dashed border-border bg-muted/10 hover:bg-muted/20 transition-colors cursor-pointer p-6 flex flex-col items-center gap-3 text-center"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={e => e.preventDefault()}
+          onDrop={handleDrop}
+        >
+          <div className="p-3 rounded-full bg-muted">
+            {uploading ? (
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Upload className="w-6 h-6 text-muted-foreground" />
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-foreground">
+              {uploading ? "Uploading…" : "Upload Strategy Document"}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              PDF, Word (.doc / .docx) or plain text · up to 20 MB
+            </p>
+          </div>
+          {!uploading && (
+            <Button size="sm" variant="outline" tabIndex={-1}>
+              Choose file
+            </Button>
+          )}
+        </div>
+      )}
+
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0];
+          if (file) handleUpload(file);
+        }}
+      />
+    </div>
   );
 }
 
@@ -461,6 +603,7 @@ export function AboutIntervention({ theory }: AboutInterventionProps) {
               form={form}
               hideHeader
             />
+            <StrategyDocumentUpload theory={theory} />
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
                 Opportunities / Constraints
