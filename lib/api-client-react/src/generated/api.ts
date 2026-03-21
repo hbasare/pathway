@@ -19,9 +19,11 @@ import type {
 import type {
   BusinessModelActor,
   Component,
+  ComponentIndicator,
   Connection,
   CreateBusinessModelActor,
   CreateComponent,
+  CreateComponentIndicator,
   CreateConnection,
   CreateTheory,
   GenerateBusinessModelImageBody,
@@ -29,6 +31,7 @@ import type {
   HealthStatus,
   Theory,
   TheoryDetail,
+  UpdateComponentIndicator,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -879,6 +882,458 @@ export const useDeleteComponent = <
   TContext
 > => {
   return useMutation(getDeleteComponentMutationOptions(options));
+};
+
+/**
+ * @summary List indicators for a component
+ */
+export const getListComponentIndicatorsUrl = (
+  theoryId: number,
+  componentId: number,
+) => {
+  return `/api/theories/${theoryId}/components/${componentId}/indicators`;
+};
+
+export const listComponentIndicators = async (
+  theoryId: number,
+  componentId: number,
+  options?: RequestInit,
+): Promise<ComponentIndicator[]> => {
+  return customFetch<ComponentIndicator[]>(
+    getListComponentIndicatorsUrl(theoryId, componentId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListComponentIndicatorsQueryKey = (
+  theoryId: number,
+  componentId: number,
+) => {
+  return [
+    `/api/theories/${theoryId}/components/${componentId}/indicators`,
+  ] as const;
+};
+
+export const getListComponentIndicatorsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listComponentIndicators>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  componentId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listComponentIndicators>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ??
+    getListComponentIndicatorsQueryKey(theoryId, componentId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listComponentIndicators>>
+  > = ({ signal }) =>
+    listComponentIndicators(theoryId, componentId, {
+      signal,
+      ...requestOptions,
+    });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!(theoryId && componentId),
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listComponentIndicators>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListComponentIndicatorsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listComponentIndicators>>
+>;
+export type ListComponentIndicatorsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List indicators for a component
+ */
+
+export function useListComponentIndicators<
+  TData = Awaited<ReturnType<typeof listComponentIndicators>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  componentId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listComponentIndicators>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListComponentIndicatorsQueryOptions(
+    theoryId,
+    componentId,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create an indicator for a component
+ */
+export const getCreateComponentIndicatorUrl = (
+  theoryId: number,
+  componentId: number,
+) => {
+  return `/api/theories/${theoryId}/components/${componentId}/indicators`;
+};
+
+export const createComponentIndicator = async (
+  theoryId: number,
+  componentId: number,
+  createComponentIndicator: CreateComponentIndicator,
+  options?: RequestInit,
+): Promise<ComponentIndicator> => {
+  return customFetch<ComponentIndicator>(
+    getCreateComponentIndicatorUrl(theoryId, componentId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createComponentIndicator),
+    },
+  );
+};
+
+export const getCreateComponentIndicatorMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createComponentIndicator>>,
+    TError,
+    {
+      theoryId: number;
+      componentId: number;
+      data: BodyType<CreateComponentIndicator>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createComponentIndicator>>,
+  TError,
+  {
+    theoryId: number;
+    componentId: number;
+    data: BodyType<CreateComponentIndicator>;
+  },
+  TContext
+> => {
+  const mutationKey = ["createComponentIndicator"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createComponentIndicator>>,
+    {
+      theoryId: number;
+      componentId: number;
+      data: BodyType<CreateComponentIndicator>;
+    }
+  > = (props) => {
+    const { theoryId, componentId, data } = props ?? {};
+
+    return createComponentIndicator(
+      theoryId,
+      componentId,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateComponentIndicatorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createComponentIndicator>>
+>;
+export type CreateComponentIndicatorMutationBody =
+  BodyType<CreateComponentIndicator>;
+export type CreateComponentIndicatorMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create an indicator for a component
+ */
+export const useCreateComponentIndicator = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createComponentIndicator>>,
+    TError,
+    {
+      theoryId: number;
+      componentId: number;
+      data: BodyType<CreateComponentIndicator>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createComponentIndicator>>,
+  TError,
+  {
+    theoryId: number;
+    componentId: number;
+    data: BodyType<CreateComponentIndicator>;
+  },
+  TContext
+> => {
+  return useMutation(getCreateComponentIndicatorMutationOptions(options));
+};
+
+/**
+ * @summary Update an indicator
+ */
+export const getUpdateComponentIndicatorUrl = (
+  theoryId: number,
+  componentId: number,
+  id: number,
+) => {
+  return `/api/theories/${theoryId}/components/${componentId}/indicators/${id}`;
+};
+
+export const updateComponentIndicator = async (
+  theoryId: number,
+  componentId: number,
+  id: number,
+  updateComponentIndicator: UpdateComponentIndicator,
+  options?: RequestInit,
+): Promise<ComponentIndicator> => {
+  return customFetch<ComponentIndicator>(
+    getUpdateComponentIndicatorUrl(theoryId, componentId, id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateComponentIndicator),
+    },
+  );
+};
+
+export const getUpdateComponentIndicatorMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateComponentIndicator>>,
+    TError,
+    {
+      theoryId: number;
+      componentId: number;
+      id: number;
+      data: BodyType<UpdateComponentIndicator>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateComponentIndicator>>,
+  TError,
+  {
+    theoryId: number;
+    componentId: number;
+    id: number;
+    data: BodyType<UpdateComponentIndicator>;
+  },
+  TContext
+> => {
+  const mutationKey = ["updateComponentIndicator"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateComponentIndicator>>,
+    {
+      theoryId: number;
+      componentId: number;
+      id: number;
+      data: BodyType<UpdateComponentIndicator>;
+    }
+  > = (props) => {
+    const { theoryId, componentId, id, data } = props ?? {};
+
+    return updateComponentIndicator(
+      theoryId,
+      componentId,
+      id,
+      data,
+      requestOptions,
+    );
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateComponentIndicatorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateComponentIndicator>>
+>;
+export type UpdateComponentIndicatorMutationBody =
+  BodyType<UpdateComponentIndicator>;
+export type UpdateComponentIndicatorMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update an indicator
+ */
+export const useUpdateComponentIndicator = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateComponentIndicator>>,
+    TError,
+    {
+      theoryId: number;
+      componentId: number;
+      id: number;
+      data: BodyType<UpdateComponentIndicator>;
+    },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateComponentIndicator>>,
+  TError,
+  {
+    theoryId: number;
+    componentId: number;
+    id: number;
+    data: BodyType<UpdateComponentIndicator>;
+  },
+  TContext
+> => {
+  return useMutation(getUpdateComponentIndicatorMutationOptions(options));
+};
+
+/**
+ * @summary Delete an indicator
+ */
+export const getDeleteComponentIndicatorUrl = (
+  theoryId: number,
+  componentId: number,
+  id: number,
+) => {
+  return `/api/theories/${theoryId}/components/${componentId}/indicators/${id}`;
+};
+
+export const deleteComponentIndicator = async (
+  theoryId: number,
+  componentId: number,
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(
+    getDeleteComponentIndicatorUrl(theoryId, componentId, id),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getDeleteComponentIndicatorMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteComponentIndicator>>,
+    TError,
+    { theoryId: number; componentId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteComponentIndicator>>,
+  TError,
+  { theoryId: number; componentId: number; id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteComponentIndicator"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteComponentIndicator>>,
+    { theoryId: number; componentId: number; id: number }
+  > = (props) => {
+    const { theoryId, componentId, id } = props ?? {};
+
+    return deleteComponentIndicator(theoryId, componentId, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteComponentIndicatorMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteComponentIndicator>>
+>;
+
+export type DeleteComponentIndicatorMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete an indicator
+ */
+export const useDeleteComponentIndicator = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteComponentIndicator>>,
+    TError,
+    { theoryId: number; componentId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteComponentIndicator>>,
+  TError,
+  { theoryId: number; componentId: number; id: number },
+  TContext
+> => {
+  return useMutation(getDeleteComponentIndicatorMutationOptions(options));
 };
 
 /**

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Component, ComponentType, useDeleteComponent, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MoreVertical, Edit2, Trash2, ArrowRight, Activity, Zap, FileText, Target, Globe, CalendarClock, CheckCircle2, Lightbulb } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, ArrowRight, Activity, Zap, FileText, Target, Globe, CalendarClock, CheckCircle2, Lightbulb, BarChart3 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -63,8 +63,7 @@ export function ComponentCard({
 
   const config = TYPE_CONFIG[component.type];
   const Icon = config.icon;
-  const hasTarget = !!(component.targetDate || component.targetFigure);
-  const hasActual = !!(component.actualDate || component.actualFigure);
+  const indicators = component.componentIndicators ?? [];
 
   const handleCardClick = () => {
     if (isConnectingMode && !isConnectingFrom) onConnectEnd(component.id);
@@ -135,7 +134,7 @@ export function ComponentCard({
           {/* Title */}
           <h4 className="font-bold text-foreground text-sm leading-snug mb-2">{component.title}</h4>
 
-          {/* Description — who does what and why */}
+          {/* Description */}
           {component.description && (
             <div className="mb-3 bg-muted/40 rounded-lg px-3 py-2 border-l-2 border-muted-foreground/20">
               <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3">
@@ -144,57 +143,67 @@ export function ComponentCard({
             </div>
           )}
 
-          {/* Indicator / assumption badges */}
-          {(component.indicators || component.assumptions) && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {component.indicators && (
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 rounded-sm font-medium">
-                  Indicators
-                </Badge>
-              )}
-              {component.assumptions && (
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm font-medium">
-                  Assumptions
-                </Badge>
-              )}
+          {/* Assumptions badge */}
+          {component.assumptions && (
+            <div className="mb-3">
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm font-medium">
+                Assumptions
+              </Badge>
             </div>
           )}
 
-          {/* Target / Actual section */}
-          {(hasTarget || hasActual) && (
-            <div className="mt-3 pt-3 border-t border-border/60 space-y-2">
-              {hasTarget && (
-                <div className="flex items-start gap-2">
-                  <CalendarClock className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-600 mb-0.5">Target</p>
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                      {component.targetDate && (
-                        <span className="text-xs text-foreground font-medium">{formatDate(component.targetDate)}</span>
+          {/* Per-indicator rows */}
+          {indicators.length > 0 && (
+            <div className="mt-2 pt-3 border-t border-border/60 space-y-2.5">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <BarChart3 className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  Indicators ({indicators.length})
+                </span>
+              </div>
+              {indicators.map((ind, idx) => {
+                const hasTarget = !!(ind.targetDate || ind.targetFigure);
+                const hasActual = !!(ind.actualDate || ind.actualFigure);
+                return (
+                  <div key={ind.id} className="rounded-md bg-muted/30 border border-border/50 px-2.5 py-2">
+                    <p className="text-[11px] font-semibold text-foreground leading-snug mb-1.5 line-clamp-2">
+                      {idx + 1}. {ind.name || <span className="italic text-muted-foreground">Unnamed indicator</span>}
+                    </p>
+                    <div className="space-y-1">
+                      {hasTarget && (
+                        <div className="flex items-center gap-1.5">
+                          <CalendarClock className="w-3 h-3 shrink-0 text-amber-500" />
+                          <span className="text-[10px] font-semibold text-amber-600 mr-1">Target:</span>
+                          {ind.targetDate && (
+                            <span className="text-[10px] text-foreground font-medium">{formatDate(ind.targetDate)}</span>
+                          )}
+                          {ind.targetDate && ind.targetFigure && (
+                            <span className="text-[10px] text-muted-foreground">·</span>
+                          )}
+                          {ind.targetFigure && (
+                            <span className="text-[10px] text-muted-foreground line-clamp-1">{ind.targetFigure}</span>
+                          )}
+                        </div>
                       )}
-                      {component.targetFigure && (
-                        <span className="text-xs text-muted-foreground">{component.targetFigure}</span>
+                      {hasActual && (
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3 h-3 shrink-0 text-emerald-500" />
+                          <span className="text-[10px] font-semibold text-emerald-600 mr-1">Actual:</span>
+                          {ind.actualDate && (
+                            <span className="text-[10px] text-foreground font-medium">{formatDate(ind.actualDate)}</span>
+                          )}
+                          {ind.actualDate && ind.actualFigure && (
+                            <span className="text-[10px] text-muted-foreground">·</span>
+                          )}
+                          {ind.actualFigure && (
+                            <span className="text-[10px] text-muted-foreground line-clamp-1">{ind.actualFigure}</span>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
-                </div>
-              )}
-              {hasActual && (
-                <div className="flex items-start gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-500" />
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-600 mb-0.5">Actual</p>
-                    <div className="flex flex-wrap gap-x-3 gap-y-0.5">
-                      {component.actualDate && (
-                        <span className="text-xs text-foreground font-medium">{formatDate(component.actualDate)}</span>
-                      )}
-                      {component.actualFigure && (
-                        <span className="text-xs text-muted-foreground">{component.actualFigure}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
+                );
+              })}
             </div>
           )}
         </div>
@@ -205,14 +214,10 @@ export function ComponentCard({
           theoryId={component.theoryId}
           initialData={{
             ...component,
-            indicators: component.indicators ?? undefined,
             assumptions: component.assumptions ?? undefined,
-            targetDate: component.targetDate ?? undefined,
-            targetFigure: component.targetFigure ?? undefined,
-            actualDate: component.actualDate ?? undefined,
-            actualFigure: component.actualFigure ?? undefined,
             qualitativeQuestions: component.qualitativeQuestions ?? undefined,
             quantitativeQuestions: component.quantitativeQuestions ?? undefined,
+            componentIndicators: component.componentIndicators ?? [],
           }}
           onSuccess={() => setIsEditOpen(false)}
         />

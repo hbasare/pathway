@@ -62,6 +62,14 @@ function getStatusInfo(targetDate?: string | null, targetFigure?: string | null,
   return "not-set";
 }
 
+// Derive the most "urgent" status across all indicators for a component
+function getComponentStatus(indicators: { targetDate?: string | null; targetFigure?: string | null; actualFigure?: string | null }[]) {
+  if (indicators.length === 0) return "not-set";
+  const order = ["overdue", "in-progress", "planned", "achieved", "not-set"];
+  const statuses = indicators.map(ind => getStatusInfo(ind.targetDate, ind.targetFigure, ind.actualFigure));
+  return order.find(s => statuses.includes(s)) ?? "not-set";
+}
+
 export default function Summary() {
   const [, params] = useRoute("/theory/:id/summary");
   const id = params?.id ? parseInt(params.id, 10) : 0;
@@ -96,15 +104,19 @@ export default function Summary() {
 
   const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
 
-  // Status counts
-  const statuses = components.map(c => getStatusInfo(c.targetDate, c.targetFigure, c.actualFigure));
+  // Status counts — count per indicator across all components
+  const allIndicators = components.flatMap(c => c.componentIndicators ?? []);
+  const indicatorStatuses = allIndicators.length > 0
+    ? allIndicators.map(ind => getStatusInfo(ind.targetDate, ind.targetFigure, ind.actualFigure))
+    : components.map(c => getComponentStatus(c.componentIndicators ?? []));
   const statusCounts = {
-    achieved: statuses.filter(s => s === "achieved").length,
-    planned: statuses.filter(s => s === "planned").length,
-    overdue: statuses.filter(s => s === "overdue").length,
-    "in-progress": statuses.filter(s => s === "in-progress").length,
-    "not-set": statuses.filter(s => s === "not-set").length,
+    achieved: indicatorStatuses.filter(s => s === "achieved").length,
+    planned: indicatorStatuses.filter(s => s === "planned").length,
+    overdue: indicatorStatuses.filter(s => s === "overdue").length,
+    "in-progress": indicatorStatuses.filter(s => s === "in-progress").length,
+    "not-set": indicatorStatuses.filter(s => s === "not-set").length,
   };
+  const statusTotal = allIndicators.length || components.length;
 
   // Components by type
   const byType = TYPES.reduce((acc, t) => {
@@ -117,9 +129,14 @@ export default function Summary() {
     .sort((a, b) => (COLUMN_ORDER[a.type] ?? 99) - (COLUMN_ORDER[b.type] ?? 99) || a.id - b.id)
     .filter(c => c.assumptions && c.assumptions.trim());
 
-  // Timeline: components with target dates
-  const withTargets = components
-    .filter(c => c.targetDate && c.targetDate.trim())
+  // Timeline: indicators with target dates (flattened, with parent component info attached)
+  type IndicatorWithComp = (typeof allIndicators)[number] & { comp: (typeof components)[number] };
+  const withTargets: IndicatorWithComp[] = components
+    .flatMap(comp =>
+      (comp.componentIndicators ?? [])
+        .filter(ind => ind.targetDate && ind.targetDate.trim())
+        .map(ind => ({ ...ind, comp }))
+    )
     .sort((a, b) => new Date(a.targetDate!).getTime() - new Date(b.targetDate!).getTime());
 
   return (
@@ -191,32 +208,32 @@ export default function Summary() {
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-semibold text-foreground">Progress Overview</p>
                   <p className="text-xs text-muted-foreground">
-                    {statusCounts.achieved}/{components.length} achieved
+                    {statusCounts.achieved}/{statusTotal} achieved ({allIndicators.length > 0 ? "by indicator" : "by component"})
                   </p>
                 </div>
                 <div className="h-3 rounded-full bg-muted overflow-hidden flex">
                   {statusCounts.achieved > 0 && (
                     <div
                       className="bg-emerald-500 h-full transition-all"
-                      style={{ width: `${(statusCounts.achieved / components.length) * 100}%` }}
+                      style={{ width: `${(statusCounts.achieved / statusTotal) * 100}%` }}
                     />
                   )}
                   {statusCounts.planned > 0 && (
                     <div
                       className="bg-amber-400 h-full transition-all"
-                      style={{ width: `${(statusCounts.planned / components.length) * 100}%` }}
+                      style={{ width: `${(statusCounts.planned / statusTotal) * 100}%` }}
                     />
                   )}
                   {statusCounts["in-progress"] > 0 && (
                     <div
                       className="bg-blue-400 h-full transition-all"
-                      style={{ width: `${(statusCounts["in-progress"] / components.length) * 100}%` }}
+                      style={{ width: `${(statusCounts["in-progress"] / statusTotal) * 100}%` }}
                     />
                   )}
                   {statusCounts.overdue > 0 && (
                     <div
                       className="bg-red-400 h-full transition-all"
-                      style={{ width: `${(statusCounts.overdue / components.length) * 100}%` }}
+                      style={{ width: `${(statusCounts.overdue / statusTotal) * 100}%` }}
                     />
                   )}
                 </div>
@@ -285,7 +302,7 @@ export default function Summary() {
                 const items = byType[type];
                 if (items.length === 0) return null;
                 return items.map(comp => {
-                  const status = getStatusInfo(comp.targetDate, comp.targetFigure, comp.actualFigure);
+                  const status = getComponentStatus(comp.componentIndicators ?? []);
                   const statusConfig = {
                     achieved: { label: "Achieved", color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
                     planned: { label: "Planned", color: "text-amber-700 bg-amber-50 border-amber-200", icon: Clock },
@@ -318,28 +335,27 @@ export default function Summary() {
                         </span>
                       </div>
 
-                      <div className="px-4 pb-3 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                        {comp.indicators && (
-                          <div className="col-span-2 sm:col-span-1 bg-white/40 rounded-lg p-2">
-                            <p className="font-semibold opacity-60 mb-0.5 text-[10px] uppercase">Indicators</p>
-                            <p className="leading-relaxed opacity-80">{comp.indicators}</p>
-                          </div>
-                        )}
-                        {comp.targetDate || comp.targetFigure ? (
-                          <div className="bg-white/40 rounded-lg p-2">
-                            <p className="font-semibold opacity-60 mb-0.5 text-[10px] uppercase">Target</p>
-                            {comp.targetDate && <p className="opacity-80">{formatDate(comp.targetDate)}</p>}
-                            {comp.targetFigure && <p className="font-medium opacity-90">{comp.targetFigure}</p>}
-                          </div>
-                        ) : null}
-                        {comp.actualDate || comp.actualFigure ? (
-                          <div className="bg-white/40 rounded-lg p-2">
-                            <p className="font-semibold opacity-60 mb-0.5 text-[10px] uppercase">Actual</p>
-                            {comp.actualDate && <p className="opacity-80">{formatDate(comp.actualDate)}</p>}
-                            {comp.actualFigure && <p className="font-medium opacity-90">{comp.actualFigure}</p>}
-                          </div>
-                        ) : null}
-                      </div>
+                      {(comp.componentIndicators ?? []).length > 0 && (
+                        <div className="px-4 pb-3 space-y-1.5">
+                          <p className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Indicators</p>
+                          {(comp.componentIndicators ?? []).map((ind, i) => (
+                            <div key={ind.id} className="bg-white/40 rounded-lg px-2.5 py-1.5 text-xs flex items-start gap-2 flex-wrap">
+                              <span className="text-[10px] font-bold opacity-50 shrink-0">{i + 1}.</span>
+                              <span className="font-medium opacity-90 flex-1 min-w-0">{ind.name}</span>
+                              {(ind.targetDate || ind.targetFigure) && (
+                                <span className="text-amber-700 opacity-80 shrink-0">
+                                  Target: {[formatDate(ind.targetDate), ind.targetFigure].filter(Boolean).join(" · ")}
+                                </span>
+                              )}
+                              {(ind.actualDate || ind.actualFigure) && (
+                                <span className="text-emerald-700 font-medium shrink-0">
+                                  Actual: {[formatDate(ind.actualDate), ind.actualFigure].filter(Boolean).join(" · ")}
+                                </span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   );
                 });
@@ -396,8 +412,9 @@ export default function Summary() {
               <div className="relative">
                 <div className="absolute left-[88px] top-0 bottom-0 w-px bg-border" />
                 <div className="space-y-3">
-                  {withTargets.map(comp => {
-                    const status = getStatusInfo(comp.targetDate, comp.targetFigure, comp.actualFigure);
+                  {withTargets.map((entry, i) => {
+                    const { comp, ...ind } = entry;
+                    const status = getStatusInfo(ind.targetDate, ind.targetFigure, ind.actualFigure);
                     const dotColor = {
                       achieved: "bg-emerald-500",
                       planned: "bg-amber-400",
@@ -406,9 +423,9 @@ export default function Summary() {
                       "not-set": "bg-muted-foreground/30",
                     }[status];
                     return (
-                      <div key={comp.id} className="flex items-start gap-4">
+                      <div key={`${comp.id}-${i}`} className="flex items-start gap-4">
                         <div className="shrink-0 w-20 text-right">
-                          <p className="text-xs font-medium text-muted-foreground">{formatDate(comp.targetDate)}</p>
+                          <p className="text-xs font-medium text-muted-foreground">{formatDate(ind.targetDate)}</p>
                         </div>
                         <div className="relative flex items-center justify-center shrink-0 mt-0.5">
                           <div className={`w-3 h-3 rounded-full border-2 border-background ${dotColor} relative z-10`} />
@@ -421,9 +438,11 @@ export default function Summary() {
                               {comp.title}
                             </span>
                           </div>
-                          {comp.targetFigure && (
-                            <p className="text-xs text-muted-foreground mt-0.5">Target: {comp.targetFigure}{comp.actualFigure ? ` · Actual: ${comp.actualFigure}` : ""}</p>
-                          )}
+                          <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
+                            {ind.name}
+                            {ind.targetFigure ? ` · Target: ${ind.targetFigure}` : ""}
+                            {ind.actualFigure ? ` · Actual: ${ind.actualFigure}` : ""}
+                          </p>
                         </div>
                       </div>
                     );

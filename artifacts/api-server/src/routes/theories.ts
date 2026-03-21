@@ -1,7 +1,16 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { theoriesTable, componentsTable, connectionsTable, insertTheorySchema, insertComponentSchema, insertConnectionSchema } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import {
+  theoriesTable,
+  componentsTable,
+  connectionsTable,
+  componentIndicatorsTable,
+  insertTheorySchema,
+  insertComponentSchema,
+  insertConnectionSchema,
+  insertComponentIndicatorSchema,
+} from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -29,7 +38,18 @@ router.get("/theories/:id", async (req, res) => {
   }
   const components = await db.select().from(componentsTable).where(eq(componentsTable.theoryId, id));
   const connections = await db.select().from(connectionsTable).where(eq(connectionsTable.theoryId, id));
-  res.json({ ...theory, components, connections });
+  const allIndicators = await db
+    .select()
+    .from(componentIndicatorsTable)
+    .where(eq(componentIndicatorsTable.theoryId, id))
+    .orderBy(componentIndicatorsTable.position, componentIndicatorsTable.id);
+
+  const componentsWithIndicators = components.map(c => ({
+    ...c,
+    componentIndicators: allIndicators.filter(ind => ind.componentId === c.id),
+  }));
+
+  res.json({ ...theory, components: componentsWithIndicators, connections });
 });
 
 router.put("/theories/:id", async (req, res) => {
@@ -95,6 +115,56 @@ router.put("/theories/:theoryId/components/:id", async (req, res) => {
 router.delete("/theories/:theoryId/components/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(componentsTable).where(eq(componentsTable.id, id));
+  res.status(204).send();
+});
+
+// Component Indicators CRUD
+router.get("/theories/:theoryId/components/:componentId/indicators", async (req, res) => {
+  const componentId = Number(req.params.componentId);
+  const theoryId = Number(req.params.theoryId);
+  const indicators = await db
+    .select()
+    .from(componentIndicatorsTable)
+    .where(and(eq(componentIndicatorsTable.componentId, componentId), eq(componentIndicatorsTable.theoryId, theoryId)))
+    .orderBy(componentIndicatorsTable.position, componentIndicatorsTable.id);
+  res.json(indicators);
+});
+
+router.post("/theories/:theoryId/components/:componentId/indicators", async (req, res) => {
+  const componentId = Number(req.params.componentId);
+  const theoryId = Number(req.params.theoryId);
+  const parsed = insertComponentIndicatorSchema.safeParse({ ...req.body, componentId, theoryId });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues });
+    return;
+  }
+  const [indicator] = await db.insert(componentIndicatorsTable).values(parsed.data).returning();
+  res.status(201).json(indicator);
+});
+
+router.put("/theories/:theoryId/components/:componentId/indicators/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const componentId = Number(req.params.componentId);
+  const theoryId = Number(req.params.theoryId);
+  const parsed = insertComponentIndicatorSchema.safeParse({ ...req.body, componentId, theoryId });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues });
+    return;
+  }
+  const [updated] = await db.update(componentIndicatorsTable)
+    .set({ ...parsed.data, updatedAt: new Date() })
+    .where(eq(componentIndicatorsTable.id, id))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  res.json(updated);
+});
+
+router.delete("/theories/:theoryId/components/:componentId/indicators/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  await db.delete(componentIndicatorsTable).where(eq(componentIndicatorsTable.id, id));
   res.status(204).send();
 });
 

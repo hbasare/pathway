@@ -1,7 +1,17 @@
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCreateComponent, useUpdateComponent, getGetTheoryQueryKey, ComponentType } from "@workspace/api-client-react";
+import { useState, useCallback } from "react";
+import {
+  useCreateComponent,
+  useUpdateComponent,
+  useCreateComponentIndicator,
+  useUpdateComponentIndicator,
+  useDeleteComponentIndicator,
+  getGetTheoryQueryKey,
+  ComponentType,
+  ComponentIndicator,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -18,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Plus, Trash2 } from "lucide-react";
 
 // Per-type guidance for the description field
 const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
@@ -47,16 +58,42 @@ const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: s
   },
 };
 
+// Local indicator row (id is present when editing an existing record)
+interface IndicatorRow {
+  localKey: string;
+  id?: number;
+  name: string;
+  targetDate: string;
+  targetFigure: string;
+  actualDate: string;
+  actualFigure: string;
+}
+
+function makeKey() {
+  return Math.random().toString(36).slice(2);
+}
+
+function emptyIndicator(): IndicatorRow {
+  return { localKey: makeKey(), name: "", targetDate: "", targetFigure: "", actualDate: "", actualFigure: "" };
+}
+
+function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
+  return {
+    localKey: makeKey(),
+    id: ind.id,
+    name: ind.name ?? "",
+    targetDate: ind.targetDate ?? "",
+    targetFigure: ind.targetFigure ?? "",
+    actualDate: ind.actualDate ?? "",
+    actualFigure: ind.actualFigure ?? "",
+  };
+}
+
 const formSchema = z.object({
   type: z.enum(["opportunity", "input", "activity", "output", "outcome", "impact"] as const),
   title: z.string().min(1, "Title is required").max(100),
   description: z.string().min(1, "Description is required"),
-  indicators: z.string().optional(),
   assumptions: z.string().optional(),
-  targetDate: z.string().optional(),
-  targetFigure: z.string().optional(),
-  actualDate: z.string().optional(),
-  actualFigure: z.string().optional(),
   qualitativeQuestions: z.string().optional(),
   quantitativeQuestions: z.string().optional(),
   positionX: z.number().default(0),
@@ -68,7 +105,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface ComponentFormProps {
   theoryId: number;
   onSuccess?: () => void;
-  initialData?: FormValues & { id: number };
+  initialData?: FormValues & { id: number; componentIndicators?: ComponentIndicator[] };
   defaultType?: ComponentType;
 }
 
@@ -77,18 +114,22 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
   const queryClient = useQueryClient();
   const isEditing = !!initialData;
 
+  const [indicators, setIndicators] = useState<IndicatorRow[]>(() =>
+    initialData?.componentIndicators?.length
+      ? initialData.componentIndicators.map(fromApiIndicator)
+      : []
+  );
+
+  // Track ids of indicators that were removed during editing
+  const [deletedIds, setDeletedIds] = useState<number[]>([]);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       type: initialData?.type || defaultType,
       title: initialData?.title || "",
       description: initialData?.description || "",
-      indicators: initialData?.indicators || "",
       assumptions: initialData?.assumptions || "",
-      targetDate: initialData?.targetDate || "",
-      targetFigure: initialData?.targetFigure || "",
-      actualDate: initialData?.actualDate || "",
-      actualFigure: initialData?.actualFigure || "",
       qualitativeQuestions: initialData?.qualitativeQuestions || "",
       quantitativeQuestions: initialData?.quantitativeQuestions || "",
       positionX: initialData?.positionX || 0,
@@ -96,39 +137,87 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
     },
   });
 
-  const createMutation = useCreateComponent({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(theoryId) });
-        toast({ title: "Component created successfully" });
-        onSuccess?.();
-      },
-      onError: () => toast({ title: "Failed to create component", variant: "destructive" }),
-    },
-  });
+  const createComponent = useCreateComponent();
+  const updateComponent = useUpdateComponent();
+  const createIndicator = useCreateComponentIndicator();
+  const updateIndicator = useUpdateComponentIndicator();
+  const deleteIndicator = useDeleteComponentIndicator();
 
-  const updateMutation = useUpdateComponent({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(theoryId) });
-        toast({ title: "Component updated successfully" });
-        onSuccess?.();
-      },
-      onError: () => toast({ title: "Failed to update component", variant: "destructive" }),
-    },
-  });
+  const isPending =
+    createComponent.isPending ||
+    updateComponent.isPending ||
+    createIndicator.isPending ||
+    updateIndicator.isPending ||
+    deleteIndicator.isPending;
 
-  const onSubmit = (values: FormValues) => {
-    if (isEditing && initialData) {
-      updateMutation.mutate({ theoryId, id: initialData.id, data: values });
-    } else {
-      createMutation.mutate({ theoryId, data: values });
-    }
-  };
-
-  const isPending = createMutation.isPending || updateMutation.isPending;
   const selectedType = form.watch("type") as ComponentType;
   const descGuidance = DESCRIPTION_GUIDANCE[selectedType] ?? DESCRIPTION_GUIDANCE.activity;
+
+  // Indicator field helpers
+  const addIndicator = useCallback(() => {
+    setIndicators(prev => [...prev, emptyIndicator()]);
+  }, []);
+
+  const removeIndicator = useCallback((localKey: string, id?: number) => {
+    if (id !== undefined) setDeletedIds(prev => [...prev, id]);
+    setIndicators(prev => prev.filter(r => r.localKey !== localKey));
+  }, []);
+
+  const updateIndicatorField = useCallback(
+    (localKey: string, field: keyof Omit<IndicatorRow, "localKey" | "id">, value: string) => {
+      setIndicators(prev => prev.map(r => (r.localKey === localKey ? { ...r, [field]: value } : r)));
+    },
+    []
+  );
+
+  const saveIndicators = async (componentId: number) => {
+    // Delete removed indicators
+    await Promise.all(
+      deletedIds.map(id =>
+        deleteIndicator.mutateAsync({ theoryId, componentId, id })
+      )
+    );
+
+    // Create or update each indicator
+    await Promise.all(
+      indicators.map((ind, idx) => {
+        const payload = {
+          name: ind.name,
+          targetDate: ind.targetDate || undefined,
+          targetFigure: ind.targetFigure || undefined,
+          actualDate: ind.actualDate || undefined,
+          actualFigure: ind.actualFigure || undefined,
+          position: idx,
+        };
+        if (ind.id !== undefined) {
+          return updateIndicator.mutateAsync({ theoryId, componentId, id: ind.id, data: payload });
+        } else {
+          return createIndicator.mutateAsync({ theoryId, componentId, data: { ...payload, name: ind.name || "" } });
+        }
+      })
+    );
+  };
+
+  const onSubmit = async (values: FormValues) => {
+    try {
+      let componentId: number;
+      if (isEditing && initialData) {
+        const updated = await updateComponent.mutateAsync({ theoryId, id: initialData.id, data: values });
+        componentId = updated.id;
+      } else {
+        const created = await createComponent.mutateAsync({ theoryId, data: values });
+        componentId = created.id;
+      }
+
+      await saveIndicators(componentId);
+
+      queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(theoryId) });
+      toast({ title: isEditing ? "Component updated" : "Component created" });
+      onSuccess?.();
+    } catch {
+      toast({ title: "Failed to save component", variant: "destructive" });
+    }
+  };
 
   return (
     <Form {...form}>
@@ -194,106 +283,120 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="indicators"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Indicators (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="e.g. Number of participants trained"
-                    className="min-h-[70px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="assumptions"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Assumptions (Optional)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="e.g. Participants have access to internet"
-                    className="min-h-[70px]"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="assumptions"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Assumptions (Optional)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="e.g. Participants have access to internet; facilitators are available"
+                  className="min-h-[60px]"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <Separator />
 
+        {/* Multi-indicator manager */}
         <div>
-          <p className="text-sm font-semibold text-foreground mb-3">Projection / Target</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="targetDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Target Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="targetFigure"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Target Figure</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 500 participants, $50,000" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Indicators</p>
+              <p className="text-xs text-muted-foreground">Each indicator tracks its own target and actual result</p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={addIndicator}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Indicator
+            </Button>
           </div>
-        </div>
 
-        <div>
-          <p className="text-sm font-semibold text-foreground mb-3">Actual Results</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="actualDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Actual Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="actualFigure"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Actual Figure</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. 423 participants, $47,200" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          {indicators.length === 0 && (
+            <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-5 text-center text-xs text-muted-foreground">
+              No indicators yet. Click "Add Indicator" to track targets and results.
+            </div>
+          )}
+
+          <div className="space-y-4">
+            {indicators.map((ind, idx) => (
+              <div key={ind.localKey} className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Indicator {idx + 1}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeIndicator(ind.localKey, ind.id)}
+                    className="text-muted-foreground hover:text-destructive transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-foreground mb-1 block">Indicator name / description</label>
+                  <Input
+                    value={ind.name}
+                    onChange={e => updateIndicatorField(ind.localKey, "name", e.target.value)}
+                    placeholder="e.g. Number of educators trained"
+                    className="text-sm"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-medium text-amber-700 mb-1 block">Target Date</label>
+                    <Input
+                      type="date"
+                      value={ind.targetDate}
+                      onChange={e => updateIndicatorField(ind.localKey, "targetDate", e.target.value)}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-amber-700 mb-1 block">Target Figure</label>
+                    <Input
+                      value={ind.targetFigure}
+                      onChange={e => updateIndicatorField(ind.localKey, "targetFigure", e.target.value)}
+                      placeholder="e.g. 500 educators"
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs font-medium text-emerald-700 mb-1 block">Actual Date</label>
+                    <Input
+                      type="date"
+                      value={ind.actualDate}
+                      onChange={e => updateIndicatorField(ind.localKey, "actualDate", e.target.value)}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-emerald-700 mb-1 block">Actual Figure</label>
+                    <Input
+                      value={ind.actualFigure}
+                      onChange={e => updateIndicatorField(ind.localKey, "actualFigure", e.target.value)}
+                      placeholder="e.g. 423 educators"
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -301,7 +404,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
 
         <div>
           <p className="text-sm font-semibold text-foreground mb-1">Measurement Questions</p>
-          <p className="text-xs text-muted-foreground mb-3">Questions to ask respondents when measuring this indicator</p>
+          <p className="text-xs text-muted-foreground mb-3">Questions to ask respondents when measuring this component</p>
           <div className="space-y-4">
             <FormField
               control={form.control}
@@ -312,7 +415,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   <FormControl>
                     <Textarea
                       placeholder="e.g. How has this programme affected your daily life? What changes have you noticed since participating?"
-                      className="min-h-[80px]"
+                      className="min-h-[70px]"
                       {...field}
                     />
                   </FormControl>
@@ -329,7 +432,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   <FormControl>
                     <Textarea
                       placeholder="e.g. How many sessions did you attend? Rate your skill level from 1-10 before and after."
-                      className="min-h-[80px]"
+                      className="min-h-[70px]"
                       {...field}
                     />
                   </FormControl>

@@ -73,6 +73,24 @@ export const insertConnectionSchema = createInsertSchema(connectionsTable).omit(
 export type InsertConnection = z.infer<typeof insertConnectionSchema>;
 export type Connection = typeof connectionsTable.$inferSelect;
 
+export const componentIndicatorsTable = pgTable("component_indicators", {
+  id: serial("id").primaryKey(),
+  componentId: integer("component_id").notNull().references(() => componentsTable.id, { onDelete: "cascade" }),
+  theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  name: text("name").notNull().default(""),
+  targetDate: text("target_date").default(""),
+  targetFigure: text("target_figure").default(""),
+  actualDate: text("actual_date").default(""),
+  actualFigure: text("actual_figure").default(""),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertComponentIndicatorSchema = createInsertSchema(componentIndicatorsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertComponentIndicator = z.infer<typeof insertComponentIndicatorSchema>;
+export type ComponentIndicator = typeof componentIndicatorsTable.$inferSelect;
+
 export const businessModelActorsTable = pgTable("business_model_actors", {
   id: serial("id").primaryKey(),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),

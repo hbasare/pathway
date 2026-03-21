@@ -83,8 +83,10 @@ Database layer using Drizzle ORM with PostgreSQL.
 
 **Schema:**
 - `theoriesTable` — theories of change
-- `componentsTable` — components (input/activity/output/outcome/impact) belonging to a theory
+- `componentsTable` — components (opportunity/input/activity/output/outcome/impact) belonging to a theory
 - `connectionsTable` — directed connections between components
+- `componentIndicatorsTable` — multiple indicators per component, each with its own name, targetDate, targetFigure, actualDate, actualFigure and position
+- `businessModelActorsTable` — actors in the business model per theory
 
 ### `lib/api-spec` (`@workspace/api-spec`)
 

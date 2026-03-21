@@ -44,23 +44,33 @@ export const ComponentType = {
   impact: "impact",
 } as const;
 
+export interface ComponentIndicator {
+  id: number;
+  componentId: number;
+  theoryId: number;
+  name: string;
+  targetDate?: string | null;
+  targetFigure?: string | null;
+  actualDate?: string | null;
+  actualFigure?: string | null;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Component {
   id: number;
   theoryId: number;
   type: ComponentType;
   title: string;
   description: string;
-  indicators: string;
   assumptions: string;
-  targetDate: string;
-  targetFigure: string;
-  actualDate: string;
-  actualFigure: string;
   qualitativeQuestions: string;
   quantitativeQuestions: string;
   willBeAddressed: boolean;
   positionX: number;
   positionY: number;
+  componentIndicators: ComponentIndicator[];
   createdAt: string;
   updatedAt: string;
 }
@@ -145,6 +155,24 @@ export interface CreateBusinessModelActor {
 
 export interface GenerateBusinessModelImageResponse {
   imageUrl: string;
+}
+
+export interface CreateComponentIndicator {
+  name: string;
+  targetDate?: string;
+  targetFigure?: string;
+  actualDate?: string;
+  actualFigure?: string;
+  position?: number;
+}
+
+export interface UpdateComponentIndicator {
+  name?: string;
+  targetDate?: string;
+  targetFigure?: string;
+  actualDate?: string;
+  actualFigure?: string;
+  position?: number;
 }
 
 export type CreateComponentType =

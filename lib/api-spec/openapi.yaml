@@ -211,6 +211,118 @@ paths:
         "204":
           description: Deleted
 
+  /theories/{theoryId}/components/{componentId}/indicators:
+    get:
+      operationId: listComponentIndicators
+      tags: [components]
+      summary: List indicators for a component
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: componentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of indicators
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ComponentIndicator"
+    post:
+      operationId: createComponentIndicator
+      tags: [components]
+      summary: Create an indicator for a component
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: componentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateComponentIndicator"
+      responses:
+        "201":
+          description: Created indicator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComponentIndicator"
+
+  /theories/{theoryId}/components/{componentId}/indicators/{id}:
+    put:
+      operationId: updateComponentIndicator
+      tags: [components]
+      summary: Update an indicator
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: componentId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateComponentIndicator"
+      responses:
+        "200":
+          description: Updated indicator
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComponentIndicator"
+    delete:
+      operationId: deleteComponentIndicator
+      tags: [components]
+      summary: Delete an indicator
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: componentId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   /theories/{theoryId}/connections:
     get:
       operationId: listConnections
@@ -631,6 +743,80 @@ components:
       required:
         - imageUrl
 
+    ComponentIndicator:
+      type: object
+      properties:
+        id:
+          type: integer
+        componentId:
+          type: integer
+        theoryId:
+          type: integer
+        name:
+          type: string
+        targetDate:
+          type: string
+          nullable: true
+        targetFigure:
+          type: string
+          nullable: true
+        actualDate:
+          type: string
+          nullable: true
+        actualFigure:
+          type: string
+          nullable: true
+        position:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - componentId
+        - theoryId
+        - name
+        - position
+        - createdAt
+        - updatedAt
+
+    CreateComponentIndicator:
+      type: object
+      properties:
+        name:
+          type: string
+        targetDate:
+          type: string
+        targetFigure:
+          type: string
+        actualDate:
+          type: string
+        actualFigure:
+          type: string
+        position:
+          type: integer
+      required:
+        - name
+
+    UpdateComponentIndicator:
+      type: object
+      properties:
+        name:
+          type: string
+        targetDate:
+          type: string
+        targetFigure:
+          type: string
+        actualDate:
+          type: string
+        actualFigure:
+          type: string
+        position:
+          type: integer
+
     Component:
       type: object
       properties:
@@ -645,17 +831,7 @@ components:
           type: string
         description:
           type: string
-        indicators:
-          type: string
         assumptions:
-          type: string
-        targetDate:
-          type: string
-        targetFigure:
-          type: string
-        actualDate:
-          type: string
-        actualFigure:
           type: string
         qualitativeQuestions:
           type: string
@@ -667,6 +843,10 @@ components:
           type: number
         positionY:
           type: number
+        componentIndicators:
+          type: array
+          items:
+            $ref: '#/components/schemas/ComponentIndicator'
         createdAt:
           type: string
           format: date-time
@@ -679,17 +859,13 @@ components:
         - type
         - title
         - description
-        - indicators
         - assumptions
-        - targetDate
-        - targetFigure
-        - actualDate
-        - actualFigure
         - qualitativeQuestions
         - quantitativeQuestions
         - willBeAddressed
         - positionX
         - positionY
+        - componentIndicators
         - createdAt
         - updatedAt
 

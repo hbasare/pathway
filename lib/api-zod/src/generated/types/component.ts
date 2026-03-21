@@ -5,6 +5,7 @@
  * Theory of Change API
  * OpenAPI spec version: 0.1.0
  */
+import type { ComponentIndicator } from "./componentIndicator";
 import type { ComponentType } from "./componentType";
 
 export interface Component {
@@ -13,17 +14,13 @@ export interface Component {
   type: ComponentType;
   title: string;
   description: string;
-  indicators: string;
   assumptions: string;
-  targetDate: string;
-  targetFigure: string;
-  actualDate: string;
-  actualFigure: string;
   qualitativeQuestions: string;
   quantitativeQuestions: string;
   willBeAddressed: boolean;
   positionX: number;
   positionY: number;
+  componentIndicators: ComponentIndicator[];
   createdAt: Date;
   updatedAt: Date;
 }

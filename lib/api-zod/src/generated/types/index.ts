@@ -8,10 +8,12 @@
 
 export * from "./businessModelActor";
 export * from "./component";
+export * from "./componentIndicator";
 export * from "./componentType";
 export * from "./connection";
 export * from "./createBusinessModelActor";
 export * from "./createComponent";
+export * from "./createComponentIndicator";
 export * from "./createComponentType";
 export * from "./createConnection";
 export * from "./createTheory";
@@ -20,3 +22,4 @@ export * from "./generateBusinessModelImageResponse";
 export * from "./healthStatus";
 export * from "./theory";
 export * from "./theoryDetail";
+export * from "./updateComponentIndicator";

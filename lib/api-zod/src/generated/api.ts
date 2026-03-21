@@ -112,17 +112,27 @@ export const GetTheoryResponse = zod.object({
       ]),
       title: zod.string(),
       description: zod.string(),
-      indicators: zod.string(),
       assumptions: zod.string(),
-      targetDate: zod.string(),
-      targetFigure: zod.string(),
-      actualDate: zod.string(),
-      actualFigure: zod.string(),
       qualitativeQuestions: zod.string(),
       quantitativeQuestions: zod.string(),
       willBeAddressed: zod.boolean(),
       positionX: zod.number(),
       positionY: zod.number(),
+      componentIndicators: zod.array(
+        zod.object({
+          id: zod.number(),
+          componentId: zod.number(),
+          theoryId: zod.number(),
+          name: zod.string(),
+          targetDate: zod.string().nullish(),
+          targetFigure: zod.string().nullish(),
+          actualDate: zod.string().nullish(),
+          actualFigure: zod.string().nullish(),
+          position: zod.number(),
+          createdAt: zod.date(),
+          updatedAt: zod.date(),
+        }),
+      ),
       createdAt: zod.date(),
       updatedAt: zod.date(),
     }),
@@ -222,17 +232,27 @@ export const ListComponentsResponseItem = zod.object({
   ]),
   title: zod.string(),
   description: zod.string(),
-  indicators: zod.string(),
   assumptions: zod.string(),
-  targetDate: zod.string(),
-  targetFigure: zod.string(),
-  actualDate: zod.string(),
-  actualFigure: zod.string(),
   qualitativeQuestions: zod.string(),
   quantitativeQuestions: zod.string(),
   willBeAddressed: zod.boolean(),
   positionX: zod.number(),
   positionY: zod.number(),
+  componentIndicators: zod.array(
+    zod.object({
+      id: zod.number(),
+      componentId: zod.number(),
+      theoryId: zod.number(),
+      name: zod.string(),
+      targetDate: zod.string().nullish(),
+      targetFigure: zod.string().nullish(),
+      actualDate: zod.string().nullish(),
+      actualFigure: zod.string().nullish(),
+      position: zod.number(),
+      createdAt: zod.date(),
+      updatedAt: zod.date(),
+    }),
+  ),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -314,17 +334,27 @@ export const UpdateComponentResponse = zod.object({
   ]),
   title: zod.string(),
   description: zod.string(),
-  indicators: zod.string(),
   assumptions: zod.string(),
-  targetDate: zod.string(),
-  targetFigure: zod.string(),
-  actualDate: zod.string(),
-  actualFigure: zod.string(),
   qualitativeQuestions: zod.string(),
   quantitativeQuestions: zod.string(),
   willBeAddressed: zod.boolean(),
   positionX: zod.number(),
   positionY: zod.number(),
+  componentIndicators: zod.array(
+    zod.object({
+      id: zod.number(),
+      componentId: zod.number(),
+      theoryId: zod.number(),
+      name: zod.string(),
+      targetDate: zod.string().nullish(),
+      targetFigure: zod.string().nullish(),
+      actualDate: zod.string().nullish(),
+      actualFigure: zod.string().nullish(),
+      position: zod.number(),
+      createdAt: zod.date(),
+      updatedAt: zod.date(),
+    }),
+  ),
   createdAt: zod.date(),
   updatedAt: zod.date(),
 });
@@ -334,6 +364,89 @@ export const UpdateComponentResponse = zod.object({
  */
 export const DeleteComponentParams = zod.object({
   theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+/**
+ * @summary List indicators for a component
+ */
+export const ListComponentIndicatorsParams = zod.object({
+  theoryId: zod.coerce.number(),
+  componentId: zod.coerce.number(),
+});
+
+export const ListComponentIndicatorsResponseItem = zod.object({
+  id: zod.number(),
+  componentId: zod.number(),
+  theoryId: zod.number(),
+  name: zod.string(),
+  targetDate: zod.string().nullish(),
+  targetFigure: zod.string().nullish(),
+  actualDate: zod.string().nullish(),
+  actualFigure: zod.string().nullish(),
+  position: zod.number(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListComponentIndicatorsResponse = zod.array(
+  ListComponentIndicatorsResponseItem,
+);
+
+/**
+ * @summary Create an indicator for a component
+ */
+export const CreateComponentIndicatorParams = zod.object({
+  theoryId: zod.coerce.number(),
+  componentId: zod.coerce.number(),
+});
+
+export const CreateComponentIndicatorBody = zod.object({
+  name: zod.string(),
+  targetDate: zod.string().optional(),
+  targetFigure: zod.string().optional(),
+  actualDate: zod.string().optional(),
+  actualFigure: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+/**
+ * @summary Update an indicator
+ */
+export const UpdateComponentIndicatorParams = zod.object({
+  theoryId: zod.coerce.number(),
+  componentId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+export const UpdateComponentIndicatorBody = zod.object({
+  name: zod.string().optional(),
+  targetDate: zod.string().optional(),
+  targetFigure: zod.string().optional(),
+  actualDate: zod.string().optional(),
+  actualFigure: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+export const UpdateComponentIndicatorResponse = zod.object({
+  id: zod.number(),
+  componentId: zod.number(),
+  theoryId: zod.number(),
+  name: zod.string(),
+  targetDate: zod.string().nullish(),
+  targetFigure: zod.string().nullish(),
+  actualDate: zod.string().nullish(),
+  actualFigure: zod.string().nullish(),
+  position: zod.number(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Delete an indicator
+ */
+export const DeleteComponentIndicatorParams = zod.object({
+  theoryId: zod.coerce.number(),
+  componentId: zod.coerce.number(),
   id: zod.coerce.number(),
 });
 
