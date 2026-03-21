@@ -32,5 +32,6 @@ export interface CreateComponentIndicator {
   actualQuantitativeQuestion?: string;
   baselineQualitativeQuestion?: string;
   baselineQuantitativeQuestion?: string;
+  calculationsNotes?: string;
   position?: number;
 }

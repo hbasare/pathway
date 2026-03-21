@@ -1010,6 +1010,9 @@ components:
         baselineQuantitativeQuestion:
           type: string
           nullable: true
+        calculationsNotes:
+          type: string
+          nullable: true
         position:
           type: integer
         createdAt:
@@ -1080,6 +1083,8 @@ components:
           type: string
         baselineQuantitativeQuestion:
           type: string
+        calculationsNotes:
+          type: string
         position:
           type: integer
       required:
@@ -1137,6 +1142,8 @@ components:
         baselineQualitativeQuestion:
           type: string
         baselineQuantitativeQuestion:
+          type: string
+        calculationsNotes:
           type: string
         position:
           type: integer

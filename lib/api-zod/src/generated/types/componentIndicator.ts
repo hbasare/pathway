@@ -35,6 +35,7 @@ export interface ComponentIndicator {
   actualQuantitativeQuestion?: string | null;
   baselineQualitativeQuestion?: string | null;
   baselineQuantitativeQuestion?: string | null;
+  calculationsNotes?: string | null;
   position: number;
   createdAt: Date;
   updatedAt: Date;
