@@ -97,16 +97,16 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
   const sortedIds = [...theory.components].sort((a, b) => a.id - b.id).map(c => c.id);
   const boxNumber = (compId: number) => sortedIds.indexOf(compId) + 1;
 
-  // Determine smart anchors so arrows route through column gaps, not through cards
+  // Determine smart anchors: between rows = bottom→top; within same row = right→left
   const getAnchors = (fromId: number, toId: number) => {
     const from = theory.components.find(c => c.id === fromId);
     const to = theory.components.find(c => c.id === toId);
     if (!from || !to) return { start: "auto" as const, end: "auto" as const };
-    const fromCol = COLUMN_INDEX[from.type as ComponentType] ?? 0;
-    const toCol = COLUMN_INDEX[to.type as ComponentType] ?? 0;
-    if (fromCol < toCol) return { start: "right" as const, end: "left" as const };
-    if (fromCol > toCol) return { start: "left" as const, end: "right" as const };
-    return { start: "bottom" as const, end: "top" as const };
+    const fromRow = COLUMN_INDEX[from.type as ComponentType] ?? 0;
+    const toRow = COLUMN_INDEX[to.type as ComponentType] ?? 0;
+    if (fromRow < toRow) return { start: "bottom" as const, end: "top" as const };
+    if (fromRow > toRow) return { start: "top" as const, end: "bottom" as const };
+    return { start: "right" as const, end: "left" as const };
   };
 
   return (
@@ -126,39 +126,39 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
         onScroll={() => setTick(t => t + 1)}
       >
         <Xwrapper>
-          <div className="flex gap-10 min-w-max pb-32">
+          <div className="flex flex-col gap-8 pb-16">
             {COLUMNS.map((col) => {
-              const columnComponents = theory.components.filter((c) => c.type === col.type);
+              const rowComponents = theory.components.filter((c) => c.type === col.type);
 
               return (
-                <div key={col.type} className="flex flex-col w-[280px] shrink-0">
-                  {/* Column header */}
-                  <div className="mb-5 sticky top-0 bg-slate-50/95 backdrop-blur-sm pt-2 pb-3 z-10 border-b border-border/50">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <h3 className="font-bold text-base text-foreground">{col.label}</h3>
-                      <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
-                        {columnComponents.length}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{col.description}</p>
+                <div key={col.type} className="flex flex-col">
+                  {/* Row header */}
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b border-border/50 sticky top-0 bg-slate-50/95 backdrop-blur-sm z-10 pt-1">
+                    <h3 className="font-bold text-base text-foreground">{col.label}</h3>
+                    <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
+                      {rowComponents.length}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">{col.description}</span>
                   </div>
 
-                  <div className="flex flex-col gap-5">
-                    {columnComponents.map((comp) => (
-                      <ComponentCard
-                        key={comp.id}
-                        component={comp}
-                        boxNumber={boxNumber(comp.id)}
-                        onConnectStart={handleConnectStart}
-                        onConnectEnd={handleConnectEnd}
-                        isConnectingFrom={connectingFrom === comp.id}
-                        isConnectingMode={!!connectingFrom}
-                      />
+                  {/* Cards arranged horizontally */}
+                  <div className="flex flex-wrap gap-5">
+                    {rowComponents.map((comp) => (
+                      <div key={comp.id} className="w-[280px] shrink-0">
+                        <ComponentCard
+                          component={comp}
+                          boxNumber={boxNumber(comp.id)}
+                          onConnectStart={handleConnectStart}
+                          onConnectEnd={handleConnectEnd}
+                          isConnectingFrom={connectingFrom === comp.id}
+                          isConnectingMode={!!connectingFrom}
+                        />
+                      </div>
                     ))}
 
                     <Button
                       variant="outline"
-                      className="border-dashed border-2 py-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                      className="border-dashed border-2 w-[280px] shrink-0 py-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                       onClick={() => {
                         setSelectedColumnType(col.type);
                         setIsAddComponentOpen(true);
