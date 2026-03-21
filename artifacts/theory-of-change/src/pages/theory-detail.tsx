@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-type ActiveTab = "canvas" | "about" | "business-model";
+type ActiveTab = "about" | "business-model" | "canvas";
 
 export default function TheoryDetail() {
   const [, params] = useRoute("/theory/:id");
@@ -32,7 +32,7 @@ export default function TheoryDetail() {
   });
 
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<ActiveTab>("canvas");
+  const [activeTab, setActiveTab] = useState<ActiveTab>("about");
 
   const deleteMutation = useDeleteTheory({
     mutation: {
@@ -125,12 +125,6 @@ export default function TheoryDetail() {
       {/* ── Tab bar ── */}
       <div className="flex-none flex items-center gap-1 px-6 pt-3 pb-0 border-b bg-card">
         <TabButton
-          active={activeTab === "canvas"}
-          onClick={() => setActiveTab("canvas")}
-          icon={<Network className="w-4 h-4" />}
-          label="Theory Canvas"
-        />
-        <TabButton
           active={activeTab === "about"}
           onClick={() => setActiveTab("about")}
           icon={<Info className="w-4 h-4" />}
@@ -142,13 +136,19 @@ export default function TheoryDetail() {
           icon={<Briefcase className="w-4 h-4" />}
           label="Business Model"
         />
+        <TabButton
+          active={activeTab === "canvas"}
+          onClick={() => setActiveTab("canvas")}
+          icon={<Network className="w-4 h-4" />}
+          label="Theory of Change"
+        />
       </div>
 
       {/* ── Tab content ── */}
       <main className="flex-1 overflow-hidden relative">
-        {activeTab === "canvas" && <TheoryCanvas theory={theory} />}
         {activeTab === "about" && <AboutIntervention theory={theory} />}
         {activeTab === "business-model" && <BusinessModel theory={theory} />}
+        {activeTab === "canvas" && <TheoryCanvas theory={theory} />}
       </main>
 
       <DialogWrapper
