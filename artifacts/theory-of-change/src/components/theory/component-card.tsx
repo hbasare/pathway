@@ -89,6 +89,9 @@ export function ComponentCard({
           {/* Header row: box number + type label + menu */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold shrink-0">
+                {boxNumber}
+              </span>
               <div className="flex items-center gap-1 text-muted-foreground">
                 <Icon className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">{component.type}</span>
