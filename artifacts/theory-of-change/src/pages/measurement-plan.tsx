@@ -222,8 +222,6 @@ export default function MeasurementPlan() {
                       {indicators.map((ind, indIdx) => {
                         const status = getStatus(ind.targetDate, ind.targetFigure, ind.actualFigure);
                         const StatusIcon = status.icon;
-                        const hasQuestion = ind.question && ind.question.trim();
-                        const qt = ind.questionType;
 
                         return (
                           <tr
@@ -274,23 +272,28 @@ export default function MeasurementPlan() {
                               </div>
                             </td>
 
-                            {/* Measurement question */}
+                            {/* Measurement questions */}
                             <td className="px-3 py-3 align-top">
-                              {hasQuestion ? (
-                                <div className="space-y-1">
-                                  {qt === "qualitative" && (
-                                    <div className="flex items-center gap-1 mb-1">
-                                      <MessageSquare className="w-2.5 h-2.5 text-violet-600 shrink-0" />
-                                      <span className="text-[9px] font-bold uppercase tracking-wide text-violet-600">Qualitative</span>
+                              {(ind.qualitativeQuestion?.trim() || ind.quantitativeQuestion?.trim()) ? (
+                                <div className="space-y-2">
+                                  {ind.qualitativeQuestion?.trim() && (
+                                    <div>
+                                      <div className="flex items-center gap-1 mb-0.5">
+                                        <MessageSquare className="w-2.5 h-2.5 text-violet-600 shrink-0" />
+                                        <span className="text-[9px] font-bold uppercase tracking-wide text-violet-600">Qualitative</span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground leading-relaxed">{ind.qualitativeQuestion}</p>
                                     </div>
                                   )}
-                                  {qt === "quantitative" && (
-                                    <div className="flex items-center gap-1 mb-1">
-                                      <BarChart3 className="w-2.5 h-2.5 text-blue-600 shrink-0" />
-                                      <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600">Quantitative</span>
+                                  {ind.quantitativeQuestion?.trim() && (
+                                    <div>
+                                      <div className="flex items-center gap-1 mb-0.5">
+                                        <BarChart3 className="w-2.5 h-2.5 text-blue-600 shrink-0" />
+                                        <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600">Quantitative</span>
+                                      </div>
+                                      <p className="text-xs text-muted-foreground leading-relaxed">{ind.quantitativeQuestion}</p>
                                     </div>
                                   )}
-                                  <p className="text-xs text-muted-foreground leading-relaxed">{ind.question}</p>
                                 </div>
                               ) : (
                                 <span className="text-xs text-muted-foreground/40 italic">—</span>

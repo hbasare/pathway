@@ -44,16 +44,6 @@ export const ComponentType = {
   impact: "impact",
 } as const;
 
-export type ComponentIndicatorQuestionType =
-  | (typeof ComponentIndicatorQuestionType)[keyof typeof ComponentIndicatorQuestionType]
-  | null;
-
-export const ComponentIndicatorQuestionType = {
-  qualitative: "qualitative",
-  quantitative: "quantitative",
-  "": "",
-} as const;
-
 export interface ComponentIndicator {
   id: number;
   componentId: number;
@@ -63,8 +53,8 @@ export interface ComponentIndicator {
   targetFigure?: string | null;
   actualDate?: string | null;
   actualFigure?: string | null;
-  questionType?: ComponentIndicatorQuestionType;
-  question?: string | null;
+  qualitativeQuestion?: string | null;
+  quantitativeQuestion?: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -175,8 +165,8 @@ export interface CreateComponentIndicator {
   targetFigure?: string;
   actualDate?: string;
   actualFigure?: string;
-  questionType?: string;
-  question?: string;
+  qualitativeQuestion?: string;
+  quantitativeQuestion?: string;
   position?: number;
 }
 
@@ -186,8 +176,8 @@ export interface UpdateComponentIndicator {
   targetFigure?: string;
   actualDate?: string;
   actualFigure?: string;
-  questionType?: string;
-  question?: string;
+  qualitativeQuestion?: string;
+  quantitativeQuestion?: string;
   position?: number;
 }
 

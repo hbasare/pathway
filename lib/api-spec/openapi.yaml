@@ -766,11 +766,10 @@ components:
         actualFigure:
           type: string
           nullable: true
-        questionType:
+        qualitativeQuestion:
           type: string
           nullable: true
-          enum: [qualitative, quantitative, ""]
-        question:
+        quantitativeQuestion:
           type: string
           nullable: true
         position:
@@ -803,9 +802,9 @@ components:
           type: string
         actualFigure:
           type: string
-        questionType:
+        qualitativeQuestion:
           type: string
-        question:
+        quantitativeQuestion:
           type: string
         position:
           type: integer
@@ -825,9 +824,9 @@ components:
           type: string
         actualFigure:
           type: string
-        questionType:
+        qualitativeQuestion:
           type: string
-        question:
+        quantitativeQuestion:
           type: string
         position:
           type: integer

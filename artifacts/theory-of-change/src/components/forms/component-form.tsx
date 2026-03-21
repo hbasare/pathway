@@ -67,8 +67,8 @@ interface IndicatorRow {
   targetFigure: string;
   actualDate: string;
   actualFigure: string;
-  questionType: string; // "qualitative" | "quantitative" | ""
-  question: string;
+  qualitativeQuestion: string;
+  quantitativeQuestion: string;
 }
 
 function makeKey() {
@@ -76,7 +76,7 @@ function makeKey() {
 }
 
 function emptyIndicator(): IndicatorRow {
-  return { localKey: makeKey(), name: "", targetDate: "", targetFigure: "", actualDate: "", actualFigure: "", questionType: "", question: "" };
+  return { localKey: makeKey(), name: "", targetDate: "", targetFigure: "", actualDate: "", actualFigure: "", qualitativeQuestion: "", quantitativeQuestion: "" };
 }
 
 function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
@@ -88,8 +88,8 @@ function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
     targetFigure: ind.targetFigure ?? "",
     actualDate: ind.actualDate ?? "",
     actualFigure: ind.actualFigure ?? "",
-    questionType: ind.questionType ?? "",
-    question: ind.question ?? "",
+    qualitativeQuestion: ind.qualitativeQuestion ?? "",
+    quantitativeQuestion: ind.quantitativeQuestion ?? "",
   };
 }
 
@@ -191,8 +191,8 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
           targetFigure: ind.targetFigure || undefined,
           actualDate: ind.actualDate || undefined,
           actualFigure: ind.actualFigure || undefined,
-          questionType: ind.questionType || undefined,
-          question: ind.question || undefined,
+          qualitativeQuestion: ind.qualitativeQuestion?.trim() || undefined,
+          quantitativeQuestion: ind.quantitativeQuestion?.trim() || undefined,
           position: idx,
         };
         if (ind.id !== undefined) {
@@ -402,59 +402,80 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   </div>
                 </div>
 
-                {/* Linked measurement question */}
-                <div className="pt-2 border-t border-border/40">
-                  <label className="text-xs font-medium text-foreground mb-2 block">Linked Measurement Question (Optional)</label>
-                  <div className="flex gap-2 mb-2">
-                    {[
-                      { value: "qualitative", label: "Qualitative", Icon: MessageSquare, color: "text-violet-600 border-violet-300 bg-violet-50" },
-                      { value: "quantitative", label: "Quantitative", Icon: BarChart3, color: "text-blue-600 border-blue-300 bg-blue-50" },
-                    ].map(({ value, label, Icon, color }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() =>
-                          updateIndicatorField(
-                            ind.localKey,
-                            "questionType",
-                            ind.questionType === value ? "" : value
-                          )
+                {/* Linked measurement questions */}
+                <div className="pt-2 border-t border-border/40 space-y-3">
+                  <p className="text-xs font-medium text-foreground">Linked Measurement Questions (Optional)</p>
+
+                  {/* Qualitative */}
+                  <div className="rounded-md border border-border/60 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateIndicatorField(
+                          ind.localKey,
+                          "qualitativeQuestion",
+                          ind.qualitativeQuestion ? "" : " "
+                        )
+                      }
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${
+                        ind.qualitativeQuestion
+                          ? "bg-violet-50 text-violet-700 border-b border-violet-200"
+                          : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      <MessageSquare className="w-3 h-3 shrink-0" />
+                      Qualitative Question
+                      <span className="ml-auto text-[10px] font-normal opacity-60">
+                        {ind.qualitativeQuestion ? "tap to remove" : "tap to add"}
+                      </span>
+                    </button>
+                    {ind.qualitativeQuestion !== undefined && ind.qualitativeQuestion !== "" && (
+                      <Textarea
+                        value={ind.qualitativeQuestion === " " ? "" : ind.qualitativeQuestion}
+                        onChange={e =>
+                          updateIndicatorField(ind.localKey, "qualitativeQuestion", e.target.value || " ")
                         }
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-colors ${
-                          ind.questionType === value
-                            ? color
-                            : "border-border text-muted-foreground hover:border-muted-foreground"
-                        }`}
-                      >
-                        <Icon className="w-3 h-3" />
-                        {label}
-                      </button>
-                    ))}
-                    {ind.questionType && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          updateIndicatorField(ind.localKey, "questionType", "");
-                          updateIndicatorField(ind.localKey, "question", "");
-                        }}
-                        className="text-xs text-muted-foreground hover:text-destructive transition-colors ml-auto"
-                      >
-                        Clear
-                      </button>
+                        placeholder="e.g. How has your confidence changed since starting the programme?"
+                        className="text-xs min-h-[64px] border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none"
+                        autoFocus
+                      />
                     )}
                   </div>
-                  {ind.questionType && (
-                    <Textarea
-                      value={ind.question}
-                      onChange={e => updateIndicatorField(ind.localKey, "question", e.target.value)}
-                      placeholder={
-                        ind.questionType === "qualitative"
-                          ? "e.g. How has this changed your day-to-day work?"
-                          : "e.g. How many sessions did you attend? Rate your confidence 1–10."
+
+                  {/* Quantitative */}
+                  <div className="rounded-md border border-border/60 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateIndicatorField(
+                          ind.localKey,
+                          "quantitativeQuestion",
+                          ind.quantitativeQuestion ? "" : " "
+                        )
                       }
-                      className="text-xs min-h-[60px]"
-                    />
-                  )}
+                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${
+                        ind.quantitativeQuestion
+                          ? "bg-blue-50 text-blue-700 border-b border-blue-200"
+                          : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      <BarChart3 className="w-3 h-3 shrink-0" />
+                      Quantitative Question
+                      <span className="ml-auto text-[10px] font-normal opacity-60">
+                        {ind.quantitativeQuestion ? "tap to remove" : "tap to add"}
+                      </span>
+                    </button>
+                    {ind.quantitativeQuestion !== undefined && ind.quantitativeQuestion !== "" && (
+                      <Textarea
+                        value={ind.quantitativeQuestion === " " ? "" : ind.quantitativeQuestion}
+                        onChange={e =>
+                          updateIndicatorField(ind.localKey, "quantitativeQuestion", e.target.value || " ")
+                        }
+                        placeholder="e.g. How many training sessions did you attend? (0–10)"
+                        className="text-xs min-h-[64px] border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none"
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             ))}
