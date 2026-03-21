@@ -131,6 +131,22 @@ export const insertTheoryNoteUpdateSchema = createInsertSchema(theoryNotesUpdate
 export type InsertTheoryNoteUpdate = z.infer<typeof insertTheoryNoteUpdateSchema>;
 export type TheoryNoteUpdate = typeof theoryNotesUpdatesTable.$inferSelect;
 
+export const theoryRiskAnalysesTable = pgTable("theory_risk_analyses", {
+  id: serial("id").primaryKey(),
+  theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  risk: text("risk").notNull().default(""),
+  likelihood: text("likelihood").notNull().default(""),
+  mitigationStrategy: text("mitigation_strategy").notNull().default(""),
+  notes: text("notes").notNull().default(""),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertTheoryRiskAnalysisSchema = createInsertSchema(theoryRiskAnalysesTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertTheoryRiskAnalysis = z.infer<typeof insertTheoryRiskAnalysisSchema>;
+export type TheoryRiskAnalysis = typeof theoryRiskAnalysesTable.$inferSelect;
+
 export const businessModelActorsTable = pgTable("business_model_actors", {
   id: serial("id").primaryKey(),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),

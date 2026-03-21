@@ -300,6 +300,34 @@ export interface UpdateTheoryNoteUpdate {
   position?: number;
 }
 
+export interface TheoryRiskAnalysis {
+  id: number;
+  theoryId: number;
+  risk: string;
+  likelihood: string;
+  mitigationStrategy: string;
+  notes: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTheoryRiskAnalysis {
+  risk: string;
+  likelihood?: string;
+  mitigationStrategy?: string;
+  notes?: string;
+  position?: number;
+}
+
+export interface UpdateTheoryRiskAnalysis {
+  risk?: string;
+  likelihood?: string;
+  mitigationStrategy?: string;
+  notes?: string;
+  position?: number;
+}
+
 export type GenerateBusinessModelImageBody = {
   prompt: string;
 };

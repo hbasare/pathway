@@ -27,14 +27,17 @@ import type {
   CreateConnection,
   CreateTheory,
   CreateTheoryNoteUpdate,
+  CreateTheoryRiskAnalysis,
   GenerateBusinessModelImageBody,
   GenerateBusinessModelImageResponse,
   HealthStatus,
   Theory,
   TheoryDetail,
   TheoryNoteUpdate,
+  TheoryRiskAnalysis,
   UpdateComponentIndicator,
   UpdateTheoryNoteUpdate,
+  UpdateTheoryRiskAnalysis,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2057,6 +2060,372 @@ export const useGenerateBusinessModelImage = <
   TContext
 > => {
   return useMutation(getGenerateBusinessModelImageMutationOptions(options));
+};
+
+/**
+ * @summary List risk analyses for a theory
+ */
+export const getListTheoryRiskAnalysesUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/risk-analyses`;
+};
+
+export const listTheoryRiskAnalyses = async (
+  theoryId: number,
+  options?: RequestInit,
+): Promise<TheoryRiskAnalysis[]> => {
+  return customFetch<TheoryRiskAnalysis[]>(
+    getListTheoryRiskAnalysesUrl(theoryId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListTheoryRiskAnalysesQueryKey = (theoryId: number) => {
+  return [`/api/theories/${theoryId}/risk-analyses`] as const;
+};
+
+export const getListTheoryRiskAnalysesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTheoryRiskAnalyses>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTheoryRiskAnalyses>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListTheoryRiskAnalysesQueryKey(theoryId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTheoryRiskAnalyses>>
+  > = ({ signal }) =>
+    listTheoryRiskAnalyses(theoryId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!theoryId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTheoryRiskAnalyses>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTheoryRiskAnalysesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTheoryRiskAnalyses>>
+>;
+export type ListTheoryRiskAnalysesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List risk analyses for a theory
+ */
+
+export function useListTheoryRiskAnalyses<
+  TData = Awaited<ReturnType<typeof listTheoryRiskAnalyses>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTheoryRiskAnalyses>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTheoryRiskAnalysesQueryOptions(theoryId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a risk analysis entry
+ */
+export const getCreateTheoryRiskAnalysisUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/risk-analyses`;
+};
+
+export const createTheoryRiskAnalysis = async (
+  theoryId: number,
+  createTheoryRiskAnalysis: CreateTheoryRiskAnalysis,
+  options?: RequestInit,
+): Promise<TheoryRiskAnalysis> => {
+  return customFetch<TheoryRiskAnalysis>(
+    getCreateTheoryRiskAnalysisUrl(theoryId),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(createTheoryRiskAnalysis),
+    },
+  );
+};
+
+export const getCreateTheoryRiskAnalysisMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTheoryRiskAnalysis>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateTheoryRiskAnalysis> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createTheoryRiskAnalysis>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateTheoryRiskAnalysis> },
+  TContext
+> => {
+  const mutationKey = ["createTheoryRiskAnalysis"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createTheoryRiskAnalysis>>,
+    { theoryId: number; data: BodyType<CreateTheoryRiskAnalysis> }
+  > = (props) => {
+    const { theoryId, data } = props ?? {};
+
+    return createTheoryRiskAnalysis(theoryId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateTheoryRiskAnalysisMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTheoryRiskAnalysis>>
+>;
+export type CreateTheoryRiskAnalysisMutationBody =
+  BodyType<CreateTheoryRiskAnalysis>;
+export type CreateTheoryRiskAnalysisMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a risk analysis entry
+ */
+export const useCreateTheoryRiskAnalysis = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTheoryRiskAnalysis>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateTheoryRiskAnalysis> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createTheoryRiskAnalysis>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateTheoryRiskAnalysis> },
+  TContext
+> => {
+  return useMutation(getCreateTheoryRiskAnalysisMutationOptions(options));
+};
+
+/**
+ * @summary Update a risk analysis entry
+ */
+export const getUpdateTheoryRiskAnalysisUrl = (
+  theoryId: number,
+  id: number,
+) => {
+  return `/api/theories/${theoryId}/risk-analyses/${id}`;
+};
+
+export const updateTheoryRiskAnalysis = async (
+  theoryId: number,
+  id: number,
+  updateTheoryRiskAnalysis: UpdateTheoryRiskAnalysis,
+  options?: RequestInit,
+): Promise<TheoryRiskAnalysis> => {
+  return customFetch<TheoryRiskAnalysis>(
+    getUpdateTheoryRiskAnalysisUrl(theoryId, id),
+    {
+      ...options,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateTheoryRiskAnalysis),
+    },
+  );
+};
+
+export const getUpdateTheoryRiskAnalysisMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTheoryRiskAnalysis>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<UpdateTheoryRiskAnalysis> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateTheoryRiskAnalysis>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<UpdateTheoryRiskAnalysis> },
+  TContext
+> => {
+  const mutationKey = ["updateTheoryRiskAnalysis"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateTheoryRiskAnalysis>>,
+    { theoryId: number; id: number; data: BodyType<UpdateTheoryRiskAnalysis> }
+  > = (props) => {
+    const { theoryId, id, data } = props ?? {};
+
+    return updateTheoryRiskAnalysis(theoryId, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateTheoryRiskAnalysisMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateTheoryRiskAnalysis>>
+>;
+export type UpdateTheoryRiskAnalysisMutationBody =
+  BodyType<UpdateTheoryRiskAnalysis>;
+export type UpdateTheoryRiskAnalysisMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a risk analysis entry
+ */
+export const useUpdateTheoryRiskAnalysis = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateTheoryRiskAnalysis>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<UpdateTheoryRiskAnalysis> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateTheoryRiskAnalysis>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<UpdateTheoryRiskAnalysis> },
+  TContext
+> => {
+  return useMutation(getUpdateTheoryRiskAnalysisMutationOptions(options));
+};
+
+/**
+ * @summary Delete a risk analysis entry
+ */
+export const getDeleteTheoryRiskAnalysisUrl = (
+  theoryId: number,
+  id: number,
+) => {
+  return `/api/theories/${theoryId}/risk-analyses/${id}`;
+};
+
+export const deleteTheoryRiskAnalysis = async (
+  theoryId: number,
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteTheoryRiskAnalysisUrl(theoryId, id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteTheoryRiskAnalysisMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTheoryRiskAnalysis>>,
+    TError,
+    { theoryId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteTheoryRiskAnalysis>>,
+  TError,
+  { theoryId: number; id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteTheoryRiskAnalysis"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteTheoryRiskAnalysis>>,
+    { theoryId: number; id: number }
+  > = (props) => {
+    const { theoryId, id } = props ?? {};
+
+    return deleteTheoryRiskAnalysis(theoryId, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteTheoryRiskAnalysisMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteTheoryRiskAnalysis>>
+>;
+
+export type DeleteTheoryRiskAnalysisMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a risk analysis entry
+ */
+export const useDeleteTheoryRiskAnalysis = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTheoryRiskAnalysis>>,
+    TError,
+    { theoryId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteTheoryRiskAnalysis>>,
+  TError,
+  { theoryId: number; id: number },
+  TContext
+> => {
+  return useMutation(getDeleteTheoryRiskAnalysisMutationOptions(options));
 };
 
 /**

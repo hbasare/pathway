@@ -735,6 +735,79 @@ export const GenerateBusinessModelImageResponse = zod.object({
 });
 
 /**
+ * @summary List risk analyses for a theory
+ */
+export const ListTheoryRiskAnalysesParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const ListTheoryRiskAnalysesResponseItem = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  risk: zod.string(),
+  likelihood: zod.string(),
+  mitigationStrategy: zod.string(),
+  notes: zod.string(),
+  position: zod.number(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListTheoryRiskAnalysesResponse = zod.array(
+  ListTheoryRiskAnalysesResponseItem,
+);
+
+/**
+ * @summary Create a risk analysis entry
+ */
+export const CreateTheoryRiskAnalysisParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const CreateTheoryRiskAnalysisBody = zod.object({
+  risk: zod.string(),
+  likelihood: zod.string().optional(),
+  mitigationStrategy: zod.string().optional(),
+  notes: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+/**
+ * @summary Update a risk analysis entry
+ */
+export const UpdateTheoryRiskAnalysisParams = zod.object({
+  theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+export const UpdateTheoryRiskAnalysisBody = zod.object({
+  risk: zod.string().optional(),
+  likelihood: zod.string().optional(),
+  mitigationStrategy: zod.string().optional(),
+  notes: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+export const UpdateTheoryRiskAnalysisResponse = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  risk: zod.string(),
+  likelihood: zod.string(),
+  mitigationStrategy: zod.string(),
+  notes: zod.string(),
+  position: zod.number(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Delete a risk analysis entry
+ */
+export const DeleteTheoryRiskAnalysisParams = zod.object({
+  theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary List notes and updates for a theory
  */
 export const ListTheoryNotesUpdatesParams = zod.object({

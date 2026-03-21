@@ -6,11 +6,13 @@ import {
   connectionsTable,
   componentIndicatorsTable,
   theoryNotesUpdatesTable,
+  theoryRiskAnalysesTable,
   insertTheorySchema,
   insertComponentSchema,
   insertConnectionSchema,
   insertComponentIndicatorSchema,
   insertTheoryNoteUpdateSchema,
+  insertTheoryRiskAnalysisSchema,
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
@@ -190,6 +192,50 @@ router.post("/theories/:theoryId/connections", async (req, res) => {
 router.delete("/theories/:theoryId/connections/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(connectionsTable).where(eq(connectionsTable.id, id));
+  res.status(204).send();
+});
+
+// ─── Risk Analyses ───────────────────────────────────────────────────────────
+
+router.get("/theories/:theoryId/risk-analyses", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const rows = await db
+    .select()
+    .from(theoryRiskAnalysesTable)
+    .where(eq(theoryRiskAnalysesTable.theoryId, theoryId))
+    .orderBy(theoryRiskAnalysesTable.position, theoryRiskAnalysesTable.id);
+  res.json(rows);
+});
+
+router.post("/theories/:theoryId/risk-analyses", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const parsed = insertTheoryRiskAnalysisSchema.safeParse({ ...req.body, theoryId });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues });
+    return;
+  }
+  const [row] = await db.insert(theoryRiskAnalysesTable).values(parsed.data).returning();
+  res.status(201).json(row);
+});
+
+router.patch("/theories/:theoryId/risk-analyses/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const theoryId = Number(req.params.theoryId);
+  const [row] = await db
+    .update(theoryRiskAnalysesTable)
+    .set({ ...req.body, updatedAt: new Date() })
+    .where(and(eq(theoryRiskAnalysesTable.id, id), eq(theoryRiskAnalysesTable.theoryId, theoryId)))
+    .returning();
+  if (!row) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  res.json(row);
+});
+
+router.delete("/theories/:theoryId/risk-analyses/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  await db.delete(theoryRiskAnalysesTable).where(eq(theoryRiskAnalysesTable.id, id));
   res.status(204).send();
 });
 

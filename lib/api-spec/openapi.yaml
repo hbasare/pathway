@@ -509,6 +509,98 @@ paths:
               schema:
                 $ref: "#/components/schemas/GenerateBusinessModelImageResponse"
 
+  /theories/{theoryId}/risk-analyses:
+    get:
+      operationId: listTheoryRiskAnalyses
+      tags: [theories]
+      summary: List risk analyses for a theory
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of risk analyses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TheoryRiskAnalysis"
+    post:
+      operationId: createTheoryRiskAnalysis
+      tags: [theories]
+      summary: Create a risk analysis entry
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTheoryRiskAnalysis"
+      responses:
+        "201":
+          description: Created risk analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TheoryRiskAnalysis"
+
+  /theories/{theoryId}/risk-analyses/{id}:
+    patch:
+      operationId: updateTheoryRiskAnalysis
+      tags: [theories]
+      summary: Update a risk analysis entry
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTheoryRiskAnalysis"
+      responses:
+        "200":
+          description: Updated risk analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TheoryRiskAnalysis"
+    delete:
+      operationId: deleteTheoryRiskAnalysis
+      tags: [theories]
+      summary: Delete a risk analysis entry
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   /theories/{theoryId}/notes-updates:
     get:
       operationId: listTheoryNotesUpdates
@@ -1238,6 +1330,70 @@ components:
         activityChange:
           type: string
         date:
+          type: string
+        position:
+          type: integer
+
+    TheoryRiskAnalysis:
+      type: object
+      properties:
+        id:
+          type: integer
+        theoryId:
+          type: integer
+        risk:
+          type: string
+        likelihood:
+          type: string
+        mitigationStrategy:
+          type: string
+        notes:
+          type: string
+        position:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - theoryId
+        - risk
+        - likelihood
+        - mitigationStrategy
+        - notes
+        - position
+        - createdAt
+        - updatedAt
+
+    CreateTheoryRiskAnalysis:
+      type: object
+      properties:
+        risk:
+          type: string
+        likelihood:
+          type: string
+        mitigationStrategy:
+          type: string
+        notes:
+          type: string
+        position:
+          type: integer
+      required:
+        - risk
+
+    UpdateTheoryRiskAnalysis:
+      type: object
+      properties:
+        risk:
+          type: string
+        likelihood:
+          type: string
+        mitigationStrategy:
+          type: string
+        notes:
           type: string
         position:
           type: integer
