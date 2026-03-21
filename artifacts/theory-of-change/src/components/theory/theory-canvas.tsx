@@ -219,6 +219,7 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
         open={isAddComponentOpen}
         onOpenChange={setIsAddComponentOpen}
         title="Add New Component"
+        className="sm:max-w-[620px]"
       >
         <ComponentForm
           theoryId={theory.id}

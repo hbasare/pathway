@@ -209,7 +209,7 @@ export function ComponentCard({
         </div>
       </div>
 
-      <DialogWrapper open={isEditOpen} onOpenChange={setIsEditOpen} title="Edit Component">
+      <DialogWrapper open={isEditOpen} onOpenChange={setIsEditOpen} title="Edit Component" className="sm:max-w-[620px]">
         <ComponentForm
           theoryId={component.theoryId}
           initialData={{
