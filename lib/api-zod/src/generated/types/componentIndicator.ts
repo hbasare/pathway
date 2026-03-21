@@ -5,6 +5,7 @@
  * Theory of Change API
  * OpenAPI spec version: 0.1.0
  */
+import type { ComponentIndicatorQuestionType } from "./componentIndicatorQuestionType";
 
 export interface ComponentIndicator {
   id: number;
@@ -15,6 +16,8 @@ export interface ComponentIndicator {
   targetFigure?: string | null;
   actualDate?: string | null;
   actualFigure?: string | null;
+  questionType?: ComponentIndicatorQuestionType;
+  question?: string | null;
   position: number;
   createdAt: Date;
   updatedAt: Date;

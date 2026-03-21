@@ -12,5 +12,7 @@ export interface UpdateComponentIndicator {
   targetFigure?: string;
   actualDate?: string;
   actualFigure?: string;
+  questionType?: string;
+  question?: string;
   position?: number;
 }

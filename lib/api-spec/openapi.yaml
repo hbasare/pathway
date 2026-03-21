@@ -766,6 +766,13 @@ components:
         actualFigure:
           type: string
           nullable: true
+        questionType:
+          type: string
+          nullable: true
+          enum: [qualitative, quantitative, ""]
+        question:
+          type: string
+          nullable: true
         position:
           type: integer
         createdAt:
@@ -796,6 +803,10 @@ components:
           type: string
         actualFigure:
           type: string
+        questionType:
+          type: string
+        question:
+          type: string
         position:
           type: integer
       required:
@@ -813,6 +824,10 @@ components:
         actualDate:
           type: string
         actualFigure:
+          type: string
+        questionType:
+          type: string
+        question:
           type: string
         position:
           type: integer

@@ -88,7 +88,6 @@ export default function MeasurementPlan() {
 
   const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
 
-  // Total indicator count across all components
   const totalIndicators = sorted.reduce((sum, c) => sum + (c.componentIndicators?.length ?? 0), 0);
 
   return (
@@ -112,7 +111,7 @@ export default function MeasurementPlan() {
       </header>
 
       <div className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto px-6 py-8 print:px-4 print:py-6">
+        <div className="max-w-[1200px] mx-auto px-6 py-8 print:px-4 print:py-6">
 
           {/* Document header */}
           <div className="mb-8 print:mb-6">
@@ -133,7 +132,7 @@ export default function MeasurementPlan() {
           </div>
 
           {/* Legend */}
-          <div className="print:hidden mb-6 flex flex-wrap gap-3 text-xs">
+          <div className="print:hidden mb-4 flex flex-wrap gap-3 text-xs">
             {[
               { label: "Achieved", color: "bg-emerald-100 text-emerald-800" },
               { label: "Planned", color: "bg-amber-100 text-amber-800" },
@@ -143,30 +142,34 @@ export default function MeasurementPlan() {
             ].map(s => (
               <span key={s.label} className={`px-2 py-1 rounded-full font-medium border ${s.color}`}>{s.label}</span>
             ))}
-          </div>
-
-          {/* Column guide */}
-          <div className="print:hidden mb-3 flex items-center gap-2 text-xs text-muted-foreground">
-            <MessageSquare className="w-3.5 h-3.5" />
-            <span>Qualitative questions are open-ended;</span>
-            <BarChart3 className="w-3.5 h-3.5 ml-1" />
-            <span>Quantitative questions are measurable/numeric.</span>
+            <span className="ml-2 flex items-center gap-1.5 text-violet-600 font-medium">
+              <MessageSquare className="w-3 h-3" /> Qualitative
+            </span>
+            <span className="flex items-center gap-1.5 text-blue-600 font-medium">
+              <BarChart3 className="w-3 h-3" /> Quantitative
+            </span>
           </div>
 
           {/* Main table */}
           <div className="rounded-xl border border-border overflow-hidden shadow-sm print:shadow-none print:border print:rounded-none overflow-x-auto">
-            <table className="w-full text-sm border-collapse" style={{ minWidth: "960px" }}>
+            <table className="w-full text-sm border-collapse" style={{ minWidth: "1060px" }}>
               <thead>
                 <tr className="bg-muted/60 border-b border-border">
                   <th className="text-left px-3 py-3 font-semibold text-muted-foreground w-10 text-xs">#</th>
                   <th className="text-left px-3 py-3 font-semibold text-muted-foreground w-20 text-xs">Type</th>
                   <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "150px" }}>Component / Title</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "160px" }}>Indicator</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "110px" }}>Assumptions</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "140px" }}>Indicator</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "160px" }}>
+                    <div className="flex items-center gap-1.5">
+                      <MessageSquare className="w-3 h-3" />
+                      Measurement Question
+                    </div>
+                  </th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs" style={{ minWidth: "100px" }}>Assumptions</th>
                   <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Target Date</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-28">Target Figure</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Target Figure</th>
                   <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Actual Date</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-28">Actual Figure</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-24">Actual Figure</th>
                   <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-22">Status</th>
                 </tr>
               </thead>
@@ -175,168 +178,168 @@ export default function MeasurementPlan() {
                   const indicators = comp.componentIndicators ?? [];
                   const isEven = compIdx % 2 === 0;
                   const rowBg = isEven ? "bg-background" : "bg-muted/20";
-                  const hasQual = comp.qualitativeQuestions && comp.qualitativeQuestions.trim();
-                  const hasQuant = comp.quantitativeQuestions && comp.quantitativeQuestions.trim();
-                  const hasQuestions = hasQual || hasQuant;
 
-                  // If no indicators, render a single row for the component
                   if (indicators.length === 0) {
                     return (
-                      <React.Fragment key={comp.id}>
-                        <tr className={`${hasQuestions ? "" : "border-b border-border/50 last:border-0"} ${rowBg}`}>
-                          <td className="px-3 py-3 align-top">
-                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
-                              {boxNum(comp.id)}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 align-top">
-                            <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
-                              {comp.type}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 align-top" colSpan={1}>
-                            <p className="font-semibold text-foreground leading-snug mb-0.5">{comp.title}</p>
-                            {comp.description && (
-                              <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>
-                            )}
-                          </td>
-                          <td className="px-3 py-3 align-top text-xs text-muted-foreground italic">No indicators</td>
-                          <td className="px-3 py-3 align-top text-xs text-muted-foreground leading-relaxed">
-                            {comp.assumptions || <span className="italic text-muted-foreground/50">—</span>}
-                          </td>
-                          <td className="px-3 py-3 align-top"><span className="text-xs text-muted-foreground/50 italic">—</span></td>
-                          <td className="px-3 py-3 align-top"><span className="text-xs text-muted-foreground/50 italic">—</span></td>
-                          <td className="px-3 py-3 align-top"><span className="text-xs text-muted-foreground/50 italic">—</span></td>
-                          <td className="px-3 py-3 align-top"><span className="text-xs text-muted-foreground/50 italic">—</span></td>
-                          <td className="px-3 py-3 align-top">
-                            <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${getStatus().color}`}>
-                              {React.createElement(getStatus().icon, { className: "w-3 h-3" })}
-                              {getStatus().label}
-                            </span>
-                          </td>
-                        </tr>
-                        {hasQuestions && (
-                          <tr className={`border-b border-border/50 last:border-0 ${rowBg}`}>
-                            <td colSpan={2} />
-                            <td colSpan={8} className="px-3 pb-4 pt-0">
-                              <QuestionsRow comp={comp} />
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
+                      <tr key={comp.id} className={`border-b border-border/50 last:border-0 ${rowBg}`}>
+                        <td className="px-3 py-3 align-top">
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
+                            {boxNum(comp.id)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
+                            {comp.type}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 align-top">
+                          <p className="font-semibold text-foreground leading-snug mb-0.5">{comp.title}</p>
+                          {comp.description && (
+                            <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>
+                          )}
+                        </td>
+                        <td className="px-3 py-3 align-top text-xs text-muted-foreground italic">No indicators</td>
+                        <td className="px-3 py-3 align-top"><span className="text-xs text-muted-foreground/50 italic">—</span></td>
+                        <td className="px-3 py-3 align-top text-xs text-muted-foreground leading-relaxed">
+                          {comp.assumptions || <span className="italic text-muted-foreground/50">—</span>}
+                        </td>
+                        <td className="px-3 py-3 align-top"><span className="text-xs text-muted-foreground/50 italic">—</span></td>
+                        <td className="px-3 py-3 align-top"><span className="text-xs text-muted-foreground/50 italic">—</span></td>
+                        <td className="px-3 py-3 align-top"><span className="text-xs text-muted-foreground/50 italic">—</span></td>
+                        <td className="px-3 py-3 align-top"><span className="text-xs text-muted-foreground/50 italic">—</span></td>
+                        <td className="px-3 py-3 align-top">
+                          <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${getStatus().color}`}>
+                            {React.createElement(getStatus().icon, { className: "w-3 h-3" })}
+                            {getStatus().label}
+                          </span>
+                        </td>
+                      </tr>
                     );
                   }
 
-                  // One row per indicator; first indicator row shows the component info
                   return (
                     <React.Fragment key={comp.id}>
                       {indicators.map((ind, indIdx) => {
                         const status = getStatus(ind.targetDate, ind.targetFigure, ind.actualFigure);
                         const StatusIcon = status.icon;
-                        const isLastInd = indIdx === indicators.length - 1;
-                        const showQuestions = isLastInd && hasQuestions;
+                        const hasQuestion = ind.question && ind.question.trim();
+                        const qt = ind.questionType;
 
                         return (
-                          <React.Fragment key={ind.id}>
-                            <tr className={`${showQuestions || !isLastInd ? "" : "border-b border-border/50 last:border-0"} ${rowBg}`}>
-                              {/* Box number — only on first indicator row */}
-                              <td className="px-3 py-3 align-top">
-                                {indIdx === 0 ? (
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
-                                    {boxNum(comp.id)}
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-border/40 text-muted-foreground/50 text-[10px]">
-                                    ↳
-                                  </span>
-                                )}
-                              </td>
-
-                              {/* Type — only on first indicator row */}
-                              <td className="px-3 py-3 align-top">
-                                {indIdx === 0 && (
-                                  <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
-                                    {comp.type}
-                                  </span>
-                                )}
-                              </td>
-
-                              {/* Component info — only on first indicator row */}
-                              <td className="px-3 py-3 align-top">
-                                {indIdx === 0 ? (
-                                  <>
-                                    <p className="font-semibold text-foreground leading-snug mb-0.5">{comp.title}</p>
-                                    {comp.description && (
-                                      <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>
-                                    )}
-                                  </>
-                                ) : null}
-                              </td>
-
-                              {/* Indicator name */}
-                              <td className="px-3 py-3 align-top">
-                                <div className="flex items-start gap-1.5">
-                                  <span className="text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">{indIdx + 1}.</span>
-                                  <p className="text-xs text-foreground leading-relaxed">
-                                    {ind.name || <span className="italic text-muted-foreground/60">Unnamed</span>}
-                                  </p>
-                                </div>
-                              </td>
-
-                              {/* Assumptions — only on first row */}
-                              <td className="px-3 py-3 align-top text-xs text-muted-foreground leading-relaxed">
-                                {indIdx === 0
-                                  ? (comp.assumptions || <span className="italic text-muted-foreground/50">—</span>)
-                                  : null}
-                              </td>
-
-                              {/* Target date */}
-                              <td className="px-3 py-3 align-top">
-                                {ind.targetDate ? (
-                                  <span className="text-xs font-medium text-amber-700">{formatDate(ind.targetDate)}</span>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground/50 italic">—</span>
-                                )}
-                              </td>
-
-                              {/* Target figure */}
-                              <td className="px-3 py-3 align-top text-xs text-foreground font-medium">
-                                {ind.targetFigure || <span className="italic text-muted-foreground/50">—</span>}
-                              </td>
-
-                              {/* Actual date */}
-                              <td className="px-3 py-3 align-top">
-                                {ind.actualDate ? (
-                                  <span className="text-xs font-medium text-emerald-700">{formatDate(ind.actualDate)}</span>
-                                ) : (
-                                  <span className="text-xs text-muted-foreground/50 italic">—</span>
-                                )}
-                              </td>
-
-                              {/* Actual figure */}
-                              <td className="px-3 py-3 align-top text-xs text-emerald-700 font-medium">
-                                {ind.actualFigure || <span className="italic text-muted-foreground/50 font-normal">—</span>}
-                              </td>
-
-                              {/* Status */}
-                              <td className="px-3 py-3 align-top">
-                                <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${status.color}`}>
-                                  <StatusIcon className="w-3 h-3" />
-                                  {status.label}
+                          <tr
+                            key={ind.id}
+                            className={`border-b border-border/50 last:border-0 ${rowBg}`}
+                          >
+                            {/* Box number */}
+                            <td className="px-3 py-3 align-top">
+                              {indIdx === 0 ? (
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-[11px] font-bold">
+                                  {boxNum(comp.id)}
                                 </span>
-                              </td>
-                            </tr>
+                              ) : (
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-border/40 text-muted-foreground/50 text-[10px]">
+                                  ↳
+                                </span>
+                              )}
+                            </td>
 
-                            {/* Measurement questions sub-row — after last indicator */}
-                            {showQuestions && (
-                              <tr className={`border-b border-border/50 last:border-0 ${rowBg}`}>
-                                <td colSpan={2} />
-                                <td colSpan={8} className="px-3 pb-4 pt-0">
-                                  <QuestionsRow comp={comp} />
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
+                            {/* Type */}
+                            <td className="px-3 py-3 align-top">
+                              {indIdx === 0 && (
+                                <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
+                                  {comp.type}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Component info */}
+                            <td className="px-3 py-3 align-top">
+                              {indIdx === 0 ? (
+                                <>
+                                  <p className="font-semibold text-foreground leading-snug mb-0.5">{comp.title}</p>
+                                  {comp.description && (
+                                    <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>
+                                  )}
+                                </>
+                              ) : null}
+                            </td>
+
+                            {/* Indicator name */}
+                            <td className="px-3 py-3 align-top">
+                              <div className="flex items-start gap-1.5">
+                                <span className="text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">{indIdx + 1}.</span>
+                                <p className="text-xs text-foreground leading-relaxed">
+                                  {ind.name || <span className="italic text-muted-foreground/60">Unnamed</span>}
+                                </p>
+                              </div>
+                            </td>
+
+                            {/* Measurement question */}
+                            <td className="px-3 py-3 align-top">
+                              {hasQuestion ? (
+                                <div className="space-y-1">
+                                  {qt === "qualitative" && (
+                                    <div className="flex items-center gap-1 mb-1">
+                                      <MessageSquare className="w-2.5 h-2.5 text-violet-600 shrink-0" />
+                                      <span className="text-[9px] font-bold uppercase tracking-wide text-violet-600">Qualitative</span>
+                                    </div>
+                                  )}
+                                  {qt === "quantitative" && (
+                                    <div className="flex items-center gap-1 mb-1">
+                                      <BarChart3 className="w-2.5 h-2.5 text-blue-600 shrink-0" />
+                                      <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600">Quantitative</span>
+                                    </div>
+                                  )}
+                                  <p className="text-xs text-muted-foreground leading-relaxed">{ind.question}</p>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/40 italic">—</span>
+                              )}
+                            </td>
+
+                            {/* Assumptions */}
+                            <td className="px-3 py-3 align-top text-xs text-muted-foreground leading-relaxed">
+                              {indIdx === 0
+                                ? (comp.assumptions || <span className="italic text-muted-foreground/50">—</span>)
+                                : null}
+                            </td>
+
+                            {/* Target date */}
+                            <td className="px-3 py-3 align-top">
+                              {ind.targetDate ? (
+                                <span className="text-xs font-medium text-amber-700">{formatDate(ind.targetDate)}</span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/50 italic">—</span>
+                              )}
+                            </td>
+
+                            {/* Target figure */}
+                            <td className="px-3 py-3 align-top text-xs text-foreground font-medium">
+                              {ind.targetFigure || <span className="italic text-muted-foreground/50">—</span>}
+                            </td>
+
+                            {/* Actual date */}
+                            <td className="px-3 py-3 align-top">
+                              {ind.actualDate ? (
+                                <span className="text-xs font-medium text-emerald-700">{formatDate(ind.actualDate)}</span>
+                              ) : (
+                                <span className="text-xs text-muted-foreground/50 italic">—</span>
+                              )}
+                            </td>
+
+                            {/* Actual figure */}
+                            <td className="px-3 py-3 align-top text-xs text-emerald-700 font-medium">
+                              {ind.actualFigure || <span className="italic text-muted-foreground/50 font-normal">—</span>}
+                            </td>
+
+                            {/* Status */}
+                            <td className="px-3 py-3 align-top">
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${status.color}`}>
+                                <StatusIcon className="w-3 h-3" />
+                                {status.label}
+                              </span>
+                            </td>
+                          </tr>
                         );
                       })}
                     </React.Fragment>
@@ -345,7 +348,7 @@ export default function MeasurementPlan() {
 
                 {sorted.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="px-4 py-12 text-center text-muted-foreground italic text-sm">
+                    <td colSpan={11} className="px-4 py-12 text-center text-muted-foreground italic text-sm">
                       No components added yet. Go back to the canvas and add components to your theory.
                     </td>
                   </tr>
@@ -375,39 +378,6 @@ export default function MeasurementPlan() {
             <p>Generated from the Theory of Change platform · {theory.title}</p>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-// Sub-component for measurement questions rows
-function QuestionsRow({ comp }: { comp: { qualitativeQuestions?: string | null; quantitativeQuestions?: string | null } }) {
-  const hasQual = comp.qualitativeQuestions && comp.qualitativeQuestions.trim();
-  const hasQuant = comp.quantitativeQuestions && comp.quantitativeQuestions.trim();
-  return (
-    <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-3">
-      <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-        Measurement Questions for Respondents
-      </p>
-      <div className={`grid gap-3 ${hasQual && hasQuant ? "grid-cols-2" : "grid-cols-1"}`}>
-        {hasQual && (
-          <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <MessageSquare className="w-3 h-3 text-violet-600 shrink-0" />
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-700">Qualitative Questions</span>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{comp.qualitativeQuestions}</p>
-          </div>
-        )}
-        {hasQuant && (
-          <div>
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <BarChart3 className="w-3 h-3 text-blue-600 shrink-0" />
-              <span className="text-[10px] font-semibold uppercase tracking-wide text-blue-700">Quantitative Questions</span>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed whitespace-pre-wrap">{comp.quantitativeQuestions}</p>
-          </div>
-        )}
       </div>
     </div>
   );

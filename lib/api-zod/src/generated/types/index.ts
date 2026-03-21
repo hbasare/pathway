@@ -9,6 +9,7 @@
 export * from "./businessModelActor";
 export * from "./component";
 export * from "./componentIndicator";
+export * from "./componentIndicatorQuestionType";
 export * from "./componentType";
 export * from "./connection";
 export * from "./createBusinessModelActor";

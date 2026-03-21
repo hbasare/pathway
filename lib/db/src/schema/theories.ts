@@ -82,6 +82,8 @@ export const componentIndicatorsTable = pgTable("component_indicators", {
   targetFigure: text("target_figure").default(""),
   actualDate: text("actual_date").default(""),
   actualFigure: text("actual_figure").default(""),
+  questionType: text("question_type").default(""),
+  question: text("question").default(""),
   position: integer("position").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

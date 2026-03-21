@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, MessageSquare, BarChart3 } from "lucide-react";
 
 // Per-type guidance for the description field
 const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
@@ -67,6 +67,8 @@ interface IndicatorRow {
   targetFigure: string;
   actualDate: string;
   actualFigure: string;
+  questionType: string; // "qualitative" | "quantitative" | ""
+  question: string;
 }
 
 function makeKey() {
@@ -74,7 +76,7 @@ function makeKey() {
 }
 
 function emptyIndicator(): IndicatorRow {
-  return { localKey: makeKey(), name: "", targetDate: "", targetFigure: "", actualDate: "", actualFigure: "" };
+  return { localKey: makeKey(), name: "", targetDate: "", targetFigure: "", actualDate: "", actualFigure: "", questionType: "", question: "" };
 }
 
 function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
@@ -86,6 +88,8 @@ function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
     targetFigure: ind.targetFigure ?? "",
     actualDate: ind.actualDate ?? "",
     actualFigure: ind.actualFigure ?? "",
+    questionType: ind.questionType ?? "",
+    question: ind.question ?? "",
   };
 }
 
@@ -182,17 +186,19 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
     await Promise.all(
       indicators.map((ind, idx) => {
         const payload = {
-          name: ind.name,
+          name: ind.name || "",
           targetDate: ind.targetDate || undefined,
           targetFigure: ind.targetFigure || undefined,
           actualDate: ind.actualDate || undefined,
           actualFigure: ind.actualFigure || undefined,
+          questionType: ind.questionType || undefined,
+          question: ind.question || undefined,
           position: idx,
         };
         if (ind.id !== undefined) {
           return updateIndicator.mutateAsync({ theoryId, componentId, id: ind.id, data: payload });
         } else {
-          return createIndicator.mutateAsync({ theoryId, componentId, data: { ...payload, name: ind.name || "" } });
+          return createIndicator.mutateAsync({ theoryId, componentId, data: payload });
         }
       })
     );
@@ -394,6 +400,61 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                       className="text-xs"
                     />
                   </div>
+                </div>
+
+                {/* Linked measurement question */}
+                <div className="pt-2 border-t border-border/40">
+                  <label className="text-xs font-medium text-foreground mb-2 block">Linked Measurement Question (Optional)</label>
+                  <div className="flex gap-2 mb-2">
+                    {[
+                      { value: "qualitative", label: "Qualitative", Icon: MessageSquare, color: "text-violet-600 border-violet-300 bg-violet-50" },
+                      { value: "quantitative", label: "Quantitative", Icon: BarChart3, color: "text-blue-600 border-blue-300 bg-blue-50" },
+                    ].map(({ value, label, Icon, color }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() =>
+                          updateIndicatorField(
+                            ind.localKey,
+                            "questionType",
+                            ind.questionType === value ? "" : value
+                          )
+                        }
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-colors ${
+                          ind.questionType === value
+                            ? color
+                            : "border-border text-muted-foreground hover:border-muted-foreground"
+                        }`}
+                      >
+                        <Icon className="w-3 h-3" />
+                        {label}
+                      </button>
+                    ))}
+                    {ind.questionType && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          updateIndicatorField(ind.localKey, "questionType", "");
+                          updateIndicatorField(ind.localKey, "question", "");
+                        }}
+                        className="text-xs text-muted-foreground hover:text-destructive transition-colors ml-auto"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  {ind.questionType && (
+                    <Textarea
+                      value={ind.question}
+                      onChange={e => updateIndicatorField(ind.localKey, "question", e.target.value)}
+                      placeholder={
+                        ind.questionType === "qualitative"
+                          ? "e.g. How has this changed your day-to-day work?"
+                          : "e.g. How many sessions did you attend? Rate your confidence 1–10."
+                      }
+                      className="text-xs min-h-[60px]"
+                    />
+                  )}
                 </div>
               </div>
             ))}
