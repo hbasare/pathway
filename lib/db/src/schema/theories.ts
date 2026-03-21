@@ -99,9 +99,13 @@ export const componentIndicatorsTable = pgTable("component_indicators", {
   baselineSourceOfInformation: text("baseline_source_of_information").default(""),
   baselineDateLastReviewed: text("baseline_date_last_reviewed").default(""),
   baselineNotes: text("baseline_notes").default(""),
-  // Measurement questions
-  qualitativeQuestion: text("qualitative_question").default(""),
-  quantitativeQuestion: text("quantitative_question").default(""),
+  // Measurement questions — per group
+  targetQualitativeQuestion: text("target_qualitative_question").default(""),
+  targetQuantitativeQuestion: text("target_quantitative_question").default(""),
+  actualQualitativeQuestion: text("actual_qualitative_question").default(""),
+  actualQuantitativeQuestion: text("actual_quantitative_question").default(""),
+  baselineQualitativeQuestion: text("baseline_qualitative_question").default(""),
+  baselineQuantitativeQuestion: text("baseline_quantitative_question").default(""),
   position: integer("position").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

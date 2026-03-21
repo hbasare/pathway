@@ -29,8 +29,12 @@ export interface ComponentIndicator {
   baselineSourceOfInformation?: string | null;
   baselineDateLastReviewed?: string | null;
   baselineNotes?: string | null;
-  qualitativeQuestion?: string | null;
-  quantitativeQuestion?: string | null;
+  targetQualitativeQuestion?: string | null;
+  targetQuantitativeQuestion?: string | null;
+  actualQualitativeQuestion?: string | null;
+  actualQuantitativeQuestion?: string | null;
+  baselineQualitativeQuestion?: string | null;
+  baselineQuantitativeQuestion?: string | null;
   position: number;
   createdAt: Date;
   updatedAt: Date;

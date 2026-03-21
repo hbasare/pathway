@@ -52,6 +52,38 @@ function getStatus(targetDate?: string | null, targetFigure?: string | null, act
   return { label: "Not Set", color: "bg-gray-100 text-gray-500 border-gray-200", icon: MinusCircle };
 }
 
+function QuestionsCell({ qual, quant, dash }: {
+  qual?: string | null;
+  quant?: string | null;
+  dash: React.ReactNode;
+}) {
+  const hasQual = qual?.trim();
+  const hasQuant = quant?.trim();
+  if (!hasQual && !hasQuant) return <>{dash}</>;
+  return (
+    <div className="space-y-1.5">
+      {hasQual && (
+        <div>
+          <div className="flex items-center gap-1 mb-0.5">
+            <MessageSquare className="w-2.5 h-2.5 text-violet-600 shrink-0" />
+            <span className="text-[9px] font-bold uppercase tracking-wide text-violet-600">Qualitative</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">{qual}</p>
+        </div>
+      )}
+      {hasQuant && (
+        <div>
+          <div className="flex items-center gap-1 mb-0.5">
+            <BarChart3 className="w-2.5 h-2.5 text-blue-600 shrink-0" />
+            <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600">Quantitative</span>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">{quant}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function MeasurementPlan() {
   const [, params] = useRoute("/theory/:id/measurement-plan");
   const id = params?.id ? parseInt(params.id, 10) : 0;
@@ -87,8 +119,10 @@ export default function MeasurementPlan() {
   const boxNum = (id: number) => sortedById.findIndex(c => c.id === id) + 1;
 
   const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
-
   const totalIndicators = sorted.reduce((sum, c) => sum + (c.componentIndicators?.length ?? 0), 0);
+
+  // Total columns: 4 fixed + 7 target + 7 actual + 7 baseline + 1 status = 26
+  const TOTAL_COLS = 26;
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -152,7 +186,7 @@ export default function MeasurementPlan() {
 
           {/* Main table */}
           <div className="rounded-xl border border-border overflow-hidden shadow-sm print:shadow-none print:border print:rounded-none overflow-x-auto">
-            <table className="w-full text-sm border-collapse" style={{ minWidth: "2200px" }}>
+            <table className="w-full text-sm border-collapse" style={{ minWidth: "2600px" }}>
               <thead>
                 {/* Row 1 — group headers */}
                 <tr className="bg-muted/80 border-b border-border">
@@ -160,13 +194,10 @@ export default function MeasurementPlan() {
                   <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground w-20 text-xs border-r border-border/40">Type</th>
                   <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground text-xs border-r border-border/40" style={{ minWidth: "140px" }}>Component</th>
                   <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground text-xs border-r border-border/40" style={{ minWidth: "130px" }}>Indicator</th>
-                  <th colSpan={6} className="text-center px-3 py-2 font-bold text-amber-800 text-xs bg-amber-50 border-r border-amber-200">TARGET</th>
-                  <th colSpan={6} className="text-center px-3 py-2 font-bold text-emerald-800 text-xs bg-emerald-50 border-r border-emerald-200">ACTUAL</th>
-                  <th colSpan={6} className="text-center px-3 py-2 font-bold text-blue-800 text-xs bg-blue-50 border-r border-blue-200">BASELINE</th>
-                  <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground text-xs border-r border-border/40 w-24">Status</th>
-                  <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground text-xs" style={{ minWidth: "130px" }}>
-                    <div className="flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Meas. Questions</div>
-                  </th>
+                  <th colSpan={7} className="text-center px-3 py-2 font-bold text-amber-800 text-xs bg-amber-50 border-r border-amber-200">TARGET</th>
+                  <th colSpan={7} className="text-center px-3 py-2 font-bold text-emerald-800 text-xs bg-emerald-50 border-r border-emerald-200">ACTUAL</th>
+                  <th colSpan={7} className="text-center px-3 py-2 font-bold text-blue-800 text-xs bg-blue-50 border-r border-blue-200">BASELINE</th>
+                  <th rowSpan={2} className="text-left px-3 py-2 font-semibold text-muted-foreground text-xs w-24">Status</th>
                 </tr>
                 {/* Row 2 — sub-column headers */}
                 <tr className="border-b border-border">
@@ -182,8 +213,11 @@ export default function MeasurementPlan() {
                   <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60 w-24">
                     <div className="flex items-center gap-0.5"><CalendarCheck className="w-2.5 h-2.5" /> Reviewed</div>
                   </th>
-                  <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60 border-r border-amber-200" style={{ minWidth: "100px" }}>
+                  <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60" style={{ minWidth: "100px" }}>
                     <div className="flex items-center gap-0.5"><StickyNote className="w-2.5 h-2.5" /> Notes</div>
+                  </th>
+                  <th className="text-left px-2 py-1.5 font-medium text-amber-700 text-[10px] bg-amber-50/60 border-r border-amber-200" style={{ minWidth: "130px" }}>
+                    <div className="flex items-center gap-0.5"><MessageSquare className="w-2.5 h-2.5" /> Questions</div>
                   </th>
                   {/* Actual sub-cols */}
                   <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60 w-24">Date</th>
@@ -197,8 +231,11 @@ export default function MeasurementPlan() {
                   <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60 w-24">
                     <div className="flex items-center gap-0.5"><CalendarCheck className="w-2.5 h-2.5" /> Reviewed</div>
                   </th>
-                  <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60 border-r border-emerald-200" style={{ minWidth: "100px" }}>
+                  <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60" style={{ minWidth: "100px" }}>
                     <div className="flex items-center gap-0.5"><StickyNote className="w-2.5 h-2.5" /> Notes</div>
+                  </th>
+                  <th className="text-left px-2 py-1.5 font-medium text-emerald-700 text-[10px] bg-emerald-50/60 border-r border-emerald-200" style={{ minWidth: "130px" }}>
+                    <div className="flex items-center gap-0.5"><MessageSquare className="w-2.5 h-2.5" /> Questions</div>
                   </th>
                   {/* Baseline sub-cols */}
                   <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60 w-24">Date</th>
@@ -212,8 +249,11 @@ export default function MeasurementPlan() {
                   <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60 w-24">
                     <div className="flex items-center gap-0.5"><CalendarCheck className="w-2.5 h-2.5" /> Reviewed</div>
                   </th>
-                  <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60 border-r border-blue-200" style={{ minWidth: "100px" }}>
+                  <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60" style={{ minWidth: "100px" }}>
                     <div className="flex items-center gap-0.5"><StickyNote className="w-2.5 h-2.5" /> Notes</div>
+                  </th>
+                  <th className="text-left px-2 py-1.5 font-medium text-blue-700 text-[10px] bg-blue-50/60 border-r border-blue-200" style={{ minWidth: "130px" }}>
+                    <div className="flex items-center gap-0.5"><MessageSquare className="w-2.5 h-2.5" /> Questions</div>
                   </th>
                 </tr>
               </thead>
@@ -249,7 +289,7 @@ export default function MeasurementPlan() {
                           {comp.description && <p className="text-xs text-muted-foreground leading-relaxed">{comp.description}</p>}
                         </td>
                         <td className="px-3 py-3 align-top text-xs text-muted-foreground italic border-r border-border/20">No indicators</td>
-                        {Array.from({ length: 20 }).map((_, i) => (
+                        {Array.from({ length: TOTAL_COLS - 4 }).map((_, i) => (
                           <td key={i} className="px-2 py-3 align-top">{dash}</td>
                         ))}
                       </tr>
@@ -304,52 +344,36 @@ export default function MeasurementPlan() {
                             <td className="px-2 py-3 align-top bg-amber-50/20">{tdText(ind.targetExplanation)}</td>
                             <td className="px-2 py-3 align-top bg-amber-50/20">{tdText(ind.targetSourceOfInformation)}</td>
                             <td className="px-2 py-3 align-top bg-amber-50/20">{tdDate(ind.targetDateLastReviewed)}</td>
-                            <td className="px-2 py-3 align-top bg-amber-50/20 border-r border-amber-100">{tdText(ind.targetNotes)}</td>
+                            <td className="px-2 py-3 align-top bg-amber-50/20">{tdText(ind.targetNotes)}</td>
+                            <td className="px-2 py-3 align-top bg-amber-50/20 border-r border-amber-100">
+                              <QuestionsCell qual={ind.targetQualitativeQuestion} quant={ind.targetQuantitativeQuestion} dash={dash} />
+                            </td>
                             {/* ACTUAL group */}
                             <td className="px-2 py-3 align-top bg-emerald-50/20">{tdDate(ind.actualDate, "text-emerald-700")}</td>
                             <td className="px-2 py-3 align-top bg-emerald-50/20">{tdText(ind.actualFigure, "text-emerald-800 font-medium")}</td>
                             <td className="px-2 py-3 align-top bg-emerald-50/20">{tdText(ind.actualExplanation)}</td>
                             <td className="px-2 py-3 align-top bg-emerald-50/20">{tdText(ind.actualSourceOfInformation)}</td>
                             <td className="px-2 py-3 align-top bg-emerald-50/20">{tdDate(ind.actualDateLastReviewed)}</td>
-                            <td className="px-2 py-3 align-top bg-emerald-50/20 border-r border-emerald-100">{tdText(ind.actualNotes)}</td>
+                            <td className="px-2 py-3 align-top bg-emerald-50/20">{tdText(ind.actualNotes)}</td>
+                            <td className="px-2 py-3 align-top bg-emerald-50/20 border-r border-emerald-100">
+                              <QuestionsCell qual={ind.actualQualitativeQuestion} quant={ind.actualQuantitativeQuestion} dash={dash} />
+                            </td>
                             {/* BASELINE group */}
                             <td className="px-2 py-3 align-top bg-blue-50/20">{tdDate(ind.baselineDate, "text-blue-700")}</td>
                             <td className="px-2 py-3 align-top bg-blue-50/20">{tdText(ind.baselineFigure, "text-blue-800 font-medium")}</td>
                             <td className="px-2 py-3 align-top bg-blue-50/20">{tdText(ind.baselineExplanation)}</td>
                             <td className="px-2 py-3 align-top bg-blue-50/20">{tdText(ind.baselineSourceOfInformation)}</td>
                             <td className="px-2 py-3 align-top bg-blue-50/20">{tdDate(ind.baselineDateLastReviewed)}</td>
-                            <td className="px-2 py-3 align-top bg-blue-50/20 border-r border-blue-100">{tdText(ind.baselineNotes)}</td>
+                            <td className="px-2 py-3 align-top bg-blue-50/20">{tdText(ind.baselineNotes)}</td>
+                            <td className="px-2 py-3 align-top bg-blue-50/20 border-r border-blue-100">
+                              <QuestionsCell qual={ind.baselineQualitativeQuestion} quant={ind.baselineQuantitativeQuestion} dash={dash} />
+                            </td>
                             {/* Status */}
-                            <td className="px-3 py-3 align-top border-r border-border/20">
+                            <td className="px-3 py-3 align-top">
                               <span className={`inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${status.color}`}>
                                 <StatusIcon className="w-3 h-3" />
                                 {status.label}
                               </span>
-                            </td>
-                            {/* Measurement questions */}
-                            <td className="px-3 py-3 align-top">
-                              {(ind.qualitativeQuestion?.trim() || ind.quantitativeQuestion?.trim()) ? (
-                                <div className="space-y-2">
-                                  {ind.qualitativeQuestion?.trim() && (
-                                    <div>
-                                      <div className="flex items-center gap-1 mb-0.5">
-                                        <MessageSquare className="w-2.5 h-2.5 text-violet-600 shrink-0" />
-                                        <span className="text-[9px] font-bold uppercase tracking-wide text-violet-600">Qualitative</span>
-                                      </div>
-                                      <p className="text-xs text-muted-foreground leading-relaxed">{ind.qualitativeQuestion}</p>
-                                    </div>
-                                  )}
-                                  {ind.quantitativeQuestion?.trim() && (
-                                    <div>
-                                      <div className="flex items-center gap-1 mb-0.5">
-                                        <BarChart3 className="w-2.5 h-2.5 text-blue-600 shrink-0" />
-                                        <span className="text-[9px] font-bold uppercase tracking-wide text-blue-600">Quantitative</span>
-                                      </div>
-                                      <p className="text-xs text-muted-foreground leading-relaxed">{ind.quantitativeQuestion}</p>
-                                    </div>
-                                  )}
-                                </div>
-                              ) : dash}
                             </td>
                           </tr>
                         );
@@ -360,7 +384,7 @@ export default function MeasurementPlan() {
 
                 {sorted.length === 0 && (
                   <tr>
-                    <td colSpan={24} className="px-4 py-12 text-center text-muted-foreground italic text-sm">
+                    <td colSpan={TOTAL_COLS} className="px-4 py-12 text-center text-muted-foreground italic text-sm">
                       No components added yet. Go back to the canvas and add components to your theory.
                     </td>
                   </tr>

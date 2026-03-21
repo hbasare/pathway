@@ -26,7 +26,11 @@ export interface UpdateComponentIndicator {
   baselineSourceOfInformation?: string;
   baselineDateLastReviewed?: string;
   baselineNotes?: string;
-  qualitativeQuestion?: string;
-  quantitativeQuestion?: string;
+  targetQualitativeQuestion?: string;
+  targetQuantitativeQuestion?: string;
+  actualQualitativeQuestion?: string;
+  actualQuantitativeQuestion?: string;
+  baselineQualitativeQuestion?: string;
+  baselineQuantitativeQuestion?: string;
   position?: number;
 }

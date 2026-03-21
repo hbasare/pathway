@@ -808,10 +808,22 @@ components:
         baselineNotes:
           type: string
           nullable: true
-        qualitativeQuestion:
+        targetQualitativeQuestion:
           type: string
           nullable: true
-        quantitativeQuestion:
+        targetQuantitativeQuestion:
+          type: string
+          nullable: true
+        actualQualitativeQuestion:
+          type: string
+          nullable: true
+        actualQuantitativeQuestion:
+          type: string
+          nullable: true
+        baselineQualitativeQuestion:
+          type: string
+          nullable: true
+        baselineQuantitativeQuestion:
           type: string
           nullable: true
         position:
@@ -872,9 +884,17 @@ components:
           type: string
         baselineNotes:
           type: string
-        qualitativeQuestion:
+        targetQualitativeQuestion:
           type: string
-        quantitativeQuestion:
+        targetQuantitativeQuestion:
+          type: string
+        actualQualitativeQuestion:
+          type: string
+        actualQuantitativeQuestion:
+          type: string
+        baselineQualitativeQuestion:
+          type: string
+        baselineQuantitativeQuestion:
           type: string
         position:
           type: integer
@@ -922,9 +942,17 @@ components:
           type: string
         baselineNotes:
           type: string
-        qualitativeQuestion:
+        targetQualitativeQuestion:
           type: string
-        quantitativeQuestion:
+        targetQuantitativeQuestion:
+          type: string
+        actualQualitativeQuestion:
+          type: string
+        actualQuantitativeQuestion:
+          type: string
+        baselineQualitativeQuestion:
+          type: string
+        baselineQuantitativeQuestion:
           type: string
         position:
           type: integer

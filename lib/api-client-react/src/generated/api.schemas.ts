@@ -67,8 +67,12 @@ export interface ComponentIndicator {
   baselineSourceOfInformation?: string | null;
   baselineDateLastReviewed?: string | null;
   baselineNotes?: string | null;
-  qualitativeQuestion?: string | null;
-  quantitativeQuestion?: string | null;
+  targetQualitativeQuestion?: string | null;
+  targetQuantitativeQuestion?: string | null;
+  actualQualitativeQuestion?: string | null;
+  actualQuantitativeQuestion?: string | null;
+  baselineQualitativeQuestion?: string | null;
+  baselineQuantitativeQuestion?: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -193,8 +197,12 @@ export interface CreateComponentIndicator {
   baselineSourceOfInformation?: string;
   baselineDateLastReviewed?: string;
   baselineNotes?: string;
-  qualitativeQuestion?: string;
-  quantitativeQuestion?: string;
+  targetQualitativeQuestion?: string;
+  targetQuantitativeQuestion?: string;
+  actualQualitativeQuestion?: string;
+  actualQuantitativeQuestion?: string;
+  baselineQualitativeQuestion?: string;
+  baselineQuantitativeQuestion?: string;
   position?: number;
 }
 
@@ -218,8 +226,12 @@ export interface UpdateComponentIndicator {
   baselineSourceOfInformation?: string;
   baselineDateLastReviewed?: string;
   baselineNotes?: string;
-  qualitativeQuestion?: string;
-  quantitativeQuestion?: string;
+  targetQualitativeQuestion?: string;
+  targetQuantitativeQuestion?: string;
+  actualQualitativeQuestion?: string;
+  actualQuantitativeQuestion?: string;
+  baselineQualitativeQuestion?: string;
+  baselineQuantitativeQuestion?: string;
   position?: number;
 }
 

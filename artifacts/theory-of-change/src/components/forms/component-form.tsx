@@ -30,7 +30,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash2, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote } from "lucide-react";
 
-// Per-type guidance for the description field
 const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
   opportunity: {
     hint: "Describe the context or constraint. What situation exists that shapes this intervention?",
@@ -58,7 +57,6 @@ const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: s
   },
 };
 
-// Local indicator row (id is present when editing an existing record)
 interface IndicatorRow {
   localKey: string;
   id?: number;
@@ -70,6 +68,8 @@ interface IndicatorRow {
   targetSourceOfInformation: string;
   targetDateLastReviewed: string;
   targetNotes: string;
+  targetQualitativeQuestion: string;
+  targetQuantitativeQuestion: string;
   // Actual group
   actualDate: string;
   actualFigure: string;
@@ -77,6 +77,8 @@ interface IndicatorRow {
   actualSourceOfInformation: string;
   actualDateLastReviewed: string;
   actualNotes: string;
+  actualQualitativeQuestion: string;
+  actualQuantitativeQuestion: string;
   // Baseline group
   baselineDate: string;
   baselineFigure: string;
@@ -84,9 +86,8 @@ interface IndicatorRow {
   baselineSourceOfInformation: string;
   baselineDateLastReviewed: string;
   baselineNotes: string;
-  // Measurement questions
-  qualitativeQuestion: string;
-  quantitativeQuestion: string;
+  baselineQualitativeQuestion: string;
+  baselineQuantitativeQuestion: string;
 }
 
 function makeKey() {
@@ -98,9 +99,11 @@ function emptyIndicator(): IndicatorRow {
     localKey: makeKey(),
     name: "",
     targetDate: "", targetFigure: "", targetExplanation: "", targetSourceOfInformation: "", targetDateLastReviewed: "", targetNotes: "",
+    targetQualitativeQuestion: "", targetQuantitativeQuestion: "",
     actualDate: "", actualFigure: "", actualExplanation: "", actualSourceOfInformation: "", actualDateLastReviewed: "", actualNotes: "",
+    actualQualitativeQuestion: "", actualQuantitativeQuestion: "",
     baselineDate: "", baselineFigure: "", baselineExplanation: "", baselineSourceOfInformation: "", baselineDateLastReviewed: "", baselineNotes: "",
-    qualitativeQuestion: "", quantitativeQuestion: "",
+    baselineQualitativeQuestion: "", baselineQuantitativeQuestion: "",
   };
 }
 
@@ -115,20 +118,24 @@ function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
     targetSourceOfInformation: ind.targetSourceOfInformation ?? "",
     targetDateLastReviewed: ind.targetDateLastReviewed ?? "",
     targetNotes: ind.targetNotes ?? "",
+    targetQualitativeQuestion: ind.targetQualitativeQuestion ?? "",
+    targetQuantitativeQuestion: ind.targetQuantitativeQuestion ?? "",
     actualDate: ind.actualDate ?? "",
     actualFigure: ind.actualFigure ?? "",
     actualExplanation: ind.actualExplanation ?? "",
     actualSourceOfInformation: ind.actualSourceOfInformation ?? "",
     actualDateLastReviewed: ind.actualDateLastReviewed ?? "",
     actualNotes: ind.actualNotes ?? "",
+    actualQualitativeQuestion: ind.actualQualitativeQuestion ?? "",
+    actualQuantitativeQuestion: ind.actualQuantitativeQuestion ?? "",
     baselineDate: ind.baselineDate ?? "",
     baselineFigure: ind.baselineFigure ?? "",
     baselineExplanation: ind.baselineExplanation ?? "",
     baselineSourceOfInformation: ind.baselineSourceOfInformation ?? "",
     baselineDateLastReviewed: ind.baselineDateLastReviewed ?? "",
     baselineNotes: ind.baselineNotes ?? "",
-    qualitativeQuestion: ind.qualitativeQuestion ?? "",
-    quantitativeQuestion: ind.quantitativeQuestion ?? "",
+    baselineQualitativeQuestion: ind.baselineQualitativeQuestion ?? "",
+    baselineQuantitativeQuestion: ind.baselineQuantitativeQuestion ?? "",
   };
 }
 
@@ -152,22 +159,26 @@ interface ComponentFormProps {
   defaultType?: ComponentType;
 }
 
-// Shared sub-field block for each measurement group
 interface MeasurementGroupProps {
   ind: IndicatorRow;
   prefix: "target" | "actual" | "baseline";
   label: string;
-  color: { border: string; header: string; label: string; dateBg: string };
+  color: { border: string; header: string; label: string };
   update: (key: string, field: keyof Omit<IndicatorRow, "localKey" | "id">, val: string) => void;
 }
 
 function MeasurementGroup({ ind, prefix, label, color, update }: MeasurementGroupProps) {
-  const dateField = `${prefix}Date` as keyof IndicatorRow;
-  const figureField = `${prefix}Figure` as keyof IndicatorRow;
+  const dateField        = `${prefix}Date` as keyof IndicatorRow;
+  const figureField      = `${prefix}Figure` as keyof IndicatorRow;
   const explanationField = `${prefix}Explanation` as keyof IndicatorRow;
-  const sourceField = `${prefix}SourceOfInformation` as keyof IndicatorRow;
-  const reviewedField = `${prefix}DateLastReviewed` as keyof IndicatorRow;
-  const notesField = `${prefix}Notes` as keyof IndicatorRow;
+  const sourceField      = `${prefix}SourceOfInformation` as keyof IndicatorRow;
+  const reviewedField    = `${prefix}DateLastReviewed` as keyof IndicatorRow;
+  const notesField       = `${prefix}Notes` as keyof IndicatorRow;
+  const qualField        = `${prefix}QualitativeQuestion` as keyof IndicatorRow;
+  const quantField       = `${prefix}QuantitativeQuestion` as keyof IndicatorRow;
+
+  const qualVal  = ind[qualField] as string;
+  const quantVal = ind[quantField] as string;
 
   return (
     <div className={`rounded-md border ${color.border} overflow-hidden`}>
@@ -175,6 +186,7 @@ function MeasurementGroup({ ind, prefix, label, color, update }: MeasurementGrou
         <span className={`text-[11px] font-bold uppercase tracking-wider ${color.label}`}>{label}</span>
       </div>
       <div className="p-3 space-y-2.5">
+        {/* Date + Figure */}
         <div className="grid grid-cols-2 gap-2">
           <div>
             <label className={`text-xs font-medium mb-1 block ${color.label}`}>Date</label>
@@ -195,6 +207,8 @@ function MeasurementGroup({ ind, prefix, label, color, update }: MeasurementGrou
             />
           </div>
         </div>
+
+        {/* Explanation */}
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
             <FileText className="w-3 h-3" /> Explanation / Assumption
@@ -206,6 +220,8 @@ function MeasurementGroup({ ind, prefix, label, color, update }: MeasurementGrou
             className="text-xs min-h-[52px]"
           />
         </div>
+
+        {/* Source */}
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
             <Database className="w-3 h-3" /> Source of Information
@@ -217,19 +233,21 @@ function MeasurementGroup({ ind, prefix, label, color, update }: MeasurementGrou
             className="text-xs"
           />
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
-              <CalendarCheck className="w-3 h-3" /> Date Last Reviewed
-            </label>
-            <Input
-              type="date"
-              value={ind[reviewedField] as string}
-              onChange={e => update(ind.localKey, reviewedField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value)}
-              className="text-xs"
-            />
-          </div>
+
+        {/* Date Last Reviewed */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+            <CalendarCheck className="w-3 h-3" /> Date Last Reviewed
+          </label>
+          <Input
+            type="date"
+            value={ind[reviewedField] as string}
+            onChange={e => update(ind.localKey, reviewedField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value)}
+            className="text-xs"
+          />
         </div>
+
+        {/* Notes */}
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
             <StickyNote className="w-3 h-3" /> Notes
@@ -240,6 +258,62 @@ function MeasurementGroup({ ind, prefix, label, color, update }: MeasurementGrou
             placeholder="Any additional context, caveats or observations…"
             className="text-xs min-h-[48px]"
           />
+        </div>
+
+        {/* Linked Measurement Questions */}
+        <div className="pt-1 border-t border-border/30 space-y-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Linked Measurement Questions</p>
+
+          {/* Qualitative toggle */}
+          <div className="rounded-md border border-border/60 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => update(ind.localKey, qualField as keyof Omit<IndicatorRow, "localKey" | "id">, qualVal ? "" : " ")}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${
+                qualVal
+                  ? "bg-violet-50 text-violet-700 border-b border-violet-200"
+                  : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
+              }`}
+            >
+              <MessageSquare className="w-3 h-3 shrink-0" />
+              Qualitative Question
+              <span className="ml-auto text-[10px] font-normal opacity-60">{qualVal ? "tap to remove" : "tap to add"}</span>
+            </button>
+            {qualVal !== undefined && qualVal !== "" && (
+              <Textarea
+                value={qualVal === " " ? "" : qualVal}
+                onChange={e => update(ind.localKey, qualField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value || " ")}
+                placeholder="e.g. How has your confidence changed since starting the programme?"
+                className="text-xs min-h-[56px] border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none"
+                autoFocus
+              />
+            )}
+          </div>
+
+          {/* Quantitative toggle */}
+          <div className="rounded-md border border-border/60 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => update(ind.localKey, quantField as keyof Omit<IndicatorRow, "localKey" | "id">, quantVal ? "" : " ")}
+              className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${
+                quantVal
+                  ? "bg-blue-50 text-blue-700 border-b border-blue-200"
+                  : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
+              }`}
+            >
+              <BarChart3 className="w-3 h-3 shrink-0" />
+              Quantitative Question
+              <span className="ml-auto text-[10px] font-normal opacity-60">{quantVal ? "tap to remove" : "tap to add"}</span>
+            </button>
+            {quantVal !== undefined && quantVal !== "" && (
+              <Textarea
+                value={quantVal === " " ? "" : quantVal}
+                onChange={e => update(ind.localKey, quantField as keyof Omit<IndicatorRow, "localKey" | "id">, e.target.value || " ")}
+                placeholder="e.g. How many training sessions did you attend? (0–10)"
+                className="text-xs min-h-[56px] border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -307,9 +381,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
 
   const saveIndicators = async (componentId: number) => {
     await Promise.all(
-      deletedIds.map(id =>
-        deleteIndicator.mutateAsync({ theoryId, componentId, id })
-      )
+      deletedIds.map(id => deleteIndicator.mutateAsync({ theoryId, componentId, id }))
     );
 
     await Promise.all(
@@ -322,20 +394,24 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
           targetSourceOfInformation: ind.targetSourceOfInformation || undefined,
           targetDateLastReviewed: ind.targetDateLastReviewed || undefined,
           targetNotes: ind.targetNotes || undefined,
+          targetQualitativeQuestion: ind.targetQualitativeQuestion?.trim() || undefined,
+          targetQuantitativeQuestion: ind.targetQuantitativeQuestion?.trim() || undefined,
           actualDate: ind.actualDate || undefined,
           actualFigure: ind.actualFigure || undefined,
           actualExplanation: ind.actualExplanation || undefined,
           actualSourceOfInformation: ind.actualSourceOfInformation || undefined,
           actualDateLastReviewed: ind.actualDateLastReviewed || undefined,
           actualNotes: ind.actualNotes || undefined,
+          actualQualitativeQuestion: ind.actualQualitativeQuestion?.trim() || undefined,
+          actualQuantitativeQuestion: ind.actualQuantitativeQuestion?.trim() || undefined,
           baselineDate: ind.baselineDate || undefined,
           baselineFigure: ind.baselineFigure || undefined,
           baselineExplanation: ind.baselineExplanation || undefined,
           baselineSourceOfInformation: ind.baselineSourceOfInformation || undefined,
           baselineDateLastReviewed: ind.baselineDateLastReviewed || undefined,
           baselineNotes: ind.baselineNotes || undefined,
-          qualitativeQuestion: ind.qualitativeQuestion?.trim() || undefined,
-          quantitativeQuestion: ind.quantitativeQuestion?.trim() || undefined,
+          baselineQualitativeQuestion: ind.baselineQualitativeQuestion?.trim() || undefined,
+          baselineQuantitativeQuestion: ind.baselineQuantitativeQuestion?.trim() || undefined,
           position: idx,
         };
         if (ind.id !== undefined) {
@@ -503,123 +579,32 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   />
                 </div>
 
-                {/* Target group */}
+                {/* TARGET group */}
                 <MeasurementGroup
                   ind={ind}
                   prefix="target"
                   label="Target"
-                  color={{
-                    border: "border-amber-200",
-                    header: "bg-amber-50",
-                    label: "text-amber-700",
-                    dateBg: "bg-amber-50",
-                  }}
+                  color={{ border: "border-amber-200", header: "bg-amber-50", label: "text-amber-700" }}
                   update={updateIndicatorField}
                 />
 
-                {/* Actual group */}
+                {/* ACTUAL group */}
                 <MeasurementGroup
                   ind={ind}
                   prefix="actual"
                   label="Actual"
-                  color={{
-                    border: "border-emerald-200",
-                    header: "bg-emerald-50",
-                    label: "text-emerald-700",
-                    dateBg: "bg-emerald-50",
-                  }}
+                  color={{ border: "border-emerald-200", header: "bg-emerald-50", label: "text-emerald-700" }}
                   update={updateIndicatorField}
                 />
 
-                {/* Baseline group */}
+                {/* BASELINE group */}
                 <MeasurementGroup
                   ind={ind}
                   prefix="baseline"
                   label="Baseline"
-                  color={{
-                    border: "border-blue-200",
-                    header: "bg-blue-50",
-                    label: "text-blue-700",
-                    dateBg: "bg-blue-50",
-                  }}
+                  color={{ border: "border-blue-200", header: "bg-blue-50", label: "text-blue-700" }}
                   update={updateIndicatorField}
                 />
-
-                {/* Linked measurement questions */}
-                <div className="pt-2 border-t border-border/40 space-y-3">
-                  <p className="text-xs font-medium text-foreground">Linked Measurement Questions (Optional)</p>
-
-                  {/* Qualitative */}
-                  <div className="rounded-md border border-border/60 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateIndicatorField(
-                          ind.localKey,
-                          "qualitativeQuestion",
-                          ind.qualitativeQuestion ? "" : " "
-                        )
-                      }
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${
-                        ind.qualitativeQuestion
-                          ? "bg-violet-50 text-violet-700 border-b border-violet-200"
-                          : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
-                      }`}
-                    >
-                      <MessageSquare className="w-3 h-3 shrink-0" />
-                      Qualitative Question
-                      <span className="ml-auto text-[10px] font-normal opacity-60">
-                        {ind.qualitativeQuestion ? "tap to remove" : "tap to add"}
-                      </span>
-                    </button>
-                    {ind.qualitativeQuestion !== undefined && ind.qualitativeQuestion !== "" && (
-                      <Textarea
-                        value={ind.qualitativeQuestion === " " ? "" : ind.qualitativeQuestion}
-                        onChange={e =>
-                          updateIndicatorField(ind.localKey, "qualitativeQuestion", e.target.value || " ")
-                        }
-                        placeholder="e.g. How has your confidence changed since starting the programme?"
-                        className="text-xs min-h-[64px] border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none"
-                        autoFocus
-                      />
-                    )}
-                  </div>
-
-                  {/* Quantitative */}
-                  <div className="rounded-md border border-border/60 overflow-hidden">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        updateIndicatorField(
-                          ind.localKey,
-                          "quantitativeQuestion",
-                          ind.quantitativeQuestion ? "" : " "
-                        )
-                      }
-                      className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${
-                        ind.quantitativeQuestion
-                          ? "bg-blue-50 text-blue-700 border-b border-blue-200"
-                          : "bg-muted/30 text-muted-foreground hover:bg-muted/60"
-                      }`}
-                    >
-                      <BarChart3 className="w-3 h-3 shrink-0" />
-                      Quantitative Question
-                      <span className="ml-auto text-[10px] font-normal opacity-60">
-                        {ind.quantitativeQuestion ? "tap to remove" : "tap to add"}
-                      </span>
-                    </button>
-                    {ind.quantitativeQuestion !== undefined && ind.quantitativeQuestion !== "" && (
-                      <Textarea
-                        value={ind.quantitativeQuestion === " " ? "" : ind.quantitativeQuestion}
-                        onChange={e =>
-                          updateIndicatorField(ind.localKey, "quantitativeQuestion", e.target.value || " ")
-                        }
-                        placeholder="e.g. How many training sessions did you attend? (0–10)"
-                        className="text-xs min-h-[64px] border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0 resize-none"
-                      />
-                    )}
-                  </div>
-                </div>
               </div>
             ))}
           </div>
@@ -627,50 +612,9 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
 
         <Separator />
 
-        <div>
-          <p className="text-sm font-semibold text-foreground mb-1">Measurement Questions</p>
-          <p className="text-xs text-muted-foreground mb-3">Questions to ask respondents when measuring this component</p>
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="qualitativeQuestions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Qualitative Questions (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="e.g. How has this programme affected your daily life? What changes have you noticed since participating?"
-                      className="min-h-[70px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="quantitativeQuestions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Quantitative Questions (Optional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="e.g. How many sessions did you attend? Rate your skill level from 1-10 before and after."
-                      className="min-h-[70px]"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <Button type="submit" disabled={isPending} className="font-semibold shadow-md">
-            {isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Component"}
+        <div className="pb-2">
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending ? "Saving…" : isEditing ? "Save Changes" : "Create Component"}
           </Button>
         </div>
       </form>
