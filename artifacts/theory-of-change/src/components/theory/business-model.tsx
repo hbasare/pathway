@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Sparkles, Plus, Trash2, Pencil, Check, X, Loader2, Image as ImageIcon,
+  Sparkles, Plus, Trash2, Pencil, Check, X, Loader2, Image as ImageIcon, Upload,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -164,6 +164,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
 
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [currentImagePath, setCurrentImagePath] = useState(theory.businessModelImagePath ?? "");
   const [addingRow, setAddingRow] = useState(false);
 
@@ -189,6 +190,26 @@ export function BusinessModel({ theory }: BusinessModelProps) {
       onError: () => toast({ title: "Failed to delete actor", variant: "destructive" }),
     },
   });
+
+  const handleUpload = async (file: File) => {
+    setIsUploading(true);
+    try {
+      const form = new FormData();
+      form.append("image", file);
+      const res = await fetch(`${API_BASE}/theories/${theory.id}/business-model/upload-image`, {
+        method: "POST",
+        body: form,
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const { imageUrl: url } = await res.json() as { imageUrl: string };
+      setCurrentImagePath(url);
+      toast({ title: "Diagram uploaded successfully" });
+    } catch (err) {
+      toast({ title: "Upload failed", description: String(err), variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -242,29 +263,73 @@ export function BusinessModel({ theory }: BusinessModelProps) {
             </h3>
           </div>
 
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Describe your business model — the key players, their roles, and how value flows between them. AI will generate a visual diagram.
-            </p>
-            <div className="flex gap-2">
+          <div className="space-y-4">
+            {/* Option A — AI generate */}
+            <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Generate with AI</p>
+              <p className="text-sm text-muted-foreground">
+                Describe your business model — the key players, their roles, and how value flows between them.
+              </p>
               <Textarea
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
                 placeholder="e.g. Smallholder farmers sell produce to aggregators, who supply food processors, who sell packaged goods through retailers to end consumers. NGO provides training to farmers. Bank provides credit to aggregators."
-                className="flex-1 min-h-[90px] text-sm"
+                className="min-h-[80px] text-sm"
               />
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating || isUploading || !prompt.trim()}
+                className="gap-2"
+              >
+                {isGenerating ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                ) : (
+                  <><Sparkles className="w-4 h-4" /> Generate Diagram</>
+                )}
+              </Button>
             </div>
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating || !prompt.trim()}
-              className="gap-2"
-            >
-              {isGenerating ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
-              ) : (
-                <><Sparkles className="w-4 h-4" /> Generate Diagram</>
-              )}
-            </Button>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground font-medium">or</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            {/* Option B — Upload */}
+            <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Upload Your Own Diagram</p>
+              <p className="text-sm text-muted-foreground">
+                Upload an existing diagram from your computer (PNG, JPG, SVG, PDF-as-image, etc.).
+              </p>
+              <label className="inline-block">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  disabled={isUploading || isGenerating}
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) handleUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+                <Button
+                  asChild
+                  variant="outline"
+                  disabled={isUploading || isGenerating}
+                  className="gap-2 cursor-pointer"
+                >
+                  <span>
+                    {isUploading ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>
+                    ) : (
+                      <><Upload className="w-4 h-4" /> Choose File</>
+                    )}
+                  </span>
+                </Button>
+              </label>
+            </div>
           </div>
 
           {/* Generated image or placeholder */}

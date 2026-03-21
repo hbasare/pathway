@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import path from "path";
 import fs from "fs";
+import multer from "multer";
 import { db } from "@workspace/db";
 import { businessModelActorsTable, insertBusinessModelActorSchema, theoriesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
@@ -11,6 +12,22 @@ const router: IRouter = Router();
 // ── Images static directory ──────────────────────────────────────────────────
 const IMAGES_DIR = path.join(process.cwd(), "public", "business-model-images");
 if (!fs.existsSync(IMAGES_DIR)) fs.mkdirSync(IMAGES_DIR, { recursive: true });
+
+// ── Multer upload config ──────────────────────────────────────────────────────
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, IMAGES_DIR),
+    filename: (req, _file, cb) => {
+      const theoryId = req.params.theoryId ?? "unknown";
+      cb(null, `theory-${theoryId}-${Date.now()}.png`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Only image files are allowed"));
+  },
+});
 
 // ── Actors CRUD ──────────────────────────────────────────────────────────────
 router.get("/theories/:theoryId/business-model/actors", async (req, res) => {
@@ -54,6 +71,25 @@ router.delete("/theories/:theoryId/business-model/actors/:id", async (req, res) 
   await db.delete(businessModelActorsTable).where(eq(businessModelActorsTable.id, id));
   res.status(204).send();
 });
+
+// ── Upload Image ──────────────────────────────────────────────────────────────
+router.post(
+  "/theories/:theoryId/business-model/upload-image",
+  upload.single("image"),
+  async (req, res) => {
+    const theoryId = Number(req.params.theoryId);
+    const file = req.file;
+    if (!file) {
+      res.status(400).json({ error: "No image file provided" });
+      return;
+    }
+    const imageUrl = `/api/business-model-images/${file.filename}`;
+    await db.update(theoriesTable)
+      .set({ businessModelImagePath: imageUrl, updatedAt: new Date() })
+      .where(eq(theoriesTable.id, theoryId));
+    res.json({ imageUrl });
+  },
+);
 
 // ── AI Image Generation ──────────────────────────────────────────────────────
 router.post("/theories/:theoryId/business-model/generate-image", async (req, res) => {
