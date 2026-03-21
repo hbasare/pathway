@@ -12,11 +12,40 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+
+// Per-type guidance for the description field
+const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
+  opportunity: {
+    hint: "Describe the context or constraint. What situation exists that shapes this intervention?",
+    placeholder: "e.g. Limited access to affordable finance prevents smallholder farmers from investing in better inputs.",
+  },
+  input: {
+    hint: "Name the actor and what resource or investment they are providing.",
+    placeholder: "e.g. Sedcom will fund the establishment of three regional training hubs to support educator capacity building.",
+  },
+  activity: {
+    hint: "Name the actor and describe the action they will take, and why.",
+    placeholder: "e.g. Sedcom will train educators and mentors so they can train students about new agricultural techniques.",
+  },
+  output: {
+    hint: "Name the actor and describe the direct result they will deliver.",
+    placeholder: "e.g. Sedcom will deliver 20 certified training workshops reaching 500 educators across the region.",
+  },
+  outcome: {
+    hint: "Name who changes and describe the change in their behaviour, skills, or knowledge.",
+    placeholder: "e.g. Trained educators will apply new mentoring techniques in their classrooms, improving student engagement.",
+  },
+  impact: {
+    hint: "Describe the long-term systemic change for the target population.",
+    placeholder: "e.g. Youth in target communities will have improved access to quality technical education, increasing employment prospects.",
+  },
+};
 
 const formSchema = z.object({
   type: z.enum(["opportunity", "input", "activity", "output", "outcome", "impact"] as const),
@@ -98,6 +127,8 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
   };
 
   const isPending = createMutation.isPending || updateMutation.isPending;
+  const selectedType = form.watch("type") as ComponentType;
+  const descGuidance = DESCRIPTION_GUIDANCE[selectedType] ?? DESCRIPTION_GUIDANCE.activity;
 
   return (
     <Form {...form}>
@@ -147,11 +178,14 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel>Description — Who does what, and why?</FormLabel>
+              <FormDescription className="text-xs text-muted-foreground leading-relaxed">
+                {descGuidance.hint}
+              </FormDescription>
               <FormControl>
                 <Textarea
-                  placeholder="Detail what this component entails..."
-                  className="min-h-[80px]"
+                  placeholder={descGuidance.placeholder}
+                  className="min-h-[90px]"
                   {...field}
                 />
               </FormControl>

@@ -133,12 +133,16 @@ export function ComponentCard({
           </div>
 
           {/* Title */}
-          <h4 className="font-bold text-foreground text-sm leading-snug mb-1.5">{component.title}</h4>
+          <h4 className="font-bold text-foreground text-sm leading-snug mb-2">{component.title}</h4>
 
-          {/* Description */}
-          <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
-            {component.description}
-          </p>
+          {/* Description — who does what and why */}
+          {component.description && (
+            <div className="mb-3 bg-muted/40 rounded-lg px-3 py-2 border-l-2 border-muted-foreground/20">
+              <p className="text-xs text-foreground/80 leading-relaxed line-clamp-3">
+                {component.description}
+              </p>
+            </div>
+          )}
 
           {/* Indicator / assumption badges */}
           {(component.indicators || component.assumptions) && (
