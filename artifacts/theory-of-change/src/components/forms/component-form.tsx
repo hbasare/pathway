@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, MessageSquare, BarChart3 } from "lucide-react";
+import { Plus, Trash2, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote } from "lucide-react";
 
 // Per-type guidance for the description field
 const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
@@ -69,6 +69,10 @@ interface IndicatorRow {
   actualFigure: string;
   qualitativeQuestion: string;
   quantitativeQuestion: string;
+  explanation: string;
+  sourceOfInformation: string;
+  dateLastReviewed: string;
+  notes: string;
 }
 
 function makeKey() {
@@ -76,7 +80,7 @@ function makeKey() {
 }
 
 function emptyIndicator(): IndicatorRow {
-  return { localKey: makeKey(), name: "", targetDate: "", targetFigure: "", actualDate: "", actualFigure: "", qualitativeQuestion: "", quantitativeQuestion: "" };
+  return { localKey: makeKey(), name: "", targetDate: "", targetFigure: "", actualDate: "", actualFigure: "", qualitativeQuestion: "", quantitativeQuestion: "", explanation: "", sourceOfInformation: "", dateLastReviewed: "", notes: "" };
 }
 
 function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
@@ -90,6 +94,10 @@ function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
     actualFigure: ind.actualFigure ?? "",
     qualitativeQuestion: ind.qualitativeQuestion ?? "",
     quantitativeQuestion: ind.quantitativeQuestion ?? "",
+    explanation: ind.explanation ?? "",
+    sourceOfInformation: ind.sourceOfInformation ?? "",
+    dateLastReviewed: ind.dateLastReviewed ?? "",
+    notes: ind.notes ?? "",
   };
 }
 
@@ -193,6 +201,10 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
           actualFigure: ind.actualFigure || undefined,
           qualitativeQuestion: ind.qualitativeQuestion?.trim() || undefined,
           quantitativeQuestion: ind.quantitativeQuestion?.trim() || undefined,
+          explanation: ind.explanation || undefined,
+          sourceOfInformation: ind.sourceOfInformation || undefined,
+          dateLastReviewed: ind.dateLastReviewed || undefined,
+          notes: ind.notes || undefined,
           position: idx,
         };
         if (ind.id !== undefined) {
@@ -398,6 +410,57 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                       onChange={e => updateIndicatorField(ind.localKey, "actualFigure", e.target.value)}
                       placeholder="e.g. 423 educators"
                       className="text-xs"
+                    />
+                  </div>
+                </div>
+
+                {/* Additional tracking fields */}
+                <div className="pt-2 border-t border-border/40 space-y-3">
+                  <p className="text-xs font-medium text-foreground">Additional Details</p>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                      <FileText className="w-3 h-3" /> Explanation / Assumption
+                    </label>
+                    <Textarea
+                      value={ind.explanation}
+                      onChange={e => updateIndicatorField(ind.localKey, "explanation", e.target.value)}
+                      placeholder="e.g. Assumes that trained educators will apply skills within 3 months of graduation."
+                      className="text-xs min-h-[60px]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                      <Database className="w-3 h-3" /> Source of Information
+                    </label>
+                    <Input
+                      value={ind.sourceOfInformation}
+                      onChange={e => updateIndicatorField(ind.localKey, "sourceOfInformation", e.target.value)}
+                      placeholder="e.g. Monitoring surveys, partner MIS, admin records"
+                      className="text-xs"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                        <CalendarCheck className="w-3 h-3" /> Date Last Reviewed
+                      </label>
+                      <Input
+                        type="date"
+                        value={ind.dateLastReviewed}
+                        onChange={e => updateIndicatorField(ind.localKey, "dateLastReviewed", e.target.value)}
+                        className="text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                      <StickyNote className="w-3 h-3" /> Notes
+                    </label>
+                    <Textarea
+                      value={ind.notes}
+                      onChange={e => updateIndicatorField(ind.localKey, "notes", e.target.value)}
+                      placeholder="Any additional context, caveats or observations…"
+                      className="text-xs min-h-[56px]"
                     />
                   </div>
                 </div>

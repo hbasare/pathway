@@ -14,5 +14,9 @@ export interface UpdateComponentIndicator {
   actualFigure?: string;
   qualitativeQuestion?: string;
   quantitativeQuestion?: string;
+  explanation?: string;
+  sourceOfInformation?: string;
+  dateLastReviewed?: string;
+  notes?: string;
   position?: number;
 }

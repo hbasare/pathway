@@ -772,6 +772,18 @@ components:
         quantitativeQuestion:
           type: string
           nullable: true
+        explanation:
+          type: string
+          nullable: true
+        sourceOfInformation:
+          type: string
+          nullable: true
+        dateLastReviewed:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
         position:
           type: integer
         createdAt:
@@ -806,6 +818,14 @@ components:
           type: string
         quantitativeQuestion:
           type: string
+        explanation:
+          type: string
+        sourceOfInformation:
+          type: string
+        dateLastReviewed:
+          type: string
+        notes:
+          type: string
         position:
           type: integer
       required:
@@ -827,6 +847,14 @@ components:
         qualitativeQuestion:
           type: string
         quantitativeQuestion:
+          type: string
+        explanation:
+          type: string
+        sourceOfInformation:
+          type: string
+        dateLastReviewed:
+          type: string
+        notes:
           type: string
         position:
           type: integer

@@ -17,6 +17,10 @@ export interface ComponentIndicator {
   actualFigure?: string | null;
   qualitativeQuestion?: string | null;
   quantitativeQuestion?: string | null;
+  explanation?: string | null;
+  sourceOfInformation?: string | null;
+  dateLastReviewed?: string | null;
+  notes?: string | null;
   position: number;
   createdAt: Date;
   updatedAt: Date;

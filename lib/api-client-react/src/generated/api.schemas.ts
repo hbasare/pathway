@@ -55,6 +55,10 @@ export interface ComponentIndicator {
   actualFigure?: string | null;
   qualitativeQuestion?: string | null;
   quantitativeQuestion?: string | null;
+  explanation?: string | null;
+  sourceOfInformation?: string | null;
+  dateLastReviewed?: string | null;
+  notes?: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -167,6 +171,10 @@ export interface CreateComponentIndicator {
   actualFigure?: string;
   qualitativeQuestion?: string;
   quantitativeQuestion?: string;
+  explanation?: string;
+  sourceOfInformation?: string;
+  dateLastReviewed?: string;
+  notes?: string;
   position?: number;
 }
 
@@ -178,6 +186,10 @@ export interface UpdateComponentIndicator {
   actualFigure?: string;
   qualitativeQuestion?: string;
   quantitativeQuestion?: string;
+  explanation?: string;
+  sourceOfInformation?: string;
+  dateLastReviewed?: string;
+  notes?: string;
   position?: number;
 }
 
