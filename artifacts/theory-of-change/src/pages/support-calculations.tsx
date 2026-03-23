@@ -249,11 +249,11 @@ export default function SupportCalculations() {
                     </span>
                   </th>
 
-                  {/* Notes / Assumptions (Target) */}
+                  {/* Assumptions / Source of Information (Target) */}
                   <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-600 border-r border-border/40">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-300 inline-block" />
-                      Notes / Assumptions
+                      Assumptions / Source of Information
                     </span>
                   </th>
 
@@ -265,11 +265,11 @@ export default function SupportCalculations() {
                     </span>
                   </th>
 
-                  {/* Notes / Assumptions (Actual) */}
+                  {/* Assumptions / Source of Information (Actual) */}
                   <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" />
-                      Notes / Assumptions
+                      Assumptions / Source of Information
                     </span>
                   </th>
                 </tr>
@@ -337,11 +337,11 @@ export default function SupportCalculations() {
                         />
                       </td>
 
-                      {/* Notes / Assumptions (Target) — independent SC field */}
+                      {/* Assumptions / Source of Information (Target) — independent SC field */}
                       <td className="px-4 py-3 bg-amber-50/20 border-r border-border/30">
                         <EditableCell
                           value={ind.scTargetNotes ?? ""}
-                          placeholder="Enter notes or assumptions..."
+                          placeholder="Enter assumptions or source of information..."
                           onSave={v => save(component.id, indicator.id, "scTargetNotes", v)}
                         />
                       </td>
@@ -355,11 +355,11 @@ export default function SupportCalculations() {
                         />
                       </td>
 
-                      {/* Notes / Assumptions (Actual) — independent SC field */}
+                      {/* Assumptions / Source of Information (Actual) — independent SC field */}
                       <td className="px-4 py-3 bg-emerald-50/20">
                         <EditableCell
                           value={ind.scActualNotes ?? ""}
-                          placeholder="Enter notes or assumptions..."
+                          placeholder="Enter assumptions or source of information..."
                           onSave={v => save(component.id, indicator.id, "scActualNotes", v)}
                         />
                       </td>
