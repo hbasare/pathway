@@ -28,15 +28,22 @@ const COLUMN_ORDER: Record<string, number> = {
   opportunity: 0, input: 1, activity: 2, output: 3, outcome: 4, impact: 5,
 };
 
-const FREQUENCY_OPTIONS = [
+const PERIOD_OPTIONS = [
   { value: "weekly",        label: "Weekly" },
   { value: "monthly",       label: "Monthly" },
   { value: "semi-annually", label: "Semi-Annually" },
   { value: "annually",      label: "Annually" },
 ];
 
-function getFrequencyLabel(val: string | null | undefined) {
-  return FREQUENCY_OPTIONS.find(o => o.value === val)?.label ?? "Set frequency";
+const currentYear = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: 12 }, (_, i) => {
+  const y = currentYear - 5 + i;
+  return { value: String(y), label: String(y) };
+});
+
+function getPeriodLabel(val: string | null | undefined) {
+  if (!val?.trim()) return "Select Period";
+  return PERIOD_OPTIONS.find(o => o.value === val)?.label ?? val;
 }
 
 interface EditableCellProps {
@@ -87,12 +94,12 @@ function EditableCell({ value, placeholder, onSave, multiline = true, className 
   );
 }
 
-interface FrequencyPickerProps {
+interface PeriodPickerProps {
   value: string | null | undefined;
   onChange: (val: string) => void;
 }
 
-function FrequencyPicker({ value, onChange }: FrequencyPickerProps) {
+function PeriodPicker({ value, onChange }: PeriodPickerProps) {
   const hasValue = value && value.trim();
   return (
     <DropdownMenu>
@@ -104,12 +111,27 @@ function FrequencyPicker({ value, onChange }: FrequencyPickerProps) {
               : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
             }`}
         >
-          <span>{getFrequencyLabel(value)}</span>
+          <span>{getPeriodLabel(value)}</span>
           <ChevronDown className="w-3 h-3 opacity-60" />
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-40">
-        {FREQUENCY_OPTIONS.map(opt => (
+      <DropdownMenuContent align="start" className="w-44 max-h-72 overflow-y-auto">
+        <div className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground">
+          Frequency
+        </div>
+        {PERIOD_OPTIONS.map(opt => (
+          <DropdownMenuItem
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={value === opt.value ? "bg-violet-50 text-violet-700 font-medium" : ""}
+          >
+            {opt.label}
+          </DropdownMenuItem>
+        ))}
+        <div className="px-2 py-1 mt-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground border-t">
+          Year
+        </div>
+        {YEAR_OPTIONS.map(opt => (
           <DropdownMenuItem
             key={opt.value}
             onClick={() => onChange(opt.value)}
@@ -324,12 +346,12 @@ export default function SupportCalculations() {
                           {indicator.name || <em className="text-muted-foreground">Unnamed indicator</em>}
                         </p>
 
-                        {/* Measurement frequency picker */}
+                        {/* Period picker */}
                         <div>
                           <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground mb-1">
-                            Measurement Frequency
+                            Select Period
                           </p>
-                          <FrequencyPicker
+                          <PeriodPicker
                             value={ind.measurementFrequency ?? ""}
                             onChange={v => save(component.id, indicator.id, "measurementFrequency", v)}
                           />
