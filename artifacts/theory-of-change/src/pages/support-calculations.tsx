@@ -119,7 +119,10 @@ function FrequencyPicker({ value, onChange }: FrequencyPickerProps) {
           </DropdownMenuItem>
         ))}
         {hasValue && (
-          <DropdownMenuItem onClick={() => onChange("")} className="text-muted-foreground text-xs border-t mt-1">
+          <DropdownMenuItem
+            onClick={() => onChange("")}
+            className="text-muted-foreground text-xs border-t mt-1"
+          >
             Clear
           </DropdownMenuItem>
         )}
@@ -168,17 +171,15 @@ export default function SupportCalculations() {
   const rows: Array<{
     component: typeof sortedComponents[number];
     indicator: NonNullable<typeof sortedComponents[number]["componentIndicators"]>[number];
-    indIndex: number;
   }> = [];
 
   for (const comp of sortedComponents) {
-    const indicators = comp.componentIndicators ?? [];
-    indicators.forEach((ind, idx) => {
-      rows.push({ component: comp, indicator: ind, indIndex: idx });
-    });
+    for (const ind of comp.componentIndicators ?? []) {
+      rows.push({ component: comp, indicator: ind });
+    }
   }
 
-  const handleSave = (componentId: number, indicatorId: number, field: string, value: string) => {
+  const save = (componentId: number, indicatorId: number, field: string, value: string) => {
     updateIndicator.mutate({
       theoryId: id,
       componentId,
@@ -225,33 +226,59 @@ export default function SupportCalculations() {
             </p>
           </div>
         ) : (
-          <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+          <div className="rounded-xl border border-border overflow-hidden shadow-sm" style={{ minWidth: 900 }}>
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-muted/60 border-b border-border">
-                  <th className="w-8 px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">#</th>
-                  <th className="w-64 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Indicator &amp; Description
+                  {/* # */}
+                  <th className="w-8 px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
+                    #
                   </th>
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+
+                  {/* Description & Indicator — from Theory of Change (read-only) */}
+                  <th className="w-64 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
+                    <div>Description &amp; Indicator</div>
+                    <div className="text-[9px] font-normal normal-case text-muted-foreground/60 mt-0.5">From Theory of Change</div>
+                  </th>
+
+                  {/* Target */}
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-700 border-r border-border/40">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                      Target &amp; Assumptions
+                      Target
                     </span>
                   </th>
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-700">
+
+                  {/* Notes / Assumptions (Target) */}
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-600 border-r border-border/40">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-amber-300 inline-block" />
+                      Notes / Assumptions
+                    </span>
+                  </th>
+
+                  {/* Actual */}
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-700 border-r border-border/40">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-                      Actual &amp; Assumptions
+                      Actual
                     </span>
                   </th>
-                  <th className="w-52 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Notes</th>
+
+                  {/* Notes / Assumptions (Actual) */}
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" />
+                      Notes / Assumptions
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map(({ component, indicator, indIndex }, rowIdx) => {
+                {rows.map(({ component, indicator }, rowIdx) => {
                   const isEven = rowIdx % 2 === 0;
                   const typeCls = TYPE_COLORS[component.type] ?? "bg-gray-100 text-gray-800 border-gray-200";
+                  const ind = indicator as any;
 
                   return (
                     <tr
@@ -259,12 +286,12 @@ export default function SupportCalculations() {
                       className={`border-b border-border/50 last:border-b-0 align-top ${isEven ? "bg-card" : "bg-muted/20"} hover:bg-primary/5 transition-colors`}
                     >
                       {/* # */}
-                      <td className="px-3 py-3 text-xs text-muted-foreground font-medium">
+                      <td className="px-3 py-3 text-xs text-muted-foreground font-medium border-r border-border/30">
                         {rowIdx + 1}
                       </td>
 
-                      {/* Indicator & Description */}
-                      <td className="px-4 py-3">
+                      {/* Description & Indicator — read-only from Theory of Change */}
+                      <td className="px-4 py-3 border-r border-border/30">
                         {/* Component type badge */}
                         <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border mb-1.5 ${typeCls}`}>
                           {component.type}
@@ -275,17 +302,16 @@ export default function SupportCalculations() {
                           {component.title}
                         </p>
 
-                        {/* Component description from Theory of Change */}
+                        {/* Component description (from Theory of Change) */}
                         {component.description && (
                           <p className="text-[11px] text-muted-foreground mt-0.5 mb-2 leading-relaxed">
                             {component.description}
                           </p>
                         )}
 
-                        {/* Divider */}
                         <div className="border-t border-border/40 my-2" />
 
-                        {/* Indicator name */}
+                        {/* Indicator name (from Theory of Change) */}
                         <p className="text-xs text-foreground font-medium leading-relaxed mb-2">
                           {indicator.name || <em className="text-muted-foreground">Unnamed indicator</em>}
                         </p>
@@ -296,64 +322,45 @@ export default function SupportCalculations() {
                             Measurement Frequency
                           </p>
                           <FrequencyPicker
-                            value={(indicator as any).measurementFrequency ?? ""}
-                            onChange={v => handleSave(component.id, indicator.id, "measurementFrequency", v)}
+                            value={ind.measurementFrequency ?? ""}
+                            onChange={v => save(component.id, indicator.id, "measurementFrequency", v)}
                           />
                         </div>
                       </td>
 
-                      {/* Target & Assumptions */}
-                      <td className="px-4 py-3 bg-amber-50/30">
-                        <div className="space-y-2">
-                          <div>
-                            <p className="text-[9px] font-bold uppercase tracking-wide text-amber-700 mb-0.5">Value</p>
-                            <EditableCell
-                              value={indicator.targetFigure ?? ""}
-                              placeholder="Enter target value..."
-                              onSave={v => handleSave(component.id, indicator.id, "targetFigure", v)}
-                              multiline={false}
-                            />
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-bold uppercase tracking-wide text-amber-700 mb-0.5">Assumptions</p>
-                            <EditableCell
-                              value={indicator.targetExplanation ?? ""}
-                              placeholder="Enter assumptions..."
-                              onSave={v => handleSave(component.id, indicator.id, "targetExplanation", v)}
-                            />
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Actual & Assumptions */}
-                      <td className="px-4 py-3 bg-emerald-50/30">
-                        <div className="space-y-2">
-                          <div>
-                            <p className="text-[9px] font-bold uppercase tracking-wide text-emerald-700 mb-0.5">Value</p>
-                            <EditableCell
-                              value={indicator.actualFigure ?? ""}
-                              placeholder="Enter actual value..."
-                              onSave={v => handleSave(component.id, indicator.id, "actualFigure", v)}
-                              multiline={false}
-                            />
-                          </div>
-                          <div>
-                            <p className="text-[9px] font-bold uppercase tracking-wide text-emerald-700 mb-0.5">Assumptions</p>
-                            <EditableCell
-                              value={indicator.actualExplanation ?? ""}
-                              placeholder="Enter assumptions..."
-                              onSave={v => handleSave(component.id, indicator.id, "actualExplanation", v)}
-                            />
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Notes */}
-                      <td className="px-4 py-3">
+                      {/* Target — independent SC field */}
+                      <td className="px-4 py-3 bg-amber-50/40 border-r border-border/30">
                         <EditableCell
-                          value={(indicator as any).calculationsNotes ?? ""}
-                          placeholder="Add calculation notes..."
-                          onSave={v => handleSave(component.id, indicator.id, "calculationsNotes", v)}
+                          value={ind.scTarget ?? ""}
+                          placeholder="Enter target..."
+                          onSave={v => save(component.id, indicator.id, "scTarget", v)}
+                        />
+                      </td>
+
+                      {/* Notes / Assumptions (Target) — independent SC field */}
+                      <td className="px-4 py-3 bg-amber-50/20 border-r border-border/30">
+                        <EditableCell
+                          value={ind.scTargetNotes ?? ""}
+                          placeholder="Enter notes or assumptions..."
+                          onSave={v => save(component.id, indicator.id, "scTargetNotes", v)}
+                        />
+                      </td>
+
+                      {/* Actual — independent SC field */}
+                      <td className="px-4 py-3 bg-emerald-50/40 border-r border-border/30">
+                        <EditableCell
+                          value={ind.scActual ?? ""}
+                          placeholder="Enter actual..."
+                          onSave={v => save(component.id, indicator.id, "scActual", v)}
+                        />
+                      </td>
+
+                      {/* Notes / Assumptions (Actual) — independent SC field */}
+                      <td className="px-4 py-3 bg-emerald-50/20">
+                        <EditableCell
+                          value={ind.scActualNotes ?? ""}
+                          placeholder="Enter notes or assumptions..."
+                          onSave={v => save(component.id, indicator.id, "scActualNotes", v)}
                         />
                       </td>
                     </tr>

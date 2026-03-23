@@ -34,5 +34,9 @@ export interface UpdateComponentIndicator {
   baselineQuantitativeQuestion?: string;
   calculationsNotes?: string;
   measurementFrequency?: string;
+  scTarget?: string;
+  scTargetNotes?: string;
+  scActual?: string;
+  scActualNotes?: string;
   position?: number;
 }

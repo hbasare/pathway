@@ -1016,6 +1016,18 @@ components:
         measurementFrequency:
           type: string
           nullable: true
+        scTarget:
+          type: string
+          nullable: true
+        scTargetNotes:
+          type: string
+          nullable: true
+        scActual:
+          type: string
+          nullable: true
+        scActualNotes:
+          type: string
+          nullable: true
         position:
           type: integer
         createdAt:
@@ -1090,6 +1102,14 @@ components:
           type: string
         measurementFrequency:
           type: string
+        scTarget:
+          type: string
+        scTargetNotes:
+          type: string
+        scActual:
+          type: string
+        scActualNotes:
+          type: string
         position:
           type: integer
       required:
@@ -1151,6 +1171,14 @@ components:
         calculationsNotes:
           type: string
         measurementFrequency:
+          type: string
+        scTarget:
+          type: string
+        scTargetNotes:
+          type: string
+        scActual:
+          type: string
+        scActualNotes:
           type: string
         position:
           type: integer

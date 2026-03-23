@@ -37,6 +37,10 @@ export interface ComponentIndicator {
   baselineQuantitativeQuestion?: string | null;
   calculationsNotes?: string | null;
   measurementFrequency?: string | null;
+  scTarget?: string | null;
+  scTargetNotes?: string | null;
+  scActual?: string | null;
+  scActualNotes?: string | null;
   position: number;
   createdAt: Date;
   updatedAt: Date;
