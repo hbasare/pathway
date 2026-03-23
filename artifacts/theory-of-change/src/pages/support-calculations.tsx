@@ -266,10 +266,18 @@ export default function SupportCalculations() {
                   </th>
 
                   {/* Assumptions / Source of Information (Actual) */}
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-600 border-r border-border/40">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" />
                       Assumptions / Source of Information
+                    </span>
+                  </th>
+
+                  {/* Notes */}
+                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
+                      Notes
                     </span>
                   </th>
                 </tr>
@@ -356,11 +364,20 @@ export default function SupportCalculations() {
                       </td>
 
                       {/* Assumptions / Source of Information (Actual) — independent SC field */}
-                      <td className="px-4 py-3 bg-emerald-50/20">
+                      <td className="px-4 py-3 bg-emerald-50/20 border-r border-border/30">
                         <EditableCell
                           value={ind.scActualNotes ?? ""}
                           placeholder="Enter assumptions or source of information..."
                           onSave={v => save(component.id, indicator.id, "scActualNotes", v)}
+                        />
+                      </td>
+
+                      {/* Notes — independent SC field */}
+                      <td className="px-4 py-3">
+                        <EditableCell
+                          value={ind.scNotes ?? ""}
+                          placeholder="Enter notes..."
+                          onSave={v => save(component.id, indicator.id, "scNotes", v)}
                         />
                       </td>
                     </tr>

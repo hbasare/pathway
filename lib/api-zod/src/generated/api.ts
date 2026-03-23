@@ -160,6 +160,7 @@ export const GetTheoryResponse = zod.object({
           scTargetNotes: zod.string().nullish(),
           scActual: zod.string().nullish(),
           scActualNotes: zod.string().nullish(),
+          scNotes: zod.string().nullish(),
           position: zod.number(),
           createdAt: zod.date(),
           updatedAt: zod.date(),
@@ -312,6 +313,7 @@ export const ListComponentsResponseItem = zod.object({
       scTargetNotes: zod.string().nullish(),
       scActual: zod.string().nullish(),
       scActualNotes: zod.string().nullish(),
+      scNotes: zod.string().nullish(),
       position: zod.number(),
       createdAt: zod.date(),
       updatedAt: zod.date(),
@@ -450,6 +452,7 @@ export const UpdateComponentResponse = zod.object({
       scTargetNotes: zod.string().nullish(),
       scActual: zod.string().nullish(),
       scActualNotes: zod.string().nullish(),
+      scNotes: zod.string().nullish(),
       position: zod.number(),
       createdAt: zod.date(),
       updatedAt: zod.date(),
@@ -510,6 +513,7 @@ export const ListComponentIndicatorsResponseItem = zod.object({
   scTargetNotes: zod.string().nullish(),
   scActual: zod.string().nullish(),
   scActualNotes: zod.string().nullish(),
+  scNotes: zod.string().nullish(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
@@ -558,6 +562,7 @@ export const CreateComponentIndicatorBody = zod.object({
   scTargetNotes: zod.string().optional(),
   scActual: zod.string().optional(),
   scActualNotes: zod.string().optional(),
+  scNotes: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -602,6 +607,7 @@ export const UpdateComponentIndicatorBody = zod.object({
   scTargetNotes: zod.string().optional(),
   scActual: zod.string().optional(),
   scActualNotes: zod.string().optional(),
+  scNotes: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -640,6 +646,7 @@ export const UpdateComponentIndicatorResponse = zod.object({
   scTargetNotes: zod.string().nullish(),
   scActual: zod.string().nullish(),
   scActualNotes: zod.string().nullish(),
+  scNotes: zod.string().nullish(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),

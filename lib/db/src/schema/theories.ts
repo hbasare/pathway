@@ -114,6 +114,7 @@ export const componentIndicatorsTable = pgTable("component_indicators", {
   scTargetNotes: text("sc_target_notes").notNull().default(""),
   scActual: text("sc_actual").notNull().default(""),
   scActualNotes: text("sc_actual_notes").notNull().default(""),
+  scNotes: text("sc_notes").notNull().default(""),
   position: integer("position").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

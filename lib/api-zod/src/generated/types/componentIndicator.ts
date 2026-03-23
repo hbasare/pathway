@@ -41,6 +41,7 @@ export interface ComponentIndicator {
   scTargetNotes?: string | null;
   scActual?: string | null;
   scActualNotes?: string | null;
+  scNotes?: string | null;
   position: number;
   createdAt: Date;
   updatedAt: Date;

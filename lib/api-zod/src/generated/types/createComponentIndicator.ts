@@ -38,5 +38,6 @@ export interface CreateComponentIndicator {
   scTargetNotes?: string;
   scActual?: string;
   scActualNotes?: string;
+  scNotes?: string;
   position?: number;
 }

@@ -79,6 +79,7 @@ export interface ComponentIndicator {
   scTargetNotes?: string | null;
   scActual?: string | null;
   scActualNotes?: string | null;
+  scNotes?: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -221,6 +222,7 @@ export interface CreateComponentIndicator {
   scTargetNotes?: string;
   scActual?: string;
   scActualNotes?: string;
+  scNotes?: string;
   position?: number;
 }
 
@@ -256,6 +258,7 @@ export interface UpdateComponentIndicator {
   scTargetNotes?: string;
   scActual?: string;
   scActualNotes?: string;
+  scNotes?: string;
   position?: number;
 }
 

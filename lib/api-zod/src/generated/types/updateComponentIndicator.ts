@@ -38,5 +38,6 @@ export interface UpdateComponentIndicator {
   scTargetNotes?: string;
   scActual?: string;
   scActualNotes?: string;
+  scNotes?: string;
   position?: number;
 }

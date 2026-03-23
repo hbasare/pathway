@@ -1028,6 +1028,9 @@ components:
         scActualNotes:
           type: string
           nullable: true
+        scNotes:
+          type: string
+          nullable: true
         position:
           type: integer
         createdAt:
@@ -1110,6 +1113,8 @@ components:
           type: string
         scActualNotes:
           type: string
+        scNotes:
+          type: string
         position:
           type: integer
       required:
@@ -1179,6 +1184,8 @@ components:
         scActual:
           type: string
         scActualNotes:
+          type: string
+        scNotes:
           type: string
         position:
           type: integer
