@@ -74,6 +74,7 @@ export interface ComponentIndicator {
   baselineQualitativeQuestion?: string | null;
   baselineQuantitativeQuestion?: string | null;
   calculationsNotes?: string | null;
+  measurementFrequency?: string | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -211,6 +212,7 @@ export interface CreateComponentIndicator {
   baselineQualitativeQuestion?: string;
   baselineQuantitativeQuestion?: string;
   calculationsNotes?: string;
+  measurementFrequency?: string;
   position?: number;
 }
 
@@ -241,6 +243,7 @@ export interface UpdateComponentIndicator {
   baselineQualitativeQuestion?: string;
   baselineQuantitativeQuestion?: string;
   calculationsNotes?: string;
+  measurementFrequency?: string;
   position?: number;
 }
 

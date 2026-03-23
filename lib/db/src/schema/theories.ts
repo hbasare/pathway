@@ -109,6 +109,7 @@ export const componentIndicatorsTable = pgTable("component_indicators", {
   baselineQualitativeQuestion: text("baseline_qualitative_question").default(""),
   baselineQuantitativeQuestion: text("baseline_quantitative_question").default(""),
   calculationsNotes: text("calculations_notes").notNull().default(""),
+  measurementFrequency: text("measurement_frequency").notNull().default(""),
   position: integer("position").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

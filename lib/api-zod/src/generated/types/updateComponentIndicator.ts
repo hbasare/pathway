@@ -33,5 +33,6 @@ export interface UpdateComponentIndicator {
   baselineQualitativeQuestion?: string;
   baselineQuantitativeQuestion?: string;
   calculationsNotes?: string;
+  measurementFrequency?: string;
   position?: number;
 }

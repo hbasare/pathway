@@ -6,8 +6,14 @@ import {
   getGetTheoryQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Printer, Calculator, Loader2 } from "lucide-react";
+import { ArrowLeft, Printer, Calculator, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const TYPE_COLORS: Record<string, string> = {
   opportunity: "bg-emerald-100 text-emerald-800 border-emerald-200",
@@ -22,8 +28,15 @@ const COLUMN_ORDER: Record<string, number> = {
   opportunity: 0, input: 1, activity: 2, output: 3, outcome: 4, impact: 5,
 };
 
-function dash(val?: string | null) {
-  return val?.trim() || null;
+const FREQUENCY_OPTIONS = [
+  { value: "weekly",        label: "Weekly" },
+  { value: "monthly",       label: "Monthly" },
+  { value: "semi-annually", label: "Semi-Annually" },
+  { value: "annually",      label: "Annually" },
+];
+
+function getFrequencyLabel(val: string | null | undefined) {
+  return FREQUENCY_OPTIONS.find(o => o.value === val)?.label ?? "Set frequency";
 }
 
 interface EditableCellProps {
@@ -71,6 +84,47 @@ function EditableCell({ value, placeholder, onSave, multiline = true, className 
       }}
       onBlur={() => onSave(local)}
     />
+  );
+}
+
+interface FrequencyPickerProps {
+  value: string | null | undefined;
+  onChange: (val: string) => void;
+}
+
+function FrequencyPicker({ value, onChange }: FrequencyPickerProps) {
+  const hasValue = value && value.trim();
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={`flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-md border transition-colors
+            ${hasValue
+              ? "bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-100"
+              : "bg-muted/50 text-muted-foreground border-border hover:bg-muted"
+            }`}
+        >
+          <span>{getFrequencyLabel(value)}</span>
+          <ChevronDown className="w-3 h-3 opacity-60" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-40">
+        {FREQUENCY_OPTIONS.map(opt => (
+          <DropdownMenuItem
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={value === opt.value ? "bg-violet-50 text-violet-700 font-medium" : ""}
+          >
+            {opt.label}
+          </DropdownMenuItem>
+        ))}
+        {hasValue && (
+          <DropdownMenuItem onClick={() => onChange("")} className="text-muted-foreground text-xs border-t mt-1">
+            Clear
+          </DropdownMenuItem>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -176,7 +230,9 @@ export default function SupportCalculations() {
               <thead>
                 <tr className="bg-muted/60 border-b border-border">
                   <th className="w-8 px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">#</th>
-                  <th className="w-52 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Indicator</th>
+                  <th className="w-64 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    Indicator &amp; Description
+                  </th>
                   <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-700">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
@@ -196,10 +252,6 @@ export default function SupportCalculations() {
                 {rows.map(({ component, indicator, indIndex }, rowIdx) => {
                   const isEven = rowIdx % 2 === 0;
                   const typeCls = TYPE_COLORS[component.type] ?? "bg-gray-100 text-gray-800 border-gray-200";
-                  const targetFig = dash(indicator.targetFigure);
-                  const targetExp = dash(indicator.targetExplanation);
-                  const actualFig = dash(indicator.actualFigure);
-                  const actualExp = dash(indicator.actualExplanation);
 
                   return (
                     <tr
@@ -211,13 +263,43 @@ export default function SupportCalculations() {
                         {rowIdx + 1}
                       </td>
 
-                      {/* Indicator */}
+                      {/* Indicator & Description */}
                       <td className="px-4 py-3">
+                        {/* Component type badge */}
                         <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border mb-1.5 ${typeCls}`}>
                           {component.type}
                         </span>
-                        <p className="text-xs font-semibold text-foreground leading-snug">{component.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{indicator.name || <em>Unnamed indicator</em>}</p>
+
+                        {/* Component title */}
+                        <p className="text-xs font-semibold text-foreground leading-snug">
+                          {component.title}
+                        </p>
+
+                        {/* Component description from Theory of Change */}
+                        {component.description && (
+                          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2 leading-relaxed">
+                            {component.description}
+                          </p>
+                        )}
+
+                        {/* Divider */}
+                        <div className="border-t border-border/40 my-2" />
+
+                        {/* Indicator name */}
+                        <p className="text-xs text-foreground font-medium leading-relaxed mb-2">
+                          {indicator.name || <em className="text-muted-foreground">Unnamed indicator</em>}
+                        </p>
+
+                        {/* Measurement frequency picker */}
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground mb-1">
+                            Measurement Frequency
+                          </p>
+                          <FrequencyPicker
+                            value={(indicator as any).measurementFrequency ?? ""}
+                            onChange={v => handleSave(component.id, indicator.id, "measurementFrequency", v)}
+                          />
+                        </div>
                       </td>
 
                       {/* Target & Assumptions */}

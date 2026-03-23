@@ -1013,6 +1013,9 @@ components:
         calculationsNotes:
           type: string
           nullable: true
+        measurementFrequency:
+          type: string
+          nullable: true
         position:
           type: integer
         createdAt:
@@ -1085,6 +1088,8 @@ components:
           type: string
         calculationsNotes:
           type: string
+        measurementFrequency:
+          type: string
         position:
           type: integer
       required:
@@ -1144,6 +1149,8 @@ components:
         baselineQuantitativeQuestion:
           type: string
         calculationsNotes:
+          type: string
+        measurementFrequency:
           type: string
         position:
           type: integer

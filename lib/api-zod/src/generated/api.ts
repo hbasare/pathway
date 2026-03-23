@@ -155,6 +155,7 @@ export const GetTheoryResponse = zod.object({
           baselineQualitativeQuestion: zod.string().nullish(),
           baselineQuantitativeQuestion: zod.string().nullish(),
           calculationsNotes: zod.string().nullish(),
+          measurementFrequency: zod.string().nullish(),
           position: zod.number(),
           createdAt: zod.date(),
           updatedAt: zod.date(),
@@ -302,6 +303,7 @@ export const ListComponentsResponseItem = zod.object({
       baselineQualitativeQuestion: zod.string().nullish(),
       baselineQuantitativeQuestion: zod.string().nullish(),
       calculationsNotes: zod.string().nullish(),
+      measurementFrequency: zod.string().nullish(),
       position: zod.number(),
       createdAt: zod.date(),
       updatedAt: zod.date(),
@@ -435,6 +437,7 @@ export const UpdateComponentResponse = zod.object({
       baselineQualitativeQuestion: zod.string().nullish(),
       baselineQuantitativeQuestion: zod.string().nullish(),
       calculationsNotes: zod.string().nullish(),
+      measurementFrequency: zod.string().nullish(),
       position: zod.number(),
       createdAt: zod.date(),
       updatedAt: zod.date(),
@@ -490,6 +493,7 @@ export const ListComponentIndicatorsResponseItem = zod.object({
   baselineQualitativeQuestion: zod.string().nullish(),
   baselineQuantitativeQuestion: zod.string().nullish(),
   calculationsNotes: zod.string().nullish(),
+  measurementFrequency: zod.string().nullish(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
@@ -533,6 +537,7 @@ export const CreateComponentIndicatorBody = zod.object({
   baselineQualitativeQuestion: zod.string().optional(),
   baselineQuantitativeQuestion: zod.string().optional(),
   calculationsNotes: zod.string().optional(),
+  measurementFrequency: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -572,6 +577,7 @@ export const UpdateComponentIndicatorBody = zod.object({
   baselineQualitativeQuestion: zod.string().optional(),
   baselineQuantitativeQuestion: zod.string().optional(),
   calculationsNotes: zod.string().optional(),
+  measurementFrequency: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -605,6 +611,7 @@ export const UpdateComponentIndicatorResponse = zod.object({
   baselineQualitativeQuestion: zod.string().nullish(),
   baselineQuantitativeQuestion: zod.string().nullish(),
   calculationsNotes: zod.string().nullish(),
+  measurementFrequency: zod.string().nullish(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
