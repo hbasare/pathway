@@ -6,7 +6,7 @@ import {
   getGetTheoryQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Plus, Info, Trash2, X } from "lucide-react";
+import { Plus, Info, Trash2, X, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ComponentCard } from "./component-card";
@@ -59,6 +59,16 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
   const [isAddComponentOpen, setIsAddComponentOpen] = useState(false);
   const [selectedColumnType, setSelectedColumnType] = useState<ComponentType>("activity");
   const [anchorEditor, setAnchorEditor] = useState<AnchorEditorState | null>(null);
+  const [collapsedRows, setCollapsedRows] = useState<Set<ComponentType>>(new Set());
+
+  const toggleRow = (type: ComponentType) => {
+    setCollapsedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(type)) next.delete(type);
+      else next.add(type);
+      return next;
+    });
+  };
 
   const [, setTick] = useState(0);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -216,17 +226,28 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
                 : theory.components.filter(c => c.type === col.type);
 
               const isTopRow    = rowIdx === COLUMNS.length - 1;
-              const isBottomRow = rowIdx === 0;
+              const isCollapsed = collapsedRows.has(col.type);
 
               return (
                 <div
                   key={col.type}
-                  className={`flex flex-row items-start gap-6 py-6 px-2
+                  className={`flex flex-row items-start gap-6 px-2 transition-all
                     ${!isTopRow ? "border-t border-border/40" : ""}
+                    ${isCollapsed ? "py-2" : "py-6"}
                   `}
                 >
-                  {/* Left-side row label — rotated upward */}
-                  <div className="w-[44px] shrink-0 flex flex-col items-center self-stretch justify-center">
+                  {/* Left-side row label — rotated upward, with collapse toggle */}
+                  <div className="w-[44px] shrink-0 flex flex-col items-center gap-1.5 self-stretch justify-center">
+                    <button
+                      onClick={() => toggleRow(col.type)}
+                      className="rounded p-0.5 text-muted-foreground/60 hover:text-foreground hover:bg-muted/60 transition-colors"
+                      title={isCollapsed ? "Expand section" : "Collapse section"}
+                    >
+                      {isCollapsed
+                        ? <ChevronRight className="w-3.5 h-3.5" />
+                        : <ChevronDown className="w-3.5 h-3.5" />
+                      }
+                    </button>
                     <h3
                       className="font-bold text-[11px] uppercase tracking-widest text-muted-foreground [writing-mode:vertical-rl] rotate-180 leading-none text-center"
                     >
@@ -234,8 +255,8 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
                     </h3>
                   </div>
 
-                  {/* Cards: horizontal row */}
-                  <div className="flex flex-row gap-5 items-start flex-1">
+                  {/* Cards: horizontal row — hidden when collapsed */}
+                  <div className={`flex flex-row gap-5 items-start flex-1 ${isCollapsed ? "hidden" : ""}`}>
                     {rowComponents.map((comp) => (
                       <ComponentCard
                         key={comp.id}
