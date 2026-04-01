@@ -356,11 +356,6 @@ export interface UpdateTheoryRiskAnalysis {
   position?: number;
 }
 
-export interface MoveComponent {
-  positionX: number;
-  positionY: number;
-}
-
 export type GenerateBusinessModelImageBody = {
   prompt: string;
 };
