@@ -95,6 +95,23 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
     }
   };
 
+  const handleDisconnect = (connId: number) => {
+    deleteConnectionMutation.mutate({ theoryId: theory.id, id: connId });
+  };
+
+  /** Returns the list of components this card is connected to, with the connection ID. */
+  const getConnectedComponents = (compId: number) => {
+    return theory.connections
+      .filter(c => c.fromComponentId === compId || c.toComponentId === compId)
+      .map(c => {
+        const otherId = c.fromComponentId === compId ? c.toComponentId : c.fromComponentId;
+        const other = theory.components.find(comp => comp.id === otherId);
+        if (!other) return null;
+        return { connectionId: c.id, title: other.title, type: other.type };
+      })
+      .filter(Boolean) as { connectionId: number; title: string; type: string }[];
+  };
+
   // Assign stable sequential box numbers by component ID order
   const sortedIds = [...theory.components].sort((a, b) => a.id - b.id).map(c => c.id);
   const boxNumber = (compId: number) => sortedIds.indexOf(compId) + 1;
@@ -158,6 +175,8 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
                         onConnectEnd={handleConnectEnd}
                         isConnectingFrom={connectingFrom === comp.id}
                         isConnectingMode={!!connectingFrom}
+                        connectedComponents={getConnectedComponents(comp.id)}
+                        onDisconnect={handleDisconnect}
                       />
                     ))}
 

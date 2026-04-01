@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { Component, ComponentType, useDeleteComponent, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MoreVertical, Edit2, Trash2, ArrowRight, Activity, Zap, FileText, Target, Globe, Lightbulb, BarChart3 } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, ArrowRight, Unlink, Activity, Zap, FileText, Target, Globe, Lightbulb, BarChart3 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -15,6 +18,12 @@ import { useToast } from "@/hooks/use-toast";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
 import { ComponentForm } from "@/components/forms/component-form";
 
+interface ConnectedComponent {
+  connectionId: number;
+  title: string;
+  type: string;
+}
+
 interface ComponentCardProps {
   component: Component;
   boxNumber: number;
@@ -22,6 +31,8 @@ interface ComponentCardProps {
   onConnectEnd: (id: number) => void;
   isConnectingFrom: boolean;
   isConnectingMode: boolean;
+  connectedComponents?: ConnectedComponent[];
+  onDisconnect?: (connectionId: number) => void;
 }
 
 const TYPE_CONFIG: Record<ComponentType, { border: string; accent: string; icon: React.ElementType }> = {
@@ -45,7 +56,8 @@ function formatDate(dateStr: string | null | undefined) {
 }
 
 export function ComponentCard({
-  component, boxNumber, onConnectStart, onConnectEnd, isConnectingFrom, isConnectingMode
+  component, boxNumber, onConnectStart, onConnectEnd, isConnectingFrom, isConnectingMode,
+  connectedComponents = [], onDisconnect,
 }: ComponentCardProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -105,11 +117,34 @@ export function ComponentCard({
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem onClick={() => onConnectStart(component.id)}>
                     <ArrowRight className="w-4 h-4 mr-2" />
                     Connect To...
                   </DropdownMenuItem>
+                  {connectedComponents.length > 0 && (
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger>
+                        <Unlink className="w-4 h-4 mr-2" />
+                        Disconnect From...
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-52">
+                        {connectedComponents.map((cc) => (
+                          <DropdownMenuItem
+                            key={cc.connectionId}
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => onDisconnect?.(cc.connectionId)}
+                          >
+                            <Unlink className="w-3.5 h-3.5 mr-2 shrink-0" />
+                            <span className="truncate">
+                              <span className="text-[10px] uppercase font-semibold opacity-60 mr-1">{cc.type}</span>
+                              {cc.title}
+                            </span>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
                     <Edit2 className="w-4 h-4 mr-2" />
