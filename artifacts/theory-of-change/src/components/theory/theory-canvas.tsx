@@ -160,17 +160,20 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
       .filter(Boolean) as { connectionId: number; title: string; type: string }[];
   };
 
-  // Determine smart anchors so arrows route through column gaps, not through cards
+  // Determine smart anchors for the vertical bottom-to-top layout:
+  // Lower row (smaller index) connects upward → exits top, enters bottom.
+  // Same row → exits right, enters left.
   const getAnchors = (conn: { fromComponentId: number; toComponentId: number; startAnchor?: string | null; endAnchor?: string | null }) => {
     const from = theory.components.find(c => c.id === conn.fromComponentId);
     const to   = theory.components.find(c => c.id === conn.toComponentId);
     if (!from || !to) return { start: "auto" as AnchorSide, end: "auto" as AnchorSide };
 
-    const fromCol = COLUMN_INDEX[from.type as ComponentType] ?? 0;
-    const toCol   = COLUMN_INDEX[to.type   as ComponentType] ?? 0;
+    const fromRow = COLUMN_INDEX[from.type as ComponentType] ?? 0;
+    const toRow   = COLUMN_INDEX[to.type   as ComponentType] ?? 0;
 
-    const autoStart: AnchorSide = fromCol < toCol ? "right" : fromCol > toCol ? "left" : "bottom";
-    const autoEnd:   AnchorSide = fromCol < toCol ? "left"  : fromCol > toCol ? "right" : "top";
+    // Upward connection (from lower row to higher row)
+    const autoStart: AnchorSide = fromRow < toRow ? "top" : fromRow > toRow ? "bottom" : "right";
+    const autoEnd:   AnchorSide = fromRow < toRow ? "bottom" : fromRow > toRow ? "top" : "left";
 
     return {
       start: (conn.startAnchor as AnchorSide) || autoStart,
@@ -200,27 +203,49 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
         onClick={() => setAnchorEditor(null)}
       >
         <Xwrapper>
-          <div className="flex gap-10 min-w-max pb-32">
-            {COLUMNS.map((col) => {
-              const isOpportunityCol = col.type === "opportunity";
-              const columnComponents = isOpportunityCol
+          {/*
+            Vertical bottom-to-top layout:
+            flex-col-reverse makes COLUMNS[0] (opportunity) appear at the BOTTOM
+            and COLUMNS[5] (impact) appear at the TOP — matching the causal chain.
+          */}
+          <div className="flex flex-col-reverse gap-0 min-w-max pr-12">
+            {COLUMNS.map((col, rowIdx) => {
+              const isOpportunityRow = col.type === "opportunity";
+              const rowComponents = isOpportunityRow
                 ? theory.components.filter(c => c.type === "opportunity" && c.willBeAddressed)
                 : theory.components.filter(c => c.type === col.type);
 
+              const isTopRow    = rowIdx === COLUMNS.length - 1;
+              const isBottomRow = rowIdx === 0;
+
               return (
-                <div key={col.type} className="flex flex-col w-[280px] shrink-0">
-                  <div className="mb-5 sticky top-0 bg-slate-50/95 backdrop-blur-sm pt-2 pb-3 z-10 border-b border-border/50">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <h3 className="font-bold text-base text-foreground">{col.label}</h3>
-                      <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
-                        {columnComponents.length}
+                <div
+                  key={col.type}
+                  className={`flex flex-row items-start gap-6 py-6 px-2
+                    ${!isTopRow ? "border-t border-border/40" : ""}
+                  `}
+                >
+                  {/* Left-side row label — fixed width */}
+                  <div className="w-[190px] shrink-0 pt-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-sm text-foreground leading-tight">{col.label}</h3>
+                      <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px] shrink-0">
+                        {rowComponents.length}
                       </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground">{col.description}</p>
+                    <p className="text-xs text-muted-foreground leading-snug">{col.description}</p>
+                    {/* Flow indicator arrow on left edge for all but the bottom row */}
+                    {!isBottomRow && (
+                      <div className="mt-3 text-[10px] text-muted-foreground/50 flex items-center gap-1">
+                        <span className="text-base leading-none">↑</span>
+                        <span>from below</span>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex flex-col gap-5">
-                    {columnComponents.map((comp) => (
+                  {/* Cards: horizontal row */}
+                  <div className="flex flex-row gap-5 items-start flex-1">
+                    {rowComponents.map((comp) => (
                       <ComponentCard
                         key={comp.id}
                         component={comp}
@@ -234,26 +259,26 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
                       />
                     ))}
 
-                    {isOpportunityCol ? (
-                      <div className="rounded-xl border-2 border-dashed border-border/60 bg-muted/10 p-4 text-center flex flex-col items-center gap-2">
+                    {isOpportunityRow ? (
+                      <div className="rounded-xl border-2 border-dashed border-border/60 bg-muted/10 p-4 w-[220px] flex flex-col items-center gap-2 self-stretch justify-center">
                         <Info className="w-4 h-4 text-muted-foreground/50" />
-                        <p className="text-xs text-muted-foreground leading-snug">
-                          Manage opportunities & constraints in the{" "}
+                        <p className="text-xs text-muted-foreground leading-snug text-center">
+                          Manage in the{" "}
                           <span className="font-semibold">About Intervention</span> tab.
-                          Toggle <span className="font-semibold">"Will be addressed"</span> to include them here.
+                          Toggle <span className="font-semibold">"Will be addressed"</span> to show here.
                         </p>
                       </div>
                     ) : (
                       <Button
                         variant="outline"
-                        className="border-dashed border-2 py-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                        className="border-dashed border-2 w-[160px] self-stretch min-h-[100px] flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                         onClick={() => {
                           setSelectedColumnType(col.type);
                           setIsAddComponentOpen(true);
                         }}
                       >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add {col.addLabel}
+                        <Plus className="w-5 h-5" />
+                        <span className="text-sm">Add {col.addLabel}</span>
                       </Button>
                     )}
                   </div>
