@@ -225,22 +225,16 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
                     ${!isTopRow ? "border-t border-border/40" : ""}
                   `}
                 >
-                  {/* Left-side row label — fixed width */}
-                  <div className="w-[190px] shrink-0 pt-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-bold text-sm text-foreground leading-tight">{col.label}</h3>
-                      <Badge variant="secondary" className="rounded-full px-2 py-0.5 text-[11px] shrink-0">
-                        {rowComponents.length}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-snug">{col.description}</p>
-                    {/* Flow indicator arrow on left edge for all but the bottom row */}
-                    {!isBottomRow && (
-                      <div className="mt-3 text-[10px] text-muted-foreground/50 flex items-center gap-1">
-                        <span className="text-base leading-none">↑</span>
-                        <span>from below</span>
-                      </div>
-                    )}
+                  {/* Left-side row label — rotated upward */}
+                  <div className="w-[44px] shrink-0 flex flex-col items-center gap-2 self-stretch justify-center">
+                    <Badge variant="secondary" className="rounded-full px-1.5 py-0.5 text-[10px] shrink-0">
+                      {rowComponents.length}
+                    </Badge>
+                    <h3
+                      className="font-bold text-[11px] uppercase tracking-widest text-muted-foreground [writing-mode:vertical-rl] rotate-180 leading-none text-center"
+                    >
+                      {col.label}
+                    </h3>
                   </div>
 
                   {/* Cards: horizontal row */}
