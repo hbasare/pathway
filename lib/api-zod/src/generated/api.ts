@@ -161,7 +161,6 @@ export const GetTheoryResponse = zod.object({
           scActual: zod.string().nullish(),
           scActualNotes: zod.string().nullish(),
           scNotes: zod.string().nullish(),
-          showOnDiagram: zod.boolean().nullish(),
           position: zod.number(),
           createdAt: zod.date(),
           updatedAt: zod.date(),
@@ -315,7 +314,6 @@ export const ListComponentsResponseItem = zod.object({
       scActual: zod.string().nullish(),
       scActualNotes: zod.string().nullish(),
       scNotes: zod.string().nullish(),
-      showOnDiagram: zod.boolean().nullish(),
       position: zod.number(),
       createdAt: zod.date(),
       updatedAt: zod.date(),
@@ -455,7 +453,6 @@ export const UpdateComponentResponse = zod.object({
       scActual: zod.string().nullish(),
       scActualNotes: zod.string().nullish(),
       scNotes: zod.string().nullish(),
-      showOnDiagram: zod.boolean().nullish(),
       position: zod.number(),
       createdAt: zod.date(),
       updatedAt: zod.date(),
@@ -517,7 +514,6 @@ export const ListComponentIndicatorsResponseItem = zod.object({
   scActual: zod.string().nullish(),
   scActualNotes: zod.string().nullish(),
   scNotes: zod.string().nullish(),
-  showOnDiagram: zod.boolean().nullish(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
@@ -567,7 +563,6 @@ export const CreateComponentIndicatorBody = zod.object({
   scActual: zod.string().optional(),
   scActualNotes: zod.string().optional(),
   scNotes: zod.string().optional(),
-  showOnDiagram: zod.boolean().optional(),
   position: zod.number().optional(),
 });
 
@@ -613,7 +608,6 @@ export const UpdateComponentIndicatorBody = zod.object({
   scActual: zod.string().optional(),
   scActualNotes: zod.string().optional(),
   scNotes: zod.string().optional(),
-  showOnDiagram: zod.boolean().optional(),
   position: zod.number().optional(),
 });
 
@@ -653,7 +647,6 @@ export const UpdateComponentIndicatorResponse = zod.object({
   scActual: zod.string().nullish(),
   scActualNotes: zod.string().nullish(),
   scNotes: zod.string().nullish(),
-  showOnDiagram: zod.boolean().nullish(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),

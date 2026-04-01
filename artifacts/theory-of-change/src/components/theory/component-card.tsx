@@ -152,18 +152,17 @@ export function ComponentCard({
             </div>
           )}
 
-          {/* Per-indicator rows — only show indicators with showOnDiagram !== false */}
-          {indicators.filter(i => i.showOnDiagram !== false).length > 0 && (
+          {/* Per-indicator rows */}
+          {indicators.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border/60 space-y-2.5">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <BarChart3 className="w-3 h-3 text-muted-foreground" />
                 <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Indicators ({indicators.filter(i => i.showOnDiagram !== false).length})
+                  Indicators ({indicators.length})
                 </span>
               </div>
-              {indicators.filter(i => i.showOnDiagram !== false).map((ind, idx) => {
-                const hasActual = !!(ind.actualDate || ind.actualFigure);
-                const allGroups = [
+              {indicators.map((ind, idx) => {
+                const groups = [
                   {
                     key: "target",
                     label: "Target",
@@ -192,8 +191,6 @@ export function ComponentCard({
                     dotCls: "bg-blue-400",
                   },
                 ];
-                // When actual data is present, hide the Target group from the canvas
-                const groups = hasActual ? allGroups.filter(g => g.key !== "target") : allGroups;
 
                 return (
                   <div key={ind.id ?? ind.name} className="rounded-md bg-muted/30 border border-border/50 px-2.5 py-2">
