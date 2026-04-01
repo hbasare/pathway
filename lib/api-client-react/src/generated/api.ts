@@ -36,6 +36,7 @@ import type {
   TheoryNoteUpdate,
   TheoryRiskAnalysis,
   UpdateComponentIndicator,
+  UpdateConnection,
   UpdateTheoryNoteUpdate,
   UpdateTheoryRiskAnalysis,
 } from "./api.schemas";
@@ -1515,6 +1516,94 @@ export const useCreateConnection = <
   TContext
 > => {
   return useMutation(getCreateConnectionMutationOptions(options));
+};
+
+/**
+ * @summary Update a connection (e.g. anchor points)
+ */
+export const getUpdateConnectionUrl = (theoryId: number, id: number) => {
+  return `/api/theories/${theoryId}/connections/${id}`;
+};
+
+export const updateConnection = async (
+  theoryId: number,
+  id: number,
+  updateConnection: UpdateConnection,
+  options?: RequestInit,
+): Promise<Connection> => {
+  return customFetch<Connection>(getUpdateConnectionUrl(theoryId, id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateConnection),
+  });
+};
+
+export const getUpdateConnectionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateConnection>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<UpdateConnection> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateConnection>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<UpdateConnection> },
+  TContext
+> => {
+  const mutationKey = ["updateConnection"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateConnection>>,
+    { theoryId: number; id: number; data: BodyType<UpdateConnection> }
+  > = (props) => {
+    const { theoryId, id, data } = props ?? {};
+
+    return updateConnection(theoryId, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateConnectionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateConnection>>
+>;
+export type UpdateConnectionMutationBody = BodyType<UpdateConnection>;
+export type UpdateConnectionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a connection (e.g. anchor points)
+ */
+export const useUpdateConnection = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateConnection>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<UpdateConnection> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateConnection>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<UpdateConnection> },
+  TContext
+> => {
+  return useMutation(getUpdateConnectionMutationOptions(options));
 };
 
 /**

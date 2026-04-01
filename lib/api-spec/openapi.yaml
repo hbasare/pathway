@@ -368,6 +368,34 @@ paths:
                 $ref: "#/components/schemas/Connection"
 
   /theories/{theoryId}/connections/{id}:
+    patch:
+      operationId: updateConnection
+      tags: [connections]
+      summary: Update a connection (e.g. anchor points)
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateConnection"
+      responses:
+        "200":
+          description: Updated connection
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Connection"
     delete:
       operationId: deleteConnection
       tags: [connections]
@@ -1308,6 +1336,12 @@ components:
           type: integer
         label:
           type: string
+        startAnchor:
+          type: string
+          nullable: true
+        endAnchor:
+          type: string
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -1332,6 +1366,16 @@ components:
         - fromComponentId
         - toComponentId
         - label
+
+    UpdateConnection:
+      type: object
+      properties:
+        startAnchor:
+          type: string
+          nullable: true
+        endAnchor:
+          type: string
+          nullable: true
 
     TheoryNoteUpdate:
       type: object

@@ -68,6 +68,8 @@ export const connectionsTable = pgTable("connections", {
   fromComponentId: integer("from_component_id").notNull().references(() => componentsTable.id, { onDelete: "cascade" }),
   toComponentId: integer("to_component_id").notNull().references(() => componentsTable.id, { onDelete: "cascade" }),
   label: text("label").notNull().default(""),
+  startAnchor: text("start_anchor"),
+  endAnchor: text("end_anchor"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

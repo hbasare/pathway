@@ -177,6 +177,8 @@ export const GetTheoryResponse = zod.object({
       fromComponentId: zod.number(),
       toComponentId: zod.number(),
       label: zod.string(),
+      startAnchor: zod.string().nullish(),
+      endAnchor: zod.string().nullish(),
       createdAt: zod.date(),
     }),
   ),
@@ -674,6 +676,8 @@ export const ListConnectionsResponseItem = zod.object({
   fromComponentId: zod.number(),
   toComponentId: zod.number(),
   label: zod.string(),
+  startAnchor: zod.string().nullish(),
+  endAnchor: zod.string().nullish(),
   createdAt: zod.date(),
 });
 export const ListConnectionsResponse = zod.array(ListConnectionsResponseItem);
@@ -689,6 +693,30 @@ export const CreateConnectionBody = zod.object({
   fromComponentId: zod.number(),
   toComponentId: zod.number(),
   label: zod.string(),
+});
+
+/**
+ * @summary Update a connection (e.g. anchor points)
+ */
+export const UpdateConnectionParams = zod.object({
+  theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+export const UpdateConnectionBody = zod.object({
+  startAnchor: zod.string().nullish(),
+  endAnchor: zod.string().nullish(),
+});
+
+export const UpdateConnectionResponse = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  fromComponentId: zod.number(),
+  toComponentId: zod.number(),
+  label: zod.string(),
+  startAnchor: zod.string().nullish(),
+  endAnchor: zod.string().nullish(),
+  createdAt: zod.date(),
 });
 
 /**

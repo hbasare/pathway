@@ -114,6 +114,8 @@ export interface Connection {
   fromComponentId: number;
   toComponentId: number;
   label: string;
+  startAnchor?: string | null;
+  endAnchor?: string | null;
   createdAt: string;
 }
 
@@ -297,6 +299,11 @@ export interface CreateConnection {
   fromComponentId: number;
   toComponentId: number;
   label: string;
+}
+
+export interface UpdateConnection {
+  startAnchor?: string | null;
+  endAnchor?: string | null;
 }
 
 export interface TheoryNoteUpdate {

@@ -6,13 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface Connection {
-  id: number;
-  theoryId: number;
-  fromComponentId: number;
-  toComponentId: number;
-  label: string;
+export interface UpdateConnection {
   startAnchor?: string | null;
   endAnchor?: string | null;
-  createdAt: Date;
 }

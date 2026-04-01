@@ -189,6 +189,21 @@ router.post("/theories/:theoryId/connections", async (req, res) => {
   res.status(201).json(connection);
 });
 
+router.patch("/theories/:theoryId/connections/:id", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const id = Number(req.params.id);
+  const { startAnchor, endAnchor } = req.body;
+  await db
+    .update(connectionsTable)
+    .set({ startAnchor: startAnchor ?? null, endAnchor: endAnchor ?? null })
+    .where(and(eq(connectionsTable.id, id), eq(connectionsTable.theoryId, theoryId)));
+  const [updated] = await db
+    .select()
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.id, id), eq(connectionsTable.theoryId, theoryId)));
+  res.json(updated);
+});
+
 router.delete("/theories/:theoryId/connections/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(connectionsTable).where(eq(connectionsTable.id, id));

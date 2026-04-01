@@ -27,5 +27,6 @@ export * from "./theoryDetail";
 export * from "./theoryNoteUpdate";
 export * from "./theoryRiskAnalysis";
 export * from "./updateComponentIndicator";
+export * from "./updateConnection";
 export * from "./updateTheoryNoteUpdate";
 export * from "./updateTheoryRiskAnalysis";
