@@ -1031,6 +1031,9 @@ components:
         scNotes:
           type: string
           nullable: true
+        showOnDiagram:
+          type: boolean
+          nullable: true
         position:
           type: integer
         createdAt:
@@ -1115,6 +1118,8 @@ components:
           type: string
         scNotes:
           type: string
+        showOnDiagram:
+          type: boolean
         position:
           type: integer
       required:
@@ -1187,6 +1192,8 @@ components:
           type: string
         scNotes:
           type: string
+        showOnDiagram:
+          type: boolean
         position:
           type: integer
 

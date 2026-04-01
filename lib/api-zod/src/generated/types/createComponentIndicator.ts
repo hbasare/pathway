@@ -39,5 +39,6 @@ export interface CreateComponentIndicator {
   scActual?: string;
   scActualNotes?: string;
   scNotes?: string;
+  showOnDiagram?: boolean;
   position?: number;
 }

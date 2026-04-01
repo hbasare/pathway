@@ -42,6 +42,7 @@ export interface ComponentIndicator {
   scActual?: string | null;
   scActualNotes?: string | null;
   scNotes?: string | null;
+  showOnDiagram?: boolean | null;
   position: number;
   createdAt: Date;
   updatedAt: Date;

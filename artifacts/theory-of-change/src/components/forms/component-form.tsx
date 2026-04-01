@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, X, ChevronDown, ChevronRight, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote } from "lucide-react";
+import { Plus, Trash2, X, ChevronDown, ChevronRight, Eye, EyeOff, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote } from "lucide-react";
 
 const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
   opportunity: {
@@ -61,6 +61,7 @@ interface IndicatorRow {
   localKey: string;
   id?: number;
   name: string;
+  showOnDiagram: boolean;
   // Target group
   targetDate: string;
   targetFigure: string;
@@ -98,6 +99,7 @@ function emptyIndicator(): IndicatorRow {
   return {
     localKey: makeKey(),
     name: "",
+    showOnDiagram: true,
     targetDate: "", targetFigure: "", targetExplanation: "", targetSourceOfInformation: "", targetDateLastReviewed: "", targetNotes: "",
     targetQualitativeQuestion: "", targetQuantitativeQuestion: "",
     actualDate: "", actualFigure: "", actualExplanation: "", actualSourceOfInformation: "", actualDateLastReviewed: "", actualNotes: "",
@@ -112,6 +114,7 @@ function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
     localKey: makeKey(),
     id: ind.id,
     name: ind.name ?? "",
+    showOnDiagram: ind.showOnDiagram ?? true,
     targetDate: ind.targetDate ?? "",
     targetFigure: ind.targetFigure ?? "",
     targetExplanation: ind.targetExplanation ?? "",
@@ -436,6 +439,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
       indicators.map((ind, idx) => {
         const payload = {
           name: ind.name || "",
+          showOnDiagram: ind.showOnDiagram,
           targetDate: ind.targetDate || undefined,
           targetFigure: ind.targetFigure || undefined,
           targetExplanation: ind.targetExplanation || undefined,
@@ -608,13 +612,32 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Indicator {idx + 1}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => removeIndicator(ind.localKey, ind.id)}
-                    className="text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      title={ind.showOnDiagram ? "Visible on diagram — click to hide" : "Hidden from diagram — click to show"}
+                      onClick={() => setIndicators(prev => prev.map(r =>
+                        r.localKey === ind.localKey ? { ...r, showOnDiagram: !r.showOnDiagram } : r
+                      ))}
+                      className={`flex items-center gap-1.5 text-[10px] font-semibold px-2 py-1 rounded-full border transition-colors ${
+                        ind.showOnDiagram
+                          ? "bg-primary/10 border-primary/30 text-primary hover:bg-primary/20"
+                          : "bg-muted border-border text-muted-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {ind.showOnDiagram
+                        ? <><Eye className="w-3 h-3" /> Show on diagram</>
+                        : <><EyeOff className="w-3 h-3" /> Hidden from diagram</>
+                      }
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => removeIndicator(ind.localKey, ind.id)}
+                      className="text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div>

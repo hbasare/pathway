@@ -80,6 +80,7 @@ export interface ComponentIndicator {
   scActual?: string | null;
   scActualNotes?: string | null;
   scNotes?: string | null;
+  showOnDiagram?: boolean | null;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -223,6 +224,7 @@ export interface CreateComponentIndicator {
   scActual?: string;
   scActualNotes?: string;
   scNotes?: string;
+  showOnDiagram?: boolean;
   position?: number;
 }
 
@@ -259,6 +261,7 @@ export interface UpdateComponentIndicator {
   scActual?: string;
   scActualNotes?: string;
   scNotes?: string;
+  showOnDiagram?: boolean;
   position?: number;
 }
 
