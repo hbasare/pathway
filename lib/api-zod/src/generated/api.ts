@@ -78,6 +78,102 @@ export const DeletePortfolioParams = zod.object({
 });
 
 /**
+ * @summary Get aggregated logframe for a portfolio
+ */
+export const GetPortfolioLogframeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPortfolioLogframeResponse = zod.object({
+  portfolio: zod.object({
+    id: zod.number(),
+    name: zod.string(),
+    description: zod.string(),
+    createdAt: zod.date(),
+    updatedAt: zod.date(),
+  }),
+  theories: zod.array(
+    zod.object({
+      id: zod.number(),
+      title: zod.string(),
+      description: zod.string(),
+      components: zod.array(
+        zod.object({
+          id: zod.number(),
+          theoryId: zod.number(),
+          type: zod.enum([
+            "opportunity",
+            "input",
+            "activity",
+            "output",
+            "outcome",
+            "impact",
+          ]),
+          title: zod.string(),
+          description: zod.string(),
+          assumptions: zod.string(),
+          targetDate: zod.string().optional(),
+          targetFigure: zod.string().optional(),
+          actualDate: zod.string().optional(),
+          actualFigure: zod.string().optional(),
+          baselineDate: zod.string().optional(),
+          baselineFigure: zod.string().optional(),
+          qualitativeQuestions: zod.string(),
+          quantitativeQuestions: zod.string(),
+          willBeAddressed: zod.boolean(),
+          positionX: zod.number(),
+          positionY: zod.number(),
+          componentIndicators: zod.array(
+            zod.object({
+              id: zod.number(),
+              componentId: zod.number(),
+              theoryId: zod.number(),
+              name: zod.string(),
+              targetDate: zod.string().nullish(),
+              targetFigure: zod.string().nullish(),
+              targetExplanation: zod.string().nullish(),
+              targetSourceOfInformation: zod.string().nullish(),
+              targetDateLastReviewed: zod.string().nullish(),
+              targetNotes: zod.string().nullish(),
+              actualDate: zod.string().nullish(),
+              actualFigure: zod.string().nullish(),
+              actualExplanation: zod.string().nullish(),
+              actualSourceOfInformation: zod.string().nullish(),
+              actualDateLastReviewed: zod.string().nullish(),
+              actualNotes: zod.string().nullish(),
+              baselineDate: zod.string().nullish(),
+              baselineFigure: zod.string().nullish(),
+              baselineExplanation: zod.string().nullish(),
+              baselineSourceOfInformation: zod.string().nullish(),
+              baselineDateLastReviewed: zod.string().nullish(),
+              baselineNotes: zod.string().nullish(),
+              targetQualitativeQuestion: zod.string().nullish(),
+              targetQuantitativeQuestion: zod.string().nullish(),
+              actualQualitativeQuestion: zod.string().nullish(),
+              actualQuantitativeQuestion: zod.string().nullish(),
+              baselineQualitativeQuestion: zod.string().nullish(),
+              baselineQuantitativeQuestion: zod.string().nullish(),
+              calculationsNotes: zod.string().nullish(),
+              measurementFrequency: zod.string().nullish(),
+              scTarget: zod.string().nullish(),
+              scTargetNotes: zod.string().nullish(),
+              scActual: zod.string().nullish(),
+              scActualNotes: zod.string().nullish(),
+              scNotes: zod.string().nullish(),
+              position: zod.number(),
+              createdAt: zod.date(),
+              updatedAt: zod.date(),
+            }),
+          ),
+          createdAt: zod.date(),
+          updatedAt: zod.date(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
  * @summary List all theories of change
  */
 export const ListTheoriesResponseItem = zod.object({

@@ -11,6 +11,7 @@ import TheoryDetail from "@/pages/theory-detail";
 import MeasurementPlan from "@/pages/measurement-plan";
 import SupportCalculations from "@/pages/support-calculations";
 import Summary from "@/pages/summary";
+import PortfolioLogframe from "@/pages/portfolio-logframe";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -26,6 +27,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
+      <Route path="/portfolio/:id/logframe" component={PortfolioLogframe} />
       <Route path="/theory/:id/measurement-plan" component={MeasurementPlan} />
       <Route path="/theory/:id/support-calculations" component={SupportCalculations} />
       <Route path="/theory/:id/summary" component={Summary} />

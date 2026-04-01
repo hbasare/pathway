@@ -1,6 +1,9 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { portfoliosTable, insertPortfolioSchema } from "@workspace/db";
+import {
+  portfoliosTable, insertPortfolioSchema,
+  theoriesTable, componentsTable, componentIndicatorsTable,
+} from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
@@ -53,6 +56,39 @@ router.delete("/portfolios/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(portfoliosTable).where(eq(portfoliosTable.id, id));
   res.status(204).send();
+});
+
+// Logframe — aggregates all intervention theory components + indicators for a portfolio
+router.get("/portfolios/:id/logframe", async (req, res) => {
+  const id = Number(req.params.id);
+
+  const [portfolio] = await db.select().from(portfoliosTable).where(eq(portfoliosTable.id, id));
+  if (!portfolio) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+
+  const theories = await db.select().from(theoriesTable).where(eq(theoriesTable.portfolioId, id));
+
+  const detailedTheories = await Promise.all(
+    theories.map(async (theory) => {
+      const components = await db.select().from(componentsTable).where(eq(componentsTable.theoryId, theory.id));
+      const indicators = await db
+        .select()
+        .from(componentIndicatorsTable)
+        .where(eq(componentIndicatorsTable.theoryId, theory.id))
+        .orderBy(componentIndicatorsTable.position, componentIndicatorsTable.id);
+
+      const componentsWithIndicators = components.map(c => ({
+        ...c,
+        componentIndicators: indicators.filter(ind => ind.componentId === c.id),
+      }));
+
+      return { ...theory, components: componentsWithIndicators };
+    })
+  );
+
+  res.json({ portfolio, theories: detailedTheories });
 });
 
 export default router;

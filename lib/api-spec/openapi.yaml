@@ -121,6 +121,27 @@ paths:
         "204":
           description: Deleted
 
+  /portfolios/{id}/logframe:
+    get:
+      operationId: getPortfolioLogframe
+      tags: [portfolios]
+      summary: Get aggregated logframe for a portfolio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Portfolio logframe with all theories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PortfolioLogframe"
+        "404":
+          description: Not found
+
   /theories:
     get:
       operationId: listTheories
@@ -1630,3 +1651,35 @@ components:
           type: string
         description:
           type: string
+
+    LogframeTheory:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        components:
+          type: array
+          items:
+            $ref: "#/components/schemas/Component"
+      required:
+        - id
+        - title
+        - description
+        - components
+
+    PortfolioLogframe:
+      type: object
+      properties:
+        portfolio:
+          $ref: "#/components/schemas/Portfolio"
+        theories:
+          type: array
+          items:
+            $ref: "#/components/schemas/LogframeTheory"
+      required:
+        - portfolio
+        - theories

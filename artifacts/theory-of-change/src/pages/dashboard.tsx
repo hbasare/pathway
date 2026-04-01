@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { Layers, Plus, ArrowRight, FolderOpen, Pencil, Trash2, MoreHorizontal, FolderPlus } from "lucide-react";
+import { Layers, Plus, ArrowRight, FolderOpen, Pencil, Trash2, MoreHorizontal, FolderPlus, TableProperties } from "lucide-react";
 import { useState } from "react";
 import {
   useListTheories,
@@ -124,6 +124,11 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground mt-0.5 truncate">{portfolio.description}</p>
                   )}
                 </div>
+                <Link href={`/portfolio/${portfolio.id}/logframe`}>
+                  <Button variant="outline" size="sm" className="gap-1.5 shrink-0 text-xs h-8">
+                    <TableProperties className="w-3.5 h-3.5" /> Logframe
+                  </Button>
+                </Link>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">

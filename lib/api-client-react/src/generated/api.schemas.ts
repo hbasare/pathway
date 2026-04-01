@@ -377,6 +377,18 @@ export interface UpdatePortfolio {
   description?: string;
 }
 
+export interface LogframeTheory {
+  id: number;
+  title: string;
+  description: string;
+  components: Component[];
+}
+
+export interface PortfolioLogframe {
+  portfolio: Portfolio;
+  theories: LogframeTheory[];
+}
+
 export type GenerateBusinessModelImageBody = {
   prompt: string;
 };

@@ -33,6 +33,7 @@ import type {
   GenerateBusinessModelImageResponse,
   HealthStatus,
   Portfolio,
+  PortfolioLogframe,
   Theory,
   TheoryDetail,
   TheoryNoteUpdate,
@@ -547,6 +548,94 @@ export const useDeletePortfolio = <
 > => {
   return useMutation(getDeletePortfolioMutationOptions(options));
 };
+
+/**
+ * @summary Get aggregated logframe for a portfolio
+ */
+export const getGetPortfolioLogframeUrl = (id: number) => {
+  return `/api/portfolios/${id}/logframe`;
+};
+
+export const getPortfolioLogframe = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PortfolioLogframe> => {
+  return customFetch<PortfolioLogframe>(getGetPortfolioLogframeUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPortfolioLogframeQueryKey = (id: number) => {
+  return [`/api/portfolios/${id}/logframe`] as const;
+};
+
+export const getGetPortfolioLogframeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPortfolioLogframe>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPortfolioLogframe>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPortfolioLogframeQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPortfolioLogframe>>
+  > = ({ signal }) => getPortfolioLogframe(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPortfolioLogframe>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPortfolioLogframeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPortfolioLogframe>>
+>;
+export type GetPortfolioLogframeQueryError = ErrorType<void>;
+
+/**
+ * @summary Get aggregated logframe for a portfolio
+ */
+
+export function useGetPortfolioLogframe<
+  TData = Awaited<ReturnType<typeof getPortfolioLogframe>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPortfolioLogframe>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPortfolioLogframeQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary List all theories of change
