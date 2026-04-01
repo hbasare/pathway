@@ -116,6 +116,24 @@ router.put("/theories/:theoryId/components/:id", async (req, res) => {
   res.json(updated);
 });
 
+router.patch("/theories/:theoryId/components/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const { positionX, positionY } = req.body;
+  if (typeof positionX !== "number" || typeof positionY !== "number") {
+    res.status(400).json({ error: "positionX and positionY must be numbers" });
+    return;
+  }
+  const [updated] = await db.update(componentsTable)
+    .set({ positionX, positionY, updatedAt: new Date() })
+    .where(eq(componentsTable.id, id))
+    .returning();
+  if (!updated) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  res.json(updated);
+});
+
 router.delete("/theories/:theoryId/components/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(componentsTable).where(eq(componentsTable.id, id));

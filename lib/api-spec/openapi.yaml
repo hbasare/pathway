@@ -192,6 +192,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Component"
+    patch:
+      operationId: moveComponent
+      tags: [components]
+      summary: Update a component's canvas position
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MoveComponent"
+      responses:
+        "200":
+          description: Updated component
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Component"
     delete:
       operationId: deleteComponent
       tags: [components]
@@ -1490,3 +1518,14 @@ components:
           type: string
         position:
           type: integer
+
+    MoveComponent:
+      type: object
+      required:
+        - positionX
+        - positionY
+      properties:
+        positionX:
+          type: number
+        positionY:
+          type: number

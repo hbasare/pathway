@@ -22,6 +22,7 @@ export * from "./createTheoryRiskAnalysis";
 export * from "./generateBusinessModelImageBody";
 export * from "./generateBusinessModelImageResponse";
 export * from "./healthStatus";
+export * from "./moveComponent";
 export * from "./theory";
 export * from "./theoryDetail";
 export * from "./theoryNoteUpdate";

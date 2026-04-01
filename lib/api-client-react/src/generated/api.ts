@@ -31,6 +31,7 @@ import type {
   GenerateBusinessModelImageBody,
   GenerateBusinessModelImageResponse,
   HealthStatus,
+  MoveComponent,
   Theory,
   TheoryDetail,
   TheoryNoteUpdate,
@@ -804,6 +805,94 @@ export const useUpdateComponent = <
   TContext
 > => {
   return useMutation(getUpdateComponentMutationOptions(options));
+};
+
+/**
+ * @summary Update a component's canvas position
+ */
+export const getMoveComponentUrl = (theoryId: number, id: number) => {
+  return `/api/theories/${theoryId}/components/${id}`;
+};
+
+export const moveComponent = async (
+  theoryId: number,
+  id: number,
+  moveComponent: MoveComponent,
+  options?: RequestInit,
+): Promise<Component> => {
+  return customFetch<Component>(getMoveComponentUrl(theoryId, id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(moveComponent),
+  });
+};
+
+export const getMoveComponentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof moveComponent>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<MoveComponent> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof moveComponent>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<MoveComponent> },
+  TContext
+> => {
+  const mutationKey = ["moveComponent"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof moveComponent>>,
+    { theoryId: number; id: number; data: BodyType<MoveComponent> }
+  > = (props) => {
+    const { theoryId, id, data } = props ?? {};
+
+    return moveComponent(theoryId, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MoveComponentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof moveComponent>>
+>;
+export type MoveComponentMutationBody = BodyType<MoveComponent>;
+export type MoveComponentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a component's canvas position
+ */
+export const useMoveComponent = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof moveComponent>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<MoveComponent> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof moveComponent>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<MoveComponent> },
+  TContext
+> => {
+  return useMutation(getMoveComponentMutationOptions(options));
 };
 
 /**
