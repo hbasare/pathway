@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Sparkles, Plus, Trash2, Pencil, Check, X, Loader2, Image as ImageIcon, Upload,
+  RefreshCw, CheckCircle2,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -163,9 +164,11 @@ export function BusinessModel({ theory }: BusinessModelProps) {
   const queryClient = useQueryClient();
 
   const [prompt, setPrompt] = useState("");
+  const [refinementPrompt, setRefinementPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [currentImagePath, setCurrentImagePath] = useState(theory.businessModelImagePath ?? "");
+  const [pendingImageUrl, setPendingImageUrl] = useState<string | null>(null);
   const [addingRow, setAddingRow] = useState(false);
 
   const { data: actors = [], refetch } = useListBusinessModelActors(theory.id);
@@ -211,24 +214,45 @@ export function BusinessModel({ theory }: BusinessModelProps) {
     }
   };
 
+  const buildGeneratePrompt = () => {
+    const base = prompt.trim();
+    const refinement = refinementPrompt.trim();
+    if (refinement) return `${base}\n\nFurther instructions: ${refinement}`;
+    return base;
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
+    setPendingImageUrl(null);
     try {
       const res = await fetch(`${API_BASE}/theories/${theory.id}/business-model/generate-image`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: prompt.trim() }),
+        body: JSON.stringify({ prompt: buildGeneratePrompt() }),
       });
       if (!res.ok) throw new Error(await res.text());
       const { imageUrl: url } = await res.json() as { imageUrl: string };
-      setCurrentImagePath(url);
-      toast({ title: "Business model image generated" });
+      setPendingImageUrl(url);
+      setRefinementPrompt("");
     } catch (err) {
       toast({ title: "Image generation failed", description: String(err), variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleAccept = () => {
+    if (!pendingImageUrl) return;
+    setCurrentImagePath(pendingImageUrl);
+    setPendingImageUrl(null);
+    setRefinementPrompt("");
+    toast({ title: "Diagram accepted and saved" });
+  };
+
+  const handleDiscard = () => {
+    setPendingImageUrl(null);
+    setRefinementPrompt("");
   };
 
   const handleSaveActor = (id: number, data: Omit<Actor, "id" | "position">) => {
@@ -275,6 +299,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
                 onChange={e => setPrompt(e.target.value)}
                 placeholder="e.g. Smallholder farmers sell produce to aggregators, who supply food processors, who sell packaged goods through retailers to end consumers. NGO provides training to farmers. Bank provides credit to aggregators."
                 className="min-h-[80px] text-sm"
+                disabled={isGenerating}
               />
               <Button
                 onClick={handleGenerate}
@@ -332,31 +357,106 @@ export function BusinessModel({ theory }: BusinessModelProps) {
             </div>
           </div>
 
-          {/* Generated image or placeholder */}
-          <div className="mt-5">
-            {currentImagePath ? (
-              <div className="rounded-xl border border-border overflow-hidden shadow-sm">
-                <img
-                  src={imageUrl(currentImagePath)}
-                  alt="Business model diagram"
-                  className="w-full object-contain bg-white"
-                  style={{ maxHeight: "520px" }}
-                />
-                <div className="px-4 py-2 bg-muted/30 border-t border-border text-xs text-muted-foreground flex items-center gap-1.5">
-                  <ImageIcon className="w-3 h-3" />
-                  AI-generated business model diagram · Enter a new description above and click Generate to update
+          {/* ── Preview / review panel (shown after generation, before acceptance) ── */}
+          {pendingImageUrl && (
+            <div className="mt-5 rounded-xl border-2 border-primary/30 bg-primary/5 overflow-hidden shadow-sm">
+              {/* Header */}
+              <div className="px-4 py-3 bg-primary/10 border-b border-primary/20 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-semibold text-primary">Review Generated Diagram</span>
+                </div>
+                <button
+                  onClick={handleDiscard}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  title="Discard"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Preview image */}
+              <img
+                src={pendingImageUrl}
+                alt="Generated business model diagram preview"
+                className="w-full object-contain bg-white"
+                style={{ maxHeight: "520px" }}
+              />
+
+              {/* Refinement + actions */}
+              <div className="px-4 py-4 space-y-3 bg-background/60">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    Refinement instructions (optional)
+                  </label>
+                  <Textarea
+                    value={refinementPrompt}
+                    onChange={e => setRefinementPrompt(e.target.value)}
+                    placeholder="Add further instructions, e.g. make the arrows thicker, or add a government regulator node between banks and farmers."
+                    className="min-h-[60px] text-sm"
+                    disabled={isGenerating}
+                  />
+                </div>
+                <div className="flex items-center gap-3">
+                  <Button
+                    onClick={handleAccept}
+                    className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    Accept Diagram
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleGenerate}
+                    disabled={isGenerating || !prompt.trim()}
+                    className="gap-2"
+                  >
+                    {isGenerating ? (
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Regenerating…</>
+                    ) : (
+                      <><RefreshCw className="w-4 h-4" /> Regenerate</>
+                    )}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleDiscard}
+                    className="text-muted-foreground gap-2 ml-auto"
+                  >
+                    <X className="w-4 h-4" />
+                    Discard
+                  </Button>
                 </div>
               </div>
-            ) : (
-              <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center py-16 text-center">
-                <Sparkles className="w-8 h-8 text-muted-foreground/40 mb-3" />
-                <p className="text-sm font-medium text-muted-foreground">No diagram yet</p>
-                <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs">
-                  Describe your business model above and click "Generate Diagram" to create a visual with AI
-                </p>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* ── Accepted / current image ── */}
+          {!pendingImageUrl && (
+            <div className="mt-5">
+              {currentImagePath ? (
+                <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+                  <img
+                    src={imageUrl(currentImagePath)}
+                    alt="Business model diagram"
+                    className="w-full object-contain bg-white"
+                    style={{ maxHeight: "520px" }}
+                  />
+                  <div className="px-4 py-2 bg-muted/30 border-t border-border text-xs text-muted-foreground flex items-center gap-1.5">
+                    <ImageIcon className="w-3 h-3" />
+                    Accepted business model diagram · Generate a new diagram above to replace it
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center py-16 text-center">
+                  <Sparkles className="w-8 h-8 text-muted-foreground/40 mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No diagram yet</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs">
+                    Describe your business model above and click "Generate Diagram" to create a visual with AI
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </section>
 
         {/* ── Actors table ── */}
