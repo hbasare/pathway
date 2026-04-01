@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +17,7 @@ import PortfolioLogframe from "@/pages/portfolio-logframe";
 import ProgramLogframe from "@/pages/program-logframe";
 import UserManagement from "@/pages/user-management";
 import LoginPage from "@/pages/login";
+import SignupPage from "@/pages/signup";
 import SetupPage from "@/pages/setup";
 import NotFound from "@/pages/not-found";
 
@@ -48,6 +49,7 @@ function Router() {
 function AppShell() {
   const { user, isLoading } = useAuth();
   const [isSetUp, setIsSetUp] = useState<boolean | null>(null);
+  const [location] = useLocation();
 
   useEffect(() => {
     fetch("/api/setup/status", { credentials: "include" })
@@ -65,11 +67,14 @@ function AppShell() {
     );
   }
 
-  // First-run setup
+  // First-run setup (no orgs exist yet)
   if (!isSetUp) return <SetupPage />;
 
-  // Not logged in
-  if (!user) return <LoginPage />;
+  // Public routes — accessible without being logged in
+  if (!user) {
+    if (location === "/signup") return <SignupPage />;
+    return <LoginPage />;
+  }
 
   // Logged in — render full app
   const style = {

@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, LogIn } from "lucide-react";
+import { Link } from "wouter";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -88,9 +89,17 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-xs text-center text-muted-foreground mt-4">
-          Contact your Evaluation Manager if you need access.
-        </p>
+        <div className="mt-4 flex flex-col items-center gap-2">
+          <p className="text-xs text-center text-muted-foreground">
+            Contact your Evaluation Manager if you need access.
+          </p>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span>New organization?</span>
+            <Link href="/signup" className="font-semibold text-primary hover:underline">
+              Create an account
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
   );
