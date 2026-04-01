@@ -576,59 +576,6 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
 
         <Separator />
 
-        {/* Target / Actual / Baseline summary */}
-        <div>
-          <p className="text-sm font-semibold text-foreground mb-1">Target / Actual / Baseline</p>
-          <p className="text-xs text-muted-foreground mb-3">Enter the headline figures shown on the canvas card</p>
-          <div className="grid grid-cols-3 gap-3">
-            {(["target", "actual", "baseline"] as const).map((group) => {
-              const dateField = `${group}Date` as "targetDate" | "actualDate" | "baselineDate";
-              const figField = `${group}Figure` as "targetFigure" | "actualFigure" | "baselineFigure";
-              const colours = { target: "amber", actual: "emerald", baseline: "blue" } as const;
-              const col = colours[group];
-              const dot: Record<string, string> = {
-                amber: "bg-amber-500",
-                emerald: "bg-emerald-500",
-                blue: "bg-blue-500",
-              };
-              return (
-                <div key={group} className="rounded-lg border border-border bg-muted/20 p-3 space-y-2">
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className={`w-2 h-2 rounded-full ${dot[col]}`} />
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{group}</span>
-                  </div>
-                  <FormField
-                    control={form.control}
-                    name={dateField}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Date</FormLabel>
-                        <FormControl>
-                          <Input type="date" className="text-xs h-8" {...field} value={field.value ?? ""} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={figField}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs">Figure / Value</FormLabel>
-                        <FormControl>
-                          <Input placeholder="e.g. $50,000" className="text-xs h-8" {...field} value={field.value ?? ""} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <Separator />
-
         {/* Multi-indicator manager */}
         <div>
           <div className="flex items-center justify-between mb-3">
