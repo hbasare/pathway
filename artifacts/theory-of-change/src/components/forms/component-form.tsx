@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, X, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote } from "lucide-react";
+import { Plus, Trash2, X, ChevronDown, ChevronRight, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote } from "lucide-react";
 
 const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
   opportunity: {
@@ -190,22 +190,42 @@ function MeasurementGroup({ ind, prefix, label, color, update, onClear }: Measur
   const hasAnyData = [dateField, figureField, explanationField, sourceField, reviewedField, notesField, qualField, quantField]
     .some(f => (ind[f] as string)?.trim());
 
+  const [isOpen, setIsOpen] = useState(hasAnyData);
+
   return (
     <div className={`rounded-md border ${color.border} overflow-hidden`}>
-      <div className={`px-3 py-1.5 ${color.header} flex items-center justify-between`}>
-        <span className={`text-[11px] font-bold uppercase tracking-wider ${color.label}`}>{label}</span>
+      <button
+        type="button"
+        onClick={() => setIsOpen(o => !o)}
+        className={`w-full px-3 py-2 ${color.header} flex items-center justify-between hover:brightness-95 transition-all`}
+      >
+        <div className="flex items-center gap-2">
+          {isOpen
+            ? <ChevronDown className={`w-3.5 h-3.5 ${color.label}`} />
+            : <ChevronRight className={`w-3.5 h-3.5 ${color.label}`} />
+          }
+          <span className={`text-[11px] font-bold uppercase tracking-wider ${color.label}`}>{label}</span>
+          {hasAnyData && !isOpen && (
+            <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${color.header} border ${color.border} ${color.label} opacity-80`}>
+              data entered
+            </span>
+          )}
+        </div>
         {hasAnyData && (
-          <button
-            type="button"
-            onClick={onClear}
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={e => { e.stopPropagation(); onClear(); }}
+            onKeyDown={e => { if (e.key === "Enter") { e.stopPropagation(); onClear(); } }}
             title={`Clear all ${label} data`}
             className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded opacity-70 hover:opacity-100 transition-opacity ${color.label} hover:text-destructive`}
           >
             <X className="w-3 h-3" />
             Clear
-          </button>
+          </span>
         )}
-      </div>
+      </button>
+      {isOpen && (
       <div className="p-3 space-y-2.5">
         {/* Date + Figure */}
         <div className="grid grid-cols-2 gap-2">
@@ -337,6 +357,7 @@ function MeasurementGroup({ ind, prefix, label, color, update, onClear }: Measur
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }
