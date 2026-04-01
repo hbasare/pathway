@@ -152,7 +152,8 @@ export function ComponentCard({
             </div>
           )}
 
-          {/* Target / Actual / Baseline — derived from indicators */}
+          {/* Target / Actual / Baseline — derived from indicators, only shown when at least one has data */}
+          {indicators.length > 0 && (
           <div className="mt-2 pt-3 border-t border-border/60">
             <div className="space-y-1.5">
               {[
@@ -217,6 +218,7 @@ export function ComponentCard({
               })}
             </div>
           </div>
+          )}
 
           {/* Per-indicator rows */}
           {indicators.length > 0 && (
