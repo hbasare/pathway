@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote } from "lucide-react";
+import { Plus, Trash2, X, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote } from "lucide-react";
 
 const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
   opportunity: {
@@ -171,9 +171,10 @@ interface MeasurementGroupProps {
   label: string;
   color: { border: string; header: string; label: string };
   update: (key: string, field: keyof Omit<IndicatorRow, "localKey" | "id">, val: string) => void;
+  onClear: () => void;
 }
 
-function MeasurementGroup({ ind, prefix, label, color, update }: MeasurementGroupProps) {
+function MeasurementGroup({ ind, prefix, label, color, update, onClear }: MeasurementGroupProps) {
   const dateField        = `${prefix}Date` as keyof IndicatorRow;
   const figureField      = `${prefix}Figure` as keyof IndicatorRow;
   const explanationField = `${prefix}Explanation` as keyof IndicatorRow;
@@ -186,10 +187,24 @@ function MeasurementGroup({ ind, prefix, label, color, update }: MeasurementGrou
   const qualVal  = ind[qualField] as string;
   const quantVal = ind[quantField] as string;
 
+  const hasAnyData = [dateField, figureField, explanationField, sourceField, reviewedField, notesField, qualField, quantField]
+    .some(f => (ind[f] as string)?.trim());
+
   return (
     <div className={`rounded-md border ${color.border} overflow-hidden`}>
-      <div className={`px-3 py-1.5 ${color.header}`}>
+      <div className={`px-3 py-1.5 ${color.header} flex items-center justify-between`}>
         <span className={`text-[11px] font-bold uppercase tracking-wider ${color.label}`}>{label}</span>
+        {hasAnyData && (
+          <button
+            type="button"
+            onClick={onClear}
+            title={`Clear all ${label} data`}
+            className={`flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded opacity-70 hover:opacity-100 transition-opacity ${color.label} hover:text-destructive`}
+          >
+            <X className="w-3 h-3" />
+            Clear
+          </button>
+        )}
       </div>
       <div className="p-3 space-y-2.5">
         {/* Date + Figure */}
@@ -651,6 +666,13 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   label="Target"
                   color={{ border: "border-amber-200", header: "bg-amber-50", label: "text-amber-700" }}
                   update={updateIndicatorField}
+                  onClear={() => {
+                    const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
+                      "targetDate", "targetFigure", "targetExplanation", "targetSourceOfInformation",
+                      "targetDateLastReviewed", "targetNotes", "targetQualitativeQuestion", "targetQuantitativeQuestion",
+                    ];
+                    fields.forEach(f => updateIndicatorField(ind.localKey, f, ""));
+                  }}
                 />
 
                 {/* ACTUAL group */}
@@ -660,6 +682,13 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   label="Actual"
                   color={{ border: "border-emerald-200", header: "bg-emerald-50", label: "text-emerald-700" }}
                   update={updateIndicatorField}
+                  onClear={() => {
+                    const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
+                      "actualDate", "actualFigure", "actualExplanation", "actualSourceOfInformation",
+                      "actualDateLastReviewed", "actualNotes", "actualQualitativeQuestion", "actualQuantitativeQuestion",
+                    ];
+                    fields.forEach(f => updateIndicatorField(ind.localKey, f, ""));
+                  }}
                 />
 
                 {/* BASELINE group */}
@@ -669,6 +698,13 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   label="Baseline"
                   color={{ border: "border-blue-200", header: "bg-blue-50", label: "text-blue-700" }}
                   update={updateIndicatorField}
+                  onClear={() => {
+                    const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
+                      "baselineDate", "baselineFigure", "baselineExplanation", "baselineSourceOfInformation",
+                      "baselineDateLastReviewed", "baselineNotes", "baselineQualitativeQuestion", "baselineQuantitativeQuestion",
+                    ];
+                    fields.forEach(f => updateIndicatorField(ind.localKey, f, ""));
+                  }}
                 />
               </div>
             ))}
