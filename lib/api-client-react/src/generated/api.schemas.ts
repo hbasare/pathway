@@ -389,6 +389,15 @@ export interface PortfolioLogframe {
   theories: LogframeTheory[];
 }
 
+export interface ProgramLogframeEntry {
+  portfolio: Portfolio;
+  theories: LogframeTheory[];
+}
+
+export interface ProgramLogframe {
+  portfolios: ProgramLogframeEntry[];
+}
+
 export type GenerateBusinessModelImageBody = {
   prompt: string;
 };

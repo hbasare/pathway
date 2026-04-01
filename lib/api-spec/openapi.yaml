@@ -121,6 +121,19 @@ paths:
         "204":
           description: Deleted
 
+  /program-logframe:
+    get:
+      operationId: getProgramLogframe
+      tags: [portfolios]
+      summary: Get aggregated logframe across all portfolios
+      responses:
+        "200":
+          description: Program logframe with all portfolios and theories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgramLogframe"
+
   /portfolios/{id}/logframe:
     get:
       operationId: getPortfolioLogframe
@@ -1683,3 +1696,26 @@ components:
       required:
         - portfolio
         - theories
+
+    ProgramLogframeEntry:
+      type: object
+      properties:
+        portfolio:
+          $ref: "#/components/schemas/Portfolio"
+        theories:
+          type: array
+          items:
+            $ref: "#/components/schemas/LogframeTheory"
+      required:
+        - portfolio
+        - theories
+
+    ProgramLogframe:
+      type: object
+      properties:
+        portfolios:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProgramLogframeEntry"
+      required:
+        - portfolios

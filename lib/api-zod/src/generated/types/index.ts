@@ -26,6 +26,8 @@ export * from "./healthStatus";
 export * from "./logframeTheory";
 export * from "./portfolio";
 export * from "./portfolioLogframe";
+export * from "./programLogframe";
+export * from "./programLogframeEntry";
 export * from "./theory";
 export * from "./theoryDetail";
 export * from "./theoryNoteUpdate";

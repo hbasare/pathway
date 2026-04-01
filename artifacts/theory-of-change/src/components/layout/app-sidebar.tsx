@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { FolderGit2, Plus, Home, Layers } from "lucide-react";
+import { FolderGit2, Plus, Home, Layers, LayoutGrid } from "lucide-react";
 import { useListTheories } from "@workspace/api-client-react";
 import { useState } from "react";
 import {
@@ -50,6 +50,14 @@ export function AppSidebar() {
                   <Link href="/">
                     <Home className="w-4 h-4 mr-2" />
                     <span>Dashboard</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={location === "/program-logframe"}>
+                  <Link href="/program-logframe">
+                    <LayoutGrid className="w-4 h-4 mr-2" />
+                    <span>Program Logframe</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

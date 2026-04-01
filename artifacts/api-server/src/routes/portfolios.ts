@@ -58,7 +58,40 @@ router.delete("/portfolios/:id", async (req, res) => {
   res.status(204).send();
 });
 
-// Logframe — aggregates all intervention theory components + indicators for a portfolio
+// Program logframe — aggregates ALL portfolios + their theories + components + indicators
+router.get("/program-logframe", async (_req, res) => {
+  const portfolios = await db.select().from(portfoliosTable).orderBy(portfoliosTable.createdAt);
+
+  const detailedPortfolios = await Promise.all(
+    portfolios.map(async (portfolio) => {
+      const theories = await db.select().from(theoriesTable).where(eq(theoriesTable.portfolioId, portfolio.id));
+
+      const detailedTheories = await Promise.all(
+        theories.map(async (theory) => {
+          const components = await db.select().from(componentsTable).where(eq(componentsTable.theoryId, theory.id));
+          const indicators = await db
+            .select()
+            .from(componentIndicatorsTable)
+            .where(eq(componentIndicatorsTable.theoryId, theory.id))
+            .orderBy(componentIndicatorsTable.position, componentIndicatorsTable.id);
+
+          const componentsWithIndicators = components.map(c => ({
+            ...c,
+            componentIndicators: indicators.filter(ind => ind.componentId === c.id),
+          }));
+
+          return { ...theory, components: componentsWithIndicators };
+        })
+      );
+
+      return { portfolio, theories: detailedTheories };
+    })
+  );
+
+  res.json({ portfolios: detailedPortfolios });
+});
+
+// Portfolio logframe — aggregates all intervention theory components + indicators for a portfolio
 router.get("/portfolios/:id/logframe", async (req, res) => {
   const id = Number(req.params.id);
 

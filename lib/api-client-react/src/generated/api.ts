@@ -34,6 +34,7 @@ import type {
   HealthStatus,
   Portfolio,
   PortfolioLogframe,
+  ProgramLogframe,
   Theory,
   TheoryDetail,
   TheoryNoteUpdate,
@@ -548,6 +549,81 @@ export const useDeletePortfolio = <
 > => {
   return useMutation(getDeletePortfolioMutationOptions(options));
 };
+
+/**
+ * @summary Get aggregated logframe across all portfolios
+ */
+export const getGetProgramLogframeUrl = () => {
+  return `/api/program-logframe`;
+};
+
+export const getProgramLogframe = async (
+  options?: RequestInit,
+): Promise<ProgramLogframe> => {
+  return customFetch<ProgramLogframe>(getGetProgramLogframeUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProgramLogframeQueryKey = () => {
+  return [`/api/program-logframe`] as const;
+};
+
+export const getGetProgramLogframeQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProgramLogframe>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getProgramLogframe>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetProgramLogframeQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProgramLogframe>>
+  > = ({ signal }) => getProgramLogframe({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProgramLogframe>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProgramLogframeQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProgramLogframe>>
+>;
+export type GetProgramLogframeQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get aggregated logframe across all portfolios
+ */
+
+export function useGetProgramLogframe<
+  TData = Awaited<ReturnType<typeof getProgramLogframe>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getProgramLogframe>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProgramLogframeQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get aggregated logframe for a portfolio
