@@ -8,6 +8,7 @@
 
 export interface Theory {
   id: number;
+  portfolioId?: number | null;
   title: string;
   description: string;
   market?: string;

@@ -7,6 +7,7 @@
  */
 
 export interface CreateTheory {
+  portfolioId?: number | null;
   title: string;
   description: string;
   market?: string;

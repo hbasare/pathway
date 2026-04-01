@@ -9,6 +9,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: portfolios
+    description: Portfolio grouping operations
   - name: theories
     description: Theory of Change operations
   - name: components
@@ -29,6 +31,95 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /portfolios:
+    get:
+      operationId: listPortfolios
+      tags: [portfolios]
+      summary: List all portfolios
+      responses:
+        "200":
+          description: List of portfolios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Portfolio"
+    post:
+      operationId: createPortfolio
+      tags: [portfolios]
+      summary: Create a new portfolio
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePortfolio"
+      responses:
+        "201":
+          description: Created portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+
+  /portfolios/{id}:
+    get:
+      operationId: getPortfolio
+      tags: [portfolios]
+      summary: Get a portfolio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+        "404":
+          description: Not found
+    patch:
+      operationId: updatePortfolio
+      tags: [portfolios]
+      summary: Update a portfolio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePortfolio"
+      responses:
+        "200":
+          description: Updated portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+    delete:
+      operationId: deletePortfolio
+      tags: [portfolios]
+      summary: Delete a portfolio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /theories:
     get:
@@ -736,6 +827,9 @@ components:
       properties:
         id:
           type: integer
+        portfolioId:
+          type: integer
+          nullable: true
         title:
           type: string
         description:
@@ -790,6 +884,9 @@ components:
       properties:
         id:
           type: integer
+        portfolioId:
+          type: integer
+          nullable: true
         title:
           type: string
         description:
@@ -856,6 +953,9 @@ components:
     CreateTheory:
       type: object
       properties:
+        portfolioId:
+          type: integer
+          nullable: true
         title:
           type: string
         description:
@@ -1490,3 +1590,43 @@ components:
           type: string
         position:
           type: integer
+
+    Portfolio:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - description
+        - createdAt
+        - updatedAt
+
+    CreatePortfolio:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+      required:
+        - name
+
+    UpdatePortfolio:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string

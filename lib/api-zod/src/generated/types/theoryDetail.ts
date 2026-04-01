@@ -10,6 +10,7 @@ import type { Connection } from "./connection";
 
 export interface TheoryDetail {
   id: number;
+  portfolioId?: number | null;
   title: string;
   description: string;
   market?: string;

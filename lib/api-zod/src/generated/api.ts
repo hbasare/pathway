@@ -16,10 +16,73 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary List all portfolios
+ */
+export const ListPortfoliosResponseItem = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListPortfoliosResponse = zod.array(ListPortfoliosResponseItem);
+
+/**
+ * @summary Create a new portfolio
+ */
+export const CreatePortfolioBody = zod.object({
+  name: zod.string(),
+  description: zod.string().optional(),
+});
+
+/**
+ * @summary Get a portfolio
+ */
+export const GetPortfolioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetPortfolioResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Update a portfolio
+ */
+export const UpdatePortfolioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdatePortfolioBody = zod.object({
+  name: zod.string().optional(),
+  description: zod.string().optional(),
+});
+
+export const UpdatePortfolioResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  description: zod.string(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Delete a portfolio
+ */
+export const DeletePortfolioParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary List all theories of change
  */
 export const ListTheoriesResponseItem = zod.object({
   id: zod.number(),
+  portfolioId: zod.number().nullish(),
   title: zod.string(),
   description: zod.string(),
   market: zod.string().optional(),
@@ -47,6 +110,7 @@ export const ListTheoriesResponse = zod.array(ListTheoriesResponseItem);
  * @summary Create a new theory of change
  */
 export const CreateTheoryBody = zod.object({
+  portfolioId: zod.number().nullish(),
   title: zod.string(),
   description: zod.string(),
   market: zod.string().optional(),
@@ -78,6 +142,7 @@ export const GetTheoryParams = zod.object({
 
 export const GetTheoryResponse = zod.object({
   id: zod.number(),
+  portfolioId: zod.number().nullish(),
   title: zod.string(),
   description: zod.string(),
   market: zod.string().optional(),
@@ -194,6 +259,7 @@ export const UpdateTheoryParams = zod.object({
 });
 
 export const UpdateTheoryBody = zod.object({
+  portfolioId: zod.number().nullish(),
   title: zod.string(),
   description: zod.string(),
   market: zod.string().optional(),
@@ -218,6 +284,7 @@ export const UpdateTheoryBody = zod.object({
 
 export const UpdateTheoryResponse = zod.object({
   id: zod.number(),
+  portfolioId: zod.number().nullish(),
   title: zod.string(),
   description: zod.string(),
   market: zod.string().optional(),

@@ -11,6 +11,7 @@ export interface HealthStatus {
 
 export interface Theory {
   id: number;
+  portfolioId?: number | null;
   title: string;
   description: string;
   market?: string;
@@ -121,6 +122,7 @@ export interface Connection {
 
 export interface TheoryDetail {
   id: number;
+  portfolioId?: number | null;
   title: string;
   description: string;
   market?: string;
@@ -148,6 +150,7 @@ export interface TheoryDetail {
 }
 
 export interface CreateTheory {
+  portfolioId?: number | null;
   title: string;
   description: string;
   market?: string;
@@ -354,6 +357,24 @@ export interface UpdateTheoryRiskAnalysis {
   mitigationStrategy?: string;
   notes?: string;
   position?: number;
+}
+
+export interface Portfolio {
+  id: number;
+  name: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePortfolio {
+  name: string;
+  description?: string;
+}
+
+export interface UpdatePortfolio {
+  name?: string;
+  description?: string;
 }
 
 export type GenerateBusinessModelImageBody = {
