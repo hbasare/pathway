@@ -226,10 +226,7 @@ export function TheoryCanvas({ theory }: TheoryCanvasProps) {
                   `}
                 >
                   {/* Left-side row label — rotated upward */}
-                  <div className="w-[44px] shrink-0 flex flex-col items-center gap-2 self-stretch justify-center">
-                    <Badge variant="secondary" className="rounded-full px-1.5 py-0.5 text-[10px] shrink-0">
-                      {rowComponents.length}
-                    </Badge>
+                  <div className="w-[44px] shrink-0 flex flex-col items-center self-stretch justify-center">
                     <h3
                       className="font-bold text-[11px] uppercase tracking-widest text-muted-foreground [writing-mode:vertical-rl] rotate-180 leading-none text-center"
                     >
