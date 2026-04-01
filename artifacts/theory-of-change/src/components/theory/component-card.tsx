@@ -241,16 +241,15 @@ export function ComponentCard({
                               <span className={`text-[10px] font-bold uppercase tracking-wide ${g.labelCls}`}>{g.label}</span>
                             </div>
                             {hasData ? (
-                              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-3">
-                                {g.date && (
-                                  <span className="text-[10px] text-foreground font-medium">{formatDate(g.date)}</span>
-                                )}
-                                {g.date && g.figure && (
-                                  <span className="text-[10px] text-muted-foreground">·</span>
-                                )}
-                                {g.figure && (
-                                  <span className="text-[10px] text-muted-foreground">{g.figure}</span>
-                                )}
+                              <div className="pl-3">
+                                <span className="text-[10px] text-foreground font-medium">
+                                  {g.figure && g.figure}
+                                  {g.date && (
+                                    <span className="text-muted-foreground font-normal">
+                                      {g.figure ? " " : ""}({formatDate(g.date)})
+                                    </span>
+                                  )}
+                                </span>
                               </div>
                             ) : (
                               <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
