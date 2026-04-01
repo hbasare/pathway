@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { FolderGit2, Plus, Home, Layers, LayoutGrid } from "lucide-react";
+import { FolderGit2, Plus, Home, Layers, LayoutGrid, Users, LogOut, Shield } from "lucide-react";
 import { useListTheories } from "@workspace/api-client-react";
 import { useState } from "react";
 import {
@@ -9,6 +9,7 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -16,19 +17,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
 import { TheoryForm } from "@/components/forms/theory-form";
+import { useAuth } from "@/contexts/auth-context";
 
 export function AppSidebar() {
   const [location] = useLocation();
   const { data: theories, isLoading } = useListTheories();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { user, logout } = useAuth();
 
   return (
     <Sidebar>
       <SidebarHeader className="p-4 border-b">
         <div className="flex items-center gap-3">
-          <img 
-            src={`${import.meta.env.BASE_URL}images/logo.png`} 
-            alt="Logo" 
+          <img
+            src={`${import.meta.env.BASE_URL}images/logo.png`}
+            alt="Logo"
             className="w-8 h-8 rounded-lg shadow-sm"
           />
           <div>
@@ -61,6 +64,16 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
+              {user?.role === "manager" && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/users"}>
+                    <Link href="/users">
+                      <Users className="w-4 h-4 mr-2" />
+                      <span>User Management</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -93,8 +106,8 @@ export function AppSidebar() {
               ) : (
                 theories?.map((theory) => (
                   <SidebarMenuItem key={theory.id}>
-                    <SidebarMenuButton 
-                      asChild 
+                    <SidebarMenuButton
+                      asChild
                       isActive={location === `/theory/${theory.id}`}
                       className="group"
                     >
@@ -110,6 +123,35 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      {/* Logged-in user footer */}
+      <SidebarFooter className="border-t p-3">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <span className="text-sm font-bold text-primary">
+              {(user?.displayName || user?.username || "?")[0].toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-semibold text-foreground truncate">
+              {user?.displayName || user?.username}
+            </div>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              {user?.role === "manager" && <Shield className="w-3 h-3 text-amber-500" />}
+              <span className="truncate">{user?.orgName}</span>
+            </div>
+          </div>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+            title="Sign out"
+            onClick={() => logout()}
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

@@ -4,17 +4,23 @@ import {
   portfoliosTable, insertPortfolioSchema,
   theoriesTable, componentsTable, componentIndicatorsTable,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-router.get("/portfolios", async (_req, res) => {
-  const portfolios = await db.select().from(portfoliosTable).orderBy(portfoliosTable.createdAt);
+router.get("/portfolios", async (req, res) => {
+  const orgId = req.session.orgId!;
+  const portfolios = await db
+    .select()
+    .from(portfoliosTable)
+    .where(eq(portfoliosTable.orgId, orgId))
+    .orderBy(portfoliosTable.createdAt);
   res.json(portfolios);
 });
 
 router.post("/portfolios", async (req, res) => {
-  const parsed = insertPortfolioSchema.safeParse(req.body);
+  const orgId = req.session.orgId!;
+  const parsed = insertPortfolioSchema.safeParse({ ...req.body, orgId });
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues });
     return;
@@ -25,7 +31,11 @@ router.post("/portfolios", async (req, res) => {
 
 router.get("/portfolios/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const [portfolio] = await db.select().from(portfoliosTable).where(eq(portfoliosTable.id, id));
+  const orgId = req.session.orgId!;
+  const [portfolio] = await db
+    .select()
+    .from(portfoliosTable)
+    .where(and(eq(portfoliosTable.id, id), eq(portfoliosTable.orgId, orgId)));
   if (!portfolio) {
     res.status(404).json({ error: "Not found" });
     return;
@@ -35,6 +45,7 @@ router.get("/portfolios/:id", async (req, res) => {
 
 router.patch("/portfolios/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const orgId = req.session.orgId!;
   const parsed = insertPortfolioSchema.partial().safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues });
@@ -43,7 +54,7 @@ router.patch("/portfolios/:id", async (req, res) => {
   const [updated] = await db
     .update(portfoliosTable)
     .set({ ...parsed.data, updatedAt: new Date() })
-    .where(eq(portfoliosTable.id, id))
+    .where(and(eq(portfoliosTable.id, id), eq(portfoliosTable.orgId, orgId)))
     .returning();
   if (!updated) {
     res.status(404).json({ error: "Not found" });
@@ -54,13 +65,21 @@ router.patch("/portfolios/:id", async (req, res) => {
 
 router.delete("/portfolios/:id", async (req, res) => {
   const id = Number(req.params.id);
-  await db.delete(portfoliosTable).where(eq(portfoliosTable.id, id));
+  const orgId = req.session.orgId!;
+  await db
+    .delete(portfoliosTable)
+    .where(and(eq(portfoliosTable.id, id), eq(portfoliosTable.orgId, orgId)));
   res.status(204).send();
 });
 
 // Program logframe — aggregates ALL portfolios + their theories + components + indicators
-router.get("/program-logframe", async (_req, res) => {
-  const portfolios = await db.select().from(portfoliosTable).orderBy(portfoliosTable.createdAt);
+router.get("/program-logframe", async (req, res) => {
+  const orgId = req.session.orgId!;
+  const portfolios = await db
+    .select()
+    .from(portfoliosTable)
+    .where(eq(portfoliosTable.orgId, orgId))
+    .orderBy(portfoliosTable.createdAt);
 
   const detailedPortfolios = await Promise.all(
     portfolios.map(async (portfolio) => {
@@ -91,11 +110,15 @@ router.get("/program-logframe", async (_req, res) => {
   res.json({ portfolios: detailedPortfolios });
 });
 
-// Portfolio logframe — aggregates all intervention theory components + indicators for a portfolio
+// Portfolio logframe
 router.get("/portfolios/:id/logframe", async (req, res) => {
   const id = Number(req.params.id);
+  const orgId = req.session.orgId!;
 
-  const [portfolio] = await db.select().from(portfoliosTable).where(eq(portfoliosTable.id, id));
+  const [portfolio] = await db
+    .select()
+    .from(portfoliosTable)
+    .where(and(eq(portfoliosTable.id, id), eq(portfoliosTable.orgId, orgId)));
   if (!portfolio) {
     res.status(404).json({ error: "Not found" });
     return;

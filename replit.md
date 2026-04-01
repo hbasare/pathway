@@ -42,12 +42,26 @@ artifacts-monorepo/
 A full-stack platform for building and managing theories of change.
 
 **Features:**
+- Multi-organization authentication with password-based login
+- First-run setup wizard (creates org + Evaluation Manager account)
+- User management: add/remove members, reset passwords, promote/demote roles
+- Two roles: Evaluation Manager (manager) and Member
 - Create and manage multiple theories of change (projects)
 - Add components of 5 types: Input, Activity, Output, Outcome, Impact
 - Connect components with arrows to show causal pathways
 - Visual canvas showing the flow across all 5 stages
 - Each component tracks: title, description, indicators (metrics), assumptions
-- Sidebar navigation between theories
+- Sidebar navigation between theories with logged-in user info and logout
+
+**Auth system:**
+- Routes: `GET /api/setup/status`, `POST /api/setup`, `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`
+- Users CRUD: `GET /api/users`, `POST /api/users`, `PATCH /api/users/:id`, `DELETE /api/users/:id`, `PATCH /api/users/:id/password`
+- Sessions via `express-session` + `connect-pg-simple` (PostgreSQL session store)
+- `SESSION_SECRET` stored as a Replit secret
+- Middleware: `requireAuth` + `requireManager` in `src/middleware/auth.ts`
+- All portfolio/theory routes scoped by `req.session.orgId`
+- Frontend pages: `Login`, `Setup`, `UserManagement` in `artifacts/theory-of-change/src/pages/`
+- Auth context: `artifacts/theory-of-change/src/contexts/auth-context.tsx`
 
 **Frontend artifact:** `artifacts/theory-of-change` (React + Vite, Tailwind, shadcn/ui, react-xarrows)
 **Backend:** `artifacts/api-server` (Express 5 + Drizzle ORM + PostgreSQL)

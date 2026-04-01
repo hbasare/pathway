@@ -1,9 +1,11 @@
 import { pgTable, text, serial, integer, real, timestamp, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
+import { organizationsTable } from "./auth";
 
 export const portfoliosTable = pgTable("portfolios", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").references(() => organizationsTable.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   description: text("description").notNull().default(""),
   createdAt: timestamp("created_at").notNull().defaultNow(),
