@@ -152,74 +152,6 @@ export function ComponentCard({
             </div>
           )}
 
-          {/* Target / Actual / Baseline — derived from indicators, only shown when at least one has data */}
-          {indicators.length > 0 && (
-          <div className="mt-2 pt-3 border-t border-border/60">
-            <div className="space-y-1.5">
-              {[
-                {
-                  key: "target",
-                  label: "Target",
-                  dateKey: "targetDate" as const,
-                  figureKey: "targetFigure" as const,
-                  labelCls: "text-amber-700",
-                  bgCls: "bg-amber-50 border-amber-200",
-                  dotCls: "bg-amber-400",
-                },
-                {
-                  key: "actual",
-                  label: "Actual",
-                  dateKey: "actualDate" as const,
-                  figureKey: "actualFigure" as const,
-                  labelCls: "text-emerald-700",
-                  bgCls: "bg-emerald-50 border-emerald-200",
-                  dotCls: "bg-emerald-400",
-                },
-                {
-                  key: "baseline",
-                  label: "Baseline",
-                  dateKey: "baselineDate" as const,
-                  figureKey: "baselineFigure" as const,
-                  labelCls: "text-blue-700",
-                  bgCls: "bg-blue-50 border-blue-200",
-                  dotCls: "bg-blue-400",
-                },
-              ].map(g => {
-                const withData = indicators.filter(i => i[g.dateKey] || i[g.figureKey]);
-                const first = withData[0];
-                return (
-                  <div key={g.key} className={`rounded border px-2 py-1 ${g.bgCls}`}>
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${g.dotCls}`} />
-                      <span className={`text-[10px] font-bold uppercase tracking-wide ${g.labelCls}`}>{g.label}</span>
-                    </div>
-                    {first ? (
-                      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-3">
-                        {first[g.dateKey] && (
-                          <span className="text-[10px] text-foreground font-medium">{formatDate(first[g.dateKey])}</span>
-                        )}
-                        {first[g.dateKey] && first[g.figureKey] && (
-                          <span className="text-[10px] text-muted-foreground">·</span>
-                        )}
-                        {first[g.figureKey] && (
-                          <span className="text-[10px] text-muted-foreground">{first[g.figureKey]}</span>
-                        )}
-                        {withData.length > 1 && (
-                          <span className={`text-[9px] font-semibold px-1 py-0.5 rounded ${g.bgCls} ${g.labelCls} opacity-80`}>
-                            +{withData.length - 1} more
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          )}
-
           {/* Per-indicator rows */}
           {indicators.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border/60 space-y-2.5">
@@ -229,14 +161,72 @@ export function ComponentCard({
                   Indicators ({indicators.length})
                 </span>
               </div>
-              {indicators.map((ind, idx) => (
-                <div key={ind.id ?? ind.name} className="flex items-start gap-1.5 px-1 py-0.5">
-                  <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5">{idx + 1}.</span>
-                  <p className="text-[11px] text-foreground leading-snug line-clamp-2">
-                    {ind.name || <span className="italic text-muted-foreground">Unnamed indicator</span>}
-                  </p>
-                </div>
-              ))}
+              {indicators.map((ind, idx) => {
+                const groups = [
+                  {
+                    key: "target",
+                    label: "Target",
+                    date: ind.targetDate,
+                    figure: ind.targetFigure,
+                    labelCls: "text-amber-700",
+                    bgCls: "bg-amber-50 border-amber-200",
+                    dotCls: "bg-amber-400",
+                  },
+                  {
+                    key: "actual",
+                    label: "Actual",
+                    date: ind.actualDate,
+                    figure: ind.actualFigure,
+                    labelCls: "text-emerald-700",
+                    bgCls: "bg-emerald-50 border-emerald-200",
+                    dotCls: "bg-emerald-400",
+                  },
+                  {
+                    key: "baseline",
+                    label: "Baseline",
+                    date: ind.baselineDate,
+                    figure: ind.baselineFigure,
+                    labelCls: "text-blue-700",
+                    bgCls: "bg-blue-50 border-blue-200",
+                    dotCls: "bg-blue-400",
+                  },
+                ];
+                return (
+                  <div key={ind.id ?? ind.name} className="rounded-md bg-muted/30 border border-border/50 px-2.5 py-2">
+                    <p className="text-[11px] font-semibold text-foreground leading-snug mb-2 line-clamp-2">
+                      {idx + 1}. {ind.name || <span className="italic text-muted-foreground">Unnamed indicator</span>}
+                    </p>
+                    <div className="space-y-1.5">
+                      {groups.map(g => {
+                        const hasData = !!(g.date || g.figure);
+                        return (
+                          <div key={g.key} className={`rounded border px-2 py-1 ${g.bgCls}`}>
+                            <div className="flex items-center gap-1 mb-0.5">
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${g.dotCls}`} />
+                              <span className={`text-[10px] font-bold uppercase tracking-wide ${g.labelCls}`}>{g.label}</span>
+                            </div>
+                            {hasData ? (
+                              <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-3">
+                                {g.date && (
+                                  <span className="text-[10px] text-foreground font-medium">{formatDate(g.date)}</span>
+                                )}
+                                {g.date && g.figure && (
+                                  <span className="text-[10px] text-muted-foreground">·</span>
+                                )}
+                                {g.figure && (
+                                  <span className="text-[10px] text-muted-foreground">{g.figure}</span>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
