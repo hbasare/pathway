@@ -27,6 +27,7 @@ import type {
   CreateConnection,
   CreatePortfolio,
   CreateTheory,
+  CreateTheoryDocument,
   CreateTheoryNoteUpdate,
   CreateTheoryRiskAnalysis,
   GenerateBusinessModelImageBody,
@@ -37,6 +38,7 @@ import type {
   ProgramLogframe,
   Theory,
   TheoryDetail,
+  TheoryDocument,
   TheoryNoteUpdate,
   TheoryRiskAnalysis,
   UpdateComponentIndicator,
@@ -44,6 +46,8 @@ import type {
   UpdatePortfolio,
   UpdateTheoryNoteUpdate,
   UpdateTheoryRiskAnalysis,
+  UploadUrlRequest,
+  UploadUrlResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -130,6 +134,353 @@ export function useHealthCheck<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+export const getRequestUploadUrlUrl = () => {
+  return `/api/storage/uploads/request-url`;
+};
+
+export const requestUploadUrl = async (
+  uploadUrlRequest: UploadUrlRequest,
+  options?: RequestInit,
+): Promise<UploadUrlResponse> => {
+  return customFetch<UploadUrlResponse>(getRequestUploadUrlUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(uploadUrlRequest),
+  });
+};
+
+export const getRequestUploadUrlMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    TError,
+    { data: BodyType<UploadUrlRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof requestUploadUrl>>,
+  TError,
+  { data: BodyType<UploadUrlRequest> },
+  TContext
+> => {
+  const mutationKey = ["requestUploadUrl"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    { data: BodyType<UploadUrlRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return requestUploadUrl(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RequestUploadUrlMutationResult = NonNullable<
+  Awaited<ReturnType<typeof requestUploadUrl>>
+>;
+export type RequestUploadUrlMutationBody = BodyType<UploadUrlRequest>;
+export type RequestUploadUrlMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+export const useRequestUploadUrl = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof requestUploadUrl>>,
+    TError,
+    { data: BodyType<UploadUrlRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof requestUploadUrl>>,
+  TError,
+  { data: BodyType<UploadUrlRequest> },
+  TContext
+> => {
+  return useMutation(getRequestUploadUrlMutationOptions(options));
+};
+
+/**
+ * @summary List documents for a theory
+ */
+export const getListTheoryDocumentsUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/documents`;
+};
+
+export const listTheoryDocuments = async (
+  theoryId: number,
+  options?: RequestInit,
+): Promise<TheoryDocument[]> => {
+  return customFetch<TheoryDocument[]>(getListTheoryDocumentsUrl(theoryId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListTheoryDocumentsQueryKey = (theoryId: number) => {
+  return [`/api/theories/${theoryId}/documents`] as const;
+};
+
+export const getListTheoryDocumentsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTheoryDocuments>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTheoryDocuments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListTheoryDocumentsQueryKey(theoryId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTheoryDocuments>>
+  > = ({ signal }) =>
+    listTheoryDocuments(theoryId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!theoryId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTheoryDocuments>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTheoryDocumentsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTheoryDocuments>>
+>;
+export type ListTheoryDocumentsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List documents for a theory
+ */
+
+export function useListTheoryDocuments<
+  TData = Awaited<ReturnType<typeof listTheoryDocuments>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTheoryDocuments>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTheoryDocumentsQueryOptions(theoryId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save document metadata after upload
+ */
+export const getCreateTheoryDocumentUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/documents`;
+};
+
+export const createTheoryDocument = async (
+  theoryId: number,
+  createTheoryDocument: CreateTheoryDocument,
+  options?: RequestInit,
+): Promise<TheoryDocument> => {
+  return customFetch<TheoryDocument>(getCreateTheoryDocumentUrl(theoryId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createTheoryDocument),
+  });
+};
+
+export const getCreateTheoryDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTheoryDocument>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateTheoryDocument> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createTheoryDocument>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateTheoryDocument> },
+  TContext
+> => {
+  const mutationKey = ["createTheoryDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createTheoryDocument>>,
+    { theoryId: number; data: BodyType<CreateTheoryDocument> }
+  > = (props) => {
+    const { theoryId, data } = props ?? {};
+
+    return createTheoryDocument(theoryId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateTheoryDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createTheoryDocument>>
+>;
+export type CreateTheoryDocumentMutationBody = BodyType<CreateTheoryDocument>;
+export type CreateTheoryDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Save document metadata after upload
+ */
+export const useCreateTheoryDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createTheoryDocument>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateTheoryDocument> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createTheoryDocument>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateTheoryDocument> },
+  TContext
+> => {
+  return useMutation(getCreateTheoryDocumentMutationOptions(options));
+};
+
+/**
+ * @summary Delete a document
+ */
+export const getDeleteTheoryDocumentUrl = (theoryId: number, docId: number) => {
+  return `/api/theories/${theoryId}/documents/${docId}`;
+};
+
+export const deleteTheoryDocument = async (
+  theoryId: number,
+  docId: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteTheoryDocumentUrl(theoryId, docId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteTheoryDocumentMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTheoryDocument>>,
+    TError,
+    { theoryId: number; docId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteTheoryDocument>>,
+  TError,
+  { theoryId: number; docId: number },
+  TContext
+> => {
+  const mutationKey = ["deleteTheoryDocument"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteTheoryDocument>>,
+    { theoryId: number; docId: number }
+  > = (props) => {
+    const { theoryId, docId } = props ?? {};
+
+    return deleteTheoryDocument(theoryId, docId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteTheoryDocumentMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteTheoryDocument>>
+>;
+
+export type DeleteTheoryDocumentMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a document
+ */
+export const useDeleteTheoryDocument = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteTheoryDocument>>,
+    TError,
+    { theoryId: number; docId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteTheoryDocument>>,
+  TError,
+  { theoryId: number; docId: number },
+  TContext
+> => {
+  return useMutation(getDeleteTheoryDocumentMutationOptions(options));
+};
 
 /**
  * @summary List all portfolios

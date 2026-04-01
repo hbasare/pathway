@@ -372,6 +372,34 @@ export interface CreatePortfolio {
   description?: string;
 }
 
+export interface UploadUrlRequest {
+  name: string;
+  size: number;
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+}
+
+export interface TheoryDocument {
+  id: number;
+  theoryId: number;
+  name: string;
+  objectPath: string;
+  contentType: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export interface CreateTheoryDocument {
+  name: string;
+  objectPath: string;
+  contentType: string;
+  size: number;
+}
+
 export interface UpdatePortfolio {
   name?: string;
   description?: string;

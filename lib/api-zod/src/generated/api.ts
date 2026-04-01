@@ -16,6 +16,62 @@ export const HealthCheckResponse = zod.object({
 });
 
 /**
+ * @summary Request a presigned URL for file upload
+ */
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string(),
+  size: zod.number(),
+  contentType: zod.string(),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string(),
+  objectPath: zod.string(),
+});
+
+/**
+ * @summary List documents for a theory
+ */
+export const ListTheoryDocumentsParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const ListTheoryDocumentsResponseItem = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  name: zod.string(),
+  objectPath: zod.string(),
+  contentType: zod.string(),
+  size: zod.number(),
+  uploadedAt: zod.date(),
+});
+export const ListTheoryDocumentsResponse = zod.array(
+  ListTheoryDocumentsResponseItem,
+);
+
+/**
+ * @summary Save document metadata after upload
+ */
+export const CreateTheoryDocumentParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const CreateTheoryDocumentBody = zod.object({
+  name: zod.string(),
+  objectPath: zod.string(),
+  contentType: zod.string(),
+  size: zod.number(),
+});
+
+/**
+ * @summary Delete a document
+ */
+export const DeleteTheoryDocumentParams = zod.object({
+  theoryId: zod.coerce.number(),
+  docId: zod.coerce.number(),
+});
+
+/**
  * @summary List all portfolios
  */
 export const ListPortfoliosResponseItem = zod.object({

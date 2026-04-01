@@ -9,6 +9,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: Storage
+    description: Object storage upload and serving endpoints.
   - name: portfolios
     description: Portfolio grouping operations
   - name: theories
@@ -31,6 +33,89 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+
+  /theories/{theoryId}/documents:
+    get:
+      operationId: listTheoryDocuments
+      tags: [theories]
+      summary: List documents for a theory
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of documents
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TheoryDocument"
+    post:
+      operationId: createTheoryDocument
+      tags: [theories]
+      summary: Save document metadata after upload
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTheoryDocument"
+      responses:
+        "201":
+          description: Document saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TheoryDocument"
+
+  /theories/{theoryId}/documents/{docId}:
+    delete:
+      operationId: deleteTheoryDocument
+      tags: [theories]
+      summary: Delete a document
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: docId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /portfolios:
     get:
@@ -1656,6 +1741,70 @@ components:
           type: string
       required:
         - name
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+        size:
+          type: integer
+        contentType:
+          type: string
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+        objectPath:
+          type: string
+
+    TheoryDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+        theoryId:
+          type: integer
+        name:
+          type: string
+        objectPath:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+        uploadedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - theoryId
+        - name
+        - objectPath
+        - contentType
+        - size
+        - uploadedAt
+
+    CreateTheoryDocument:
+      type: object
+      properties:
+        name:
+          type: string
+        objectPath:
+          type: string
+        contentType:
+          type: string
+        size:
+          type: integer
+      required:
+        - name
+        - objectPath
+        - contentType
+        - size
 
     UpdatePortfolio:
       type: object
