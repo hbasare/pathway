@@ -164,7 +164,7 @@ router.post("/theories/:theoryId/business-model/generate-image", async (req, res
   const enrichedPrompt = `Business model ecosystem diagram: ${prompt}. Style: clean flat design infographic, white background, colorful icons for each actor/player, arrows showing relationships and flows between actors, labels for each entity and connection, professional and modern look. Include all named stakeholders as distinct visual icons with their names beneath them.`;
 
   try {
-    const buffer = await generateImageBuffer(enrichedPrompt, "1024x1024");
+    const buffer = await generateImageBuffer(enrichedPrompt, "1536x1024");
 
     const filename = `theory-${theoryId}-${Date.now()}.png`;
     const filePath = path.join(IMAGES_DIR, filename);
