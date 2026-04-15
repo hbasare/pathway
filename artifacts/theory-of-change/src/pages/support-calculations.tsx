@@ -203,7 +203,7 @@ interface ScYearRowProps {
   onRefresh: () => void;
 }
 
-function ScYearRow({ theoryId, componentId, indicatorId, row, shade, onRefresh }: ScYearRowProps) {
+function ScYearRow({ theoryId, indicatorId, row, shade, onRefresh }: ScYearRowProps) {
   const save = useCallback(async (field: string, value: string) => {
     await fetch(`/api/theories/${theoryId}/indicators/${indicatorId}/sc-years/${row.id}`, {
       method: "PATCH",
@@ -223,15 +223,20 @@ function ScYearRow({ theoryId, componentId, indicatorId, row, shade, onRefresh }
   };
 
   return (
-    <tr className={`border-b border-border/30 last:border-0 align-top group ${shade ? "bg-muted/10" : "bg-card"}`}>
-      {/* Target — year picker lives here as a compact label */}
-      <td className="px-3 py-2.5 bg-amber-50/40 border-r border-border/30">
-        <div className="flex items-center gap-1.5 mb-1.5">
+    <tr className={`border-b border-border/30 last:border-0 align-middle group ${shade ? "bg-muted/10" : "bg-card"}`}>
+      {/* Col 1 — Year label/picker, indented under the indicator */}
+      <td className="pl-8 pr-3 py-2 border-r border-border/30">
+        <div className="flex items-center gap-1">
+          <span className="text-muted-foreground/40 text-xs select-none">›</span>
           <YearPicker
             value={row.year}
             onChange={v => save("year", v)}
           />
         </div>
+      </td>
+
+      {/* Target */}
+      <td className="px-3 py-2 bg-amber-50/40 border-r border-border/30">
         <EditableCell
           value={row.target}
           placeholder="Enter target..."
@@ -240,7 +245,7 @@ function ScYearRow({ theoryId, componentId, indicatorId, row, shade, onRefresh }
       </td>
 
       {/* Target assumptions */}
-      <td className="px-3 py-2.5 bg-amber-50/20 border-r border-border/30">
+      <td className="px-3 py-2 bg-amber-50/20 border-r border-border/30">
         <EditableCell
           value={row.targetNotes}
           placeholder="Assumptions / source..."
@@ -249,7 +254,7 @@ function ScYearRow({ theoryId, componentId, indicatorId, row, shade, onRefresh }
       </td>
 
       {/* Actual */}
-      <td className="px-3 py-2.5 bg-emerald-50/40 border-r border-border/30">
+      <td className="px-3 py-2 bg-emerald-50/40 border-r border-border/30">
         <EditableCell
           value={row.actual}
           placeholder="Enter actual..."
@@ -258,7 +263,7 @@ function ScYearRow({ theoryId, componentId, indicatorId, row, shade, onRefresh }
       </td>
 
       {/* Actual assumptions */}
-      <td className="px-3 py-2.5 bg-emerald-50/20 border-r border-border/30">
+      <td className="px-3 py-2 bg-emerald-50/20 border-r border-border/30">
         <EditableCell
           value={row.actualNotes}
           placeholder="Assumptions / source..."
@@ -267,7 +272,7 @@ function ScYearRow({ theoryId, componentId, indicatorId, row, shade, onRefresh }
       </td>
 
       {/* Notes + delete */}
-      <td className="px-3 py-2.5">
+      <td className="px-3 py-2">
         <div className="flex items-start gap-1">
           <div className="flex-1">
             <EditableCell
@@ -279,7 +284,7 @@ function ScYearRow({ theoryId, componentId, indicatorId, row, shade, onRefresh }
           <button
             onClick={deleteRow}
             className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5 text-muted-foreground hover:text-destructive"
-            title="Remove year row"
+            title="Remove year"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -405,10 +410,10 @@ export default function SupportCalculations() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-muted/60 border-b border-border">
-                  {/* Description & Indicator */}
-                  <th className="w-72 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
-                    <div>Description &amp; Indicator</div>
-                    <div className="text-[9px] font-normal normal-case text-muted-foreground/60 mt-0.5">From Theory of Change</div>
+                  {/* Indicator / Year */}
+                  <th className="w-56 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
+                    <div>Indicator / Year</div>
+                    <div className="text-[9px] font-normal normal-case text-muted-foreground/60 mt-0.5">Years listed below each indicator</div>
                   </th>
 
                   {/* Target */}
@@ -461,43 +466,41 @@ export default function SupportCalculations() {
 
                   return (
                     <>
-                      {/* ── Indicator header row ── */}
+                      {/* ── Indicator header row — spans all 6 columns ── */}
                       <tr
                         key={`ind-${indicator.id}`}
-                        className={`border-b border-border/50 align-top ${isEven ? "bg-card" : "bg-muted/20"}`}
+                        className={`border-b border-border/40 ${isEven ? "bg-muted/30" : "bg-muted/50"}`}
                       >
-                        {/* Description col — spans all year sub-rows + header + add-year row */}
-                        <td
-                          className="px-4 py-3 border-r border-border/40 align-top"
-                          rowSpan={scYears.length + 2}
-                        >
-                          <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border mb-1.5 ${typeCls}`}>
-                            {component.type}
-                          </span>
-                          <p className="text-xs font-semibold text-foreground leading-snug">{component.title}</p>
-                          {component.description && (
-                            <p className="text-[11px] text-muted-foreground mt-0.5 mb-2 leading-relaxed">{component.description}</p>
-                          )}
-                          <div className="border-t border-border/40 my-2" />
-                          <p className="text-xs text-foreground font-medium leading-relaxed mb-2">
-                            {indicator.name || <em className="text-muted-foreground">Unnamed indicator</em>}
-                          </p>
-                          <div>
-                            <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground mb-1">
-                              Frequency
-                            </p>
-                            <PeriodPicker
-                              value={ind.measurementFrequency ?? ""}
-                              onChange={v => saveIndicator(component.id, indicator.id, "measurementFrequency", v)}
-                            />
-                          </div>
-                        </td>
+                        <td colSpan={6} className="px-4 py-3">
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                            {/* Component badge + title */}
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className={`shrink-0 inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${typeCls}`}>
+                                {component.type}
+                              </span>
+                              <span className="text-xs font-semibold text-foreground truncate">{component.title}</span>
+                              {component.description && (
+                                <span className="text-[11px] text-muted-foreground truncate hidden sm:inline">{component.description}</span>
+                              )}
+                            </div>
 
-                        {/* Empty cells for the header row (data cols) */}
-                        <td colSpan={5} className={`px-3 py-1.5 ${isEven ? "bg-card" : "bg-muted/20"}`}>
-                          <span className="text-[10px] text-muted-foreground/50 italic">
-                            {scYears.length === 0 ? "No year rows yet — add one below" : ""}
-                          </span>
+                            {/* Divider */}
+                            <span className="text-muted-foreground/30 select-none hidden sm:inline">|</span>
+
+                            {/* Indicator name */}
+                            <span className="text-xs text-foreground font-medium">
+                              {indicator.name || <em className="text-muted-foreground font-normal">Unnamed indicator</em>}
+                            </span>
+
+                            {/* Frequency picker */}
+                            <div className="ml-auto flex items-center gap-1.5">
+                              <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Frequency:</span>
+                              <PeriodPicker
+                                value={ind.measurementFrequency ?? ""}
+                                onChange={v => saveIndicator(component.id, indicator.id, "measurementFrequency", v)}
+                              />
+                            </div>
+                          </div>
                         </td>
                       </tr>
 
@@ -517,7 +520,7 @@ export default function SupportCalculations() {
 
                       {/* ── Add year row ── */}
                       <tr key={`add-${indicator.id}`} className={`border-b border-border/50 ${isEven ? "bg-card" : "bg-muted/20"}`}>
-                        <td colSpan={5} className="px-3 py-1.5">
+                        <td colSpan={6} className="pl-8 pr-3 py-1.5">
                           <button
                             onClick={() => addYearRow(indicator.id, scYears.length)}
                             className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium"
