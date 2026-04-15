@@ -224,16 +224,14 @@ function ScYearRow({ theoryId, componentId, indicatorId, row, shade, onRefresh }
 
   return (
     <tr className={`border-b border-border/30 last:border-0 align-top group ${shade ? "bg-muted/10" : "bg-card"}`}>
-      {/* Year */}
-      <td className="px-3 py-2.5 border-r border-border/30 w-[80px]">
-        <YearPicker
-          value={row.year}
-          onChange={v => save("year", v)}
-        />
-      </td>
-
-      {/* Target */}
+      {/* Target — year picker lives here as a compact label */}
       <td className="px-3 py-2.5 bg-amber-50/40 border-r border-border/30">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <YearPicker
+            value={row.year}
+            onChange={v => save("year", v)}
+          />
+        </div>
         <EditableCell
           value={row.target}
           placeholder="Enter target..."
@@ -413,11 +411,6 @@ export default function SupportCalculations() {
                     <div className="text-[9px] font-normal normal-case text-muted-foreground/60 mt-0.5">From Theory of Change</div>
                   </th>
 
-                  {/* Year */}
-                  <th className="w-20 px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
-                    Year
-                  </th>
-
                   {/* Target */}
                   <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-700 border-r border-border/40">
                     <span className="flex items-center gap-1.5">
@@ -500,8 +493,8 @@ export default function SupportCalculations() {
                           </div>
                         </td>
 
-                        {/* Empty cells for the header row (Year + data cols) */}
-                        <td colSpan={6} className={`px-3 py-1.5 ${isEven ? "bg-card" : "bg-muted/20"}`}>
+                        {/* Empty cells for the header row (data cols) */}
+                        <td colSpan={5} className={`px-3 py-1.5 ${isEven ? "bg-card" : "bg-muted/20"}`}>
                           <span className="text-[10px] text-muted-foreground/50 italic">
                             {scYears.length === 0 ? "No year rows yet — add one below" : ""}
                           </span>
@@ -524,7 +517,7 @@ export default function SupportCalculations() {
 
                       {/* ── Add year row ── */}
                       <tr key={`add-${indicator.id}`} className={`border-b border-border/50 ${isEven ? "bg-card" : "bg-muted/20"}`}>
-                        <td colSpan={6} className="px-3 py-1.5">
+                        <td colSpan={5} className="px-3 py-1.5">
                           <button
                             onClick={() => addYearRow(indicator.id, scYears.length)}
                             className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium"
