@@ -492,8 +492,8 @@ export default function SupportCalculations() {
                               {indicator.name || <em className="text-muted-foreground font-normal">Unnamed indicator</em>}
                             </span>
 
-                            {/* Frequency picker */}
-                            <div className="ml-auto flex items-center gap-1.5">
+                            {/* Frequency picker — inline after indicator name */}
+                            <div className="flex items-center gap-1.5">
                               <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Frequency:</span>
                               <PeriodPicker
                                 value={ind.measurementFrequency ?? ""}
