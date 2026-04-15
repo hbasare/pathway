@@ -492,14 +492,6 @@ export default function SupportCalculations() {
                               {indicator.name || <em className="text-muted-foreground font-normal">Unnamed indicator</em>}
                             </span>
 
-                            {/* Frequency picker — inline after indicator name */}
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">Frequency:</span>
-                              <PeriodPicker
-                                value={ind.measurementFrequency ?? ""}
-                                onChange={v => saveIndicator(component.id, indicator.id, "measurementFrequency", v)}
-                              />
-                            </div>
                           </div>
                         </td>
                       </tr>
