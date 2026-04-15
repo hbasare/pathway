@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Fragment } from "react";
 import { useRoute, useLocation } from "wouter";
 import {
   useGetTheory,
@@ -6,7 +6,7 @@ import {
   getGetTheoryQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Printer, Calculator, Loader2, ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Printer, Calculator, Loader2, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -344,20 +344,24 @@ export default function SupportCalculations() {
     );
   }
 
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+  const toggleCollapse = (compId: number) => {
+    setCollapsed(prev => {
+      const next = new Set(prev);
+      if (next.has(compId)) next.delete(compId); else next.add(compId);
+      return next;
+    });
+  };
+
   const sortedComponents = [...(theory.components ?? [])].sort(
     (a, b) => (COLUMN_ORDER[a.type] ?? 99) - (COLUMN_ORDER[b.type] ?? 99)
   );
 
-  const rows: Array<{
-    component: typeof sortedComponents[number];
-    indicator: NonNullable<typeof sortedComponents[number]["componentIndicators"]>[number];
-  }> = [];
+  const componentGroups = sortedComponents
+    .map(comp => ({ component: comp, indicators: comp.componentIndicators ?? [] }))
+    .filter(g => g.indicators.length > 0);
 
-  for (const comp of sortedComponents) {
-    for (const ind of comp.componentIndicators ?? []) {
-      rows.push({ component: comp, indicator: ind });
-    }
-  }
+  const totalIndicators = componentGroups.reduce((s, g) => s + g.indicators.length, 0);
 
   const saveIndicator = (componentId: number, indicatorId: number, field: string, value: string) => {
     updateIndicator.mutate({
@@ -397,7 +401,7 @@ export default function SupportCalculations() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto px-6 py-5">
-        {rows.length === 0 ? (
+        {totalIndicators === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <Calculator className="w-10 h-10 text-muted-foreground/40 mb-3" />
             <p className="text-sm font-medium text-muted-foreground mb-1">No indicators yet</p>
@@ -410,119 +414,106 @@ export default function SupportCalculations() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-muted/60 border-b border-border">
-                  {/* Indicator / Year */}
                   <th className="w-56 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
                     <div>Indicator / Year</div>
                     <div className="text-[9px] font-normal normal-case text-muted-foreground/60 mt-0.5">Years listed below each indicator</div>
                   </th>
-
-                  {/* Target */}
                   <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-700 border-r border-border/40">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
-                      Target
-                    </span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Target</span>
                   </th>
-
-                  {/* Target assumptions */}
                   <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-600 border-r border-border/40">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-amber-300 inline-block" />
-                      Assumptions / Source
-                    </span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-300 inline-block" />Assumptions / Source</span>
                   </th>
-
-                  {/* Actual */}
                   <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-700 border-r border-border/40">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
-                      Actual
-                    </span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />Actual</span>
                   </th>
-
-                  {/* Actual assumptions */}
                   <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-600 border-r border-border/40">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" />
-                      Assumptions / Source
-                    </span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" />Assumptions / Source</span>
                   </th>
-
-                  {/* Notes */}
                   <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
-                      Notes
-                    </span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />Notes</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map(({ component, indicator }, rowIdx) => {
-                  const isEven = rowIdx % 2 === 0;
+                {componentGroups.map(({ component, indicators }) => {
+                  const isCollapsed = collapsed.has(component.id);
                   const typeCls = TYPE_COLORS[component.type] ?? "bg-gray-100 text-gray-800 border-gray-200";
-                  const ind = indicator as any;
-                  const scYears: ScYear[] = ind.scYears ?? [];
 
                   return (
-                    <>
-                      {/* ── Indicator header row — spans all 6 columns ── */}
+                    <Fragment key={component.id}>
+                      {/* ── Component (description) header row — collapsible ── */}
                       <tr
-                        key={`ind-${indicator.id}`}
-                        className={`border-b border-border/40 ${isEven ? "bg-muted/30" : "bg-muted/50"}`}
+                        className="border-b border-border/60 bg-muted/70 cursor-pointer hover:bg-muted/90 transition-colors select-none"
+                        onClick={() => toggleCollapse(component.id)}
                       >
-                        <td colSpan={6} className="px-4 py-3">
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                            {/* Component badge + title */}
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className={`shrink-0 inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${typeCls}`}>
-                                {component.type}
-                              </span>
-                              <span className="text-xs font-semibold text-foreground truncate">{component.title}</span>
-                              {component.description && (
-                                <span className="text-[11px] text-muted-foreground truncate hidden sm:inline">{component.description}</span>
-                              )}
-                            </div>
-
-                            {/* Divider */}
-                            <span className="text-muted-foreground/30 select-none hidden sm:inline">|</span>
-
-                            {/* Indicator name */}
-                            <span className="text-xs text-foreground font-medium">
-                              {indicator.name || <em className="text-muted-foreground font-normal">Unnamed indicator</em>}
+                        <td colSpan={6} className="px-4 py-2.5">
+                          <div className="flex items-center gap-2">
+                            <ChevronRight
+                              className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}
+                            />
+                            <span className={`shrink-0 inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${typeCls}`}>
+                              {component.type}
                             </span>
-
+                            <span className="text-xs font-semibold text-foreground">{component.title}</span>
+                            {component.description && (
+                              <span className="text-[11px] text-muted-foreground hidden sm:inline">{component.description}</span>
+                            )}
+                            <span className="ml-auto text-[10px] text-muted-foreground/60">
+                              {indicators.length} indicator{indicators.length !== 1 ? "s" : ""}
+                              {isCollapsed ? " — click to expand" : ""}
+                            </span>
                           </div>
                         </td>
                       </tr>
 
-                      {/* ── Year sub-rows ── */}
-                      {scYears.map((yr, yi) => (
-                        <ScYearRow
-                          key={yr.id}
-                          theoryId={id}
-                          componentId={component.id}
-                          indicatorId={indicator.id}
-                          row={yr}
-                          isLast={yi === scYears.length - 1}
-                          shade={yi % 2 === 1}
-                          onRefresh={refresh}
-                        />
-                      ))}
+                      {/* ── Indicators (hidden when collapsed) ── */}
+                      {!isCollapsed && indicators.map((indicator, indIdx) => {
+                        const isEven = indIdx % 2 === 0;
+                        const ind = indicator as any;
+                        const scYears: ScYear[] = ind.scYears ?? [];
 
-                      {/* ── Add year row ── */}
-                      <tr key={`add-${indicator.id}`} className={`border-b border-border/50 ${isEven ? "bg-card" : "bg-muted/20"}`}>
-                        <td colSpan={6} className="pl-8 pr-3 py-1.5">
-                          <button
-                            onClick={() => addYearRow(indicator.id, scYears.length)}
-                            className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            Add year
-                          </button>
-                        </td>
-                      </tr>
-                    </>
+                        return (
+                          <Fragment key={indicator.id}>
+                            {/* Indicator name row */}
+                            <tr className={`border-b border-border/30 ${isEven ? "bg-card" : "bg-muted/15"}`}>
+                              <td colSpan={6} className="pl-9 pr-4 py-2">
+                                <span className="text-[11px] font-semibold text-foreground">
+                                  {indicator.name || <em className="text-muted-foreground font-normal">Unnamed indicator</em>}
+                                </span>
+                              </td>
+                            </tr>
+
+                            {/* Year sub-rows */}
+                            {scYears.map((yr, yi) => (
+                              <ScYearRow
+                                key={yr.id}
+                                theoryId={id}
+                                componentId={component.id}
+                                indicatorId={indicator.id}
+                                row={yr}
+                                isLast={yi === scYears.length - 1}
+                                shade={yi % 2 === 1}
+                                onRefresh={refresh}
+                              />
+                            ))}
+
+                            {/* Add year row */}
+                            <tr className={`border-b border-border/40 ${isEven ? "bg-card" : "bg-muted/15"}`}>
+                              <td colSpan={6} className="pl-12 pr-3 py-1.5">
+                                <button
+                                  onClick={() => addYearRow(indicator.id, scYears.length)}
+                                  className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  Add year
+                                </button>
+                              </td>
+                            </tr>
+                          </Fragment>
+                        );
+                      })}
+                    </Fragment>
                   );
                 })}
               </tbody>
