@@ -358,10 +358,7 @@ export default function SupportCalculations() {
   );
 
   const componentGroups = sortedComponents
-    .map(comp => ({ component: comp, indicators: comp.componentIndicators ?? [] }))
-    .filter(g => g.indicators.length > 0);
-
-  const totalIndicators = componentGroups.reduce((s, g) => s + g.indicators.length, 0);
+    .map(comp => ({ component: comp, indicators: comp.componentIndicators ?? [] }));
 
   const saveIndicator = (componentId: number, indicatorId: number, field: string, value: string) => {
     updateIndicator.mutate({
@@ -401,12 +398,12 @@ export default function SupportCalculations() {
 
       {/* Table */}
       <div className="flex-1 overflow-auto px-6 py-5">
-        {totalIndicators === 0 ? (
+        {componentGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <Calculator className="w-10 h-10 text-muted-foreground/40 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground mb-1">No indicators yet</p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">No components yet</p>
             <p className="text-xs text-muted-foreground">
-              Add indicators to your components via the Theory of Change tab.
+              Add components to your Theory of Change first.
             </p>
           </div>
         ) : (
@@ -468,6 +465,15 @@ export default function SupportCalculations() {
                       </tr>
 
                       {/* ── Indicators (hidden when collapsed) ── */}
+                      {!isCollapsed && indicators.length === 0 && (
+                        <tr className="border-b border-border/30 bg-card">
+                          <td colSpan={6} className="pl-9 pr-4 py-3">
+                            <span className="text-[11px] text-muted-foreground/60 italic">
+                              No indicators added yet — add them from the Theory of Change tab.
+                            </span>
+                          </td>
+                        </tr>
+                      )}
                       {!isCollapsed && indicators.map((indicator, indIdx) => {
                         const isEven = indIdx % 2 === 0;
                         const ind = indicator as any;
