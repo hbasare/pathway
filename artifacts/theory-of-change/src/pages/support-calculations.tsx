@@ -345,6 +345,17 @@ export default function SupportCalculations() {
   }
 
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+  const [aggMode, setAggMode] = useState<"sum" | "avg" | "count">("sum");
+
+  const aggregate = (values: string[], mode: "sum" | "avg" | "count"): string => {
+    const nums = values.map(v => parseFloat(v)).filter(n => !isNaN(n));
+    if (nums.length === 0) return "—";
+    if (mode === "count") return String(nums.length);
+    const total = nums.reduce((a, b) => a + b, 0);
+    if (mode === "avg") return (total / nums.length).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    return total.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  };
+
   const toggleCollapse = (compId: number) => {
     setCollapsed(prev => {
       const next = new Set(prev);
@@ -386,10 +397,28 @@ export default function SupportCalculations() {
             </div>
           </div>
         </div>
-        <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
-          <Printer className="w-4 h-4" />
-          Print
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Aggregate mode toggle */}
+          <div className="flex items-center rounded-md border border-border overflow-hidden text-[11px] font-medium">
+            {(["sum", "avg", "count"] as const).map(mode => (
+              <button
+                key={mode}
+                onClick={() => setAggMode(mode)}
+                className={`px-2.5 py-1.5 capitalize transition-colors ${
+                  aggMode === mode
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-card text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {mode === "sum" ? "Sum" : mode === "avg" ? "Avg" : "Count"}
+              </button>
+            ))}
+          </div>
+          <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
+            <Printer className="w-4 h-4" />
+            Print
+          </Button>
+        </div>
       </header>
 
       {/* Print title */}
@@ -482,13 +511,37 @@ export default function SupportCalculations() {
 
                         return (
                           <Fragment key={indicator.id}>
-                            {/* Indicator name row */}
-                            <tr className={`border-b border-border/30 ${isEven ? "bg-card" : "bg-muted/15"}`}>
-                              <td colSpan={6} className="pl-9 pr-4 py-2">
+                            {/* Indicator summary row — name + aggregates */}
+                            <tr className={`border-b border-border/30 ${isEven ? "bg-amber-50/20" : "bg-amber-50/30"}`}>
+                              {/* Name */}
+                              <td className="pl-9 pr-3 py-2 border-r border-border/30">
                                 <span className="text-[11px] font-semibold text-foreground">
                                   {indicator.name || <em className="text-muted-foreground font-normal">Unnamed indicator</em>}
                                 </span>
+                                {scYears.length > 0 && (
+                                  <span className="ml-2 text-[9px] text-muted-foreground/60">
+                                    {scYears.length} yr{scYears.length !== 1 ? "s" : ""}
+                                  </span>
+                                )}
                               </td>
+                              {/* Target aggregate */}
+                              <td className="px-3 py-2 bg-amber-100/50 border-r border-border/30">
+                                <span className="text-[11px] font-semibold text-amber-800">
+                                  {aggregate(scYears.map(y => y.target ?? ""), aggMode)}
+                                </span>
+                              </td>
+                              {/* Target assumptions — blank summary */}
+                              <td className="px-3 py-2 bg-amber-50/30 border-r border-border/30" />
+                              {/* Actual aggregate */}
+                              <td className="px-3 py-2 bg-emerald-100/50 border-r border-border/30">
+                                <span className="text-[11px] font-semibold text-emerald-800">
+                                  {aggregate(scYears.map(y => y.actual ?? ""), aggMode)}
+                                </span>
+                              </td>
+                              {/* Actual assumptions — blank summary */}
+                              <td className="px-3 py-2 bg-emerald-50/30 border-r border-border/30" />
+                              {/* Notes — blank */}
+                              <td className="px-3 py-2" />
                             </tr>
 
                             {/* Year sub-rows */}
