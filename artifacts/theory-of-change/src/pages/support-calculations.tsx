@@ -358,6 +358,7 @@ export default function SupportCalculations() {
   );
 
   const componentGroups = sortedComponents
+    .filter(comp => comp.type !== "input")
     .map(comp => ({ component: comp, indicators: comp.componentIndicators ?? [] }));
 
   const saveIndicator = (componentId: number, indicatorId: number, field: string, value: string) => {
