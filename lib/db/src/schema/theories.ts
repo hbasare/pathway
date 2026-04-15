@@ -185,6 +185,25 @@ export const insertTheoryDocumentSchema = createInsertSchema(theoryDocumentsTabl
 export type InsertTheoryDocument = z.infer<typeof insertTheoryDocumentSchema>;
 export type TheoryDocument = typeof theoryDocumentsTable.$inferSelect;
 
+// ── Support Calculation Year Rows ─────────────────────────────────────────────
+export const indicatorScYearsTable = pgTable("indicator_sc_years", {
+  id: serial("id").primaryKey(),
+  indicatorId: integer("indicator_id").notNull().references(() => componentIndicatorsTable.id, { onDelete: "cascade" }),
+  year: text("year").notNull().default(""),
+  target: text("target").notNull().default(""),
+  targetNotes: text("target_notes").notNull().default(""),
+  actual: text("actual").notNull().default(""),
+  actualNotes: text("actual_notes").notNull().default(""),
+  notes: text("notes").notNull().default(""),
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertIndicatorScYearSchema = createInsertSchema(indicatorScYearsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertIndicatorScYear = z.infer<typeof insertIndicatorScYearSchema>;
+export type IndicatorScYear = typeof indicatorScYearsTable.$inferSelect;
+
 export const businessModelActorsTable = pgTable("business_model_actors", {
   id: serial("id").primaryKey(),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),

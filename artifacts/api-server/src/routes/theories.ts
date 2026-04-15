@@ -7,12 +7,14 @@ import {
   componentIndicatorsTable,
   theoryNotesUpdatesTable,
   theoryRiskAnalysesTable,
+  indicatorScYearsTable,
   insertTheorySchema,
   insertComponentSchema,
   insertConnectionSchema,
   insertComponentIndicatorSchema,
   insertTheoryNoteUpdateSchema,
   insertTheoryRiskAnalysisSchema,
+  insertIndicatorScYearSchema,
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 
@@ -48,9 +50,26 @@ router.get("/theories/:id", async (req, res) => {
     .where(eq(componentIndicatorsTable.theoryId, id))
     .orderBy(componentIndicatorsTable.position, componentIndicatorsTable.id);
 
+  // Fetch sc year rows for all indicators in this theory
+  const indicatorIds = allIndicators.map(ind => ind.id);
+  let allScYears: (typeof indicatorScYearsTable.$inferSelect)[] = [];
+  if (indicatorIds.length > 0) {
+    const { inArray } = await import("drizzle-orm");
+    allScYears = await db
+      .select()
+      .from(indicatorScYearsTable)
+      .where(inArray(indicatorScYearsTable.indicatorId, indicatorIds))
+      .orderBy(indicatorScYearsTable.position, indicatorScYearsTable.id);
+  }
+
   const componentsWithIndicators = components.map(c => ({
     ...c,
-    componentIndicators: allIndicators.filter(ind => ind.componentId === c.id),
+    componentIndicators: allIndicators
+      .filter(ind => ind.componentId === c.id)
+      .map(ind => ({
+        ...ind,
+        scYears: allScYears.filter(y => y.indicatorId === ind.id),
+      })),
   }));
 
   res.json({ ...theory, components: componentsWithIndicators, connections });
@@ -295,6 +314,40 @@ router.patch("/theories/:theoryId/notes-updates/:id", async (req, res) => {
 router.delete("/theories/:theoryId/notes-updates/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(theoryNotesUpdatesTable).where(eq(theoryNotesUpdatesTable.id, id));
+  res.status(204).send();
+});
+
+// ─── Indicator SC Year Rows ───────────────────────────────────────────────────
+
+router.post("/theories/:theoryId/indicators/:indicatorId/sc-years", async (req, res) => {
+  const indicatorId = Number(req.params.indicatorId);
+  const parsed = insertIndicatorScYearSchema.safeParse({ ...req.body, indicatorId });
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.issues });
+    return;
+  }
+  const [row] = await db.insert(indicatorScYearsTable).values(parsed.data).returning();
+  res.status(201).json(row);
+});
+
+router.patch("/theories/:theoryId/indicators/:indicatorId/sc-years/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  const indicatorId = Number(req.params.indicatorId);
+  const [row] = await db
+    .update(indicatorScYearsTable)
+    .set({ ...req.body, updatedAt: new Date() })
+    .where(and(eq(indicatorScYearsTable.id, id), eq(indicatorScYearsTable.indicatorId, indicatorId)))
+    .returning();
+  if (!row) {
+    res.status(404).json({ error: "Not found" });
+    return;
+  }
+  res.json(row);
+});
+
+router.delete("/theories/:theoryId/indicators/:indicatorId/sc-years/:id", async (req, res) => {
+  const id = Number(req.params.id);
+  await db.delete(indicatorScYearsTable).where(eq(indicatorScYearsTable.id, id));
   res.status(204).send();
 });
 

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRoute, useLocation } from "wouter";
 import {
   useGetTheory,
@@ -6,7 +6,7 @@ import {
   getGetTheoryQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Printer, Calculator, Loader2, ChevronDown } from "lucide-react";
+import { ArrowLeft, Printer, Calculator, Loader2, ChevronDown, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -36,8 +36,8 @@ const PERIOD_OPTIONS = [
 ];
 
 const currentYear = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: 12 }, (_, i) => {
-  const y = currentYear - 5 + i;
+const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => {
+  const y = currentYear - 10 + i;
   return { value: String(y), label: String(y) };
 });
 
@@ -45,6 +45,8 @@ function getPeriodLabel(val: string | null | undefined) {
   if (!val?.trim()) return "Select Period";
   return PERIOD_OPTIONS.find(o => o.value === val)?.label ?? val;
 }
+
+// ── Editable cell ─────────────────────────────────────────────────────────────
 
 interface EditableCellProps {
   value: string;
@@ -72,14 +74,14 @@ function EditableCell({ value, placeholder, onSave, multiline = true, className 
         placeholder={placeholder}
         value={local}
         onChange={e => { setLocal(e.target.value); trigger(e.target.value); }}
-        onBlur={() => onSave(local)}
+        onBlur={() => { if (timer.current) clearTimeout(timer.current); onSave(local); }}
       />
     );
   }
 
   return (
     <textarea
-      className={`w-full bg-transparent border-none outline-none resize-none text-xs text-foreground placeholder:text-muted-foreground/40 focus:ring-0 leading-relaxed min-h-[40px] ${className}`}
+      className={`w-full bg-transparent border-none outline-none resize-none text-xs text-foreground placeholder:text-muted-foreground/40 focus:ring-0 leading-relaxed min-h-[36px] ${className}`}
       placeholder={placeholder}
       value={local}
       rows={2}
@@ -89,10 +91,12 @@ function EditableCell({ value, placeholder, onSave, multiline = true, className 
         e.target.style.height = "auto";
         e.target.style.height = e.target.scrollHeight + "px";
       }}
-      onBlur={() => onSave(local)}
+      onBlur={() => { if (timer.current) clearTimeout(timer.current); onSave(local); }}
     />
   );
 }
+
+// ── Period picker ─────────────────────────────────────────────────────────────
 
 interface PeriodPickerProps {
   value: string | null | undefined;
@@ -128,18 +132,6 @@ function PeriodPicker({ value, onChange }: PeriodPickerProps) {
             {opt.label}
           </DropdownMenuItem>
         ))}
-        <div className="px-2 py-1 mt-1 text-[9px] font-bold uppercase tracking-wider text-muted-foreground border-t">
-          Year
-        </div>
-        {YEAR_OPTIONS.map(opt => (
-          <DropdownMenuItem
-            key={opt.value}
-            onClick={() => onChange(opt.value)}
-            className={value === opt.value ? "bg-violet-50 text-violet-700 font-medium" : ""}
-          >
-            {opt.label}
-          </DropdownMenuItem>
-        ))}
         {hasValue && (
           <DropdownMenuItem
             onClick={() => onChange("")}
@@ -152,6 +144,154 @@ function PeriodPicker({ value, onChange }: PeriodPickerProps) {
     </DropdownMenu>
   );
 }
+
+// ── Year picker ───────────────────────────────────────────────────────────────
+
+interface YearPickerProps {
+  value: string;
+  onChange: (val: string) => void;
+}
+
+function YearPicker({ value, onChange }: YearPickerProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors min-w-[52px]"
+          title="Change year"
+        >
+          <span>{value || <span className="text-muted-foreground font-normal text-xs">Year</span>}</span>
+          <ChevronDown className="w-3 h-3 text-muted-foreground" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-24 max-h-64 overflow-y-auto">
+        {YEAR_OPTIONS.map(opt => (
+          <DropdownMenuItem
+            key={opt.value}
+            onClick={() => onChange(opt.value)}
+            className={value === opt.value ? "bg-primary/10 text-primary font-semibold" : ""}
+          >
+            {opt.label}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+// ── SC Year row ───────────────────────────────────────────────────────────────
+
+interface ScYear {
+  id: number;
+  indicatorId: number;
+  year: string;
+  target: string;
+  targetNotes: string;
+  actual: string;
+  actualNotes: string;
+  notes: string;
+  position: number;
+}
+
+interface ScYearRowProps {
+  theoryId: number;
+  componentId: number;
+  indicatorId: number;
+  row: ScYear;
+  isLast: boolean;
+  shade: boolean;
+  onRefresh: () => void;
+}
+
+function ScYearRow({ theoryId, componentId, indicatorId, row, shade, onRefresh }: ScYearRowProps) {
+  const save = useCallback(async (field: string, value: string) => {
+    await fetch(`/api/theories/${theoryId}/indicators/${indicatorId}/sc-years/${row.id}`, {
+      method: "PATCH",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ [field]: value }),
+    });
+    onRefresh();
+  }, [theoryId, indicatorId, row.id, onRefresh]);
+
+  const deleteRow = async () => {
+    await fetch(`/api/theories/${theoryId}/indicators/${indicatorId}/sc-years/${row.id}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    onRefresh();
+  };
+
+  return (
+    <tr className={`border-b border-border/30 last:border-0 align-top group ${shade ? "bg-muted/10" : "bg-card"}`}>
+      {/* Year */}
+      <td className="px-3 py-2.5 border-r border-border/30 w-[80px]">
+        <YearPicker
+          value={row.year}
+          onChange={v => save("year", v)}
+        />
+      </td>
+
+      {/* Target */}
+      <td className="px-3 py-2.5 bg-amber-50/40 border-r border-border/30">
+        <EditableCell
+          value={row.target}
+          placeholder="Enter target..."
+          onSave={v => save("target", v)}
+        />
+      </td>
+
+      {/* Target assumptions */}
+      <td className="px-3 py-2.5 bg-amber-50/20 border-r border-border/30">
+        <EditableCell
+          value={row.targetNotes}
+          placeholder="Assumptions / source..."
+          onSave={v => save("targetNotes", v)}
+        />
+      </td>
+
+      {/* Actual */}
+      <td className="px-3 py-2.5 bg-emerald-50/40 border-r border-border/30">
+        <EditableCell
+          value={row.actual}
+          placeholder="Enter actual..."
+          onSave={v => save("actual", v)}
+        />
+      </td>
+
+      {/* Actual assumptions */}
+      <td className="px-3 py-2.5 bg-emerald-50/20 border-r border-border/30">
+        <EditableCell
+          value={row.actualNotes}
+          placeholder="Assumptions / source..."
+          onSave={v => save("actualNotes", v)}
+        />
+      </td>
+
+      {/* Notes + delete */}
+      <td className="px-3 py-2.5">
+        <div className="flex items-start gap-1">
+          <div className="flex-1">
+            <EditableCell
+              value={row.notes}
+              placeholder="Notes..."
+              onSave={v => save("notes", v)}
+            />
+          </div>
+          <button
+            onClick={deleteRow}
+            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 mt-0.5 text-muted-foreground hover:text-destructive"
+            title="Remove year row"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function SupportCalculations() {
   const [, params] = useRoute("/theory/:id/support-calculations");
@@ -168,6 +308,21 @@ export default function SupportCalculations() {
       onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(id) }),
     },
   });
+
+  const refresh = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(id) });
+  }, [queryClient, id]);
+
+  const addYearRow = async (indicatorId: number, position: number) => {
+    const nextYear = String(currentYear);
+    await fetch(`/api/theories/${id}/indicators/${indicatorId}/sc-years`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ year: nextYear, position }),
+    });
+    refresh();
+  };
 
   if (isLoading) {
     return (
@@ -201,7 +356,7 @@ export default function SupportCalculations() {
     }
   }
 
-  const save = (componentId: number, indicatorId: number, field: string, value: string) => {
+  const saveIndicator = (componentId: number, indicatorId: number, field: string, value: string) => {
     updateIndicator.mutate({
       theoryId: id,
       componentId,
@@ -232,7 +387,7 @@ export default function SupportCalculations() {
         </Button>
       </header>
 
-      {/* Print-only title */}
+      {/* Print title */}
       <div className="hidden print:block px-6 pt-6 pb-2">
         <h1 className="text-xl font-bold">{theory.title} — Support Calculations</h1>
       </div>
@@ -248,55 +403,55 @@ export default function SupportCalculations() {
             </p>
           </div>
         ) : (
-          <div className="rounded-xl border border-border overflow-hidden shadow-sm" style={{ minWidth: 900 }}>
+          <div className="rounded-xl border border-border overflow-hidden shadow-sm" style={{ minWidth: 1000 }}>
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-muted/60 border-b border-border">
-                  {/* # */}
-                  <th className="w-8 px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
-                    #
-                  </th>
-
-                  {/* Description & Indicator — from Theory of Change (read-only) */}
-                  <th className="w-64 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
+                  {/* Description & Indicator */}
+                  <th className="w-72 px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
                     <div>Description &amp; Indicator</div>
                     <div className="text-[9px] font-normal normal-case text-muted-foreground/60 mt-0.5">From Theory of Change</div>
                   </th>
 
+                  {/* Year */}
+                  <th className="w-20 px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground border-r border-border/40">
+                    Year
+                  </th>
+
                   {/* Target */}
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-700 border-r border-border/40">
+                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-700 border-r border-border/40">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />
                       Target
                     </span>
                   </th>
 
-                  {/* Assumptions / Source of Information (Target) */}
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-600 border-r border-border/40">
+                  {/* Target assumptions */}
+                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-600 border-r border-border/40">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-amber-300 inline-block" />
-                      Assumptions / Source of Information
+                      Assumptions / Source
                     </span>
                   </th>
 
                   {/* Actual */}
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-700 border-r border-border/40">
+                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-700 border-r border-border/40">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />
                       Actual
                     </span>
                   </th>
 
-                  {/* Assumptions / Source of Information (Actual) */}
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-600 border-r border-border/40">
+                  {/* Actual assumptions */}
+                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-600 border-r border-border/40">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" />
-                      Assumptions / Source of Information
+                      Assumptions / Source
                     </span>
                   </th>
 
                   {/* Notes */}
-                  <th className="px-4 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                     <span className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />
                       Notes
@@ -309,100 +464,77 @@ export default function SupportCalculations() {
                   const isEven = rowIdx % 2 === 0;
                   const typeCls = TYPE_COLORS[component.type] ?? "bg-gray-100 text-gray-800 border-gray-200";
                   const ind = indicator as any;
+                  const scYears: ScYear[] = ind.scYears ?? [];
 
                   return (
-                    <tr
-                      key={indicator.id}
-                      className={`border-b border-border/50 last:border-b-0 align-top ${isEven ? "bg-card" : "bg-muted/20"} hover:bg-primary/5 transition-colors`}
-                    >
-                      {/* # */}
-                      <td className="px-3 py-3 text-xs text-muted-foreground font-medium border-r border-border/30">
-                        {rowIdx + 1}
-                      </td>
-
-                      {/* Description & Indicator — read-only from Theory of Change */}
-                      <td className="px-4 py-3 border-r border-border/30">
-                        {/* Component type badge */}
-                        <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border mb-1.5 ${typeCls}`}>
-                          {component.type}
-                        </span>
-
-                        {/* Component title */}
-                        <p className="text-xs font-semibold text-foreground leading-snug">
-                          {component.title}
-                        </p>
-
-                        {/* Component description (from Theory of Change) */}
-                        {component.description && (
-                          <p className="text-[11px] text-muted-foreground mt-0.5 mb-2 leading-relaxed">
-                            {component.description}
+                    <>
+                      {/* ── Indicator header row ── */}
+                      <tr
+                        key={`ind-${indicator.id}`}
+                        className={`border-b border-border/50 align-top ${isEven ? "bg-card" : "bg-muted/20"}`}
+                      >
+                        {/* Description col — spans all year sub-rows + header + add-year row */}
+                        <td
+                          className="px-4 py-3 border-r border-border/40 align-top"
+                          rowSpan={scYears.length + 2}
+                        >
+                          <span className={`inline-block text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border mb-1.5 ${typeCls}`}>
+                            {component.type}
+                          </span>
+                          <p className="text-xs font-semibold text-foreground leading-snug">{component.title}</p>
+                          {component.description && (
+                            <p className="text-[11px] text-muted-foreground mt-0.5 mb-2 leading-relaxed">{component.description}</p>
+                          )}
+                          <div className="border-t border-border/40 my-2" />
+                          <p className="text-xs text-foreground font-medium leading-relaxed mb-2">
+                            {indicator.name || <em className="text-muted-foreground">Unnamed indicator</em>}
                           </p>
-                        )}
+                          <div>
+                            <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground mb-1">
+                              Frequency
+                            </p>
+                            <PeriodPicker
+                              value={ind.measurementFrequency ?? ""}
+                              onChange={v => saveIndicator(component.id, indicator.id, "measurementFrequency", v)}
+                            />
+                          </div>
+                        </td>
 
-                        <div className="border-t border-border/40 my-2" />
+                        {/* Empty cells for the header row (Year + data cols) */}
+                        <td colSpan={6} className={`px-3 py-1.5 ${isEven ? "bg-card" : "bg-muted/20"}`}>
+                          <span className="text-[10px] text-muted-foreground/50 italic">
+                            {scYears.length === 0 ? "No year rows yet — add one below" : ""}
+                          </span>
+                        </td>
+                      </tr>
 
-                        {/* Indicator name (from Theory of Change) */}
-                        <p className="text-xs text-foreground font-medium leading-relaxed mb-2">
-                          {indicator.name || <em className="text-muted-foreground">Unnamed indicator</em>}
-                        </p>
-
-                        {/* Period picker */}
-                        <div>
-                          <p className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground mb-1">
-                            Select Period
-                          </p>
-                          <PeriodPicker
-                            value={ind.measurementFrequency ?? ""}
-                            onChange={v => save(component.id, indicator.id, "measurementFrequency", v)}
-                          />
-                        </div>
-                      </td>
-
-                      {/* Target — independent SC field */}
-                      <td className="px-4 py-3 bg-amber-50/40 border-r border-border/30">
-                        <EditableCell
-                          value={ind.scTarget ?? ""}
-                          placeholder="Enter target..."
-                          onSave={v => save(component.id, indicator.id, "scTarget", v)}
+                      {/* ── Year sub-rows ── */}
+                      {scYears.map((yr, yi) => (
+                        <ScYearRow
+                          key={yr.id}
+                          theoryId={id}
+                          componentId={component.id}
+                          indicatorId={indicator.id}
+                          row={yr}
+                          isLast={yi === scYears.length - 1}
+                          shade={yi % 2 === 1}
+                          onRefresh={refresh}
                         />
-                      </td>
+                      ))}
 
-                      {/* Assumptions / Source of Information (Target) — independent SC field */}
-                      <td className="px-4 py-3 bg-amber-50/20 border-r border-border/30">
-                        <EditableCell
-                          value={ind.scTargetNotes ?? ""}
-                          placeholder="Enter assumptions or source of information..."
-                          onSave={v => save(component.id, indicator.id, "scTargetNotes", v)}
-                        />
-                      </td>
-
-                      {/* Actual — independent SC field */}
-                      <td className="px-4 py-3 bg-emerald-50/40 border-r border-border/30">
-                        <EditableCell
-                          value={ind.scActual ?? ""}
-                          placeholder="Enter actual..."
-                          onSave={v => save(component.id, indicator.id, "scActual", v)}
-                        />
-                      </td>
-
-                      {/* Assumptions / Source of Information (Actual) — independent SC field */}
-                      <td className="px-4 py-3 bg-emerald-50/20 border-r border-border/30">
-                        <EditableCell
-                          value={ind.scActualNotes ?? ""}
-                          placeholder="Enter assumptions or source of information..."
-                          onSave={v => save(component.id, indicator.id, "scActualNotes", v)}
-                        />
-                      </td>
-
-                      {/* Notes — independent SC field */}
-                      <td className="px-4 py-3">
-                        <EditableCell
-                          value={ind.scNotes ?? ""}
-                          placeholder="Enter notes..."
-                          onSave={v => save(component.id, indicator.id, "scNotes", v)}
-                        />
-                      </td>
-                    </tr>
+                      {/* ── Add year row ── */}
+                      <tr key={`add-${indicator.id}`} className={`border-b border-border/50 ${isEven ? "bg-card" : "bg-muted/20"}`}>
+                        <td colSpan={6} className="px-3 py-1.5">
+                          <button
+                            onClick={() => addYearRow(indicator.id, scYears.length)}
+                            className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Add year
+                          </button>
+                        </td>
+                      </tr>
+                    </>
                   );
                 })}
               </tbody>
