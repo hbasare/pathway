@@ -36,10 +36,6 @@ const PERIOD_OPTIONS = [
 ];
 
 const currentYear = new Date().getFullYear();
-const YEAR_OPTIONS = Array.from({ length: 20 }, (_, i) => {
-  const y = currentYear - 10 + i;
-  return { value: String(y), label: String(y) };
-});
 
 function getPeriodLabel(val: string | null | undefined) {
   if (!val?.trim()) return "Select Period";
@@ -147,35 +143,61 @@ function PeriodPicker({ value, onChange }: PeriodPickerProps) {
 
 // ── Year picker ───────────────────────────────────────────────────────────────
 
-interface YearPickerProps {
+interface DatePickerProps {
   value: string;
   onChange: (val: string) => void;
 }
 
-function YearPicker({ value, onChange }: YearPickerProps) {
+function DatePicker({ value, onChange }: DatePickerProps) {
+  const [editing, setEditing] = useState(false);
+
+  // Normalise stored value → yyyy-MM-dd for the input, display as readable label
+  const toInputValue = (v: string) => {
+    if (!v) return "";
+    // Already ISO date
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    // Bare year e.g. "2024" → "2024-01-01"
+    if (/^\d{4}$/.test(v)) return `${v}-01-01`;
+    return "";
+  };
+
+  const toDisplay = (v: string) => {
+    if (!v) return null;
+    const d = new Date(toInputValue(v) || v);
+    if (isNaN(d.getTime())) return v;
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  };
+
+  if (editing) {
+    return (
+      <input
+        type="date"
+        autoFocus
+        defaultValue={toInputValue(value)}
+        className="text-xs font-semibold text-foreground bg-transparent border-b border-primary outline-none w-[130px]"
+        onBlur={e => {
+          if (e.target.value) onChange(e.target.value);
+          setEditing(false);
+        }}
+        onKeyDown={e => {
+          if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+          if (e.key === "Escape") setEditing(false);
+        }}
+      />
+    );
+  }
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors min-w-[52px]"
-          title="Change year"
-        >
-          <span>{value || <span className="text-muted-foreground font-normal text-xs">Year</span>}</span>
-          <ChevronDown className="w-3 h-3 text-muted-foreground" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-24 max-h-64 overflow-y-auto">
-        {YEAR_OPTIONS.map(opt => (
-          <DropdownMenuItem
-            key={opt.value}
-            onClick={() => onChange(opt.value)}
-            className={value === opt.value ? "bg-primary/10 text-primary font-semibold" : ""}
-          >
-            {opt.label}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <button
+      onClick={() => setEditing(true)}
+      className="flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary transition-colors"
+      title="Click to change date"
+    >
+      {value
+        ? <span>{toDisplay(value)}</span>
+        : <span className="text-muted-foreground font-normal text-xs">Set date…</span>}
+      <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" />
+    </button>
   );
 }
 
@@ -228,7 +250,7 @@ function ScYearRow({ theoryId, indicatorId, row, shade, onRefresh }: ScYearRowPr
       <td className="pl-8 pr-3 py-2 border-r border-border/30">
         <div className="flex items-center gap-1">
           <span className="text-muted-foreground/40 text-xs select-none">›</span>
-          <YearPicker
+          <DatePicker
             value={row.year}
             onChange={v => save("year", v)}
           />
