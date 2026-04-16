@@ -641,60 +641,94 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
         />
 
         {/* Beneficiaries — only for output, outcome, impact */}
-        {["output", "outcome", "impact"].includes(selectedType) && (
-          <>
-            <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
-              <div className="flex items-center gap-2">
+        {["output", "outcome", "impact"].includes(selectedType) && (() => {
+          const isOutput = selectedType === "output";
+          const directLabel  = isOutput ? "Direct SMEs" : "Direct Beneficiaries";
+          const indirectLabel = isOutput ? "Indirect SMEs" : "Indirect Beneficiaries";
+          const directDesc   = isOutput
+            ? "The SMEs (enterprises, practitioners, or organisations) who directly adopt or adapt the innovation introduced by this output."
+            : "The people or groups who are the primary, intended recipients of this outcome's / impact's benefits.";
+          const indirectDesc = isOutput
+            ? "Other SMEs or actors influenced as a secondary effect of the direct SMEs adopting the innovation — the separate onward pathway."
+            : "People or groups who benefit as a secondary effect — e.g. households, communities, or others reached through the direct beneficiaries.";
+          const directPlaceholder  = isOutput
+            ? "e.g. 120 agri-input SMEs in target districts"
+            : "e.g. 500 smallholder farmers trained by SMEs";
+          const indirectPlaceholder = isOutput
+            ? "e.g. 40 additional SMEs influenced by peer networks"
+            : "e.g. ~2,500 household members of trained farmers";
+
+          return (
+            <div className="space-y-0">
+              {/* Section heading */}
+              <div className="flex items-center gap-2 mb-2">
                 <Users className="w-4 h-4 text-muted-foreground" />
-                <p className="text-sm font-semibold text-foreground">Beneficiaries</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {isOutput ? "SME Pathways" : "Beneficiary Pathways"}
+                </p>
               </div>
-              <FormField
-                control={form.control}
-                name="directBeneficiaries"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium text-emerald-700">
-                      Direct Beneficiaries
-                    </FormLabel>
-                    <FormDescription className="text-xs text-muted-foreground">
-                      People who are the primary, intended recipients of this {selectedType}'s benefits.
-                    </FormDescription>
-                    <FormControl>
-                      <Textarea
-                        placeholder="e.g. 500 smallholder farmers in target districts"
-                        className="min-h-[60px] text-sm"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="indirectBeneficiaries"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-medium text-blue-700">
-                      Indirect Beneficiaries
-                    </FormLabel>
-                    <FormDescription className="text-xs text-muted-foreground">
-                      People who benefit as a secondary effect — households, communities, or others influenced by direct beneficiaries.
-                    </FormDescription>
-                    <FormControl>
-                      <Textarea
-                        placeholder="e.g. ~2,500 household members of trained farmers"
-                        className="min-h-[60px] text-sm"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
+              {/* Direct pathway box */}
+              <div className="rounded-t-lg border border-b-0 border-emerald-300 bg-emerald-50/60 p-3 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="text-xs font-bold text-emerald-800">Direct pathway — {directLabel}</span>
+                </div>
+                <p className="text-[11px] text-emerald-700/80 leading-relaxed">{directDesc}</p>
+                <FormField
+                  control={form.control}
+                  name="directBeneficiaries"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea
+                          placeholder={directPlaceholder}
+                          className="min-h-[56px] text-sm bg-white border-emerald-200 focus-visible:ring-emerald-400"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Connector arrow */}
+              <div className="flex items-center gap-0 pl-4">
+                <div className="w-px h-3 bg-border" />
+                <svg width="12" height="8" viewBox="0 0 12 8" className="text-muted-foreground -ml-[0.5px] -mt-0.5" fill="none">
+                  <path d="M6 8L0 0h12L6 8Z" fill="currentColor" />
+                </svg>
+                <span className="ml-2 text-[10px] text-muted-foreground italic">separate onward pathway</span>
+              </div>
+
+              {/* Indirect pathway box */}
+              <div className="rounded-b-lg border border-t-0 border-blue-300 bg-blue-50/60 p-3 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
+                  <span className="text-xs font-bold text-blue-800">Indirect pathway — {indirectLabel}</span>
+                </div>
+                <p className="text-[11px] text-blue-700/80 leading-relaxed">{indirectDesc}</p>
+                <FormField
+                  control={form.control}
+                  name="indirectBeneficiaries"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea
+                          placeholder={indirectPlaceholder}
+                          className="min-h-[56px] text-sm bg-white border-blue-200 focus-visible:ring-blue-400"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
-          </>
-        )}
+          );
+        })()}
 
         <Separator />
 
