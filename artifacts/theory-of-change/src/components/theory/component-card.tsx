@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Component, ComponentType, useDeleteComponent, useUpdateComponentIndicator, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MoreVertical, Edit2, Trash2, ArrowRight, Unlink, Activity, Zap, FileText, Target, Globe, Lightbulb, BarChart3 } from "lucide-react";
+import { MoreVertical, Edit2, Trash2, ArrowRight, Unlink, Activity, Zap, FileText, Target, Globe, Lightbulb, BarChart3, Users } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -288,6 +288,35 @@ export function ComponentCard({
               <Badge variant="outline" className="text-[10px] px-1.5 py-0 rounded-sm font-medium">
                 Assumptions
               </Badge>
+            </div>
+          )}
+
+          {/* Beneficiaries — output / outcome / impact only */}
+          {["output", "outcome", "impact"].includes(component.type) &&
+            ((component as any).directBeneficiaries || (component as any).indirectBeneficiaries) && (
+            <div className="mb-3 rounded-lg border border-border/50 overflow-hidden">
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-muted/50 border-b border-border/40">
+                <Users className="w-3 h-3 text-muted-foreground" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Beneficiaries</span>
+              </div>
+              <div className="divide-y divide-border/30">
+                {(component as any).directBeneficiaries && (
+                  <div className="px-2.5 py-1.5">
+                    <p className="text-[9px] font-bold uppercase tracking-wide text-emerald-700 mb-0.5">Direct</p>
+                    <p className="text-[10px] text-foreground/80 leading-snug line-clamp-2">
+                      {(component as any).directBeneficiaries}
+                    </p>
+                  </div>
+                )}
+                {(component as any).indirectBeneficiaries && (
+                  <div className="px-2.5 py-1.5">
+                    <p className="text-[9px] font-bold uppercase tracking-wide text-blue-700 mb-0.5">Indirect</p>
+                    <p className="text-[10px] text-foreground/80 leading-snug line-clamp-2">
+                      {(component as any).indirectBeneficiaries}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

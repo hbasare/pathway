@@ -101,6 +101,8 @@ export interface Component {
   baselineFigure?: string;
   qualitativeQuestions: string;
   quantitativeQuestions: string;
+  directBeneficiaries: string;
+  indirectBeneficiaries: string;
   willBeAddressed: boolean;
   positionX: number;
   positionY: number;
@@ -293,6 +295,8 @@ export interface CreateComponent {
   baselineFigure?: string;
   qualitativeQuestions?: string;
   quantitativeQuestions?: string;
+  directBeneficiaries?: string;
+  indirectBeneficiaries?: string;
   willBeAddressed?: boolean;
   positionX?: number;
   positionY?: number;

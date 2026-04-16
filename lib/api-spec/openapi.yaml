@@ -1469,6 +1469,10 @@ components:
           type: string
         quantitativeQuestions:
           type: string
+        directBeneficiaries:
+          type: string
+        indirectBeneficiaries:
+          type: string
         willBeAddressed:
           type: boolean
         positionX:
@@ -1494,6 +1498,8 @@ components:
         - assumptions
         - qualitativeQuestions
         - quantitativeQuestions
+        - directBeneficiaries
+        - indirectBeneficiaries
         - willBeAddressed
         - positionX
         - positionY
@@ -1530,6 +1536,10 @@ components:
         qualitativeQuestions:
           type: string
         quantitativeQuestions:
+          type: string
+        directBeneficiaries:
+          type: string
+        indirectBeneficiaries:
           type: string
         willBeAddressed:
           type: boolean

@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, X, ChevronDown, ChevronRight, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote, Calculator } from "lucide-react";
+import { Plus, Trash2, X, ChevronDown, ChevronRight, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote, Calculator, Users } from "lucide-react";
 
 const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
   opportunity: {
@@ -154,6 +154,8 @@ const formSchema = z.object({
   title: z.string().min(1, "Title is required").max(100),
   description: z.string().min(1, "Description is required"),
   assumptions: z.string().optional(),
+  directBeneficiaries: z.string().optional(),
+  indirectBeneficiaries: z.string().optional(),
   targetDate: z.string().optional(),
   targetFigure: z.string().optional(),
   actualDate: z.string().optional(),
@@ -444,6 +446,8 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
       title: initialData?.title || "",
       description: initialData?.description || "",
       assumptions: initialData?.assumptions || "",
+      directBeneficiaries: initialData?.directBeneficiaries ?? "",
+      indirectBeneficiaries: initialData?.indirectBeneficiaries ?? "",
       targetDate: initialData?.targetDate ?? "",
       targetFigure: initialData?.targetFigure ?? "",
       actualDate: initialData?.actualDate ?? "",
@@ -635,6 +639,62 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
             </FormItem>
           )}
         />
+
+        {/* Beneficiaries — only for output, outcome, impact */}
+        {["output", "outcome", "impact"].includes(selectedType) && (
+          <>
+            <div className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Beneficiaries</p>
+              </div>
+              <FormField
+                control={form.control}
+                name="directBeneficiaries"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-medium text-emerald-700">
+                      Direct Beneficiaries
+                    </FormLabel>
+                    <FormDescription className="text-xs text-muted-foreground">
+                      People who are the primary, intended recipients of this {selectedType}'s benefits.
+                    </FormDescription>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g. 500 smallholder farmers in target districts"
+                        className="min-h-[60px] text-sm"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="indirectBeneficiaries"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-medium text-blue-700">
+                      Indirect Beneficiaries
+                    </FormLabel>
+                    <FormDescription className="text-xs text-muted-foreground">
+                      People who benefit as a secondary effect — households, communities, or others influenced by direct beneficiaries.
+                    </FormDescription>
+                    <FormControl>
+                      <Textarea
+                        placeholder="e.g. ~2,500 household members of trained farmers"
+                        className="min-h-[60px] text-sm"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </>
+        )}
 
         <Separator />
 
