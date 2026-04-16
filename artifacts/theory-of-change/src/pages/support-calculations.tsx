@@ -366,9 +366,15 @@ export default function SupportCalculations() {
 
   const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
   const [indAggMode, setIndAggMode] = useState<Record<number, "sum" | "avg" | "count">>({});
+  const [indTargetMode, setIndTargetMode] = useState<Record<number, "computed" | "manual">>({});
+  const [indActualMode, setIndActualMode] = useState<Record<number, "computed" | "manual">>({});
+
   const getAggMode = (indicatorId: number) => indAggMode[indicatorId] ?? "sum";
   const setAggMode = (indicatorId: number, mode: "sum" | "avg" | "count") =>
     setIndAggMode(prev => ({ ...prev, [indicatorId]: mode }));
+
+  const getTargetMode = (indicatorId: number) => indTargetMode[indicatorId] ?? "manual";
+  const getActualMode = (indicatorId: number) => indActualMode[indicatorId] ?? "manual";
 
   const aggregate = (values: string[], mode: "sum" | "avg" | "count"): string => {
     const nums = values.map(v => parseFloat(v)).filter(n => !isNaN(n));
@@ -543,24 +549,45 @@ export default function SupportCalculations() {
                                       </div>
                                     </div>
                                   </td>
-                                  {/* Target — editable value + aggregate below */}
-                                  <td className="px-3 py-2 bg-amber-100/50 border-r border-border/30">
-                                    <EditableCell
-                                      value={ind.targetFigure ?? ""}
-                                      placeholder="Set target…"
-                                      onSave={v => saveIndicator(component.id, indicator.id, "targetFigure", v)}
-                                      className="text-[11px] font-semibold text-amber-900"
-                                    />
-                                    {targetAgg !== "—" && (
-                                      <button
-                                        onClick={() => saveIndicator(component.id, indicator.id, "targetFigure", targetAgg)}
-                                        className="mt-1 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-200/70 text-amber-800 hover:bg-amber-300/70 text-[9px] font-semibold transition-colors w-fit"
-                                        title="Use computed value as set target"
-                                      >
-                                        {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg} → use
-                                      </button>
-                                    )}
-                                  </td>
+                                  {/* Target — computed or manual toggle */}
+                                  {(() => {
+                                    const tMode = getTargetMode(indicator.id);
+                                    return (
+                                      <td className="px-3 py-2 bg-amber-100/50 border-r border-border/30">
+                                        {/* Mode toggle */}
+                                        <div className="flex items-center rounded border border-amber-300/60 overflow-hidden text-[9px] font-semibold w-fit mb-1.5">
+                                          <button
+                                            onClick={() => {
+                                              setIndTargetMode(prev => ({ ...prev, [indicator.id]: "computed" }));
+                                              if (targetAgg !== "—") saveIndicator(component.id, indicator.id, "targetFigure", targetAgg);
+                                            }}
+                                            className={`px-2 py-0.5 transition-colors ${tMode === "computed" ? "bg-amber-400/80 text-amber-950" : "text-amber-700 hover:bg-amber-200/60"}`}
+                                          >
+                                            {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} Computed
+                                          </button>
+                                          <button
+                                            onClick={() => setIndTargetMode(prev => ({ ...prev, [indicator.id]: "manual" }))}
+                                            className={`px-2 py-0.5 transition-colors border-l border-amber-300/60 ${tMode === "manual" ? "bg-amber-400/80 text-amber-950" : "text-amber-700 hover:bg-amber-200/60"}`}
+                                          >
+                                            Manual
+                                          </button>
+                                        </div>
+                                        {/* Value display */}
+                                        {tMode === "computed" ? (
+                                          <p className="text-[11px] font-semibold text-amber-900">
+                                            {targetAgg === "—" ? <em className="text-amber-400 font-normal text-[10px]">No year data yet</em> : targetAgg}
+                                          </p>
+                                        ) : (
+                                          <EditableCell
+                                            value={ind.targetFigure ?? ""}
+                                            placeholder="Type a value…"
+                                            onSave={v => saveIndicator(component.id, indicator.id, "targetFigure", v)}
+                                            className="text-[11px] font-semibold text-amber-900"
+                                          />
+                                        )}
+                                      </td>
+                                    );
+                                  })()}
                                   {/* Target Notes */}
                                   <td className="px-3 py-2 bg-amber-50/30 border-r border-border/30">
                                     <EditableCell
@@ -570,24 +597,45 @@ export default function SupportCalculations() {
                                       className="text-[11px] text-muted-foreground"
                                     />
                                   </td>
-                                  {/* Actual — editable value + aggregate below */}
-                                  <td className="px-3 py-2 bg-emerald-100/50 border-r border-border/30">
-                                    <EditableCell
-                                      value={ind.actualFigure ?? ""}
-                                      placeholder="Set actual…"
-                                      onSave={v => saveIndicator(component.id, indicator.id, "actualFigure", v)}
-                                      className="text-[11px] font-semibold text-emerald-900"
-                                    />
-                                    {actualAgg !== "—" && (
-                                      <button
-                                        onClick={() => saveIndicator(component.id, indicator.id, "actualFigure", actualAgg)}
-                                        className="mt-1 flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-200/70 text-emerald-800 hover:bg-emerald-300/70 text-[9px] font-semibold transition-colors w-fit"
-                                        title="Use computed value as set actual"
-                                      >
-                                        {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg} → use
-                                      </button>
-                                    )}
-                                  </td>
+                                  {/* Actual — computed or manual toggle */}
+                                  {(() => {
+                                    const aMode = getActualMode(indicator.id);
+                                    return (
+                                      <td className="px-3 py-2 bg-emerald-100/50 border-r border-border/30">
+                                        {/* Mode toggle */}
+                                        <div className="flex items-center rounded border border-emerald-300/60 overflow-hidden text-[9px] font-semibold w-fit mb-1.5">
+                                          <button
+                                            onClick={() => {
+                                              setIndActualMode(prev => ({ ...prev, [indicator.id]: "computed" }));
+                                              if (actualAgg !== "—") saveIndicator(component.id, indicator.id, "actualFigure", actualAgg);
+                                            }}
+                                            className={`px-2 py-0.5 transition-colors ${aMode === "computed" ? "bg-emerald-400/80 text-emerald-950" : "text-emerald-700 hover:bg-emerald-200/60"}`}
+                                          >
+                                            {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} Computed
+                                          </button>
+                                          <button
+                                            onClick={() => setIndActualMode(prev => ({ ...prev, [indicator.id]: "manual" }))}
+                                            className={`px-2 py-0.5 transition-colors border-l border-emerald-300/60 ${aMode === "manual" ? "bg-emerald-400/80 text-emerald-950" : "text-emerald-700 hover:bg-emerald-200/60"}`}
+                                          >
+                                            Manual
+                                          </button>
+                                        </div>
+                                        {/* Value display */}
+                                        {aMode === "computed" ? (
+                                          <p className="text-[11px] font-semibold text-emerald-900">
+                                            {actualAgg === "—" ? <em className="text-emerald-400 font-normal text-[10px]">No year data yet</em> : actualAgg}
+                                          </p>
+                                        ) : (
+                                          <EditableCell
+                                            value={ind.actualFigure ?? ""}
+                                            placeholder="Type a value…"
+                                            onSave={v => saveIndicator(component.id, indicator.id, "actualFigure", v)}
+                                            className="text-[11px] font-semibold text-emerald-900"
+                                          />
+                                        )}
+                                      </td>
+                                    );
+                                  })()}
                                   {/* Actual Notes */}
                                   <td className="px-3 py-2 bg-emerald-50/20">
                                     <EditableCell
