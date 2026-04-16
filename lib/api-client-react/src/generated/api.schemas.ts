@@ -45,6 +45,15 @@ export const ComponentType = {
   impact: "impact",
 } as const;
 
+export type ComponentPathway =
+  | (typeof ComponentPathway)[keyof typeof ComponentPathway]
+  | null;
+
+export const ComponentPathway = {
+  direct: "direct",
+  indirect: "indirect",
+} as const;
+
 export interface ComponentIndicator {
   id: number;
   componentId: number;
@@ -103,6 +112,7 @@ export interface Component {
   quantitativeQuestions: string;
   directBeneficiaries: string;
   indirectBeneficiaries: string;
+  pathway?: ComponentPathway;
   willBeAddressed: boolean;
   positionX: number;
   positionY: number;
@@ -281,6 +291,15 @@ export const CreateComponentType = {
   impact: "impact",
 } as const;
 
+export type CreateComponentPathway =
+  | (typeof CreateComponentPathway)[keyof typeof CreateComponentPathway]
+  | null;
+
+export const CreateComponentPathway = {
+  direct: "direct",
+  indirect: "indirect",
+} as const;
+
 export interface CreateComponent {
   type: CreateComponentType;
   title: string;
@@ -297,6 +316,7 @@ export interface CreateComponent {
   quantitativeQuestions?: string;
   directBeneficiaries?: string;
   indirectBeneficiaries?: string;
+  pathway?: CreateComponentPathway;
   willBeAddressed?: boolean;
   positionX?: number;
   positionY?: number;

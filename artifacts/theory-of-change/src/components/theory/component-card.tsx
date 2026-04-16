@@ -198,13 +198,19 @@ export function ComponentCard({
           ${config.border}
         `}
       >
-        {/* Accent top bar */}
-        <div className={`h-1 w-full ${config.accent} opacity-70`} />
+        {/* Accent top bar — pathway overrides type color */}
+        <div className={`h-1.5 w-full ${
+          (component as any).pathway === "direct"
+            ? "bg-emerald-400"
+            : (component as any).pathway === "indirect"
+            ? "bg-blue-400"
+            : `${config.accent} opacity-70`
+        }`} />
 
         <div className="p-4">
-          {/* Header row: box number + type label + menu */}
+          {/* Header row: box number + type label + pathway badge + menu */}
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold shrink-0">
                 {boxNumber}
               </span>
@@ -212,6 +218,18 @@ export function ComponentCard({
                 <Icon className="w-3.5 h-3.5" />
                 <span className="text-[10px] font-bold uppercase tracking-widest">{component.type}</span>
               </div>
+              {(component as any).pathway === "direct" && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  Direct
+                </span>
+              )}
+              {(component as any).pathway === "indirect" && (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide bg-blue-100 text-blue-800 border border-blue-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                  Indirect
+                </span>
+              )}
             </div>
 
             {!isConnectingMode && (
@@ -291,63 +309,6 @@ export function ComponentCard({
             </div>
           )}
 
-          {/* Beneficiary / SME Pathways — output / outcome / impact only */}
-          {["output", "outcome", "impact"].includes(component.type) &&
-            ((component as any).directBeneficiaries || (component as any).indirectBeneficiaries) && (() => {
-              const isOutput = component.type === "output";
-              const directLabel  = isOutput ? "Direct SMEs"        : "Direct Beneficiaries";
-              const indirectLabel = isOutput ? "Indirect SMEs"     : "Indirect Beneficiaries";
-              const direct   = (component as any).directBeneficiaries as string | undefined;
-              const indirect = (component as any).indirectBeneficiaries as string | undefined;
-              return (
-                <div className="mb-3 space-y-0">
-                  {/* Section label */}
-                  <div className="flex items-center gap-1 mb-1.5">
-                    <Users className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                      {isOutput ? "SME Pathways" : "Beneficiary Pathways"}
-                    </span>
-                  </div>
-
-                  {/* Direct pathway box */}
-                  {direct && (
-                    <div className="rounded-t-md border border-b-0 border-emerald-300 bg-emerald-50/70 px-2.5 py-1.5">
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                        <span className="text-[9px] font-bold uppercase tracking-wide text-emerald-800">
-                          Direct — {directLabel}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-emerald-900/80 leading-snug line-clamp-2 pl-2.5">{direct}</p>
-                    </div>
-                  )}
-
-                  {/* Connector — only if both present */}
-                  {direct && indirect && (
-                    <div className="flex items-center pl-4 bg-transparent">
-                      <div className="w-px h-2.5 bg-muted-foreground/30" />
-                      <svg width="8" height="6" viewBox="0 0 8 6" className="text-muted-foreground/40 -ml-[0.5px]" fill="currentColor">
-                        <path d="M4 6L0 0h8L4 6Z" />
-                      </svg>
-                    </div>
-                  )}
-
-                  {/* Indirect pathway box */}
-                  {indirect && (
-                    <div className={`border border-blue-300 bg-blue-50/70 px-2.5 py-1.5 ${direct ? "rounded-b-md border-t-0" : "rounded-md"}`}>
-                      <div className="flex items-center gap-1 mb-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
-                        <span className="text-[9px] font-bold uppercase tracking-wide text-blue-800">
-                          Indirect — {indirectLabel}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-blue-900/80 leading-snug line-clamp-2 pl-2.5">{indirect}</p>
-                    </div>
-                  )}
-                </div>
-              );
-            })()
-          }
 
           {/* Per-indicator rows */}
           {indicators.length > 0 && (

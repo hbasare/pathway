@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ComponentIndicator } from "./componentIndicator";
+import type { ComponentPathway } from "./componentPathway";
 import type { ComponentType } from "./componentType";
 
 export interface Component {
@@ -25,6 +26,7 @@ export interface Component {
   quantitativeQuestions: string;
   directBeneficiaries: string;
   indirectBeneficiaries: string;
+  pathway?: ComponentPathway;
   willBeAddressed: boolean;
   positionX: number;
   positionY: number;

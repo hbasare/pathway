@@ -1473,6 +1473,10 @@ components:
           type: string
         indirectBeneficiaries:
           type: string
+        pathway:
+          type: string
+          nullable: true
+          enum: [direct, indirect]
         willBeAddressed:
           type: boolean
         positionX:
@@ -1541,6 +1545,10 @@ components:
           type: string
         indirectBeneficiaries:
           type: string
+        pathway:
+          type: string
+          nullable: true
+          enum: [direct, indirect]
         willBeAddressed:
           type: boolean
         positionX:

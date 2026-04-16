@@ -5,6 +5,7 @@
  * Theory of Change API
  * OpenAPI spec version: 0.1.0
  */
+import type { CreateComponentPathway } from "./createComponentPathway";
 import type { CreateComponentType } from "./createComponentType";
 
 export interface CreateComponent {
@@ -23,6 +24,7 @@ export interface CreateComponent {
   quantitativeQuestions?: string;
   directBeneficiaries?: string;
   indirectBeneficiaries?: string;
+  pathway?: CreateComponentPathway;
   willBeAddressed?: boolean;
   positionX?: number;
   positionY?: number;

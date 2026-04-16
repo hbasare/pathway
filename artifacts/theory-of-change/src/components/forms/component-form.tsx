@@ -154,6 +154,7 @@ const formSchema = z.object({
   title: z.string().min(1, "Title is required").max(100),
   description: z.string().min(1, "Description is required"),
   assumptions: z.string().optional(),
+  pathway: z.enum(["direct", "indirect"]).nullable().optional(),
   directBeneficiaries: z.string().optional(),
   indirectBeneficiaries: z.string().optional(),
   targetDate: z.string().optional(),
@@ -446,6 +447,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
       title: initialData?.title || "",
       description: initialData?.description || "",
       assumptions: initialData?.assumptions || "",
+      pathway: (initialData as any)?.pathway ?? null,
       directBeneficiaries: initialData?.directBeneficiaries ?? "",
       indirectBeneficiaries: initialData?.indirectBeneficiaries ?? "",
       targetDate: initialData?.targetDate ?? "",
@@ -640,95 +642,83 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
           )}
         />
 
-        {/* Beneficiaries — only for output, outcome, impact */}
-        {["output", "outcome", "impact"].includes(selectedType) && (() => {
-          const isOutput = selectedType === "output";
-          const directLabel  = isOutput ? "Direct SMEs" : "Direct Beneficiaries";
-          const indirectLabel = isOutput ? "Indirect SMEs" : "Indirect Beneficiaries";
-          const directDesc   = isOutput
-            ? "The SMEs (enterprises, practitioners, or organisations) who directly adopt or adapt the innovation introduced by this output."
-            : "The people or groups who are the primary, intended recipients of this outcome's / impact's benefits.";
-          const indirectDesc = isOutput
-            ? "Other SMEs or actors influenced as a secondary effect of the direct SMEs adopting the innovation — the separate onward pathway."
-            : "People or groups who benefit as a secondary effect — e.g. households, communities, or others reached through the direct beneficiaries.";
-          const directPlaceholder  = isOutput
-            ? "e.g. 120 agri-input SMEs in target districts"
-            : "e.g. 500 smallholder farmers trained by SMEs";
-          const indirectPlaceholder = isOutput
-            ? "e.g. 40 additional SMEs influenced by peer networks"
-            : "e.g. ~2,500 household members of trained farmers";
-
-          return (
-            <div className="space-y-0">
-              {/* Section heading */}
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-muted-foreground" />
-                <p className="text-sm font-semibold text-foreground">
-                  {isOutput ? "SME Pathways" : "Beneficiary Pathways"}
-                </p>
-              </div>
-
-              {/* Direct pathway box */}
-              <div className="rounded-t-lg border border-b-0 border-emerald-300 bg-emerald-50/60 p-3 space-y-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span className="text-xs font-bold text-emerald-800">Direct pathway — {directLabel}</span>
-                </div>
-                <p className="text-[11px] text-emerald-700/80 leading-relaxed">{directDesc}</p>
-                <FormField
-                  control={form.control}
-                  name="directBeneficiaries"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Textarea
-                          placeholder={directPlaceholder}
-                          className="min-h-[56px] text-sm bg-white border-emerald-200 focus-visible:ring-emerald-400"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+        {/* Pathway designation — output, outcome, impact only */}
+        {["output", "outcome", "impact"].includes(selectedType) && (
+          <FormField
+            control={form.control}
+            name="pathway"
+            render={({ field }) => {
+              const isOutput = selectedType === "output";
+              const directLabel   = isOutput ? "Direct SMEs"   : "Direct Beneficiaries";
+              const indirectLabel = isOutput ? "Indirect SMEs" : "Indirect Beneficiaries";
+              const directDesc    = isOutput
+                ? "SMEs who directly adopt or adapt the innovation from this output."
+                : "The primary, intended recipients of this outcome's / impact's benefits.";
+              const indirectDesc  = isOutput
+                ? "SMEs reached as a secondary effect of the direct SMEs — the separate onward pathway."
+                : "People or groups benefiting as a secondary effect through the direct beneficiaries.";
+              const current = field.value ?? null;
+              return (
+                <FormItem>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Users className="w-4 h-4 text-muted-foreground" />
+                    <FormLabel className="text-sm font-semibold text-foreground m-0">
+                      {isOutput ? "SME Pathway" : "Beneficiary Pathway"}
+                    </FormLabel>
+                    <span className="text-xs text-muted-foreground">(optional — marks this card's role in the pathway)</span>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {/* Unset */}
+                    <button
+                      type="button"
+                      onClick={() => field.onChange(null)}
+                      className={`rounded-lg border px-3 py-2.5 text-xs font-medium text-center transition-all ${
+                        current === null
+                          ? "border-border bg-muted text-foreground ring-1 ring-border"
+                          : "border-border/50 bg-transparent text-muted-foreground hover:bg-muted/40"
+                      }`}
+                    >
+                      Primary / None
+                    </button>
+                    {/* Direct */}
+                    <button
+                      type="button"
+                      onClick={() => field.onChange("direct")}
+                      className={`rounded-lg border px-3 py-2.5 text-xs font-bold text-center transition-all ${
+                        current === "direct"
+                          ? "border-emerald-400 bg-emerald-50 text-emerald-800 ring-1 ring-emerald-400"
+                          : "border-emerald-200 bg-transparent text-emerald-700 hover:bg-emerald-50/60"
+                      }`}
+                    >
+                      <span className="block">🟢 Direct</span>
+                      <span className="font-normal text-[10px] opacity-80">{directLabel}</span>
+                    </button>
+                    {/* Indirect */}
+                    <button
+                      type="button"
+                      onClick={() => field.onChange("indirect")}
+                      className={`rounded-lg border px-3 py-2.5 text-xs font-bold text-center transition-all ${
+                        current === "indirect"
+                          ? "border-blue-400 bg-blue-50 text-blue-800 ring-1 ring-blue-400"
+                          : "border-blue-200 bg-transparent text-blue-700 hover:bg-blue-50/60"
+                      }`}
+                    >
+                      <span className="block">🔵 Indirect</span>
+                      <span className="font-normal text-[10px] opacity-80">{indirectLabel}</span>
+                    </button>
+                  </div>
+                  {current === "direct" && (
+                    <p className="text-[11px] text-emerald-700/80 mt-1.5 pl-1">{directDesc}</p>
                   )}
-                />
-              </div>
-
-              {/* Connector arrow */}
-              <div className="flex items-center gap-0 pl-4">
-                <div className="w-px h-3 bg-border" />
-                <svg width="12" height="8" viewBox="0 0 12 8" className="text-muted-foreground -ml-[0.5px] -mt-0.5" fill="none">
-                  <path d="M6 8L0 0h12L6 8Z" fill="currentColor" />
-                </svg>
-                <span className="ml-2 text-[10px] text-muted-foreground italic">separate onward pathway</span>
-              </div>
-
-              {/* Indirect pathway box */}
-              <div className="rounded-b-lg border border-t-0 border-blue-300 bg-blue-50/60 p-3 space-y-2">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-blue-500 shrink-0" />
-                  <span className="text-xs font-bold text-blue-800">Indirect pathway — {indirectLabel}</span>
-                </div>
-                <p className="text-[11px] text-blue-700/80 leading-relaxed">{indirectDesc}</p>
-                <FormField
-                  control={form.control}
-                  name="indirectBeneficiaries"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Textarea
-                          placeholder={indirectPlaceholder}
-                          className="min-h-[56px] text-sm bg-white border-blue-200 focus-visible:ring-blue-400"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  {current === "indirect" && (
+                    <p className="text-[11px] text-blue-700/80 mt-1.5 pl-1">{indirectDesc}</p>
                   )}
-                />
-              </div>
-            </div>
-          );
-        })()}
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
+          />
+        )}
 
         <Separator />
 

@@ -68,6 +68,7 @@ export const componentsTable = pgTable("components", {
   quantitativeQuestions: text("quantitative_questions").default(""),
   directBeneficiaries: text("direct_beneficiaries").notNull().default(""),
   indirectBeneficiaries: text("indirect_beneficiaries").notNull().default(""),
+  pathway: text("pathway"), // 'direct' | 'indirect' | null
   willBeAddressed: boolean("will_be_addressed").notNull().default(false),
   positionX: real("position_x").notNull().default(0),
   positionY: real("position_y").notNull().default(0),
