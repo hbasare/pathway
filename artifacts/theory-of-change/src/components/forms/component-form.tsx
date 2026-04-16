@@ -28,7 +28,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, X, ChevronDown, ChevronRight, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote } from "lucide-react";
+import { Plus, Trash2, X, ChevronDown, ChevronRight, MessageSquare, BarChart3, FileText, Database, CalendarCheck, StickyNote, Calculator } from "lucide-react";
 
 const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: string }> = {
   opportunity: {
@@ -57,10 +57,18 @@ const DESCRIPTION_GUIDANCE: Record<ComponentType, { hint: string; placeholder: s
   },
 };
 
+interface ScYear {
+  target?: string | null;
+  actual?: string | null;
+}
+
+type IndicatorWithSc = ComponentIndicator & { scYears?: ScYear[] };
+
 interface IndicatorRow {
   localKey: string;
   id?: number;
   name: string;
+  scYears?: ScYear[];
   // Target group
   targetDate: string;
   targetFigure: string;
@@ -98,6 +106,7 @@ function emptyIndicator(): IndicatorRow {
   return {
     localKey: makeKey(),
     name: "",
+    scYears: [],
     targetDate: "", targetFigure: "", targetExplanation: "", targetSourceOfInformation: "", targetDateLastReviewed: "", targetNotes: "",
     targetQualitativeQuestion: "", targetQuantitativeQuestion: "",
     actualDate: "", actualFigure: "", actualExplanation: "", actualSourceOfInformation: "", actualDateLastReviewed: "", actualNotes: "",
@@ -107,11 +116,12 @@ function emptyIndicator(): IndicatorRow {
   };
 }
 
-function fromApiIndicator(ind: ComponentIndicator): IndicatorRow {
+function fromApiIndicator(ind: IndicatorWithSc): IndicatorRow {
   return {
     localKey: makeKey(),
     id: ind.id,
     name: ind.name ?? "",
+    scYears: (ind.scYears ?? []) as ScYear[],
     targetDate: ind.targetDate ?? "",
     targetFigure: ind.targetFigure ?? "",
     targetExplanation: ind.targetExplanation ?? "",
@@ -161,7 +171,7 @@ type FormValues = z.infer<typeof formSchema>;
 interface ComponentFormProps {
   theoryId: number;
   onSuccess?: () => void;
-  initialData?: FormValues & { id: number; componentIndicators?: ComponentIndicator[]; targetDate?: string | null; targetFigure?: string | null; actualDate?: string | null; actualFigure?: string | null; baselineDate?: string | null; baselineFigure?: string | null };
+  initialData?: FormValues & { id: number; componentIndicators?: IndicatorWithSc[]; targetDate?: string | null; targetFigure?: string | null; actualDate?: string | null; actualFigure?: string | null; baselineDate?: string | null; baselineFigure?: string | null };
   defaultType?: ComponentType;
 }
 
@@ -172,9 +182,19 @@ interface MeasurementGroupProps {
   color: { border: string; header: string; label: string };
   update: (key: string, field: keyof Omit<IndicatorRow, "localKey" | "id">, val: string) => void;
   onClear: () => void;
+  scValues?: (string | null | undefined)[];
 }
 
-function MeasurementGroup({ ind, prefix, label, color, update, onClear }: MeasurementGroupProps) {
+function computeAggregate(vals: (string | null | undefined)[], mode: "sum" | "avg" | "count"): string | null {
+  const nums = vals.map(v => parseFloat(v ?? "")).filter(n => !isNaN(n));
+  if (nums.length === 0) return null;
+  if (mode === "count") return String(nums.length);
+  const total = nums.reduce((a, b) => a + b, 0);
+  if (mode === "avg") return (total / nums.length).toLocaleString(undefined, { maximumFractionDigits: 2 });
+  return total.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+function MeasurementGroup({ ind, prefix, label, color, update, onClear, scValues }: MeasurementGroupProps) {
   const dateField        = `${prefix}Date` as keyof IndicatorRow;
   const figureField      = `${prefix}Figure` as keyof IndicatorRow;
   const explanationField = `${prefix}Explanation` as keyof IndicatorRow;
@@ -191,6 +211,10 @@ function MeasurementGroup({ ind, prefix, label, color, update, onClear }: Measur
     .some(f => (ind[f] as string)?.trim());
 
   const [isOpen, setIsOpen] = useState(hasAnyData);
+  const [aggMode, setAggMode] = useState<"sum" | "avg" | "count">("sum");
+
+  const hasScData = scValues && scValues.some(v => v != null && v !== "");
+  const aggResult = hasScData ? computeAggregate(scValues!, aggMode) : null;
 
   return (
     <div className={`rounded-md border ${color.border} overflow-hidden`}>
@@ -248,6 +272,44 @@ function MeasurementGroup({ ind, prefix, label, color, update, onClear }: Measur
             />
           </div>
         </div>
+
+        {/* SC aggregate picker — only shown when there is SC year data */}
+        {hasScData && (
+          <div className={`rounded border ${color.border} bg-white/60 p-2.5 space-y-2`}>
+            <div className="flex items-center gap-1.5">
+              <Calculator className={`w-3 h-3 ${color.label}`} />
+              <span className={`text-[10px] font-bold uppercase tracking-wider ${color.label}`}>From Support Calculations</span>
+            </div>
+            {/* Mode toggle */}
+            <div className="flex items-center gap-0.5 w-fit rounded border overflow-hidden text-[10px] font-semibold">
+              {(["sum", "avg", "count"] as const).map(m => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setAggMode(m)}
+                  className={`px-2.5 py-1 transition-colors ${aggMode === m ? `${color.header} ${color.label} border-r last:border-r-0` : "text-muted-foreground hover:bg-muted/60 border-r last:border-r-0"}`}
+                >
+                  {m === "sum" ? "Σ Sum" : m === "avg" ? "Ø Average" : "# Count"}
+                </button>
+              ))}
+            </div>
+            {/* Result + apply */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-foreground">
+                {aggResult ?? <em className="text-xs font-normal text-muted-foreground">No numeric data yet</em>}
+              </span>
+              {aggResult && (
+                <button
+                  type="button"
+                  onClick={() => update(ind.localKey, figureField as keyof Omit<IndicatorRow, "localKey" | "id">, aggResult)}
+                  className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${color.border} ${color.label} ${color.header} hover:brightness-95 transition-all`}
+                >
+                  Apply to figure
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Explanation */}
         <div>
@@ -634,6 +696,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   label="Target"
                   color={{ border: "border-amber-200", header: "bg-amber-50", label: "text-amber-700" }}
                   update={updateIndicatorField}
+                  scValues={ind.scYears?.map(y => y.target)}
                   onClear={() => {
                     const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
                       "targetDate", "targetFigure", "targetExplanation", "targetSourceOfInformation",
@@ -650,6 +713,7 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
                   label="Actual"
                   color={{ border: "border-emerald-200", header: "bg-emerald-50", label: "text-emerald-700" }}
                   update={updateIndicatorField}
+                  scValues={ind.scYears?.map(y => y.actual)}
                   onClear={() => {
                     const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
                       "actualDate", "actualFigure", "actualExplanation", "actualSourceOfInformation",
