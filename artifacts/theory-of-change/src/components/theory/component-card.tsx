@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Component, ComponentType, useDeleteComponent, getGetTheoryQueryKey } from "@workspace/api-client-react";
+import { useState, useRef } from "react";
+import { Component, ComponentType, useDeleteComponent, useUpdateComponentIndicator, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { MoreVertical, Edit2, Trash2, ArrowRight, Unlink, Activity, Zap, FileText, Target, Globe, Lightbulb, BarChart3 } from "lucide-react";
 import {
@@ -68,6 +68,82 @@ function formatDate(dateStr: string | null | undefined) {
   }
 }
 
+function sumNumeric(vals: (string | null | undefined)[]): string | null {
+  const nums = vals.map(v => parseFloat(v ?? "")).filter(n => !isNaN(n));
+  if (nums.length === 0) return null;
+  const total = nums.reduce((a, b) => a + b, 0);
+  return total.toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+interface InlineFigureProps {
+  value: string | null | undefined;
+  placeholder: string;
+  scValue: string | null;
+  onSave: (v: string) => void;
+  valueCls: string;
+  accentCls: string;
+}
+
+function InlineFigure({ value, placeholder, scValue, onSave, valueCls, accentCls }: InlineFigureProps) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const startEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDraft(value ?? "");
+    setEditing(true);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const commit = (v: string) => {
+    setEditing(false);
+    if (v !== (value ?? "")) onSave(v);
+  };
+
+  const applySc = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (scValue) { onSave(scValue); setEditing(false); }
+  };
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+        <input
+          ref={inputRef}
+          className={`w-full bg-transparent border-b border-current outline-none text-[10px] font-semibold ${valueCls} placeholder:text-current/40`}
+          value={draft}
+          placeholder={placeholder}
+          onChange={e => setDraft(e.target.value)}
+          onBlur={() => commit(draft)}
+          onKeyDown={e => { if (e.key === "Enter") commit(draft); if (e.key === "Escape") setEditing(false); }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <button
+        onClick={startEdit}
+        className={`text-[10px] font-semibold ${value ? valueCls : "text-muted-foreground/40 italic"} hover:opacity-70 transition-opacity text-left`}
+        title="Click to edit"
+      >
+        {value || placeholder}
+      </button>
+      {scValue && scValue !== value && (
+        <button
+          onClick={applySc}
+          className={`inline-flex items-center gap-0.5 px-1 py-px rounded text-[8px] font-semibold border ${accentCls} hover:opacity-80 transition-opacity leading-none`}
+          title={`Use Support Calculations total: ${scValue}`}
+        >
+          SC Σ {scValue}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function ComponentCard({
   component, boxNumber, onConnectStart, onConnectEnd, isConnectingFrom, isConnectingMode,
   connectedComponents = [], onDisconnect,
@@ -85,6 +161,21 @@ export function ComponentCard({
       onError: () => toast({ title: "Failed to delete component", variant: "destructive" }),
     },
   });
+
+  const updateIndicator = useUpdateComponentIndicator({
+    mutation: {
+      onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(component.theoryId) }),
+    },
+  });
+
+  const saveIndicatorField = (indicatorId: number, field: "targetFigure" | "actualFigure", value: string) => {
+    updateIndicator.mutate({
+      theoryId: component.theoryId,
+      componentId: component.id,
+      id: indicatorId,
+      data: { [field]: value },
+    });
+  };
 
   const config = TYPE_CONFIG[component.type];
   const Icon = config.icon;
@@ -212,88 +303,87 @@ export function ComponentCard({
               {(indicators as IndicatorWithSc[]).map((ind, idx) => {
                 const scYears = ind.scYears ?? [];
 
-                // Latest target date from SC year rows (the "year" / target-date field)
-                const latestScTargetDate = scYears
-                  .map(y => y.year)
-                  .filter(Boolean)
-                  .sort()
-                  .at(-1);
+                // SC sums (from year rows — the values entered in Support Calculations)
+                const scTargetSum = sumNumeric(scYears.map(y => y.target));
+                const scActualSum = sumNumeric(scYears.map(y => y.actual));
 
-                // Latest actual date from SC year rows
-                const latestScActualDate = scYears
-                  .map(y => y.actualDate)
-                  .filter(Boolean)
-                  .sort()
-                  .at(-1);
+                // Latest dates from SC year rows
+                const latestScTargetDate = scYears.map(y => y.year).filter(Boolean).sort().at(-1);
+                const latestScActualDate = scYears.map(y => y.actualDate).filter(Boolean).sort().at(-1);
 
-                const groups = [
-                  {
-                    key: "target",
-                    label: "Target",
-                    figure: ind.targetFigure,
-                    date: latestScTargetDate ?? ind.targetDate,
-                    scDate: latestScTargetDate,
-                    labelCls: "text-amber-700",
-                    bgCls: "bg-amber-50 border-amber-200",
-                    dotCls: "bg-amber-400",
-                  },
-                  {
-                    key: "actual",
-                    label: "Actual",
-                    figure: ind.actualFigure,
-                    date: latestScActualDate ?? ind.actualDate,
-                    scDate: latestScActualDate,
-                    labelCls: "text-emerald-700",
-                    bgCls: "bg-emerald-50 border-emerald-200",
-                    dotCls: "bg-emerald-400",
-                  },
-                  {
-                    key: "baseline",
-                    label: "Baseline",
-                    figure: ind.baselineFigure,
-                    date: ind.baselineDate,
-                    scDate: undefined,
-                    labelCls: "text-blue-700",
-                    bgCls: "bg-blue-50 border-blue-200",
-                    dotCls: "bg-blue-400",
-                  },
-                ];
                 return (
                   <div key={ind.id ?? ind.name} className="rounded-md bg-muted/30 border border-border/50 px-2.5 py-2">
                     <p className="text-[11px] font-semibold text-foreground leading-snug mb-2 line-clamp-2">
                       {idx + 1}. {ind.name || <span className="italic text-muted-foreground">Unnamed indicator</span>}
                     </p>
                     <div className="space-y-1.5">
-                      {groups.map(g => {
-                        const hasData = !!(g.date || g.figure);
-                        return (
-                          <div key={g.key} className={`rounded border px-2 py-1 ${g.bgCls}`}>
-                            <div className="flex items-center gap-1 mb-0.5">
-                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${g.dotCls}`} />
-                              <span className={`text-[10px] font-bold uppercase tracking-wide ${g.labelCls}`}>{g.label}</span>
-                            </div>
-                            {hasData ? (
-                              <div className="pl-3 space-y-0.5">
-                                {g.figure && (
-                                  <p className="text-[10px] text-foreground font-semibold">{g.figure}</p>
-                                )}
-                                {g.date && (
-                                  <p className="text-[10px] text-muted-foreground font-normal flex items-center gap-1">
-                                    {formatDate(g.date)}
-                                    {g.scDate && (
-                                      <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-muted border border-border/60 text-muted-foreground uppercase tracking-wide leading-none">
-                                        SC
-                                      </span>
-                                    )}
-                                  </p>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
-                            )}
+                      {/* Target */}
+                      <div className="rounded border px-2 py-1 bg-amber-50 border-amber-200">
+                        <div className="flex items-center gap-1 mb-1">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-amber-400" />
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Target</span>
+                        </div>
+                        <div className="pl-3 space-y-0.5">
+                          <InlineFigure
+                            value={ind.targetFigure}
+                            placeholder="Click to set target…"
+                            scValue={scTargetSum}
+                            onSave={v => ind.id != null && saveIndicatorField(ind.id, "targetFigure", v)}
+                            valueCls="text-amber-900"
+                            accentCls="bg-amber-100 border-amber-300 text-amber-800"
+                          />
+                          {(latestScTargetDate ?? ind.targetDate) && (
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              {formatDate(latestScTargetDate ?? ind.targetDate)}
+                              {latestScTargetDate && (
+                                <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-muted border border-border/60 text-muted-foreground uppercase tracking-wide leading-none">SC</span>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actual */}
+                      <div className="rounded border px-2 py-1 bg-emerald-50 border-emerald-200">
+                        <div className="flex items-center gap-1 mb-1">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-400" />
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700">Actual</span>
+                        </div>
+                        <div className="pl-3 space-y-0.5">
+                          <InlineFigure
+                            value={ind.actualFigure}
+                            placeholder="Click to set actual…"
+                            scValue={scActualSum}
+                            onSave={v => ind.id != null && saveIndicatorField(ind.id, "actualFigure", v)}
+                            valueCls="text-emerald-900"
+                            accentCls="bg-emerald-100 border-emerald-300 text-emerald-800"
+                          />
+                          {(latestScActualDate ?? ind.actualDate) && (
+                            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                              {formatDate(latestScActualDate ?? ind.actualDate)}
+                              {latestScActualDate && (
+                                <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-muted border border-border/60 text-muted-foreground uppercase tracking-wide leading-none">SC</span>
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Baseline — read-only (set via Edit Component) */}
+                      <div className="rounded border px-2 py-1 bg-blue-50 border-blue-200">
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-blue-400" />
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-blue-700">Baseline</span>
+                        </div>
+                        {(ind.baselineFigure || ind.baselineDate) ? (
+                          <div className="pl-3 space-y-0.5">
+                            {ind.baselineFigure && <p className="text-[10px] text-blue-900 font-semibold">{ind.baselineFigure}</p>}
+                            {ind.baselineDate && <p className="text-[10px] text-muted-foreground">{formatDate(ind.baselineDate)}</p>}
                           </div>
-                        );
-                      })}
+                        ) : (
+                          <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
