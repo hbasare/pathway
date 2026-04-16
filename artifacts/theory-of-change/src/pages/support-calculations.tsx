@@ -336,6 +336,19 @@ export default function SupportCalculations() {
     queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(id) });
   }, [queryClient, id]);
 
+  // All state must live before any early returns (Rules of Hooks)
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
+  const [indAggMode, setIndAggMode] = useState<Record<number, "sum" | "avg" | "count">>({});
+  const [indTargetMode, setIndTargetMode] = useState<Record<number, "computed" | "manual">>({});
+  const [indActualMode, setIndActualMode] = useState<Record<number, "computed" | "manual">>({});
+
+  const getAggMode = (indicatorId: number) => indAggMode[indicatorId] ?? "sum";
+  const setAggMode = (indicatorId: number, mode: "sum" | "avg" | "count") =>
+    setIndAggMode(prev => ({ ...prev, [indicatorId]: mode }));
+
+  const getTargetMode = (indicatorId: number) => indTargetMode[indicatorId] ?? "manual";
+  const getActualMode = (indicatorId: number) => indActualMode[indicatorId] ?? "manual";
+
   const addYearRow = async (indicatorId: number, position: number) => {
     const nextYear = String(currentYear);
     await fetch(`/api/theories/${id}/indicators/${indicatorId}/sc-years`, {
@@ -363,18 +376,6 @@ export default function SupportCalculations() {
       </div>
     );
   }
-
-  const [collapsed, setCollapsed] = useState<Set<number>>(new Set());
-  const [indAggMode, setIndAggMode] = useState<Record<number, "sum" | "avg" | "count">>({});
-  const [indTargetMode, setIndTargetMode] = useState<Record<number, "computed" | "manual">>({});
-  const [indActualMode, setIndActualMode] = useState<Record<number, "computed" | "manual">>({});
-
-  const getAggMode = (indicatorId: number) => indAggMode[indicatorId] ?? "sum";
-  const setAggMode = (indicatorId: number, mode: "sum" | "avg" | "count") =>
-    setIndAggMode(prev => ({ ...prev, [indicatorId]: mode }));
-
-  const getTargetMode = (indicatorId: number) => indTargetMode[indicatorId] ?? "manual";
-  const getActualMode = (indicatorId: number) => indActualMode[indicatorId] ?? "manual";
 
   const aggregate = (values: string[], mode: "sum" | "avg" | "count"): string => {
     const nums = values.map(v => parseFloat(v)).filter(n => !isNaN(n));

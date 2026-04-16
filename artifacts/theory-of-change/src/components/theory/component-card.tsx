@@ -24,6 +24,19 @@ interface ConnectedComponent {
   type: string;
 }
 
+interface ScYear {
+  id?: number;
+  year?: string | null;
+  actualDate?: string | null;
+  target?: string | null;
+  actual?: string | null;
+  position?: number | null;
+}
+
+type IndicatorWithSc = NonNullable<Component["componentIndicators"]>[number] & {
+  scYears?: ScYear[];
+};
+
 interface ComponentCardProps {
   component: Component;
   boxNumber: number;
@@ -196,13 +209,30 @@ export function ComponentCard({
                   Indicators ({indicators.length})
                 </span>
               </div>
-              {indicators.map((ind, idx) => {
+              {(indicators as IndicatorWithSc[]).map((ind, idx) => {
+                const scYears = ind.scYears ?? [];
+
+                // Latest target date from SC year rows (the "year" / target-date field)
+                const latestScTargetDate = scYears
+                  .map(y => y.year)
+                  .filter(Boolean)
+                  .sort()
+                  .at(-1);
+
+                // Latest actual date from SC year rows
+                const latestScActualDate = scYears
+                  .map(y => y.actualDate)
+                  .filter(Boolean)
+                  .sort()
+                  .at(-1);
+
                 const groups = [
                   {
                     key: "target",
                     label: "Target",
-                    date: ind.targetDate,
                     figure: ind.targetFigure,
+                    date: latestScTargetDate ?? ind.targetDate,
+                    scDate: latestScTargetDate,
                     labelCls: "text-amber-700",
                     bgCls: "bg-amber-50 border-amber-200",
                     dotCls: "bg-amber-400",
@@ -210,8 +240,9 @@ export function ComponentCard({
                   {
                     key: "actual",
                     label: "Actual",
-                    date: ind.actualDate,
                     figure: ind.actualFigure,
+                    date: latestScActualDate ?? ind.actualDate,
+                    scDate: latestScActualDate,
                     labelCls: "text-emerald-700",
                     bgCls: "bg-emerald-50 border-emerald-200",
                     dotCls: "bg-emerald-400",
@@ -219,8 +250,9 @@ export function ComponentCard({
                   {
                     key: "baseline",
                     label: "Baseline",
-                    date: ind.baselineDate,
                     figure: ind.baselineFigure,
+                    date: ind.baselineDate,
+                    scDate: undefined,
                     labelCls: "text-blue-700",
                     bgCls: "bg-blue-50 border-blue-200",
                     dotCls: "bg-blue-400",
@@ -241,15 +273,20 @@ export function ComponentCard({
                               <span className={`text-[10px] font-bold uppercase tracking-wide ${g.labelCls}`}>{g.label}</span>
                             </div>
                             {hasData ? (
-                              <div className="pl-3">
-                                <span className="text-[10px] text-foreground font-medium">
-                                  {g.figure && g.figure}
-                                  {g.date && (
-                                    <span className="text-muted-foreground font-normal">
-                                      {g.figure ? " " : ""}({formatDate(g.date)})
-                                    </span>
-                                  )}
-                                </span>
+                              <div className="pl-3 space-y-0.5">
+                                {g.figure && (
+                                  <p className="text-[10px] text-foreground font-semibold">{g.figure}</p>
+                                )}
+                                {g.date && (
+                                  <p className="text-[10px] text-muted-foreground font-normal flex items-center gap-1">
+                                    {formatDate(g.date)}
+                                    {g.scDate && (
+                                      <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-muted border border-border/60 text-muted-foreground uppercase tracking-wide leading-none">
+                                        SC
+                                      </span>
+                                    )}
+                                  </p>
+                                )}
                               </div>
                             ) : (
                               <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
