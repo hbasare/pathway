@@ -267,11 +267,11 @@ function ScYearRow({ theoryId, indicatorId, row, shade, onRefresh }: ScYearRowPr
         />
       </td>
 
-      {/* Target assumptions */}
+      {/* Target Notes */}
       <td className="px-3 py-2 bg-amber-50/20 border-r border-border/30">
         <EditableCell
           value={row.targetNotes}
-          placeholder="Assumptions / source..."
+          placeholder="Target notes..."
           onSave={v => save("targetNotes", v)}
         />
       </td>
@@ -291,23 +291,14 @@ function ScYearRow({ theoryId, indicatorId, row, shade, onRefresh }: ScYearRowPr
         />
       </td>
 
-      {/* Actual assumptions */}
-      <td className="px-3 py-2 bg-emerald-50/20 border-r border-border/30">
-        <EditableCell
-          value={row.actualNotes}
-          placeholder="Assumptions / source..."
-          onSave={v => save("actualNotes", v)}
-        />
-      </td>
-
-      {/* Notes + delete */}
-      <td className="px-3 py-2">
+      {/* Actual Notes + delete */}
+      <td className="px-3 py-2 bg-emerald-50/20">
         <div className="flex items-start gap-1">
           <div className="flex-1">
             <EditableCell
-              value={row.notes}
-              placeholder="Notes..."
-              onSave={v => save("notes", v)}
+              value={row.actualNotes}
+              placeholder="Actual notes..."
+              onSave={v => save("actualNotes", v)}
             />
           </div>
           <button
@@ -463,16 +454,13 @@ export default function SupportCalculations() {
                     <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />Target</span>
                   </th>
                   <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-amber-600 border-r border-border/40">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-300 inline-block" />Assumptions / Source</span>
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-amber-300 inline-block" />Target Notes</span>
                   </th>
                   <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-700 border-r border-border/40">
                     <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block" />Actual</span>
                   </th>
-                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-600 border-r border-border/40">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" />Assumptions / Source</span>
-                  </th>
-                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-gray-400 inline-block" />Notes</span>
+                  <th className="px-3 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-emerald-600">
+                    <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-300 inline-block" />Actual Notes</span>
                   </th>
                 </tr>
               </thead>
@@ -488,7 +476,7 @@ export default function SupportCalculations() {
                         className="border-b border-border/60 bg-muted/70 cursor-pointer hover:bg-muted/90 transition-colors select-none"
                         onClick={() => toggleCollapse(component.id)}
                       >
-                        <td colSpan={6} className="px-4 py-2.5">
+                        <td colSpan={5} className="px-4 py-2.5">
                           <div className="flex items-center gap-2">
                             <ChevronRight
                               className={`w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform duration-150 ${isCollapsed ? "" : "rotate-90"}`}
@@ -511,7 +499,7 @@ export default function SupportCalculations() {
                       {/* ── Indicators (hidden when collapsed) ── */}
                       {!isCollapsed && indicators.length === 0 && (
                         <tr className="border-b border-border/30 bg-card">
-                          <td colSpan={6} className="pl-9 pr-4 py-3">
+                          <td colSpan={5} className="pl-9 pr-4 py-3">
                             <span className="text-[11px] text-muted-foreground/60 italic">
                               No indicators added yet — add them from the Theory of Change tab.
                             </span>
@@ -532,9 +520,9 @@ export default function SupportCalculations() {
                               const actualAgg = aggregate(scYears.map(y => y.actual ?? ""), mode);
                               return (
                                 <tr className={`border-b border-border/30 ${isEven ? "bg-amber-50/20" : "bg-amber-50/30"}`}>
-                                  {/* Name + inline mode toggle */}
+                                  {/* Col 1 — name, mode toggle, and aggregate set buttons */}
                                   <td className="pl-9 pr-3 py-2 border-r border-border/30">
-                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
                                       <span className="text-[11px] font-semibold text-foreground">
                                         {indicator.name || <em className="text-muted-foreground font-normal">Unnamed indicator</em>}
                                       </span>
@@ -554,6 +542,29 @@ export default function SupportCalculations() {
                                         ))}
                                       </div>
                                     </div>
+                                    {/* Aggregate results with set buttons */}
+                                    {(targetAgg !== "—" || actualAgg !== "—") && (
+                                      <div className="flex flex-wrap gap-1.5 mt-1">
+                                        {targetAgg !== "—" && (
+                                          <button
+                                            onClick={() => saveIndicator(component.id, indicator.id, "targetFigure", targetAgg)}
+                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 text-[9px] font-semibold transition-colors"
+                                            title="Apply as set target"
+                                          >
+                                            <span className="text-amber-500">T</span> {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg} → set target
+                                          </button>
+                                        )}
+                                        {actualAgg !== "—" && (
+                                          <button
+                                            onClick={() => saveIndicator(component.id, indicator.id, "actualFigure", actualAgg)}
+                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-[9px] font-semibold transition-colors"
+                                            title="Apply as set actual"
+                                          >
+                                            <span className="text-emerald-500">A</span> {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg} → set actual
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
                                   </td>
                                   {/* Target — editable ToC value only */}
                                   <td className="px-3 py-2 bg-amber-100/50 border-r border-border/30">
@@ -564,11 +575,11 @@ export default function SupportCalculations() {
                                       className="text-[11px] font-semibold text-amber-900"
                                     />
                                   </td>
-                                  {/* Target assumptions/source */}
+                                  {/* Target Notes */}
                                   <td className="px-3 py-2 bg-amber-50/30 border-r border-border/30">
                                     <EditableCell
                                       value={ind.targetSourceOfInformation ?? ""}
-                                      placeholder="Source…"
+                                      placeholder="Target notes…"
                                       onSave={v => saveIndicator(component.id, indicator.id, "targetSourceOfInformation", v)}
                                       className="text-[11px] text-muted-foreground"
                                     />
@@ -582,51 +593,14 @@ export default function SupportCalculations() {
                                       className="text-[11px] font-semibold text-emerald-900"
                                     />
                                   </td>
-                                  {/* Actual assumptions/source */}
-                                  <td className="px-3 py-2 bg-emerald-50/30 border-r border-border/30">
+                                  {/* Actual Notes */}
+                                  <td className="px-3 py-2 bg-emerald-50/20">
                                     <EditableCell
                                       value={ind.actualSourceOfInformation ?? ""}
-                                      placeholder="Source…"
+                                      placeholder="Actual notes…"
                                       onSave={v => saveIndicator(component.id, indicator.id, "actualSourceOfInformation", v)}
                                       className="text-[11px] text-muted-foreground"
                                     />
-                                  </td>
-                                  {/* Notes col — aggregate with "set" buttons */}
-                                  <td className="px-3 py-2">
-                                    {(targetAgg !== "—" || actualAgg !== "—") && (
-                                      <div className="flex flex-col gap-1 text-[9px]">
-                                        {targetAgg !== "—" && (
-                                          <div className="flex items-center gap-1">
-                                            <span className="text-muted-foreground">
-                                              <span className="font-bold text-amber-600">T</span>
-                                              {" "}{mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg}
-                                            </span>
-                                            <button
-                                              onClick={() => saveIndicator(component.id, indicator.id, "targetFigure", targetAgg)}
-                                              className="ml-1 px-1 py-0.5 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 font-semibold transition-colors"
-                                              title="Use this value as the set target"
-                                            >
-                                              → set target
-                                            </button>
-                                          </div>
-                                        )}
-                                        {actualAgg !== "—" && (
-                                          <div className="flex items-center gap-1">
-                                            <span className="text-muted-foreground">
-                                              <span className="font-bold text-emerald-600">A</span>
-                                              {" "}{mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg}
-                                            </span>
-                                            <button
-                                              onClick={() => saveIndicator(component.id, indicator.id, "actualFigure", actualAgg)}
-                                              className="ml-1 px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold transition-colors"
-                                              title="Use this value as the set actual"
-                                            >
-                                              → set actual
-                                            </button>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
                                   </td>
                                 </tr>
                               );
@@ -648,7 +622,7 @@ export default function SupportCalculations() {
 
                             {/* Add year row */}
                             <tr className={`border-b border-border/40 ${isEven ? "bg-card" : "bg-muted/15"}`}>
-                              <td colSpan={6} className="pl-12 pr-3 py-1.5">
+                              <td colSpan={5} className="pl-12 pr-3 py-1.5">
                                 <button
                                   onClick={() => addYearRow(indicator.id, scYears.length)}
                                   className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-primary transition-colors font-medium"
