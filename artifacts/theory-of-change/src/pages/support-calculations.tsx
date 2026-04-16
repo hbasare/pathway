@@ -591,21 +591,39 @@ export default function SupportCalculations() {
                                       className="text-[11px] text-muted-foreground"
                                     />
                                   </td>
-                                  {/* Notes col — read-only aggregate from year rows */}
+                                  {/* Notes col — aggregate with "set" buttons */}
                                   <td className="px-3 py-2">
                                     {(targetAgg !== "—" || actualAgg !== "—") && (
-                                      <div className="flex flex-col gap-0.5 text-[9px] text-muted-foreground">
+                                      <div className="flex flex-col gap-1 text-[9px]">
                                         {targetAgg !== "—" && (
-                                          <span>
-                                            <span className="font-bold text-amber-600">T</span>
-                                            {" "}{mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg}
-                                          </span>
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">
+                                              <span className="font-bold text-amber-600">T</span>
+                                              {" "}{mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg}
+                                            </span>
+                                            <button
+                                              onClick={() => saveIndicator(component.id, indicator.id, "targetFigure", targetAgg)}
+                                              className="ml-1 px-1 py-0.5 rounded bg-amber-100 text-amber-700 hover:bg-amber-200 font-semibold transition-colors"
+                                              title="Use this value as the set target"
+                                            >
+                                              → set target
+                                            </button>
+                                          </div>
                                         )}
                                         {actualAgg !== "—" && (
-                                          <span>
-                                            <span className="font-bold text-emerald-600">A</span>
-                                            {" "}{mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg}
-                                          </span>
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-muted-foreground">
+                                              <span className="font-bold text-emerald-600">A</span>
+                                              {" "}{mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg}
+                                            </span>
+                                            <button
+                                              onClick={() => saveIndicator(component.id, indicator.id, "actualFigure", actualAgg)}
+                                              className="ml-1 px-1 py-0.5 rounded bg-emerald-100 text-emerald-700 hover:bg-emerald-200 font-semibold transition-colors"
+                                              title="Use this value as the set actual"
+                                            >
+                                              → set actual
+                                            </button>
+                                          </div>
                                         )}
                                       </div>
                                     )}
