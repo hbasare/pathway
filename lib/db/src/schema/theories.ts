@@ -193,6 +193,7 @@ export const indicatorScYearsTable = pgTable("indicator_sc_years", {
   target: text("target").notNull().default(""),
   targetNotes: text("target_notes").notNull().default(""),
   actual: text("actual").notNull().default(""),
+  actualDate: text("actual_date").notNull().default(""),
   actualNotes: text("actual_notes").notNull().default(""),
   notes: text("notes").notNull().default(""),
   position: integer("position").notNull().default(0),

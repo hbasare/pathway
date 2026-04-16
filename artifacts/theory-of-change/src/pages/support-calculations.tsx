@@ -210,6 +210,7 @@ interface ScYear {
   target: string;
   targetNotes: string;
   actual: string;
+  actualDate: string;
   actualNotes: string;
   notes: string;
   position: number;
@@ -246,10 +247,10 @@ function ScYearRow({ theoryId, indicatorId, row, shade, onRefresh }: ScYearRowPr
 
   return (
     <tr className={`border-b border-border/30 last:border-0 align-middle group ${shade ? "bg-muted/10" : "bg-card"}`}>
-      {/* Col 1 — Year label/picker, indented under the indicator */}
+      {/* Col 1 — Target date, indented under the indicator */}
       <td className="pl-8 pr-3 py-2 border-r border-border/30">
-        <div className="flex items-center gap-1">
-          <span className="text-muted-foreground/40 text-xs select-none">›</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[9px] font-bold uppercase tracking-wide text-amber-600/70 shrink-0">Target</span>
           <DatePicker
             value={row.year}
             onChange={v => save("year", v)}
@@ -277,6 +278,12 @@ function ScYearRow({ theoryId, indicatorId, row, shade, onRefresh }: ScYearRowPr
 
       {/* Actual */}
       <td className="px-3 py-2 bg-emerald-50/40 border-r border-border/30">
+        <div className="mb-1">
+          <DatePicker
+            value={row.actualDate}
+            onChange={v => save("actualDate", v)}
+          />
+        </div>
         <EditableCell
           value={row.actual}
           placeholder="Enter actual..."
