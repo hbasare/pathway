@@ -555,7 +555,7 @@ export default function SupportCalculations() {
                                       </div>
                                     </div>
                                   </td>
-                                  {/* Target — ToC value (editable) + year aggregate below */}
+                                  {/* Target — editable ToC value only */}
                                   <td className="px-3 py-2 bg-amber-100/50 border-r border-border/30">
                                     <EditableCell
                                       value={ind.targetFigure ?? ""}
@@ -563,13 +563,8 @@ export default function SupportCalculations() {
                                       onSave={v => saveIndicator(component.id, indicator.id, "targetFigure", v)}
                                       className="text-[11px] font-semibold text-amber-900"
                                     />
-                                    {targetAgg !== "—" && (
-                                      <div className="text-[9px] text-amber-600/70 mt-0.5">
-                                        {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg}
-                                      </div>
-                                    )}
                                   </td>
-                                  {/* Target notes/source — ToC value */}
+                                  {/* Target assumptions/source */}
                                   <td className="px-3 py-2 bg-amber-50/30 border-r border-border/30">
                                     <EditableCell
                                       value={ind.targetSourceOfInformation ?? ""}
@@ -578,7 +573,7 @@ export default function SupportCalculations() {
                                       className="text-[11px] text-muted-foreground"
                                     />
                                   </td>
-                                  {/* Actual — ToC value (editable) + year aggregate below */}
+                                  {/* Actual — editable ToC value only */}
                                   <td className="px-3 py-2 bg-emerald-100/50 border-r border-border/30">
                                     <EditableCell
                                       value={ind.actualFigure ?? ""}
@@ -586,13 +581,8 @@ export default function SupportCalculations() {
                                       onSave={v => saveIndicator(component.id, indicator.id, "actualFigure", v)}
                                       className="text-[11px] font-semibold text-emerald-900"
                                     />
-                                    {actualAgg !== "—" && (
-                                      <div className="text-[9px] text-emerald-600/70 mt-0.5">
-                                        {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg}
-                                      </div>
-                                    )}
                                   </td>
-                                  {/* Actual notes/source — ToC value */}
+                                  {/* Actual assumptions/source */}
                                   <td className="px-3 py-2 bg-emerald-50/30 border-r border-border/30">
                                     <EditableCell
                                       value={ind.actualSourceOfInformation ?? ""}
@@ -601,7 +591,25 @@ export default function SupportCalculations() {
                                       className="text-[11px] text-muted-foreground"
                                     />
                                   </td>
-                                  <td className="px-3 py-2" />
+                                  {/* Notes col — read-only aggregate from year rows */}
+                                  <td className="px-3 py-2">
+                                    {(targetAgg !== "—" || actualAgg !== "—") && (
+                                      <div className="flex flex-col gap-0.5 text-[9px] text-muted-foreground">
+                                        {targetAgg !== "—" && (
+                                          <span>
+                                            <span className="font-bold text-amber-600">T</span>
+                                            {" "}{mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg}
+                                          </span>
+                                        )}
+                                        {actualAgg !== "—" && (
+                                          <span>
+                                            <span className="font-bold text-emerald-600">A</span>
+                                            {" "}{mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg}
+                                          </span>
+                                        )}
+                                      </div>
+                                    )}
+                                  </td>
                                 </tr>
                               );
                             })()}
