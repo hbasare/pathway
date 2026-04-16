@@ -496,9 +496,11 @@ export default function SupportCalculations() {
 
                         return (
                           <Fragment key={indicator.id}>
-                            {/* Indicator summary row — name + per-indicator aggregates */}
+                            {/* Indicator summary row — ToC values + year aggregate sub-label */}
                             {(() => {
                               const mode = getAggMode(indicator.id);
+                              const targetAgg = aggregate(scYears.map(y => y.target ?? ""), mode);
+                              const actualAgg = aggregate(scYears.map(y => y.actual ?? ""), mode);
                               return (
                                 <tr className={`border-b border-border/30 ${isEven ? "bg-amber-50/20" : "bg-amber-50/30"}`}>
                                   {/* Name + inline mode toggle */}
@@ -524,20 +526,52 @@ export default function SupportCalculations() {
                                       </div>
                                     </div>
                                   </td>
-                                  {/* Target aggregate */}
+                                  {/* Target — ToC value (editable) + year aggregate below */}
                                   <td className="px-3 py-2 bg-amber-100/50 border-r border-border/30">
-                                    <span className="text-[11px] font-semibold text-amber-800">
-                                      {aggregate(scYears.map(y => y.target ?? ""), mode)}
-                                    </span>
+                                    <EditableCell
+                                      value={ind.targetFigure ?? ""}
+                                      placeholder="Set target…"
+                                      onSave={v => saveIndicator(component.id, indicator.id, "targetFigure", v)}
+                                      className="text-[11px] font-semibold text-amber-900"
+                                    />
+                                    {targetAgg !== "—" && (
+                                      <div className="text-[9px] text-amber-600/70 mt-0.5">
+                                        {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg}
+                                      </div>
+                                    )}
                                   </td>
-                                  <td className="px-3 py-2 bg-amber-50/30 border-r border-border/30" />
-                                  {/* Actual aggregate */}
+                                  {/* Target notes/source — ToC value */}
+                                  <td className="px-3 py-2 bg-amber-50/30 border-r border-border/30">
+                                    <EditableCell
+                                      value={ind.targetSourceOfInformation ?? ""}
+                                      placeholder="Source…"
+                                      onSave={v => saveIndicator(component.id, indicator.id, "targetSourceOfInformation", v)}
+                                      className="text-[11px] text-muted-foreground"
+                                    />
+                                  </td>
+                                  {/* Actual — ToC value (editable) + year aggregate below */}
                                   <td className="px-3 py-2 bg-emerald-100/50 border-r border-border/30">
-                                    <span className="text-[11px] font-semibold text-emerald-800">
-                                      {aggregate(scYears.map(y => y.actual ?? ""), mode)}
-                                    </span>
+                                    <EditableCell
+                                      value={ind.actualFigure ?? ""}
+                                      placeholder="Set actual…"
+                                      onSave={v => saveIndicator(component.id, indicator.id, "actualFigure", v)}
+                                      className="text-[11px] font-semibold text-emerald-900"
+                                    />
+                                    {actualAgg !== "—" && (
+                                      <div className="text-[9px] text-emerald-600/70 mt-0.5">
+                                        {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg}
+                                      </div>
+                                    )}
                                   </td>
-                                  <td className="px-3 py-2 bg-emerald-50/30 border-r border-border/30" />
+                                  {/* Actual notes/source — ToC value */}
+                                  <td className="px-3 py-2 bg-emerald-50/30 border-r border-border/30">
+                                    <EditableCell
+                                      value={ind.actualSourceOfInformation ?? ""}
+                                      placeholder="Source…"
+                                      onSave={v => saveIndicator(component.id, indicator.id, "actualSourceOfInformation", v)}
+                                      className="text-[11px] text-muted-foreground"
+                                    />
+                                  </td>
                                   <td className="px-3 py-2" />
                                 </tr>
                               );
