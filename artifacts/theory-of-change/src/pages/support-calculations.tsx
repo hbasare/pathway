@@ -520,9 +520,9 @@ export default function SupportCalculations() {
                               const actualAgg = aggregate(scYears.map(y => y.actual ?? ""), mode);
                               return (
                                 <tr className={`border-b border-border/30 ${isEven ? "bg-amber-50/20" : "bg-amber-50/30"}`}>
-                                  {/* Col 1 — name, mode toggle, and aggregate set buttons */}
+                                  {/* Col 1 — indicator name + Σ/Ø/# mode toggle */}
                                   <td className="pl-9 pr-3 py-2 border-r border-border/30">
-                                    <div className="flex items-center justify-between gap-2 flex-wrap mb-1">
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
                                       <span className="text-[11px] font-semibold text-foreground">
                                         {indicator.name || <em className="text-muted-foreground font-normal">Unnamed indicator</em>}
                                       </span>
@@ -542,31 +542,8 @@ export default function SupportCalculations() {
                                         ))}
                                       </div>
                                     </div>
-                                    {/* Aggregate results with set buttons */}
-                                    {(targetAgg !== "—" || actualAgg !== "—") && (
-                                      <div className="flex flex-wrap gap-1.5 mt-1">
-                                        {targetAgg !== "—" && (
-                                          <button
-                                            onClick={() => saveIndicator(component.id, indicator.id, "targetFigure", targetAgg)}
-                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 hover:bg-amber-200 text-[9px] font-semibold transition-colors"
-                                            title="Apply as set target"
-                                          >
-                                            <span className="text-amber-500">T</span> {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg} → set target
-                                          </button>
-                                        )}
-                                        {actualAgg !== "—" && (
-                                          <button
-                                            onClick={() => saveIndicator(component.id, indicator.id, "actualFigure", actualAgg)}
-                                            className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-[9px] font-semibold transition-colors"
-                                            title="Apply as set actual"
-                                          >
-                                            <span className="text-emerald-500">A</span> {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg} → set actual
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
                                   </td>
-                                  {/* Target — editable ToC value only */}
+                                  {/* Target — editable value + aggregate below */}
                                   <td className="px-3 py-2 bg-amber-100/50 border-r border-border/30">
                                     <EditableCell
                                       value={ind.targetFigure ?? ""}
@@ -574,6 +551,15 @@ export default function SupportCalculations() {
                                       onSave={v => saveIndicator(component.id, indicator.id, "targetFigure", v)}
                                       className="text-[11px] font-semibold text-amber-900"
                                     />
+                                    {targetAgg !== "—" && (
+                                      <button
+                                        onClick={() => saveIndicator(component.id, indicator.id, "targetFigure", targetAgg)}
+                                        className="mt-1 flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-200/70 text-amber-800 hover:bg-amber-300/70 text-[9px] font-semibold transition-colors w-fit"
+                                        title="Use computed value as set target"
+                                      >
+                                        {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {targetAgg} → use
+                                      </button>
+                                    )}
                                   </td>
                                   {/* Target Notes */}
                                   <td className="px-3 py-2 bg-amber-50/30 border-r border-border/30">
@@ -584,7 +570,7 @@ export default function SupportCalculations() {
                                       className="text-[11px] text-muted-foreground"
                                     />
                                   </td>
-                                  {/* Actual — editable ToC value only */}
+                                  {/* Actual — editable value + aggregate below */}
                                   <td className="px-3 py-2 bg-emerald-100/50 border-r border-border/30">
                                     <EditableCell
                                       value={ind.actualFigure ?? ""}
@@ -592,6 +578,15 @@ export default function SupportCalculations() {
                                       onSave={v => saveIndicator(component.id, indicator.id, "actualFigure", v)}
                                       className="text-[11px] font-semibold text-emerald-900"
                                     />
+                                    {actualAgg !== "—" && (
+                                      <button
+                                        onClick={() => saveIndicator(component.id, indicator.id, "actualFigure", actualAgg)}
+                                        className="mt-1 flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-200/70 text-emerald-800 hover:bg-emerald-300/70 text-[9px] font-semibold transition-colors w-fit"
+                                        title="Use computed value as set actual"
+                                      >
+                                        {mode === "sum" ? "Σ" : mode === "avg" ? "Ø" : "#"} {actualAgg} → use
+                                      </button>
+                                    )}
                                   </td>
                                   {/* Actual Notes */}
                                   <td className="px-3 py-2 bg-emerald-50/20">
