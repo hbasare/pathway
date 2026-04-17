@@ -931,6 +931,98 @@ paths:
         "204":
           description: Deleted
 
+  /theories/{theoryId}/systemic-changes:
+    get:
+      operationId: listSystemicChanges
+      tags: [theories]
+      summary: List systemic change entries for a theory
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of systemic change entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SystemicChange"
+    post:
+      operationId: createSystemicChange
+      tags: [theories]
+      summary: Create a systemic change entry
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSystemicChange"
+      responses:
+        "201":
+          description: Created systemic change entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemicChange"
+
+  /theories/{theoryId}/systemic-changes/{id}:
+    put:
+      operationId: updateSystemicChange
+      tags: [theories]
+      summary: Update a systemic change entry
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSystemicChange"
+      responses:
+        "200":
+          description: Updated systemic change entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemicChange"
+    delete:
+      operationId: deleteSystemicChange
+      tags: [theories]
+      summary: Delete a systemic change entry
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
 components:
   schemas:
     HealthStatus:
@@ -1886,3 +1978,58 @@ components:
             $ref: "#/components/schemas/ProgramLogframeEntry"
       required:
         - portfolios
+
+    SystemicChange:
+      type: object
+      properties:
+        id:
+          type: integer
+        theoryId:
+          type: integer
+        dimension:
+          type: string
+        description:
+          type: string
+        changeObserved:
+          type: string
+        level:
+          type: string
+        status:
+          type: string
+        position:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - theoryId
+        - dimension
+        - description
+        - changeObserved
+        - level
+        - status
+        - position
+        - createdAt
+        - updatedAt
+
+    CreateSystemicChange:
+      type: object
+      properties:
+        dimension:
+          type: string
+        description:
+          type: string
+        changeObserved:
+          type: string
+        level:
+          type: string
+        status:
+          type: string
+        position:
+          type: integer
+      required:
+        - dimension

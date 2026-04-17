@@ -450,6 +450,28 @@ export interface ProgramLogframe {
   portfolios: ProgramLogframeEntry[];
 }
 
+export interface SystemicChange {
+  id: number;
+  theoryId: number;
+  dimension: string;
+  description: string;
+  changeObserved: string;
+  level: string;
+  status: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateSystemicChange {
+  dimension: string;
+  description?: string;
+  changeObserved?: string;
+  level?: string;
+  status?: string;
+  position?: number;
+}
+
 export type GenerateBusinessModelImageBody = {
   prompt: string;
 };

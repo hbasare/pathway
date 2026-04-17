@@ -12,6 +12,7 @@ import Dashboard from "@/pages/dashboard";
 import TheoryDetail from "@/pages/theory-detail";
 import MeasurementPlan from "@/pages/measurement-plan";
 import SupportCalculations from "@/pages/support-calculations";
+import SystemicChange from "@/pages/systemic-change";
 import Summary from "@/pages/summary";
 import PortfolioLogframe from "@/pages/portfolio-logframe";
 import ProgramLogframe from "@/pages/program-logframe";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/portfolio/:id/logframe" component={PortfolioLogframe} />
       <Route path="/theory/:id/measurement-plan" component={MeasurementPlan} />
       <Route path="/theory/:id/support-calculations" component={SupportCalculations} />
+      <Route path="/theory/:id/systemic-change" component={SystemicChange} />
       <Route path="/theory/:id/summary" component={Summary} />
       <Route path="/theory/:id" component={TheoryDetail} />
       <Route path="/users" component={UserManagement} />

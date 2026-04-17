@@ -221,4 +221,22 @@ export const businessModelActorsTable = pgTable("business_model_actors", {
 
 export const insertBusinessModelActorSchema = createInsertSchema(businessModelActorsTable).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertBusinessModelActor = z.infer<typeof insertBusinessModelActorSchema>;
+
+// ── Systemic Change Entries ───────────────────────────────────────────────────
+export const systemicChangesTable = pgTable("systemic_changes", {
+  id: serial("id").primaryKey(),
+  theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  dimension: text("dimension").notNull().default(""),
+  description: text("description").notNull().default(""),
+  changeObserved: text("change_observed").notNull().default(""),
+  level: text("level").notNull().default("meso"),       // micro | meso | macro
+  status: text("status").notNull().default("emerging"),  // emerging | established | sustained
+  position: integer("position").notNull().default(0),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertSystemicChangeSchema = createInsertSchema(systemicChangesTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertSystemicChange = z.infer<typeof insertSystemicChangeSchema>;
+export type SystemicChange = typeof systemicChangesTable.$inferSelect;
 export type BusinessModelActor = typeof businessModelActorsTable.$inferSelect;

@@ -26,6 +26,7 @@ import type {
   CreateComponentIndicator,
   CreateConnection,
   CreatePortfolio,
+  CreateSystemicChange,
   CreateTheory,
   CreateTheoryDocument,
   CreateTheoryNoteUpdate,
@@ -36,6 +37,7 @@ import type {
   Portfolio,
   PortfolioLogframe,
   ProgramLogframe,
+  SystemicChange,
   Theory,
   TheoryDetail,
   TheoryDocument,
@@ -3810,4 +3812,353 @@ export const useDeleteTheoryNoteUpdate = <
   TContext
 > => {
   return useMutation(getDeleteTheoryNoteUpdateMutationOptions(options));
+};
+
+/**
+ * @summary List systemic change entries for a theory
+ */
+export const getListSystemicChangesUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/systemic-changes`;
+};
+
+export const listSystemicChanges = async (
+  theoryId: number,
+  options?: RequestInit,
+): Promise<SystemicChange[]> => {
+  return customFetch<SystemicChange[]>(getListSystemicChangesUrl(theoryId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListSystemicChangesQueryKey = (theoryId: number) => {
+  return [`/api/theories/${theoryId}/systemic-changes`] as const;
+};
+
+export const getListSystemicChangesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listSystemicChanges>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSystemicChanges>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListSystemicChangesQueryKey(theoryId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listSystemicChanges>>
+  > = ({ signal }) =>
+    listSystemicChanges(theoryId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!theoryId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listSystemicChanges>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListSystemicChangesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listSystemicChanges>>
+>;
+export type ListSystemicChangesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List systemic change entries for a theory
+ */
+
+export function useListSystemicChanges<
+  TData = Awaited<ReturnType<typeof listSystemicChanges>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listSystemicChanges>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListSystemicChangesQueryOptions(theoryId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a systemic change entry
+ */
+export const getCreateSystemicChangeUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/systemic-changes`;
+};
+
+export const createSystemicChange = async (
+  theoryId: number,
+  createSystemicChange: CreateSystemicChange,
+  options?: RequestInit,
+): Promise<SystemicChange> => {
+  return customFetch<SystemicChange>(getCreateSystemicChangeUrl(theoryId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSystemicChange),
+  });
+};
+
+export const getCreateSystemicChangeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSystemicChange>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateSystemicChange> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createSystemicChange>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateSystemicChange> },
+  TContext
+> => {
+  const mutationKey = ["createSystemicChange"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createSystemicChange>>,
+    { theoryId: number; data: BodyType<CreateSystemicChange> }
+  > = (props) => {
+    const { theoryId, data } = props ?? {};
+
+    return createSystemicChange(theoryId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateSystemicChangeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createSystemicChange>>
+>;
+export type CreateSystemicChangeMutationBody = BodyType<CreateSystemicChange>;
+export type CreateSystemicChangeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a systemic change entry
+ */
+export const useCreateSystemicChange = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createSystemicChange>>,
+    TError,
+    { theoryId: number; data: BodyType<CreateSystemicChange> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createSystemicChange>>,
+  TError,
+  { theoryId: number; data: BodyType<CreateSystemicChange> },
+  TContext
+> => {
+  return useMutation(getCreateSystemicChangeMutationOptions(options));
+};
+
+/**
+ * @summary Update a systemic change entry
+ */
+export const getUpdateSystemicChangeUrl = (theoryId: number, id: number) => {
+  return `/api/theories/${theoryId}/systemic-changes/${id}`;
+};
+
+export const updateSystemicChange = async (
+  theoryId: number,
+  id: number,
+  createSystemicChange: CreateSystemicChange,
+  options?: RequestInit,
+): Promise<SystemicChange> => {
+  return customFetch<SystemicChange>(getUpdateSystemicChangeUrl(theoryId, id), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createSystemicChange),
+  });
+};
+
+export const getUpdateSystemicChangeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSystemicChange>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<CreateSystemicChange> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateSystemicChange>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<CreateSystemicChange> },
+  TContext
+> => {
+  const mutationKey = ["updateSystemicChange"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateSystemicChange>>,
+    { theoryId: number; id: number; data: BodyType<CreateSystemicChange> }
+  > = (props) => {
+    const { theoryId, id, data } = props ?? {};
+
+    return updateSystemicChange(theoryId, id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateSystemicChangeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateSystemicChange>>
+>;
+export type UpdateSystemicChangeMutationBody = BodyType<CreateSystemicChange>;
+export type UpdateSystemicChangeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a systemic change entry
+ */
+export const useUpdateSystemicChange = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateSystemicChange>>,
+    TError,
+    { theoryId: number; id: number; data: BodyType<CreateSystemicChange> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateSystemicChange>>,
+  TError,
+  { theoryId: number; id: number; data: BodyType<CreateSystemicChange> },
+  TContext
+> => {
+  return useMutation(getUpdateSystemicChangeMutationOptions(options));
+};
+
+/**
+ * @summary Delete a systemic change entry
+ */
+export const getDeleteSystemicChangeUrl = (theoryId: number, id: number) => {
+  return `/api/theories/${theoryId}/systemic-changes/${id}`;
+};
+
+export const deleteSystemicChange = async (
+  theoryId: number,
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteSystemicChangeUrl(theoryId, id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteSystemicChangeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSystemicChange>>,
+    TError,
+    { theoryId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteSystemicChange>>,
+  TError,
+  { theoryId: number; id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteSystemicChange"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteSystemicChange>>,
+    { theoryId: number; id: number }
+  > = (props) => {
+    const { theoryId, id } = props ?? {};
+
+    return deleteSystemicChange(theoryId, id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteSystemicChangeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteSystemicChange>>
+>;
+
+export type DeleteSystemicChangeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a systemic change entry
+ */
+export const useDeleteSystemicChange = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteSystemicChange>>,
+    TError,
+    { theoryId: number; id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteSystemicChange>>,
+  TError,
+  { theoryId: number; id: number },
+  TContext
+> => {
+  return useMutation(getDeleteSystemicChangeMutationOptions(options));
 };

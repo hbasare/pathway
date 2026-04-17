@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useDeleteTheory, getListTheoriesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, Calculator, LayoutList, Network, Info, Briefcase, StickyNote, ShieldAlert } from "lucide-react";
+import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, Calculator, LayoutList, Network, Info, Briefcase, StickyNote, ShieldAlert, GitBranch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TheoryCanvas } from "@/components/theory/theory-canvas";
 import { AboutIntervention } from "@/components/theory/about-intervention";
@@ -111,6 +111,15 @@ export default function TheoryDetail() {
           >
             <Calculator className="w-4 h-4" />
             Support Calculations
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLocation(`/theory/${id}/systemic-change`)}
+            className="gap-2"
+          >
+            <GitBranch className="w-4 h-4" />
+            Systemic Change
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

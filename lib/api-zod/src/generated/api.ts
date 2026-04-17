@@ -1284,3 +1284,80 @@ export const DeleteTheoryNoteUpdateParams = zod.object({
   theoryId: zod.coerce.number(),
   id: zod.coerce.number(),
 });
+
+/**
+ * @summary List systemic change entries for a theory
+ */
+export const ListSystemicChangesParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const ListSystemicChangesResponseItem = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  dimension: zod.string(),
+  description: zod.string(),
+  changeObserved: zod.string(),
+  level: zod.string(),
+  status: zod.string(),
+  position: zod.number(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+export const ListSystemicChangesResponse = zod.array(
+  ListSystemicChangesResponseItem,
+);
+
+/**
+ * @summary Create a systemic change entry
+ */
+export const CreateSystemicChangeParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const CreateSystemicChangeBody = zod.object({
+  dimension: zod.string(),
+  description: zod.string().optional(),
+  changeObserved: zod.string().optional(),
+  level: zod.string().optional(),
+  status: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+/**
+ * @summary Update a systemic change entry
+ */
+export const UpdateSystemicChangeParams = zod.object({
+  theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
+
+export const UpdateSystemicChangeBody = zod.object({
+  dimension: zod.string(),
+  description: zod.string().optional(),
+  changeObserved: zod.string().optional(),
+  level: zod.string().optional(),
+  status: zod.string().optional(),
+  position: zod.number().optional(),
+});
+
+export const UpdateSystemicChangeResponse = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  dimension: zod.string(),
+  description: zod.string(),
+  changeObserved: zod.string(),
+  level: zod.string(),
+  status: zod.string(),
+  position: zod.number(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Delete a systemic change entry
+ */
+export const DeleteSystemicChangeParams = zod.object({
+  theoryId: zod.coerce.number(),
+  id: zod.coerce.number(),
+});
