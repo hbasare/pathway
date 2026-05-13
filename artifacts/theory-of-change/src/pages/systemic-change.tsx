@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 // ─── Framework definitions ────────────────────────────────────────────────────
 type FrameworkKey = "aaer" | "msr" | "oh" | "msc";
 type Granularity = "annual" | "biannual" | "quarterly";
+type PilotDuration = "none" | "3mo" | "6mo" | "1yr";
 
 interface FrameworkDef {
   key: FrameworkKey;
@@ -229,9 +230,20 @@ function generatePeriods(startYear: number, endYear: number, granularity: Granul
   return periods;
 }
 
-/** Returns true for any period that belongs to Year 1 (the pilot phase). */
+/** Generates pilot-phase period labels before Y1 starts. */
+function generatePilotPeriods(duration: PilotDuration, granularity: Granularity): string[] {
+  if (duration === "none") return [];
+  if (granularity === "annual") return ["Pilot"];
+  if (granularity === "biannual") return duration === "1yr" ? ["P H1", "P H2"] : ["P H1"];
+  // quarterly
+  if (duration === "3mo") return ["P Q1"];
+  if (duration === "6mo") return ["P Q1", "P Q2"];
+  return ["P Q1", "P Q2", "P Q3", "P Q4"]; // 1yr
+}
+
+/** Returns true for any period that belongs to the pilot phase. */
 function isPilotPeriod(period: string): boolean {
-  return period === "Y1" || period.endsWith(" Y1");
+  return period === "Pilot" || period.startsWith("P H") || period.startsWith("P Q");
 }
 
 // ─── Tag / status badge helpers ───────────────────────────────────────────────
@@ -422,7 +434,14 @@ function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void
 }
 
 // ─── AAER Settings panel ──────────────────────────────────────────────────────
-interface AaerSettings { startYear: number; endYear: number; granularity: Granularity }
+interface AaerSettings { startYear: number; endYear: number; granularity: Granularity; pilotDuration: PilotDuration }
+
+const PILOT_DURATION_OPTIONS: { value: PilotDuration; label: string; desc: string }[] = [
+  { value: "none",  label: "No pilot phase",  desc: "Tracking starts at Y1" },
+  { value: "3mo",   label: "3 months",         desc: "Short pilot before Y1" },
+  { value: "6mo",   label: "6 months",         desc: "Half-year pilot before Y1" },
+  { value: "1yr",   label: "1 year",           desc: "Full-year pilot before Y1" },
+];
 
 function AaerSettingsPanel({ settings, onSave }: {
   settings: AaerSettings;
@@ -440,9 +459,13 @@ function AaerSettingsPanel({ settings, onSave }: {
     }
   };
 
-  const periods = local.startYear && local.endYear
+  const pilotPeriods = generatePilotPeriods(local.pilotDuration, local.granularity);
+  const regularPeriods = local.startYear && local.endYear
     ? generatePeriods(local.startYear, local.endYear, local.granularity)
     : [];
+  const allPeriods = [...pilotPeriods, ...regularPeriods];
+
+  const pilotLabel = PILOT_DURATION_OPTIONS.find(o => o.value === settings.pilotDuration)?.label ?? "No pilot";
 
   return (
     <div className="rounded-xl border border-violet-200 bg-violet-50 overflow-hidden mb-4">
@@ -453,7 +476,10 @@ function AaerSettingsPanel({ settings, onSave }: {
           <span className="text-sm font-semibold text-violet-900">Intervention Timeline</span>
           {settings.startYear && settings.endYear ? (
             <span className="ml-3 text-xs text-violet-600">
-              {settings.startYear}–{settings.endYear} · {settings.granularity} · {generatePeriods(settings.startYear, settings.endYear, settings.granularity).length} periods · <span className="text-amber-600 font-semibold">Y1 = Pilot phase</span>
+              {settings.startYear}–{settings.endYear} · {settings.granularity} · {generatePeriods(settings.startYear, settings.endYear, settings.granularity).length} tracking periods
+              {settings.pilotDuration !== "none" && (
+                <span className="ml-1 text-amber-600 font-semibold">· Pilot: {pilotLabel}</span>
+              )}
             </span>
           ) : (
             <span className="ml-3 text-xs text-violet-500 italic">Not configured — click to set up</span>
@@ -463,10 +489,29 @@ function AaerSettingsPanel({ settings, onSave }: {
       </button>
 
       {open && (
-        <div className="border-t border-violet-200 px-5 py-4 bg-white/70">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+        <div className="border-t border-violet-200 px-5 py-4 bg-white/70 space-y-4">
+          {/* Pilot duration */}
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-2 block">Pilot Phase Duration</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {PILOT_DURATION_OPTIONS.map(opt => (
+                <button key={opt.value} onClick={() => setLocal(p => ({ ...p, pilotDuration: opt.value }))}
+                  className={`rounded-lg border-2 px-3 py-2 text-center transition-all ${
+                    local.pilotDuration === opt.value
+                      ? "bg-amber-100 border-amber-400 text-amber-900"
+                      : "border-border bg-background hover:bg-muted text-muted-foreground"
+                  }`}>
+                  <div className="text-xs font-bold">{opt.label}</div>
+                  <div className="text-[10px] mt-0.5 opacity-70 leading-tight">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Start / End / Granularity */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Start Year</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Intervention Start Year</Label>
               <Select value={String(local.startYear || "")} onValueChange={v => setLocal(p => ({ ...p, startYear: Number(v) }))}>
                 <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Select year" /></SelectTrigger>
                 <SelectContent>
@@ -475,7 +520,7 @@ function AaerSettingsPanel({ settings, onSave }: {
               </Select>
             </div>
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">End Year</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Intervention End Year</Label>
               <Select value={String(local.endYear || "")} onValueChange={v => setLocal(p => ({ ...p, endYear: Number(v) }))}>
                 <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Select year" /></SelectTrigger>
                 <SelectContent>
@@ -495,11 +540,16 @@ function AaerSettingsPanel({ settings, onSave }: {
               </Select>
             </div>
           </div>
-          {periods.length > 0 && (
-            <div className="mb-4">
-              <p className="text-[11px] font-semibold text-muted-foreground mb-2">Generated periods ({periods.length}):</p>
+
+          {/* Period preview */}
+          {allPeriods.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold text-muted-foreground mb-2">
+                Full timeline preview ({allPeriods.length} periods
+                {pilotPeriods.length > 0 && `, incl. ${pilotPeriods.length} pilot`}):
+              </p>
               <div className="flex flex-wrap gap-1.5">
-                {periods.map(p => (
+                {allPeriods.map(p => (
                   <span key={p} className={`text-[11px] px-2 py-0.5 rounded-full font-medium border inline-flex items-center gap-1 ${
                     isPilotPeriod(p)
                       ? "bg-amber-100 text-amber-800 border-amber-300"
@@ -512,6 +562,7 @@ function AaerSettingsPanel({ settings, onSave }: {
               </div>
             </div>
           )}
+
           <Button size="sm" className="bg-violet-600 hover:bg-violet-700 text-white" onClick={handleSave}
             disabled={!local.startYear || !local.endYear || local.endYear < local.startYear}>
             <Check className="w-3.5 h-3.5 mr-1.5" />Apply Timeline
@@ -1904,7 +1955,7 @@ export default function SystemicChange() {
   const [showSelector, setShowSelector] = useState(false);
   const [localFrameworkKey, setLocalFrameworkKey] = useState<FrameworkKey | null>(null);
   const [cellModal, setCellModal] = useState<CellModalState | null>(null);
-  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual" });
+  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none" });
   const [settingsSynced, setSettingsSynced] = useState(false);
 
   const loadEntries = async () => {
@@ -1926,9 +1977,10 @@ export default function SystemicChange() {
     if (key && !localFrameworkKey) setLocalFrameworkKey(key);
     if (!settingsSynced && (t.interventionStartYear || t.interventionEndYear)) {
       setLocalSettings({
-        startYear:   t.interventionStartYear ?? 0,
-        endYear:     t.interventionEndYear   ?? 0,
-        granularity: (t.periodGranularity as Granularity) ?? "annual",
+        startYear:      t.interventionStartYear ?? 0,
+        endYear:        t.interventionEndYear   ?? 0,
+        granularity:    (t.periodGranularity as Granularity) ?? "annual",
+        pilotDuration:  (t.pilotDuration as PilotDuration)  ?? "none",
       });
       setSettingsSynced(true);
     }
@@ -1950,6 +2002,7 @@ export default function SystemicChange() {
         interventionStartYear: s.startYear,
         interventionEndYear: s.endYear,
         periodGranularity: s.granularity,
+        pilotDuration: s.pilotDuration,
       } as any,
     });
   };
@@ -2030,7 +2083,10 @@ export default function SystemicChange() {
 
   const isAaer = localFrameworkKey === "aaer";
   const periods = localSettings.startYear && localSettings.endYear
-    ? generatePeriods(localSettings.startYear, localSettings.endYear, localSettings.granularity)
+    ? [
+        ...generatePilotPeriods(localSettings.pilotDuration, localSettings.granularity),
+        ...generatePeriods(localSettings.startYear, localSettings.endYear, localSettings.granularity),
+      ]
     : [];
 
   return (
