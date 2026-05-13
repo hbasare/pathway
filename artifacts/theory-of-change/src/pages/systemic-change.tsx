@@ -543,11 +543,73 @@ function parseAdoptData(raw: string): AdoptData {
   try {
     const p = JSON.parse(raw || "{}");
     const d = p.adopt ?? {};
-    // Migrate old flat q1/q2 strings to object form
     const q1 = typeof d.q1 === "string" ? { value: d.q1, notes: "" } : (d.q1 ?? { value: "", notes: "" });
     const q2 = typeof d.q2 === "string" ? { value: d.q2, notes: "" } : (d.q2 ?? { value: "", notes: "" });
     return { ...DEFAULT_ADOPT, ...d, q1, q2 };
   } catch { return DEFAULT_ADOPT; }
+}
+
+// ─── Adapt data ───────────────────────────────────────────────────────────────
+interface AdaptData {
+  q1: { answer: string; notes: string };
+  q2: { answer: string; notes: string };
+  q3: { value: string; notes: string };
+  q4: { answer: string; notes: string };
+  q5: { value: string; notes: string };
+  keyQuestion: string;
+  keyQuestionNotes: string;
+}
+const DEFAULT_ADAPT: AdaptData = {
+  q1: { answer: "", notes: "" }, q2: { answer: "", notes: "" },
+  q3: { value: "", notes: "" }, q4: { answer: "", notes: "" },
+  q5: { value: "", notes: "" },
+  keyQuestion: "", keyQuestionNotes: "",
+};
+function parseAdaptData(raw: string): AdaptData {
+  try { const p = JSON.parse(raw || "{}"); return { ...DEFAULT_ADAPT, ...(p.adapt ?? {}) }; }
+  catch { return DEFAULT_ADAPT; }
+}
+
+// ─── Expansion data ───────────────────────────────────────────────────────────
+interface ExpansionData {
+  q1: { answer: string; notes: string };
+  q2: { value: string; notes: string };
+  q3: { value: string; notes: string };
+  q4: { answer: string; notes: string };
+  q5: { value: string; notes: string };
+  keyQuestion: string;
+  keyQuestionNotes: string;
+}
+const DEFAULT_EXPANSION: ExpansionData = {
+  q1: { answer: "", notes: "" },
+  q2: { value: "", notes: "" }, q3: { value: "", notes: "" },
+  q4: { answer: "", notes: "" }, q5: { value: "", notes: "" },
+  keyQuestion: "", keyQuestionNotes: "",
+};
+function parseExpansionData(raw: string): ExpansionData {
+  try { const p = JSON.parse(raw || "{}"); return { ...DEFAULT_EXPANSION, ...(p.expand ?? {}) }; }
+  catch { return DEFAULT_EXPANSION; }
+}
+
+// ─── Response data ────────────────────────────────────────────────────────────
+interface ResponseData {
+  q1: { answer: string; notes: string };
+  q2: { answer: string; notes: string };
+  q3: { value: string; notes: string };
+  q4: { answer: string; notes: string };
+  q5: { notes: string };
+  keyQuestion: string;
+  keyQuestionNotes: string;
+}
+const DEFAULT_RESPONSE: ResponseData = {
+  q1: { answer: "", notes: "" }, q2: { answer: "", notes: "" },
+  q3: { value: "", notes: "" }, q4: { answer: "", notes: "" },
+  q5: { notes: "" },
+  keyQuestion: "", keyQuestionNotes: "",
+};
+function parseResponseData(raw: string): ResponseData {
+  try { const p = JSON.parse(raw || "{}"); return { ...DEFAULT_RESPONSE, ...(p.respond ?? {}) }; }
+  catch { return DEFAULT_RESPONSE; }
 }
 
 function YNButtons({ value, onChange, options }: {
@@ -685,12 +747,271 @@ function AdoptQuestionsPanel({ data, onChange }: { data: AdoptData; onChange: (d
   );
 }
 
+// ─── Adapt questions panel ────────────────────────────────────────────────────
+const ADAPT_KQ_OPTS = [
+  { value: "yes", label: "Yes — independently", active: "bg-emerald-100 text-emerald-800 border-emerald-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "uncertain", label: "Uncertain", active: "bg-amber-100 text-amber-800 border-amber-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "no", label: "No — still need us", active: "bg-red-100 text-red-800 border-red-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+];
+
+function AdaptQuestionsPanel({ data, onChange }: { data: AdaptData; onChange: (d: AdaptData) => void }) {
+  const setField = (key: keyof AdaptData, val: any) => onChange({ ...data, [key]: val });
+  const setNested = (key: keyof AdaptData, field: string, val: string) =>
+    onChange({ ...data, [key]: { ...(data[key] as any), [field]: val } });
+  const cc = "mt-2 w-full text-xs px-2.5 py-1.5 rounded-md border border-input bg-white/70 focus:outline-none focus:ring-1 focus:ring-blue-300 resize-none text-foreground placeholder:text-muted-foreground/50 min-h-[52px]";
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border-2 border-blue-300 bg-blue-50 p-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Key Question</p>
+        <p className="text-xs font-semibold text-blue-900 mb-2.5 leading-snug">
+          If you left now, would partners build upon the changes they've adopted, without us?
+        </p>
+        <YNButtons value={data.keyQuestion} onChange={v => setField("keyQuestion", v)} options={ADAPT_KQ_OPTS} />
+        <textarea value={data.keyQuestionNotes} onChange={e => setField("keyQuestionNotes", e.target.value)}
+          placeholder="Comments — explain your assessment…" className={`${cc} bg-blue-50/80`} />
+      </div>
+
+      {[
+        { key: "q1" as const, n: 1, type: "yn", label: "Have the partners made any autonomous changes to the model that has been piloted?", ph: "Describe the autonomous changes observed…" },
+        { key: "q2" as const, n: 2, type: "yn", label: "Have the partners increased their share of the costs/investment (compared to the pilot)?", ph: "Explain the investment shift…" },
+      ].map(q => (
+        <div key={q.key} className="rounded-lg border border-border bg-background p-3">
+          <div className="flex gap-2 mb-2.5">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black shrink-0 mt-0.5">{q.n}</span>
+            <p className="text-xs text-foreground leading-snug">{q.label}</p>
+          </div>
+          <YNButtons value={(data[q.key] as any).answer} onChange={v => setNested(q.key, "answer", v)} options={YN_OPTS} />
+          <textarea value={(data[q.key] as any).notes} onChange={e => setNested(q.key, "notes", e.target.value)}
+            placeholder={`Comments — ${q.ph}`} className={cc} />
+        </div>
+      ))}
+
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black shrink-0">3</span>
+          <p className="text-xs text-foreground leading-snug">If yes, what is their increased contribution? (%)</p>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <input type="number" min="0" max="100" value={data.q3.value} onChange={e => setNested("q3", "value", e.target.value)}
+            className="w-20 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-blue-400 text-center font-bold" placeholder="0" />
+          <span className="text-xs text-muted-foreground">%</span>
+        </div>
+        <textarea value={data.q3.notes} onChange={e => setNested("q3", "notes", e.target.value)}
+          placeholder="Comments — how this was calculated or estimated…" className={cc} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-background p-3">
+        <div className="flex gap-2 mb-2.5">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black shrink-0 mt-0.5">4</span>
+          <p className="text-xs text-foreground leading-snug">Have the partners autonomously expanded to other areas with reduced or no support from us?</p>
+        </div>
+        <YNButtons value={data.q4.answer} onChange={v => setNested("q4", "answer", v)} options={YN_OPTS} />
+        <textarea value={data.q4.notes} onChange={e => setNested("q4", "notes", e.target.value)}
+          placeholder="Comments — describe the areas of expansion…" className={cc} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black shrink-0">5</span>
+          <p className="text-xs text-foreground leading-snug">If yes, how many new locations have they expanded to?</p>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <input type="number" min="0" value={data.q5.value} onChange={e => setNested("q5", "value", e.target.value)}
+            className="w-20 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-blue-400 text-center font-bold" placeholder="0" />
+          <span className="text-xs text-muted-foreground">locations</span>
+        </div>
+        <textarea value={data.q5.notes} onChange={e => setNested("q5", "notes", e.target.value)}
+          placeholder="Comments — which locations or regions…" className={cc} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Expansion questions panel ────────────────────────────────────────────────
+const EXPANSION_KQ_OPTS = [
+  { value: "yes", label: "Yes — too concentrated", active: "bg-red-100 text-red-800 border-red-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "uncertain", label: "Uncertain", active: "bg-amber-100 text-amber-800 border-amber-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "no", label: "No — spread widely", active: "bg-emerald-100 text-emerald-800 border-emerald-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+];
+
+function ExpansionQuestionsPanel({ data, onChange }: { data: ExpansionData; onChange: (d: ExpansionData) => void }) {
+  const setField = (key: keyof ExpansionData, val: any) => onChange({ ...data, [key]: val });
+  const setNested = (key: keyof ExpansionData, field: string, val: string) =>
+    onChange({ ...data, [key]: { ...(data[key] as any), [field]: val } });
+  const cc = "mt-2 w-full text-xs px-2.5 py-1.5 rounded-md border border-input bg-white/70 focus:outline-none focus:ring-1 focus:ring-emerald-300 resize-none text-foreground placeholder:text-muted-foreground/50 min-h-[52px]";
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Key Question</p>
+        <p className="text-xs font-semibold text-emerald-900 mb-2.5 leading-snug">
+          If you left now, would target group benefits depend on too few people, firms, or organisations?
+        </p>
+        <YNButtons value={data.keyQuestion} onChange={v => setField("keyQuestion", v)} options={EXPANSION_KQ_OPTS} />
+        <textarea value={data.keyQuestionNotes} onChange={e => setField("keyQuestionNotes", e.target.value)}
+          placeholder="Comments — explain your assessment…" className={`${cc} bg-emerald-50/80`} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-background p-3">
+        <div className="flex gap-2 mb-2.5">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black shrink-0 mt-0.5">1</span>
+          <p className="text-xs text-foreground leading-snug">Have competitors or other market players crowded in?</p>
+        </div>
+        <YNButtons value={data.q1.answer} onChange={v => setNested("q1", "answer", v)} options={YN_OPTS} />
+        <textarea value={data.q1.notes} onChange={e => setNested("q1", "notes", e.target.value)}
+          placeholder="Comments — which competitors or players…" className={cc} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black shrink-0">2</span>
+          <p className="text-xs text-foreground leading-snug">If yes, how many market player(s) have crowded in?</p>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <input type="number" min="0" value={data.q2.value} onChange={e => setNested("q2", "value", e.target.value)}
+            className="w-20 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-emerald-400 text-center font-bold" placeholder="0" />
+          <span className="text-xs text-muted-foreground">players</span>
+        </div>
+        <textarea value={data.q2.notes} onChange={e => setNested("q2", "notes", e.target.value)}
+          placeholder="Comments — name or describe the players…" className={cc} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black shrink-0">3</span>
+          <p className="text-xs text-foreground leading-snug">What is the combined market share of the partner(s) and others that have crowded in? (%)</p>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <input type="number" min="0" max="100" value={data.q3.value} onChange={e => setNested("q3", "value", e.target.value)}
+            className="w-20 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-emerald-400 text-center font-bold" placeholder="0" />
+          <span className="text-xs text-muted-foreground">%</span>
+        </div>
+        <textarea value={data.q3.notes} onChange={e => setNested("q3", "notes", e.target.value)}
+          placeholder="Comments — how this was estimated…" className={cc} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-background p-3">
+        <div className="flex gap-2 mb-2.5">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black shrink-0 mt-0.5">4</span>
+          <p className="text-xs text-foreground leading-snug">Have others, whom we haven't targeted directly, started copying the behaviour change of the target group?</p>
+        </div>
+        <YNButtons value={data.q4.answer} onChange={v => setNested("q4", "answer", v)} options={YN_OPTS} />
+        <textarea value={data.q4.notes} onChange={e => setNested("q4", "notes", e.target.value)}
+          placeholder="Comments — describe who is copying and how…" className={cc} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black shrink-0">5</span>
+          <p className="text-xs text-foreground leading-snug">What is the ratio of direct to indirect beneficiaries? (e.g. 1:2)</p>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <input type="text" value={data.q5.value} onChange={e => setNested("q5", "value", e.target.value)}
+            className="w-24 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-emerald-400 text-center font-bold" placeholder="1:2" />
+        </div>
+        <textarea value={data.q5.notes} onChange={e => setNested("q5", "notes", e.target.value)}
+          placeholder="Comments — explain the methodology behind this ratio…" className={cc} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Response questions panel ─────────────────────────────────────────────────
+const RESPONSE_KQ_OPTS = [
+  { value: "yes", label: "Yes — supportive", active: "bg-emerald-100 text-emerald-800 border-emerald-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "uncertain", label: "Uncertain", active: "bg-amber-100 text-amber-800 border-amber-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "no", label: "No — not yet", active: "bg-red-100 text-red-800 border-red-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+];
+
+function ResponseQuestionsPanel({ data, onChange }: { data: ResponseData; onChange: (d: ResponseData) => void }) {
+  const setField = (key: keyof ResponseData, val: any) => onChange({ ...data, [key]: val });
+  const setNested = (key: keyof ResponseData, field: string, val: string) =>
+    onChange({ ...data, [key]: { ...(data[key] as any), [field]: val } });
+  const cc = "mt-2 w-full text-xs px-2.5 py-1.5 rounded-md border border-input bg-white/70 focus:outline-none focus:ring-1 focus:ring-orange-300 resize-none text-foreground placeholder:text-muted-foreground/50 min-h-[52px]";
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border-2 border-orange-300 bg-orange-50 p-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-orange-600 mb-1">Key Question</p>
+        <p className="text-xs font-semibold text-orange-900 mb-2.5 leading-snug">
+          If you left now, would the system be supportive of the changes introduced (allowing them to be upheld, grow, evolve)?
+        </p>
+        <YNButtons value={data.keyQuestion} onChange={v => setField("keyQuestion", v)} options={RESPONSE_KQ_OPTS} />
+        <textarea value={data.keyQuestionNotes} onChange={e => setField("keyQuestionNotes", e.target.value)}
+          placeholder="Comments — explain your assessment…" className={`${cc} bg-orange-50/80`} />
+      </div>
+
+      {[
+        { key: "q1" as const, n: 1, label: "Has there been any changes in policy or the way business is conducted that has impacted the intervention?", ph: "Describe the policy or business conduct changes…" },
+        { key: "q2" as const, n: 2, label: "Have market players from interconnected/supporting markets reacted/responded to the new business model?", ph: "Describe how related markets have responded…" },
+      ].map(q => (
+        <div key={q.key} className="rounded-lg border border-border bg-background p-3">
+          <div className="flex gap-2 mb-2.5">
+            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-black shrink-0 mt-0.5">{q.n}</span>
+            <p className="text-xs text-foreground leading-snug">{q.label}</p>
+          </div>
+          <YNButtons value={(data[q.key] as any).answer} onChange={v => setNested(q.key, "answer", v)} options={YN_OPTS} />
+          <textarea value={(data[q.key] as any).notes} onChange={e => setNested(q.key, "notes", e.target.value)}
+            placeholder={`Comments — ${q.ph}`} className={cc} />
+        </div>
+      ))}
+
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-black shrink-0">3</span>
+          <p className="text-xs text-foreground leading-snug">If yes, how many market players have responded?</p>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <input type="number" min="0" value={data.q3.value} onChange={e => setNested("q3", "value", e.target.value)}
+            className="w-20 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-orange-400 text-center font-bold" placeholder="0" />
+          <span className="text-xs text-muted-foreground">players</span>
+        </div>
+        <textarea value={data.q3.notes} onChange={e => setNested("q3", "notes", e.target.value)}
+          placeholder="Comments — name or describe the responding players…" className={cc} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-background p-3">
+        <div className="flex gap-2 mb-2.5">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-black shrink-0 mt-0.5">4</span>
+          <p className="text-xs text-foreground leading-snug">Has the market been able to withstand and cope with shocks?</p>
+        </div>
+        <YNButtons value={data.q4.answer} onChange={v => setNested("q4", "answer", v)} options={YN_OPTS} />
+        <textarea value={data.q4.notes} onChange={e => setNested("q4", "notes", e.target.value)}
+          placeholder="Comments — describe shocks encountered and how the market responded…" className={cc} />
+      </div>
+
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-black shrink-0">5</span>
+          <p className="text-xs text-foreground leading-snug">Other relevant observations about systemic response.</p>
+        </div>
+        <textarea value={data.q5.notes} onChange={e => setNested("q5", "notes", e.target.value)}
+          placeholder="Comments — any other relevant systemic changes or observations…" className={cc} />
+      </div>
+    </div>
+  );
+}
+
 // ─── AAER cell modal ──────────────────────────────────────────────────────────
 interface CellModalState {
   actor: string;
   period: string;
   entry: Entry | null;
 }
+
+const STAGE_LABELS: Record<string, string> = {
+  adopt: "Adoption Assessment", adapt: "Adaptation Assessment",
+  expand: "Expansion Assessment", respond: "Response Assessment",
+};
+const STAGE_BORDER_COLOR: Record<string, string> = {
+  adopt: "border-violet-200", adapt: "border-blue-200",
+  expand: "border-emerald-200", respond: "border-orange-200",
+};
+const STAGE_LABEL_COLOR: Record<string, string> = {
+  adopt: "text-violet-700", adapt: "text-blue-700",
+  expand: "text-emerald-700", respond: "text-orange-700",
+};
 
 function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
   state: CellModalState;
@@ -699,7 +1020,7 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
   onDelete: () => void;
   fw: FrameworkDef;
 }) {
-  const existingAdopt = parseAdoptData(state.entry?.stageData ?? "{}");
+  const raw = state.entry?.stageData ?? "{}";
   const [vals, setVals] = useState({
     frameworkTag:   state.entry?.frameworkTag   ?? "adopt",
     description:    state.entry?.description    ?? "",
@@ -707,13 +1028,17 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
     level:          state.entry?.level          ?? "actor",
     status:         state.entry?.status         ?? "plausible",
   });
-  const [adoptData, setAdoptData] = useState<AdoptData>(existingAdopt);
+  const [adoptData,    setAdoptData]    = useState<AdoptData>(parseAdoptData(raw));
+  const [adaptData,    setAdaptData]    = useState<AdaptData>(parseAdaptData(raw));
+  const [expansionData, setExpansionData] = useState<ExpansionData>(parseExpansionData(raw));
+  const [responseData, setResponseData] = useState<ResponseData>(parseResponseData(raw));
   const set = (k: string, v: string) => setVals(p => ({ ...p, [k]: v }));
 
   const handleSave = () => {
-    const stageData = vals.frameworkTag === "adopt"
-      ? JSON.stringify({ adopt: adoptData })
-      : state.entry?.stageData ?? "{}";
+    const stageData = JSON.stringify({
+      adopt: adoptData, adapt: adaptData,
+      expand: expansionData, respond: responseData,
+    });
     onSave({
       dimension:      state.actor,
       frameworkTag:   vals.frameworkTag,
@@ -727,11 +1052,17 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
   };
 
   const stage = AAER_STAGE_COLORS[vals.frameworkTag];
-  const isAdopt = vals.frameworkTag === "adopt";
+  const hasGuidedPanel = ["adopt","adapt","expand","respond"].includes(vals.frameworkTag);
+  const descLabel: Record<string, string> = {
+    adopt: "What did they adopt / narrative summary",
+    adapt: "How did they adapt the model",
+    expand: "How did expansion occur",
+    respond: "What systemic response occurred",
+  };
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className={`${isAdopt ? "max-w-2xl" : "max-w-lg"} max-h-[90vh] flex flex-col`}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base">
             <span className="font-bold truncate">{state.actor}</span>
@@ -763,17 +1094,22 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
             </div>
           </div>
 
-          {/* Adopt: guided questions */}
-          {isAdopt && (
-            <div className="border-t border-violet-200 pt-4">
-              <p className="text-xs font-bold text-violet-700 uppercase tracking-widest mb-3">Adoption Assessment</p>
-              <AdoptQuestionsPanel data={adoptData} onChange={setAdoptData} />
+          {/* Guided assessment panel per stage */}
+          {hasGuidedPanel && (
+            <div className={`border-t ${STAGE_BORDER_COLOR[vals.frameworkTag]} pt-4`}>
+              <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${STAGE_LABEL_COLOR[vals.frameworkTag]}`}>
+                {STAGE_LABELS[vals.frameworkTag]}
+              </p>
+              {vals.frameworkTag === "adopt"  && <AdoptQuestionsPanel     data={adoptData}     onChange={setAdoptData} />}
+              {vals.frameworkTag === "adapt"  && <AdaptQuestionsPanel     data={adaptData}     onChange={setAdaptData} />}
+              {vals.frameworkTag === "expand" && <ExpansionQuestionsPanel data={expansionData} onChange={setExpansionData} />}
+              {vals.frameworkTag === "respond"&& <ResponseQuestionsPanel  data={responseData}  onChange={setResponseData} />}
             </div>
           )}
 
           {/* Common fields */}
-          <div className={`${isAdopt ? "border-t border-border pt-4" : ""} space-y-3`}>
-            {isAdopt && <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Additional Notes</p>}
+          <div className={`border-t border-border pt-4 space-y-3`}>
+            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Additional Notes</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Scale / Reach</Label>
@@ -796,11 +1132,11 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
             </div>
             <div>
               <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
-                {isAdopt ? "What did they adopt / narrative summary" : "What changed / what they did"}
+                {descLabel[vals.frameworkTag] ?? "What changed / what they did"}
               </Label>
               <Textarea value={vals.description} onChange={e => set("description", e.target.value)}
                 className="text-sm min-h-[64px]"
-                placeholder={isAdopt ? "Describe what this actor adopted and how…" : "Describe what this actor did during this period…"} />
+                placeholder="Describe what this actor did during this period…" />
             </div>
             <div>
               <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Evidence / Source</Label>
@@ -999,114 +1335,186 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
       </div>
 
       {/* Detail cards for entries */}
-      {entries.length > 0 && (
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Entry Details</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {entries.map(e => {
-              const s = AAER_STAGE_COLORS[e.frameworkTag];
-              const levelLabel = fw.levelOptions.find(l => l.value === e.level)?.label ?? e.level;
-              const isAdopt = e.frameworkTag === "adopt";
-              const adoptD = isAdopt ? parseAdoptData(e.stageData ?? "{}") : null;
-              const kqColors: Record<string, string> = {
-                yes: "bg-red-100 text-red-700 border-red-300",
-                uncertain: "bg-amber-100 text-amber-700 border-amber-300",
-                no: "bg-emerald-100 text-emerald-700 border-emerald-300",
-              };
-              const kqLabels: Record<string, string> = {
-                yes: "Would revert", uncertain: "Uncertain", no: "Would continue",
-              };
-              const answerColor = (a: string) =>
-                a === "yes" ? "text-emerald-700" : a === "partial" ? "text-amber-700" : a === "no" ? "text-red-700" : a === "uncertain" ? "text-amber-700" : "text-muted-foreground";
-              const answerLabel = (a: string) =>
-                a === "yes" ? "Yes" : a === "partial" ? "Partially" : a === "no" ? "No" : a === "uncertain" ? "Uncertain" : "—";
-              const hasAdoptContent = adoptD && (adoptD.q1 || adoptD.q2 || adoptD.q3.answer || adoptD.q4.answer || adoptD.q5.answer || adoptD.q6.answer || adoptD.q7.answer || adoptD.keyQuestion);
-              const hasBasicContent = e.description || e.changeObserved;
-              if (!hasAdoptContent && !hasBasicContent) return null;
-              return (
-                <div key={e.id} className={`rounded-lg border p-3 ${s?.bg ?? "bg-muted/30"} ${s?.border ?? "border-border"}`}>
-                  <div className="flex items-start gap-2 mb-2">
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border shrink-0 ${s?.bg} ${s?.text} ${s?.border}`}>{s?.label}</span>
-                    <span className="text-xs font-semibold text-foreground">{e.dimension}</span>
-                    <span className="text-xs text-muted-foreground ml-auto shrink-0">{e.periodLabel}</span>
-                  </div>
+      {entries.length > 0 && (() => {
+        const answerColor = (a: string) =>
+          a === "yes" ? "text-emerald-700" : a === "no" ? "text-red-700" : a === "uncertain" || a === "partial" ? "text-amber-700" : "text-muted-foreground";
+        const answerLabel = (a: string) =>
+          a === "yes" ? "Yes" : a === "partial" ? "Partially" : a === "no" ? "No" : a === "uncertain" ? "Uncertain" : "—";
+        const kqColor = (a: string, positive: string) =>
+          a === positive ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+          : a === "uncertain" ? "bg-amber-100 text-amber-800 border-amber-300"
+          : a ? "bg-red-100 text-red-800 border-red-300" : "bg-muted border-border";
 
-                  {/* Adopt assessment summary */}
-                  {adoptD && hasAdoptContent && (
-                    <div className="mb-2 space-y-1.5">
-                      {/* Key question */}
-                      {adoptD.keyQuestion && (
-                        <div className={`rounded-lg border px-2.5 py-1.5 ${kqColors[adoptD.keyQuestion] ?? "bg-muted border-border"}`}>
-                          <p className="text-[10px] font-bold uppercase tracking-wide opacity-60 mb-0.5">Key Question</p>
-                          <p className="text-xs font-semibold">{kqLabels[adoptD.keyQuestion] ?? adoptD.keyQuestion}</p>
-                          {adoptD.keyQuestionNotes && (
-                            <p className="text-[11px] text-foreground/70 mt-1 italic">{adoptD.keyQuestionNotes}</p>
-                          )}
-                        </div>
-                      )}
-                      {/* Q1 & Q2 */}
-                      {(adoptD.q1.value || adoptD.q2.value) && (
-                        <div className="flex gap-2">
-                          {adoptD.q1.value && (
-                            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1">
-                              <p className="text-[10px] text-muted-foreground font-semibold text-center">Partners Adopted</p>
-                              <p className="text-sm font-black text-foreground text-center">{adoptD.q1.value}</p>
-                              {adoptD.q1.notes && <p className="text-[10px] text-muted-foreground italic mt-0.5">{adoptD.q1.notes}</p>}
-                            </div>
-                          )}
-                          {adoptD.q2.value && (
-                            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1">
-                              <p className="text-[10px] text-muted-foreground font-semibold text-center">Pilot Contribution</p>
-                              <p className="text-sm font-black text-foreground text-center">{adoptD.q2.value}%</p>
-                              {adoptD.q2.notes && <p className="text-[10px] text-muted-foreground italic mt-0.5">{adoptD.q2.notes}</p>}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {/* Q3–Q7 compact */}
-                      {(["q3","q4","q5","q6","q7"] as const).some(k => (adoptD[k] as any).answer) && (
-                        <div className="bg-white/50 rounded border border-white/80 divide-y divide-white/80">
-                          {([
-                            { k: "q3", short: "Partners satisfied & willing to continue?" },
-                            { k: "q4", short: "Increased revenue/profit?" },
-                            { k: "q5", short: "Target group benefitting?" },
-                            { k: "q6", short: "Champion/change agent in org?" },
-                            { k: "q7", short: "Org continues without champion?" },
-                          ] as const).filter(row => (adoptD[row.k] as any).answer).map(row => {
-                            const qd = adoptD[row.k] as { answer: string; notes: string };
-                            return (
-                              <div key={row.k} className="px-2 py-1.5">
-                                <div className="flex items-start gap-2">
-                                  <span className={`text-[10px] font-black shrink-0 mt-0.5 ${answerColor(qd.answer)}`}>{answerLabel(qd.answer)}</span>
-                                  <span className="text-[11px] text-foreground/75 leading-snug">{row.short}</span>
-                                </div>
-                                {qd.notes && (
-                                  <p className="text-[10px] text-muted-foreground italic mt-0.5 pl-5 leading-snug">{qd.notes}</p>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
+        const KQBlock = ({ kq, kqNotes, kqLabel, positive }: { kq: string; kqNotes: string; kqLabel: string; positive: string }) =>
+          kq ? (
+            <div className={`rounded-lg border px-2.5 py-1.5 ${kqColor(kq, positive)}`}>
+              <p className="text-[10px] font-bold uppercase tracking-wide opacity-60 mb-0.5">Key Question</p>
+              <p className="text-xs font-semibold">{kqLabel}</p>
+              {kqNotes && <p className="text-[11px] text-foreground/70 mt-1 italic leading-snug">{kqNotes}</p>}
+            </div>
+          ) : null;
 
-                  {e.description && <p className="text-xs text-foreground/80 leading-relaxed mb-1.5">{e.description}</p>}
-                  {e.changeObserved && (
-                    <p className="text-[11px] text-muted-foreground bg-white/60 rounded px-2 py-1 border border-white/80">
-                      <span className="font-semibold">Evidence: </span>{e.changeObserved}
-                    </p>
-                  )}
-                  <div className="flex gap-2 mt-2">
-                    <span className="text-[10px] text-muted-foreground bg-white/60 border border-white/80 px-2 py-0.5 rounded-full">{levelLabel}</span>
-                    {(() => { const c = fw.statusOptions.find(o => o.value === e.status); return c ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${c.color}`}>{c.label}</span> : null; })()}
+        const StatTile = ({ label, value, suffix = "" }: { label: string; value: string; suffix?: string }) =>
+          value ? (
+            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1 text-center">
+              <p className="text-[10px] text-muted-foreground font-semibold">{label}</p>
+              <p className="text-sm font-black text-foreground">{value}{suffix}</p>
+            </div>
+          ) : null;
+
+        const YNList = ({ rows }: { rows: { short: string; answer: string; notes: string }[] }) => {
+          const filled = rows.filter(r => r.answer);
+          return filled.length > 0 ? (
+            <div className="bg-white/50 rounded border border-white/80 divide-y divide-white/80">
+              {filled.map((r, i) => (
+                <div key={i} className="px-2 py-1.5">
+                  <div className="flex items-start gap-2">
+                    <span className={`text-[10px] font-black shrink-0 mt-0.5 ${answerColor(r.answer)}`}>{answerLabel(r.answer)}</span>
+                    <span className="text-[11px] text-foreground/75 leading-snug">{r.short}</span>
                   </div>
+                  {r.notes && <p className="text-[10px] text-muted-foreground italic mt-0.5 pl-5 leading-snug">{r.notes}</p>}
                 </div>
-              );
-            })}
+              ))}
+            </div>
+          ) : null;
+        };
+
+        const cards = entries.map(e => {
+          const s = AAER_STAGE_COLORS[e.frameworkTag];
+          const levelLabel = fw.levelOptions.find(l => l.value === e.level)?.label ?? e.level;
+          const raw = e.stageData ?? "{}";
+          const ft = e.frameworkTag;
+
+          // Parse the active stage's data
+          const adoptD  = ft === "adopt"  ? parseAdoptData(raw)     : null;
+          const adaptD  = ft === "adapt"  ? parseAdaptData(raw)     : null;
+          const expandD = ft === "expand" ? parseExpansionData(raw) : null;
+          const respondD= ft === "respond"? parseResponseData(raw)  : null;
+
+          const hasAdoptContent  = adoptD  && (adoptD.q1.value || adoptD.q2.value || adoptD.q3.answer || adoptD.q4.answer || adoptD.q5.answer || adoptD.q6.answer || adoptD.q7.answer || adoptD.keyQuestion);
+          const hasAdaptContent  = adaptD  && (adaptD.q1.answer || adaptD.q2.answer || adaptD.q3.value || adaptD.q4.answer || adaptD.q5.value || adaptD.keyQuestion);
+          const hasExpandContent = expandD && (expandD.q1.answer || expandD.q2.value || expandD.q3.value || expandD.q4.answer || expandD.q5.value || expandD.keyQuestion);
+          const hasRespondContent= respondD&& (respondD.q1.answer || respondD.q2.answer || respondD.q3.value || respondD.q4.answer || respondD.q5.notes || respondD.keyQuestion);
+          const hasGuidedContent = hasAdoptContent || hasAdaptContent || hasExpandContent || hasRespondContent;
+          const hasBasicContent  = e.description || e.changeObserved;
+          if (!hasGuidedContent && !hasBasicContent) return null;
+
+          const kqLabelMap: Record<string, Record<string, string>> = {
+            adopt:  { yes: "Would revert",          uncertain: "Uncertain", no: "Would continue" },
+            adapt:  { yes: "Yes — independently",   uncertain: "Uncertain", no: "No — still need us" },
+            expand: { yes: "Yes — too concentrated",uncertain: "Uncertain", no: "No — spread widely" },
+            respond:{ yes: "Yes — supportive",      uncertain: "Uncertain", no: "No — not yet" },
+          };
+          const positiveKQ: Record<string, string> = { adopt: "no", adapt: "yes", expand: "no", respond: "yes" };
+          const kqLbl = kqLabelMap[ft]?.[adoptD?.keyQuestion || adaptD?.keyQuestion || expandD?.keyQuestion || respondD?.keyQuestion || ""] ?? "";
+
+          return (
+            <div key={e.id} className={`rounded-lg border p-3 ${s?.bg ?? "bg-muted/30"} ${s?.border ?? "border-border"}`}>
+              <div className="flex items-start gap-2 mb-2">
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border shrink-0 ${s?.bg} ${s?.text} ${s?.border}`}>{s?.label}</span>
+                <span className="text-xs font-semibold text-foreground">{e.dimension}</span>
+                <span className="text-xs text-muted-foreground ml-auto shrink-0">{e.periodLabel}</span>
+              </div>
+
+              {hasGuidedContent && (
+                <div className="mb-2 space-y-1.5">
+                  {/* ── ADOPT ── */}
+                  {adoptD && hasAdoptContent && (<>
+                    <KQBlock kq={adoptD.keyQuestion} kqNotes={adoptD.keyQuestionNotes}
+                      kqLabel={kqLabelMap.adopt[adoptD.keyQuestion] ?? adoptD.keyQuestion} positive="no" />
+                    {(adoptD.q1.value || adoptD.q2.value) && (
+                      <div className="flex gap-2">
+                        <StatTile label="Partners Adopted" value={adoptD.q1.value} />
+                        <StatTile label="Pilot Contribution" value={adoptD.q2.value} suffix="%" />
+                      </div>
+                    )}
+                    <YNList rows={[
+                      { short: "Partners satisfied & willing to continue?", ...adoptD.q3 },
+                      { short: "Increased revenue/profit?",                 ...adoptD.q4 },
+                      { short: "Target group benefitting?",                 ...adoptD.q5 },
+                      { short: "Champion/change agent in org?",             ...adoptD.q6 },
+                      { short: "Org continues without champion?",           answer: adoptD.q7.answer, notes: adoptD.q7.notes },
+                    ]} />
+                  </>)}
+
+                  {/* ── ADAPT ── */}
+                  {adaptD && hasAdaptContent && (<>
+                    <KQBlock kq={adaptD.keyQuestion} kqNotes={adaptD.keyQuestionNotes}
+                      kqLabel={kqLabelMap.adapt[adaptD.keyQuestion] ?? adaptD.keyQuestion} positive="yes" />
+                    <YNList rows={[
+                      { short: "Partners made autonomous changes to model?", ...adaptD.q1 },
+                      { short: "Partners increased cost/investment share?",  ...adaptD.q2 },
+                    ]} />
+                    {adaptD.q3.value && (
+                      <div className="flex gap-2">
+                        <StatTile label="Increased Contribution" value={adaptD.q3.value} suffix="%" />
+                      </div>
+                    )}
+                    <YNList rows={[{ short: "Partners autonomously expanded to other areas?", ...adaptD.q4 }]} />
+                    {adaptD.q5.value && (
+                      <div className="flex gap-2">
+                        <StatTile label="New Locations" value={adaptD.q5.value} />
+                      </div>
+                    )}
+                  </>)}
+
+                  {/* ── EXPAND ── */}
+                  {expandD && hasExpandContent && (<>
+                    <KQBlock kq={expandD.keyQuestion} kqNotes={expandD.keyQuestionNotes}
+                      kqLabel={kqLabelMap.expand[expandD.keyQuestion] ?? expandD.keyQuestion} positive="no" />
+                    <YNList rows={[{ short: "Competitors / other market players crowded in?", ...expandD.q1 }]} />
+                    {(expandD.q2.value || expandD.q3.value || expandD.q5.value) && (
+                      <div className="flex gap-2 flex-wrap">
+                        <StatTile label="Players Crowded In" value={expandD.q2.value} />
+                        <StatTile label="Combined Market Share" value={expandD.q3.value} suffix="%" />
+                        <StatTile label="Direct : Indirect Ratio" value={expandD.q5.value} />
+                      </div>
+                    )}
+                    <YNList rows={[{ short: "Others copying target group behaviour?", ...expandD.q4 }]} />
+                  </>)}
+
+                  {/* ── RESPOND ── */}
+                  {respondD && hasRespondContent && (<>
+                    <KQBlock kq={respondD.keyQuestion} kqNotes={respondD.keyQuestionNotes}
+                      kqLabel={kqLabelMap.respond[respondD.keyQuestion] ?? respondD.keyQuestion} positive="yes" />
+                    <YNList rows={[
+                      { short: "Changes in policy/business conduct impacted intervention?", ...respondD.q1 },
+                      { short: "Interconnected market players reacted/responded?",          ...respondD.q2 },
+                    ]} />
+                    {respondD.q3.value && (
+                      <div className="flex gap-2">
+                        <StatTile label="Market Players Responded" value={respondD.q3.value} />
+                      </div>
+                    )}
+                    <YNList rows={[{ short: "Market withstood and coped with shocks?", ...respondD.q4 }]} />
+                    {respondD.q5.notes && (
+                      <p className="text-[11px] text-muted-foreground bg-white/50 rounded border border-white/80 px-2 py-1 italic">{respondD.q5.notes}</p>
+                    )}
+                  </>)}
+                </div>
+              )}
+
+              {e.description && <p className="text-xs text-foreground/80 leading-relaxed mb-1.5">{e.description}</p>}
+              {e.changeObserved && (
+                <p className="text-[11px] text-muted-foreground bg-white/60 rounded px-2 py-1 border border-white/80">
+                  <span className="font-semibold">Evidence: </span>{e.changeObserved}
+                </p>
+              )}
+              <div className="flex gap-2 mt-2">
+                <span className="text-[10px] text-muted-foreground bg-white/60 border border-white/80 px-2 py-0.5 rounded-full">{levelLabel}</span>
+                {(() => { const c = fw.statusOptions.find(o => o.value === e.status); return c ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${c.color}`}>{c.label}</span> : null; })()}
+              </div>
+            </div>
+          );
+        }).filter(Boolean);
+
+        return cards.length > 0 ? (
+          <div>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Entry Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{cards}</div>
           </div>
-        </div>
-      )}
+        ) : null;
+      })()}
     </div>
   );
 }
