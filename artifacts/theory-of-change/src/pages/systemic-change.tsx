@@ -1381,7 +1381,12 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
           ) : null;
         };
 
-        const cards = entries.map(e => {
+        const sorted = [...entries].sort((a, b) => {
+          const dimCmp = (a.dimension ?? "").localeCompare(b.dimension ?? "");
+          return dimCmp !== 0 ? dimCmp : (a.periodLabel ?? "").localeCompare(b.periodLabel ?? "");
+        });
+
+        const cards = sorted.map(e => {
           const s = AAER_STAGE_COLORS[e.frameworkTag];
           const levelLabel = fw.levelOptions.find(l => l.value === e.level)?.label ?? e.level;
           const raw = e.stageData ?? "{}";
@@ -1398,8 +1403,6 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
           const hasExpandContent = expandD && (expandD.q1.answer || expandD.q2.value || expandD.q3.value || expandD.q4.answer || expandD.q5.value || expandD.keyQuestion);
           const hasRespondContent= respondD&& (respondD.q1.answer || respondD.q2.answer || respondD.q3.value || respondD.q4.answer || respondD.q5.notes || respondD.keyQuestion);
           const hasGuidedContent = hasAdoptContent || hasAdaptContent || hasExpandContent || hasRespondContent;
-          const hasBasicContent  = e.description || e.changeObserved;
-          if (!hasGuidedContent && !hasBasicContent) return null;
 
           const kqLabelMap: Record<string, Record<string, string>> = {
             adopt:  { yes: "Would revert",          uncertain: "Uncertain", no: "Would continue" },
@@ -1502,17 +1505,24 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
                   <span className="font-semibold">Evidence: </span>{e.changeObserved}
                 </p>
               )}
+              {!hasGuidedContent && !e.description && !e.changeObserved && (
+                <p className="text-[11px] text-muted-foreground/50 italic py-1">
+                  No details recorded yet — click the cell to add guided responses.
+                </p>
+              )}
               <div className="flex gap-2 mt-2">
                 <span className="text-[10px] text-muted-foreground bg-white/60 border border-white/80 px-2 py-0.5 rounded-full">{levelLabel}</span>
                 {(() => { const c = fw.statusOptions.find(o => o.value === e.status); return c ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${c.color}`}>{c.label}</span> : null; })()}
               </div>
             </div>
           );
-        }).filter(Boolean);
+        });
 
         return cards.length > 0 ? (
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Entry Details</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+              Entry Details <span className="font-normal text-muted-foreground/60 normal-case tracking-normal">({cards.length})</span>
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{cards}</div>
           </div>
         ) : null;
