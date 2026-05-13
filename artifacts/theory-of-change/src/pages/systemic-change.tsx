@@ -510,14 +510,15 @@ function AaerSettingsPanel({ settings, onSave }: {
 
 // ─── Adopt guided questions ───────────────────────────────────────────────────
 interface AdoptData {
-  q1: string;
-  q2: string;
+  q1: { value: string; notes: string };
+  q2: { value: string; notes: string };
   q3: { answer: string; notes: string };
   q4: { answer: string; notes: string };
   q5: { answer: string; notes: string };
   q6: { answer: string; notes: string };
   q7: { answer: string; notes: string };
   keyQuestion: string;
+  keyQuestionNotes: string;
 }
 
 const ADOPT_QUESTIONS = [
@@ -531,17 +532,21 @@ const ADOPT_QUESTIONS = [
 ] as const;
 
 const DEFAULT_ADOPT: AdoptData = {
-  q1: "", q2: "",
+  q1: { value: "", notes: "" }, q2: { value: "", notes: "" },
   q3: { answer: "", notes: "" }, q4: { answer: "", notes: "" },
   q5: { answer: "", notes: "" }, q6: { answer: "", notes: "" },
   q7: { answer: "", notes: "" },
-  keyQuestion: "",
+  keyQuestion: "", keyQuestionNotes: "",
 };
 
 function parseAdoptData(raw: string): AdoptData {
   try {
     const p = JSON.parse(raw || "{}");
-    return p.adopt ?? DEFAULT_ADOPT;
+    const d = p.adopt ?? {};
+    // Migrate old flat q1/q2 strings to object form
+    const q1 = typeof d.q1 === "string" ? { value: d.q1, notes: "" } : (d.q1 ?? { value: "", notes: "" });
+    const q2 = typeof d.q2 === "string" ? { value: d.q2, notes: "" } : (d.q2 ?? { value: "", notes: "" });
+    return { ...DEFAULT_ADOPT, ...d, q1, q2 };
   } catch { return DEFAULT_ADOPT; }
 }
 
@@ -583,9 +588,11 @@ const KQ_OPTS = [
 ];
 
 function AdoptQuestionsPanel({ data, onChange }: { data: AdoptData; onChange: (d: AdoptData) => void }) {
-  const set = (key: keyof AdoptData, val: any) => onChange({ ...data, [key]: val });
-  const setQA = (key: keyof AdoptData, field: "answer" | "notes", val: string) =>
+  const setField = (key: keyof AdoptData, val: any) => onChange({ ...data, [key]: val });
+  const setNested = (key: keyof AdoptData, field: string, val: string) =>
     onChange({ ...data, [key]: { ...(data[key] as any), [field]: val } });
+
+  const commentClass = "mt-2 w-full text-xs px-2.5 py-1.5 rounded-md border border-input bg-white/70 focus:outline-none focus:ring-1 focus:ring-violet-300 resize-none text-foreground placeholder:text-muted-foreground/50 min-h-[52px]";
 
   return (
     <div className="space-y-3">
@@ -595,54 +602,82 @@ function AdoptQuestionsPanel({ data, onChange }: { data: AdoptData; onChange: (d
         <p className="text-xs font-semibold text-violet-900 mb-2.5 leading-snug">
           If you left now, would partners return to their previous way of working?
         </p>
-        <YNButtons value={data.keyQuestion} onChange={v => set("keyQuestion", v)} options={KQ_OPTS} />
+        <YNButtons value={data.keyQuestion} onChange={v => setField("keyQuestion", v)} options={KQ_OPTS} />
+        <textarea
+          value={data.keyQuestionNotes}
+          onChange={e => setField("keyQuestionNotes", e.target.value)}
+          placeholder="Comments — explain your assessment…"
+          className={`${commentClass} bg-violet-50/80`}
+        />
       </div>
 
-      {/* Q1 & Q2 side by side */}
-      <div className="grid grid-cols-2 gap-3">
-        {[{ id: "q1" as const, label: "Partners adopted", unit: "no." }, { id: "q2" as const, label: "Pilot contribution", unit: "%" }].map(q => (
-          <div key={q.id} className="rounded-lg border border-border bg-muted/30 p-3">
-            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
-              {q.id === "q1" ? "Q1" : "Q2"}
-            </p>
-            <p className="text-[11px] text-foreground leading-snug mb-2">
-              {q.id === "q1"
-                ? "No. of partners/market players who have adopted the new business model (incremental)"
-                : "Partner(s) contribution to the pilot"}
-            </p>
-            <div className="flex items-center gap-2">
-              <input type="number" min="0"
-                value={data[q.id]}
-                onChange={e => set(q.id, e.target.value)}
-                className="w-20 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-violet-400 text-center font-bold"
-                placeholder="0" />
-              <span className="text-xs text-muted-foreground">{q.unit}</span>
-            </div>
-          </div>
-        ))}
+      {/* Q1 — number + comments */}
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-black shrink-0">1</span>
+          <p className="text-xs text-foreground leading-snug">
+            No. of partner(s)/market player(s) who have adopted the new business model (incremental).
+          </p>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <input type="number" min="0"
+            value={data.q1.value}
+            onChange={e => setNested("q1", "value", e.target.value)}
+            className="w-20 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-violet-400 text-center font-bold"
+            placeholder="0" />
+          <span className="text-xs text-muted-foreground">partners</span>
+        </div>
+        <textarea
+          value={data.q1.notes}
+          onChange={e => setNested("q1", "notes", e.target.value)}
+          placeholder="Comments — which partners, context, or caveats…"
+          className={commentClass}
+        />
       </div>
 
-      {/* Q3–Q7 */}
+      {/* Q2 — percent + comments */}
+      <div className="rounded-lg border border-border bg-muted/30 p-3">
+        <div className="flex gap-2 mb-2">
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-black shrink-0">2</span>
+          <p className="text-xs text-foreground leading-snug">
+            Partner(s) contribution to the pilot. (%)
+          </p>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <input type="number" min="0" max="100"
+            value={data.q2.value}
+            onChange={e => setNested("q2", "value", e.target.value)}
+            className="w-20 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-violet-400 text-center font-bold"
+            placeholder="0" />
+          <span className="text-xs text-muted-foreground">%</span>
+        </div>
+        <textarea
+          value={data.q2.notes}
+          onChange={e => setNested("q2", "notes", e.target.value)}
+          placeholder="Comments — how contribution was calculated or estimated…"
+          className={commentClass}
+        />
+      </div>
+
+      {/* Q3–Q7 — toggle + always-visible comments */}
       {ADOPT_QUESTIONS.filter(q => q.type !== "number" && q.type !== "percent").map(q => {
         const qData = data[q.id as keyof AdoptData] as { answer: string; notes: string };
         const opts = q.type === "ynp" ? YNP_OPTS : q.type === "yn" ? YN_OPTS : YNU_OPTS;
         return (
           <div key={q.id} className="rounded-lg border border-border bg-background p-3">
-            <div className="flex gap-2 mb-2">
+            <div className="flex gap-2 mb-2.5">
               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-black shrink-0 mt-0.5">
                 {q.num}
               </span>
               <p className="text-xs text-foreground leading-snug">{q.label}</p>
             </div>
-            <YNButtons value={qData.answer} onChange={v => setQA(q.id as any, "answer", v)} options={opts} />
-            {qData.answer && (
-              <input
-                value={qData.notes}
-                onChange={e => setQA(q.id as any, "notes", e.target.value)}
-                placeholder="Add notes (optional)…"
-                className="mt-2 w-full text-xs h-7 px-2 rounded border border-input bg-muted/40 focus:outline-none focus:ring-1 focus:ring-violet-300 text-muted-foreground placeholder:text-muted-foreground/50"
-              />
-            )}
+            <YNButtons value={qData.answer} onChange={v => setNested(q.id as any, "answer", v)} options={opts} />
+            <textarea
+              value={qData.notes}
+              onChange={e => setNested(q.id as any, "notes", e.target.value)}
+              placeholder="Comments — explain your answer with evidence or observations…"
+              className={commentClass}
+            />
           </div>
         );
       })}
@@ -1004,21 +1039,26 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
                         <div className={`rounded-lg border px-2.5 py-1.5 ${kqColors[adoptD.keyQuestion] ?? "bg-muted border-border"}`}>
                           <p className="text-[10px] font-bold uppercase tracking-wide opacity-60 mb-0.5">Key Question</p>
                           <p className="text-xs font-semibold">{kqLabels[adoptD.keyQuestion] ?? adoptD.keyQuestion}</p>
+                          {adoptD.keyQuestionNotes && (
+                            <p className="text-[11px] text-foreground/70 mt-1 italic">{adoptD.keyQuestionNotes}</p>
+                          )}
                         </div>
                       )}
                       {/* Q1 & Q2 */}
-                      {(adoptD.q1 || adoptD.q2) && (
+                      {(adoptD.q1.value || adoptD.q2.value) && (
                         <div className="flex gap-2">
-                          {adoptD.q1 && (
-                            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1 text-center">
-                              <p className="text-[10px] text-muted-foreground font-semibold">Partners Adopted</p>
-                              <p className="text-sm font-black text-foreground">{adoptD.q1}</p>
+                          {adoptD.q1.value && (
+                            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1">
+                              <p className="text-[10px] text-muted-foreground font-semibold text-center">Partners Adopted</p>
+                              <p className="text-sm font-black text-foreground text-center">{adoptD.q1.value}</p>
+                              {adoptD.q1.notes && <p className="text-[10px] text-muted-foreground italic mt-0.5">{adoptD.q1.notes}</p>}
                             </div>
                           )}
-                          {adoptD.q2 && (
-                            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1 text-center">
-                              <p className="text-[10px] text-muted-foreground font-semibold">Pilot Contribution</p>
-                              <p className="text-sm font-black text-foreground">{adoptD.q2}%</p>
+                          {adoptD.q2.value && (
+                            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1">
+                              <p className="text-[10px] text-muted-foreground font-semibold text-center">Pilot Contribution</p>
+                              <p className="text-sm font-black text-foreground text-center">{adoptD.q2.value}%</p>
+                              {adoptD.q2.notes && <p className="text-[10px] text-muted-foreground italic mt-0.5">{adoptD.q2.notes}</p>}
                             </div>
                           )}
                         </div>
@@ -1035,10 +1075,14 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
                           ] as const).filter(row => (adoptD[row.k] as any).answer).map(row => {
                             const qd = adoptD[row.k] as { answer: string; notes: string };
                             return (
-                              <div key={row.k} className="px-2 py-1 flex items-start gap-2">
-                                <span className={`text-[10px] font-black shrink-0 mt-0.5 ${answerColor(qd.answer)}`}>{answerLabel(qd.answer)}</span>
-                                <span className="text-[11px] text-foreground/75 leading-snug">{row.short}</span>
-                                {qd.notes && <span className="text-[10px] text-muted-foreground italic ml-auto shrink-0 max-w-[100px] truncate" title={qd.notes}>{qd.notes}</span>}
+                              <div key={row.k} className="px-2 py-1.5">
+                                <div className="flex items-start gap-2">
+                                  <span className={`text-[10px] font-black shrink-0 mt-0.5 ${answerColor(qd.answer)}`}>{answerLabel(qd.answer)}</span>
+                                  <span className="text-[11px] text-foreground/75 leading-snug">{row.short}</span>
+                                </div>
+                                {qd.notes && (
+                                  <p className="text-[10px] text-muted-foreground italic mt-0.5 pl-5 leading-snug">{qd.notes}</p>
+                                )}
                               </div>
                             );
                           })}
