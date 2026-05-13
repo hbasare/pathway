@@ -229,6 +229,11 @@ function generatePeriods(startYear: number, endYear: number, granularity: Granul
   return periods;
 }
 
+/** Returns true for any period that belongs to Year 1 (the pilot phase). */
+function isPilotPeriod(period: string): boolean {
+  return period === "Y1" || period.endsWith(" Y1");
+}
+
 // ─── Tag / status badge helpers ───────────────────────────────────────────────
 function TagBadge({ value, fw }: { value: string; fw: FrameworkDef }) {
   const opt = fw.tagOptions.find(o => o.value === value);
@@ -448,7 +453,7 @@ function AaerSettingsPanel({ settings, onSave }: {
           <span className="text-sm font-semibold text-violet-900">Intervention Timeline</span>
           {settings.startYear && settings.endYear ? (
             <span className="ml-3 text-xs text-violet-600">
-              {settings.startYear}–{settings.endYear} · {settings.granularity} · {generatePeriods(settings.startYear, settings.endYear, settings.granularity).length} periods
+              {settings.startYear}–{settings.endYear} · {settings.granularity} · {generatePeriods(settings.startYear, settings.endYear, settings.granularity).length} periods · <span className="text-amber-600 font-semibold">Y1 = Pilot phase</span>
             </span>
           ) : (
             <span className="ml-3 text-xs text-violet-500 italic">Not configured — click to set up</span>
@@ -495,7 +500,14 @@ function AaerSettingsPanel({ settings, onSave }: {
               <p className="text-[11px] font-semibold text-muted-foreground mb-2">Generated periods ({periods.length}):</p>
               <div className="flex flex-wrap gap-1.5">
                 {periods.map(p => (
-                  <span key={p} className="text-[11px] bg-violet-100 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full font-medium">{p}</span>
+                  <span key={p} className={`text-[11px] px-2 py-0.5 rounded-full font-medium border inline-flex items-center gap-1 ${
+                    isPilotPeriod(p)
+                      ? "bg-amber-100 text-amber-800 border-amber-300"
+                      : "bg-violet-100 text-violet-700 border-violet-200"
+                  }`}>
+                    {p}
+                    {isPilotPeriod(p) && <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">· Pilot</span>}
+                  </span>
                 ))}
               </div>
             </div>
@@ -1023,8 +1035,12 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
   fw: FrameworkDef;
 }) {
   const raw = state.entry?.stageData ?? "{}";
+  const isPilot = isPilotPeriod(state.period);
   const [vals, setVals] = useState({
-    frameworkTag:   state.entry?.frameworkTag   ?? "adopt",
+    frameworkTag: (() => {
+      const tag = state.entry?.frameworkTag ?? (isPilot ? "adopt" : "adapt");
+      return !isPilot && tag === "adopt" ? "adapt" : tag;
+    })(),
     description:    state.entry?.description    ?? "",
     changeObserved: state.entry?.changeObserved ?? "",
     level:          state.entry?.level          ?? "actor",
@@ -1078,9 +1094,16 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
         <div className="overflow-y-auto flex-1 space-y-4 py-1 pr-1">
           {/* Stage selector */}
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">AAER Stage</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {fw.tagOptions.map(opt => {
+            <div className="flex items-center justify-between mb-1.5">
+              <Label className="text-xs font-semibold text-muted-foreground">AAER Stage</Label>
+              {isPilot ? (
+                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">Pilot phase — all stages available</span>
+              ) : (
+                <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full">Adopt is pilot-only · tracked in Y1</span>
+              )}
+            </div>
+            <div className={`grid gap-2 ${isPilot ? "grid-cols-4" : "grid-cols-3"}`}>
+              {fw.tagOptions.filter(o => isPilot || o.value !== "adopt").map(opt => {
                 const s = AAER_STAGE_COLORS[opt.value];
                 const active = vals.frameworkTag === opt.value;
                 return (
@@ -1241,8 +1264,11 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
                   Actor / Market Firm
                 </th>
                 {periods.map(p => (
-                  <th key={p} className="px-2 py-3 text-center text-[11px] font-bold text-muted-foreground min-w-[72px]">
-                    {p}
+                  <th key={p} className={`px-2 py-3 text-center text-[11px] font-bold min-w-[72px] ${isPilotPeriod(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
+                    <div>{p}</div>
+                    {isPilotPeriod(p) && (
+                      <div className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mt-0.5 opacity-80">Pilot</div>
+                    )}
                   </th>
                 ))}
                 <th className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground w-24">Progress</th>
