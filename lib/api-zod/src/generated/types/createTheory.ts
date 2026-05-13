@@ -27,5 +27,6 @@ export interface CreateTheory {
   contributionOfOtherProjects?: string;
   strategyDocumentPath?: string;
   strategyDocumentName?: string;
+  systemicChangeFramework?: string | null;
   businessModelImagePath?: string;
 }

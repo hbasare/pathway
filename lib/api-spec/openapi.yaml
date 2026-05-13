@@ -1136,6 +1136,9 @@ components:
           type: string
         strategyDocumentName:
           type: string
+        systemicChangeFramework:
+          type: string
+          nullable: true
         businessModelImagePath:
           type: string
         components:
@@ -1205,6 +1208,9 @@ components:
           type: string
         strategyDocumentName:
           type: string
+        systemicChangeFramework:
+          type: string
+          nullable: true
         businessModelImagePath:
           type: string
       required:
@@ -1996,6 +2002,8 @@ components:
           type: string
         status:
           type: string
+        frameworkTag:
+          type: string
         position:
           type: integer
         createdAt:
@@ -2028,6 +2036,8 @@ components:
         level:
           type: string
         status:
+          type: string
+        frameworkTag:
           type: string
         position:
           type: integer

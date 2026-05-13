@@ -154,6 +154,7 @@ export interface TheoryDetail {
   contributionOfOtherProjects?: string;
   strategyDocumentPath?: string;
   strategyDocumentName?: string;
+  systemicChangeFramework?: string | null;
   businessModelImagePath?: string;
   components: Component[];
   connections: Connection[];
@@ -182,6 +183,7 @@ export interface CreateTheory {
   contributionOfOtherProjects?: string;
   strategyDocumentPath?: string;
   strategyDocumentName?: string;
+  systemicChangeFramework?: string | null;
   businessModelImagePath?: string;
 }
 
@@ -458,6 +460,7 @@ export interface SystemicChange {
   changeObserved: string;
   level: string;
   status: string;
+  frameworkTag?: string;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -469,6 +472,7 @@ export interface CreateSystemicChange {
   changeObserved?: string;
   level?: string;
   status?: string;
+  frameworkTag?: string;
   position?: number;
 }
 

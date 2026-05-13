@@ -14,6 +14,7 @@ export interface SystemicChange {
   changeObserved: string;
   level: string;
   status: string;
+  frameworkTag?: string;
   position: number;
   createdAt: Date;
   updatedAt: Date;

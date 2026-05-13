@@ -12,5 +12,6 @@ export interface CreateSystemicChange {
   changeObserved?: string;
   level?: string;
   status?: string;
+  frameworkTag?: string;
   position?: number;
 }

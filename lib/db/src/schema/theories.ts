@@ -40,6 +40,7 @@ export const theoriesTable = pgTable("theories", {
   // Strategy document
   strategyDocumentPath: text("strategy_document_path").default(""),
   strategyDocumentName: text("strategy_document_name").default(""),
+  systemicChangeFramework: text("systemic_change_framework"), // 'aaer' | 'msr' | 'oh' | 'msc' | null
   // Business model
   businessModelImagePath: text("business_model_image_path").default(""),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -229,8 +230,9 @@ export const systemicChangesTable = pgTable("systemic_changes", {
   dimension: text("dimension").notNull().default(""),
   description: text("description").notNull().default(""),
   changeObserved: text("change_observed").notNull().default(""),
-  level: text("level").notNull().default("meso"),       // micro | meso | macro
-  status: text("status").notNull().default("emerging"),  // emerging | established | sustained
+  level: text("level").notNull().default("meso"),
+  status: text("status").notNull().default("emerging"),
+  frameworkTag: text("framework_tag").notNull().default(""), // AAER stage, MSR dimension, OH scope, MSC domain
   position: integer("position").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

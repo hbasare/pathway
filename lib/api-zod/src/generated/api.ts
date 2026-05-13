@@ -384,6 +384,7 @@ export const CreateTheoryBody = zod.object({
   contributionOfOtherProjects: zod.string().optional(),
   strategyDocumentPath: zod.string().optional(),
   strategyDocumentName: zod.string().optional(),
+  systemicChangeFramework: zod.string().nullish(),
   businessModelImagePath: zod.string().optional(),
 });
 
@@ -416,6 +417,7 @@ export const GetTheoryResponse = zod.object({
   contributionOfOtherProjects: zod.string().optional(),
   strategyDocumentPath: zod.string().optional(),
   strategyDocumentName: zod.string().optional(),
+  systemicChangeFramework: zod.string().nullish(),
   businessModelImagePath: zod.string().optional(),
   components: zod.array(
     zod.object({
@@ -536,6 +538,7 @@ export const UpdateTheoryBody = zod.object({
   contributionOfOtherProjects: zod.string().optional(),
   strategyDocumentPath: zod.string().optional(),
   strategyDocumentName: zod.string().optional(),
+  systemicChangeFramework: zod.string().nullish(),
   businessModelImagePath: zod.string().optional(),
 });
 
@@ -1300,6 +1303,7 @@ export const ListSystemicChangesResponseItem = zod.object({
   changeObserved: zod.string(),
   level: zod.string(),
   status: zod.string(),
+  frameworkTag: zod.string().optional(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
@@ -1321,6 +1325,7 @@ export const CreateSystemicChangeBody = zod.object({
   changeObserved: zod.string().optional(),
   level: zod.string().optional(),
   status: zod.string().optional(),
+  frameworkTag: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -1338,6 +1343,7 @@ export const UpdateSystemicChangeBody = zod.object({
   changeObserved: zod.string().optional(),
   level: zod.string().optional(),
   status: zod.string().optional(),
+  frameworkTag: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -1349,6 +1355,7 @@ export const UpdateSystemicChangeResponse = zod.object({
   changeObserved: zod.string(),
   level: zod.string(),
   status: zod.string(),
+  frameworkTag: zod.string().optional(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),

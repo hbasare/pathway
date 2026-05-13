@@ -30,6 +30,7 @@ export interface TheoryDetail {
   contributionOfOtherProjects?: string;
   strategyDocumentPath?: string;
   strategyDocumentName?: string;
+  systemicChangeFramework?: string | null;
   businessModelImagePath?: string;
   components: Component[];
   connections: Connection[];
