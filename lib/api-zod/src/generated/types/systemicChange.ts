@@ -15,6 +15,7 @@ export interface SystemicChange {
   level: string;
   status: string;
   frameworkTag?: string;
+  periodLabel?: string;
   position: number;
   createdAt: Date;
   updatedAt: Date;

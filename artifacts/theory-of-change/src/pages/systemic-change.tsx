@@ -1,24 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useUpdateTheory, getGetTheoryQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Plus, Trash2, Pencil, Check, X, Loader2, GitBranch,
-  ChevronRight, RefreshCw, Info,
+  ChevronRight, RefreshCw, Info, Settings, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
   Tooltip, TooltipContent, TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 // ─── Framework definitions ────────────────────────────────────────────────────
 type FrameworkKey = "aaer" | "msr" | "oh" | "msc";
+type Granularity = "annual" | "biannual" | "quarterly";
 
 interface FrameworkDef {
   key: FrameworkKey;
@@ -46,6 +50,14 @@ interface ColDef {
   isStatus?: boolean;
 }
 
+// ── AAER stage colours ──
+const AAER_STAGE_COLORS: Record<string, { bg: string; text: string; border: string; label: string; abbr: string }> = {
+  adopt:   { bg: "bg-violet-100", text: "text-violet-800", border: "border-violet-300", label: "Adopt",   abbr: "A" },
+  adapt:   { bg: "bg-blue-100",   text: "text-blue-800",   border: "border-blue-300",   label: "Adapt",   abbr: "Ad" },
+  expand:  { bg: "bg-emerald-100",text: "text-emerald-800",border: "border-emerald-300",label: "Expand",  abbr: "E" },
+  respond: { bg: "bg-orange-100", text: "text-orange-800", border: "border-orange-300", label: "Respond", abbr: "R" },
+};
+
 const FRAMEWORKS: FrameworkDef[] = [
   {
     key: "aaer",
@@ -54,17 +66,9 @@ const FRAMEWORKS: FrameworkDef[] = [
     org: "DCED / Springfield Centre",
     color: "border-violet-300 bg-violet-50",
     accent: "bg-violet-600",
-    description:
-      "Tracks how market actors respond to an intervention by adopting new practices, adapting them to their context, expanding reach, or responding to system-level shifts.",
+    description: "Tracks how market actors respond to an intervention by adopting new practices, adapting them, expanding reach, or responding to system-level shifts.",
     useCase: "Best for market systems development (MSD) programmes tracking crowding-in and private sector behaviour change.",
-    cols: [
-      { key: "dimension",      header: "Actor / SME",             tooltip: "The firm, organisation, or market actor",                         width: "w-36",  textarea: false },
-      { key: "frameworkTag",   header: "AAER Stage",              tooltip: "Which stage of the AAER model this entry represents",             width: "w-32",  isTag: true },
-      { key: "description",    header: "What Changed",            tooltip: "Describe what the actor adopted, adapted, expanded, or responded", width: "",      textarea: true },
-      { key: "changeObserved", header: "Evidence",                tooltip: "Data, observations, or sources confirming the change",            width: "",      textarea: true },
-      { key: "level",          header: "Scale",                   tooltip: "How broadly this change has spread",                              width: "w-28",  isLevel: true },
-      { key: "status",         header: "Confidence",              tooltip: "How confident you are this change is genuine",                    width: "w-28",  isStatus: true },
-    ],
+    cols: [],
     tagOptions: [
       { value: "adopt",   label: "Adopt",   desc: "Actor directly adopts the new practice / product / service" },
       { value: "adapt",   label: "Adapt",   desc: "Actor modifies the innovation to fit their context" },
@@ -77,9 +81,9 @@ const FRAMEWORKS: FrameworkDef[] = [
       { value: "plausible", label: "Plausible", color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
     ],
     levelOptions: [
-      { value: "actor",   label: "Individual actor" },
-      { value: "sector",  label: "Sector-wide" },
-      { value: "market",  label: "Market-wide" },
+      { value: "actor",  label: "Individual actor" },
+      { value: "sector", label: "Sector-wide" },
+      { value: "market", label: "Market-wide" },
     ],
   },
   {
@@ -89,16 +93,15 @@ const FRAMEWORKS: FrameworkDef[] = [
     org: "BEAM Exchange / SDC",
     color: "border-teal-300 bg-teal-50",
     accent: "bg-teal-600",
-    description:
-      "Assesses the capacity of market systems to absorb shocks, adapt, and transform — going beyond outputs to understand durability of change.",
-    useCase: "Best for programmes operating in fragile or crisis-affected contexts where long-term system durability matters.",
+    description: "Assesses the capacity of market systems to absorb shocks, adapt, and transform — going beyond outputs to understand durability of change.",
+    useCase: "Best for programmes in fragile or crisis-affected contexts where long-term system durability matters.",
     cols: [
-      { key: "frameworkTag",   header: "Resilience Dimension",    tooltip: "Which MSR dimension this entry tracks",                  width: "w-44",  isTag: true },
-      { key: "dimension",      header: "Market / Subsystem",      tooltip: "Which market or subsystem this applies to",              width: "w-36",  textarea: false },
-      { key: "description",    header: "Expected Resilience",     tooltip: "What resilience outcome is anticipated",                 width: "",      textarea: true },
-      { key: "changeObserved", header: "Evidence Observed",       tooltip: "What evidence of resilience have you seen?",            width: "",      textarea: true },
-      { key: "level",          header: "System Level",            tooltip: "At which level of the system this applies",             width: "w-28",  isLevel: true },
-      { key: "status",         header: "Status",                  tooltip: "Current state of this resilience dimension",            width: "w-28",  isStatus: true },
+      { key: "frameworkTag",   header: "Resilience Dimension",  tooltip: "Which MSR dimension this tracks",              width: "w-44", isTag: true },
+      { key: "dimension",      header: "Market / Subsystem",    tooltip: "Which market or subsystem",                    width: "w-36" },
+      { key: "description",    header: "Expected Resilience",   tooltip: "What resilience outcome is anticipated",       width: "",     textarea: true },
+      { key: "changeObserved", header: "Evidence Observed",     tooltip: "What evidence have you seen?",                 width: "",     textarea: true },
+      { key: "level",          header: "System Level",          tooltip: "Level of the system",                          width: "w-28", isLevel: true },
+      { key: "status",         header: "Status",                tooltip: "Current state of this resilience dimension",   width: "w-28", isStatus: true },
     ],
     tagOptions: [
       { value: "robustness",       label: "Robustness",       desc: "Ability to absorb shocks without major disruption" },
@@ -125,16 +128,15 @@ const FRAMEWORKS: FrameworkDef[] = [
     org: "Wilson-Grau / USAID",
     color: "border-orange-300 bg-orange-50",
     accent: "bg-orange-500",
-    description:
-      "Works backwards from observed outcomes — collecting evidence of what actually changed and then analysing how the intervention contributed.",
+    description: "Works backwards from observed outcomes — collecting evidence of what actually changed and how the intervention contributed.",
     useCase: "Best for complex, emergent programmes where linear attribution is difficult and stakeholder-driven evidence matters.",
     cols: [
-      { key: "dimension",      header: "Who Changed",             tooltip: "The social actor (individual, org, system) that changed",  width: "w-36",  textarea: false },
-      { key: "frameworkTag",   header: "Outcome Type",            tooltip: "Category of the outcome",                                  width: "w-36",  isTag: true },
-      { key: "description",    header: "Outcome Statement",       tooltip: "What changed, how, and why it is significant",             width: "",      textarea: true },
-      { key: "changeObserved", header: "Evidence & Source",       tooltip: "Data or source confirming this outcome occurred",          width: "",      textarea: true },
-      { key: "level",          header: "Scope",                   tooltip: "Geographic or organisational scope",                       width: "w-28",  isLevel: true },
-      { key: "status",         header: "Verification",            tooltip: "Level of verification of this outcome",                    width: "w-32",  isStatus: true },
+      { key: "dimension",      header: "Who Changed",         tooltip: "The social actor that changed",                  width: "w-36" },
+      { key: "frameworkTag",   header: "Outcome Type",        tooltip: "Category of the outcome",                        width: "w-36", isTag: true },
+      { key: "description",    header: "Outcome Statement",   tooltip: "What changed, how, and why it is significant",   width: "",     textarea: true },
+      { key: "changeObserved", header: "Evidence & Source",   tooltip: "Data or source confirming this outcome",         width: "",     textarea: true },
+      { key: "level",          header: "Scope",               tooltip: "Geographic or organisational scope",             width: "w-28", isLevel: true },
+      { key: "status",         header: "Verification",        tooltip: "Level of verification",                          width: "w-32", isStatus: true },
     ],
     tagOptions: [
       { value: "practices",     label: "Practices",     desc: "Changes in what actors do" },
@@ -144,9 +146,9 @@ const FRAMEWORKS: FrameworkDef[] = [
       { value: "resources",     label: "Resources",     desc: "Changes in access to or use of resources" },
     ],
     statusOptions: [
-      { value: "unverified",   label: "Unverified",   color: "bg-red-100 text-red-800 border-red-300" },
-      { value: "partial",      label: "Partly verified", color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
-      { value: "verified",     label: "Verified",     color: "bg-emerald-100 text-emerald-800 border-emerald-300" },
+      { value: "unverified", label: "Unverified",      color: "bg-red-100 text-red-800 border-red-300" },
+      { value: "partial",    label: "Partly verified", color: "bg-yellow-100 text-yellow-800 border-yellow-300" },
+      { value: "verified",   label: "Verified",        color: "bg-emerald-100 text-emerald-800 border-emerald-300" },
     ],
     levelOptions: [
       { value: "local",    label: "Local" },
@@ -161,28 +163,27 @@ const FRAMEWORKS: FrameworkDef[] = [
     org: "Davies & Dart",
     color: "border-rose-300 bg-rose-50",
     accent: "bg-rose-500",
-    description:
-      "A participatory technique that collects stories of significant change from stakeholders, which panels then review to select the 'most significant'.",
-    useCase: "Best for capturing unexpected or qualitative changes, elevating beneficiary voices, and communicating impact to diverse audiences.",
+    description: "A participatory technique that collects stories of significant change from stakeholders, which panels then review to select the 'most significant'.",
+    useCase: "Best for capturing unexpected or qualitative changes, elevating beneficiary voices, and communicating impact.",
     cols: [
-      { key: "frameworkTag",   header: "Domain",                  tooltip: "Thematic domain of the story",                            width: "w-36",  isTag: true },
-      { key: "dimension",      header: "Story Title",             tooltip: "Short title for this change story",                       width: "w-40",  textarea: false },
-      { key: "description",    header: "The Story",               tooltip: "Full narrative of the change — what happened, when, where, who was involved", width: "", textarea: true },
-      { key: "changeObserved", header: "Why Most Significant?",   tooltip: "Why this change matters above others in this period",     width: "",      textarea: true },
-      { key: "level",          header: "Scope",                   tooltip: "Geographic or community scope of the story",              width: "w-28",  isLevel: true },
-      { key: "status",         header: "Review Status",           tooltip: "Stage in the MSC panel review process",                   width: "w-32",  isStatus: true },
+      { key: "frameworkTag",   header: "Domain",              tooltip: "Thematic domain of the story",                   width: "w-36", isTag: true },
+      { key: "dimension",      header: "Story Title",         tooltip: "Short title for this change story",              width: "w-40" },
+      { key: "description",    header: "The Story",           tooltip: "Full narrative of the change",                   width: "",     textarea: true },
+      { key: "changeObserved", header: "Why Most Significant?",tooltip: "Why this change matters above others",          width: "",     textarea: true },
+      { key: "level",          header: "Scope",               tooltip: "Geographic or community scope",                  width: "w-28", isLevel: true },
+      { key: "status",         header: "Review Status",       tooltip: "Stage in the MSC panel review process",          width: "w-32", isStatus: true },
     ],
     tagOptions: [
-      { value: "livelihoods",   label: "Livelihoods",   desc: "Income, assets, economic wellbeing" },
-      { value: "access",        label: "Access",        desc: "Access to services, markets, information" },
-      { value: "empowerment",   label: "Empowerment",   desc: "Agency, voice, decision-making power" },
-      { value: "environment",   label: "Environment",   desc: "Natural resources, climate, land" },
-      { value: "wellbeing",     label: "Wellbeing",     desc: "Health, safety, nutrition, happiness" },
-      { value: "other",         label: "Other",         desc: "" },
+      { value: "livelihoods", label: "Livelihoods", desc: "Income, assets, economic wellbeing" },
+      { value: "access",      label: "Access",      desc: "Access to services, markets, information" },
+      { value: "empowerment", label: "Empowerment", desc: "Agency, voice, decision-making power" },
+      { value: "environment", label: "Environment", desc: "Natural resources, climate, land" },
+      { value: "wellbeing",   label: "Wellbeing",   desc: "Health, safety, nutrition, happiness" },
+      { value: "other",       label: "Other",       desc: "" },
     ],
     statusOptions: [
-      { value: "draft",          label: "Draft",          color: "bg-muted text-muted-foreground border-border" },
-      { value: "panel-reviewed", label: "Panel reviewed", color: "bg-blue-100 text-blue-800 border-blue-300" },
+      { value: "draft",          label: "Draft",               color: "bg-muted text-muted-foreground border-border" },
+      { value: "panel-reviewed", label: "Panel reviewed",      color: "bg-blue-100 text-blue-800 border-blue-300" },
       { value: "verified",       label: "Selected / Verified", color: "bg-emerald-100 text-emerald-800 border-emerald-300" },
     ],
     levelOptions: [
@@ -203,33 +204,46 @@ interface Entry {
   level: string;
   status: string;
   frameworkTag: string;
+  periodLabel: string;
   position: number;
 }
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
 
-// ─── Tag badge ────────────────────────────────────────────────────────────────
+// ─── Period generation ────────────────────────────────────────────────────────
+function generatePeriods(startYear: number, endYear: number, granularity: Granularity): string[] {
+  const periods: string[] = [];
+  const totalYears = endYear - startYear + 1;
+  for (let y = 1; y <= totalYears; y++) {
+    if (granularity === "annual") {
+      periods.push(`Y${y}`);
+    } else if (granularity === "biannual") {
+      periods.push(`H1 Y${y}`, `H2 Y${y}`);
+    } else {
+      periods.push(`Q1 Y${y}`, `Q2 Y${y}`, `Q3 Y${y}`, `Q4 Y${y}`);
+    }
+  }
+  return periods;
+}
+
+// ─── Tag / status badge helpers ───────────────────────────────────────────────
 function TagBadge({ value, fw }: { value: string; fw: FrameworkDef }) {
   const opt = fw.tagOptions.find(o => o.value === value);
   const colors: Record<string, string> = {
-    // AAER
     adopt: "bg-violet-100 text-violet-800 border-violet-300",
     adapt: "bg-blue-100 text-blue-800 border-blue-300",
     expand: "bg-emerald-100 text-emerald-800 border-emerald-300",
     respond: "bg-orange-100 text-orange-800 border-orange-300",
-    // MSR
     robustness: "bg-teal-100 text-teal-800 border-teal-300",
     redundancy: "bg-cyan-100 text-cyan-800 border-cyan-300",
     rapidity: "bg-blue-100 text-blue-800 border-blue-300",
     adaptability: "bg-emerald-100 text-emerald-800 border-emerald-300",
     transformability: "bg-purple-100 text-purple-800 border-purple-300",
-    // OH
     practices: "bg-orange-100 text-orange-800 border-orange-300",
     policies: "bg-red-100 text-red-800 border-red-300",
     relationships: "bg-pink-100 text-pink-800 border-pink-300",
     norms: "bg-yellow-100 text-yellow-800 border-yellow-300",
     resources: "bg-green-100 text-green-800 border-green-300",
-    // MSC
     livelihoods: "bg-green-100 text-green-800 border-green-300",
     access: "bg-blue-100 text-blue-800 border-blue-300",
     empowerment: "bg-purple-100 text-purple-800 border-purple-300",
@@ -244,7 +258,6 @@ function TagBadge({ value, fw }: { value: string; fw: FrameworkDef }) {
   );
 }
 
-// ─── Status badge ─────────────────────────────────────────────────────────────
 function StatusBadge({ value, fw }: { value: string; fw: FrameworkDef }) {
   const opt = fw.statusOptions.find(o => o.value === value);
   return (
@@ -254,7 +267,7 @@ function StatusBadge({ value, fw }: { value: string; fw: FrameworkDef }) {
   );
 }
 
-// ─── View row ─────────────────────────────────────────────────────────────────
+// ─── Generic table entry row ──────────────────────────────────────────────────
 function EntryRow({ entry, rowNum, fw, onEdit, onDelete }: {
   entry: Entry; rowNum: number; fw: FrameworkDef;
   onEdit: () => void; onDelete: () => void;
@@ -291,7 +304,6 @@ function EntryRow({ entry, rowNum, fw, onEdit, onDelete }: {
   );
 }
 
-// ─── Edit / create row ────────────────────────────────────────────────────────
 function EditRow({ initial, rowNum, fw, onSave, onCancel }: {
   initial: Partial<Entry>; rowNum: number; fw: FrameworkDef;
   onSave: (d: Omit<Entry, "id" | "theoryId" | "position">) => void;
@@ -304,17 +316,9 @@ function EditRow({ initial, rowNum, fw, onSave, onCancel }: {
     level:          initial.level          ?? fw.levelOptions[0].value,
     status:         initial.status         ?? fw.statusOptions[0].value,
     frameworkTag:   initial.frameworkTag   ?? fw.tagOptions[0].value,
+    periodLabel:    initial.periodLabel    ?? "",
   });
   const set = (k: string, v: string) => setVals(p => ({ ...p, [k]: v }));
-
-  const handleSave = () => {
-    onSave({
-      dimension: vals.dimension, description: vals.description,
-      changeObserved: vals.changeObserved, level: vals.level,
-      status: vals.status, frameworkTag: vals.frameworkTag,
-    });
-  };
-
   return (
     <tr className="bg-primary/5 border-b border-border align-top">
       <td className="px-3 py-2 text-sm font-bold text-muted-foreground text-center">{rowNum}</td>
@@ -336,40 +340,30 @@ function EditRow({ initial, rowNum, fw, onSave, onCancel }: {
             <Select value={vals.status} onValueChange={v => set("status", v)}>
               <SelectTrigger className="text-sm h-8"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {fw.statusOptions.map(o => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                ))}
+                {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
               </SelectContent>
             </Select>
           ) : col.isLevel ? (
             <Select value={vals.level} onValueChange={v => set("level", v)}>
               <SelectTrigger className="text-sm h-8"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {fw.levelOptions.map(o => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-                ))}
+                {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
               </SelectContent>
             </Select>
           ) : col.textarea ? (
-            <Textarea
-              value={vals[col.key as string]}
-              onChange={e => set(col.key as string, e.target.value)}
-              className="text-sm min-h-[64px]"
-              placeholder={col.header + "…"}
-            />
+            <Textarea value={vals[col.key as string]} onChange={e => set(col.key as string, e.target.value)}
+              className="text-sm min-h-[64px]" placeholder={col.header + "…"} />
           ) : (
-            <input
-              value={vals[col.key as string]}
-              onChange={e => set(col.key as string, e.target.value)}
+            <input value={vals[col.key as string]} onChange={e => set(col.key as string, e.target.value)}
               className="w-full text-sm h-8 px-3 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-              placeholder={col.header + "…"}
-            />
+              placeholder={col.header + "…"} />
           )}
         </td>
       ))}
       <td className="px-3 py-2">
         <div className="flex gap-1 pt-1">
-          <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600" onClick={handleSave}>
+          <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600"
+            onClick={() => onSave({ dimension: vals.dimension, description: vals.description, changeObserved: vals.changeObserved, level: vals.level, status: vals.status, frameworkTag: vals.frameworkTag, periodLabel: vals.periodLabel })}>
             <Check className="w-3.5 h-3.5" />
           </Button>
           <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={onCancel}>
@@ -381,7 +375,7 @@ function EditRow({ initial, rowNum, fw, onSave, onCancel }: {
   );
 }
 
-// ─── Framework selector screen ────────────────────────────────────────────────
+// ─── Framework selector ───────────────────────────────────────────────────────
 function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void }) {
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
@@ -389,25 +383,19 @@ function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
           <GitBranch className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Choose a Systemic Change Framework</h2>
+        <h2 className="text-2xl font-bold mb-2">Choose a Systemic Change Framework</h2>
         <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-          Select the industry-standard approach that best fits your programme context. This will shape how you capture and track systemic change for this theory.
+          Select the industry-standard approach that best fits your programme context. You can switch at any time — existing entries are preserved.
         </p>
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {FRAMEWORKS.map(fw => (
-          <button
-            key={fw.key}
-            onClick={() => onSelect(fw.key)}
-            className={`text-left rounded-xl border-2 p-5 transition-all hover:shadow-md hover:scale-[1.01] active:scale-100 group ${fw.color}`}
-          >
+          <button key={fw.key} onClick={() => onSelect(fw.key)}
+            className={`text-left rounded-xl border-2 p-5 transition-all hover:shadow-md hover:scale-[1.01] active:scale-100 group ${fw.color}`}>
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
-                <span className={`inline-block text-xs font-bold uppercase tracking-widest text-white px-2.5 py-1 rounded-full mb-2 ${fw.accent}`}>
-                  {fw.abbr}
-                </span>
-                <h3 className="text-sm font-bold text-foreground leading-snug">{fw.label}</h3>
+                <span className={`inline-block text-xs font-bold uppercase tracking-widest text-white px-2.5 py-1 rounded-full mb-2 ${fw.accent}`}>{fw.abbr}</span>
+                <h3 className="text-sm font-bold leading-snug">{fw.label}</h3>
                 <p className="text-[11px] text-muted-foreground mt-0.5">By {fw.org}</p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground/50 shrink-0 mt-1 group-hover:text-foreground transition-colors" />
@@ -421,10 +409,427 @@ function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void
           </button>
         ))}
       </div>
+    </div>
+  );
+}
 
-      <p className="text-center text-xs text-muted-foreground mt-8">
-        You can switch frameworks at any time — existing entries will be preserved.
-      </p>
+// ─── AAER Settings panel ──────────────────────────────────────────────────────
+interface AaerSettings { startYear: number; endYear: number; granularity: Granularity }
+
+function AaerSettingsPanel({ settings, onSave }: {
+  settings: AaerSettings;
+  onSave: (s: AaerSettings) => void;
+}) {
+  const [open, setOpen] = useState(!settings.startYear);
+  const [local, setLocal] = useState(settings);
+  const curYear = new Date().getFullYear();
+  const years = Array.from({ length: 20 }, (_, i) => curYear - 5 + i);
+
+  const handleSave = () => {
+    if (local.startYear && local.endYear && local.endYear >= local.startYear) {
+      onSave(local);
+      setOpen(false);
+    }
+  };
+
+  const periods = local.startYear && local.endYear
+    ? generatePeriods(local.startYear, local.endYear, local.granularity)
+    : [];
+
+  return (
+    <div className="rounded-xl border border-violet-200 bg-violet-50 overflow-hidden mb-4">
+      <button onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-violet-100 transition-colors">
+        <Settings className="w-4 h-4 text-violet-600 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-semibold text-violet-900">Intervention Timeline</span>
+          {settings.startYear && settings.endYear ? (
+            <span className="ml-3 text-xs text-violet-600">
+              {settings.startYear}–{settings.endYear} · {settings.granularity} · {generatePeriods(settings.startYear, settings.endYear, settings.granularity).length} periods
+            </span>
+          ) : (
+            <span className="ml-3 text-xs text-violet-500 italic">Not configured — click to set up</span>
+          )}
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-violet-500" /> : <ChevronDown className="w-4 h-4 text-violet-500" />}
+      </button>
+
+      {open && (
+        <div className="border-t border-violet-200 px-5 py-4 bg-white/70">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Start Year</Label>
+              <Select value={String(local.startYear || "")} onValueChange={v => setLocal(p => ({ ...p, startYear: Number(v) }))}>
+                <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Select year" /></SelectTrigger>
+                <SelectContent>
+                  {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">End Year</Label>
+              <Select value={String(local.endYear || "")} onValueChange={v => setLocal(p => ({ ...p, endYear: Number(v) }))}>
+                <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Select year" /></SelectTrigger>
+                <SelectContent>
+                  {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Period Granularity</Label>
+              <Select value={local.granularity} onValueChange={v => setLocal(p => ({ ...p, granularity: v as Granularity }))}>
+                <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="annual">Annual (Y1, Y2…)</SelectItem>
+                  <SelectItem value="biannual">Bi-annual (H1 Y1, H2 Y1…)</SelectItem>
+                  <SelectItem value="quarterly">Quarterly (Q1 Y1, Q2 Y1…)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {periods.length > 0 && (
+            <div className="mb-4">
+              <p className="text-[11px] font-semibold text-muted-foreground mb-2">Generated periods ({periods.length}):</p>
+              <div className="flex flex-wrap gap-1.5">
+                {periods.map(p => (
+                  <span key={p} className="text-[11px] bg-violet-100 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full font-medium">{p}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          <Button size="sm" className="bg-violet-600 hover:bg-violet-700 text-white" onClick={handleSave}
+            disabled={!local.startYear || !local.endYear || local.endYear < local.startYear}>
+            <Check className="w-3.5 h-3.5 mr-1.5" />Apply Timeline
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── AAER cell modal ──────────────────────────────────────────────────────────
+interface CellModalState {
+  actor: string;
+  period: string;
+  entry: Entry | null;
+}
+
+function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
+  state: CellModalState;
+  onClose: () => void;
+  onSave: (data: Omit<Entry, "id" | "theoryId" | "position">) => void;
+  onDelete: () => void;
+  fw: FrameworkDef;
+}) {
+  const [vals, setVals] = useState({
+    frameworkTag:   state.entry?.frameworkTag   ?? "adopt",
+    description:    state.entry?.description    ?? "",
+    changeObserved: state.entry?.changeObserved ?? "",
+    level:          state.entry?.level          ?? "actor",
+    status:         state.entry?.status         ?? "plausible",
+  });
+  const set = (k: string, v: string) => setVals(p => ({ ...p, [k]: v }));
+
+  const handleSave = () => {
+    onSave({
+      dimension:      state.actor,
+      frameworkTag:   vals.frameworkTag,
+      description:    vals.description,
+      changeObserved: vals.changeObserved,
+      level:          vals.level,
+      status:         vals.status,
+      periodLabel:    state.period,
+    });
+  };
+
+  const stage = AAER_STAGE_COLORS[vals.frameworkTag];
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <span className="font-bold">{state.actor}</span>
+            <span className="text-muted-foreground">·</span>
+            <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${stage?.bg} ${stage?.text} ${stage?.border}`}>
+              {state.period}
+            </span>
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-1">
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">AAER Stage</Label>
+            <div className="grid grid-cols-4 gap-2">
+              {fw.tagOptions.map(opt => {
+                const s = AAER_STAGE_COLORS[opt.value];
+                const active = vals.frameworkTag === opt.value;
+                return (
+                  <button key={opt.value} onClick={() => set("frameworkTag", opt.value)}
+                    className={`rounded-lg border-2 px-3 py-2 text-center transition-all ${active
+                      ? `${s.bg} ${s.text} ${s.border} shadow-sm`
+                      : "border-border bg-background hover:bg-muted text-muted-foreground"}`}>
+                    <div className="text-sm font-bold">{opt.label}</div>
+                    <div className="text-[10px] mt-0.5 leading-tight opacity-75">{opt.desc?.split(" ").slice(0, 4).join(" ")}…</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Scale / Reach</Label>
+              <Select value={vals.level} onValueChange={v => set("level", v)}>
+                <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Confidence</Label>
+              <Select value={vals.status} onValueChange={v => set("status", v)}>
+                <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">What changed / what they did</Label>
+            <Textarea value={vals.description} onChange={e => set("description", e.target.value)}
+              className="text-sm min-h-[72px]" placeholder="Describe what this actor did during this period…" />
+          </div>
+
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Evidence / Source</Label>
+            <Textarea value={vals.changeObserved} onChange={e => set("changeObserved", e.target.value)}
+              className="text-sm min-h-[56px]" placeholder="Data, observations, or sources confirming this change…" />
+          </div>
+        </div>
+
+        <DialogFooter className="flex items-center gap-2">
+          {state.entry && (
+            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive mr-auto" onClick={onDelete}>
+              <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
+            </Button>
+          )}
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" onClick={handleSave} className="bg-violet-600 hover:bg-violet-700 text-white">
+            <Check className="w-3.5 h-3.5 mr-1.5" />{state.entry ? "Update" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── AAER Matrix view ─────────────────────────────────────────────────────────
+function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
+  entries: Entry[];
+  periods: string[];
+  fw: FrameworkDef;
+  onCellClick: (actor: string, period: string, entry: Entry | null) => void;
+  theory: any;
+}) {
+  // Derive unique actors from entries (preserving order of first appearance)
+  const actorOrder = useRef<string[]>([]);
+  const [newActor, setNewActor] = useState("");
+  const [addingActor, setAddingActor] = useState(false);
+
+  // Collect actors from entries + any locally added ones
+  const entryActors = entries.map(e => e.dimension).filter(Boolean);
+  entryActors.forEach(a => {
+    if (!actorOrder.current.includes(a)) actorOrder.current.push(a);
+  });
+  const actors = actorOrder.current.length > 0 ? actorOrder.current : [];
+
+  // Index entries by actor::period
+  const index: Record<string, Entry> = {};
+  entries.forEach(e => {
+    if (e.dimension && e.periodLabel) index[`${e.dimension}::${e.periodLabel}`] = e;
+  });
+
+  const handleAddActor = () => {
+    const name = newActor.trim();
+    if (name && !actorOrder.current.includes(name)) {
+      actorOrder.current = [...actorOrder.current, name];
+      // Trigger a click on the first period for this actor
+      if (periods.length > 0) onCellClick(name, periods[0], null);
+    }
+    setNewActor("");
+    setAddingActor(false);
+  };
+
+  if (periods.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-violet-300 bg-violet-50/50 p-10 text-center">
+        <Settings className="w-8 h-8 text-violet-300 mx-auto mb-3" />
+        <p className="text-sm font-medium text-violet-700">Configure the intervention timeline above</p>
+        <p className="text-xs text-violet-500 mt-1">Set start year, end year, and granularity to generate your tracking matrix.</p>
+      </div>
+    );
+  }
+
+  // Stage progression arrow for a row
+  const getRowStages = (actor: string) =>
+    periods.map(p => index[`${actor}::${p}`]?.frameworkTag ?? null);
+
+  return (
+    <div className="space-y-4">
+      {/* Legend */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-xs font-semibold text-muted-foreground mr-1">AAER Stages:</span>
+        {fw.tagOptions.map(opt => {
+          const s = AAER_STAGE_COLORS[opt.value];
+          return (
+            <span key={opt.value} className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${s.bg} ${s.text} ${s.border}`}>
+              {opt.label}
+            </span>
+          );
+        })}
+        <span className="text-[11px] border border-dashed border-border text-muted-foreground/50 px-2.5 py-0.5 rounded-full">No data</span>
+      </div>
+
+      {/* Matrix table */}
+      <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="border-collapse w-full" style={{ minWidth: `${Math.max(600, 160 + periods.length * 80)}px` }}>
+            <thead>
+              <tr className="bg-muted/70 border-b border-border">
+                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-40 min-w-[160px]">
+                  Actor / Market Firm
+                </th>
+                {periods.map(p => (
+                  <th key={p} className="px-2 py-3 text-center text-[11px] font-bold text-muted-foreground min-w-[72px]">
+                    {p}
+                  </th>
+                ))}
+                <th className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground w-24">Progress</th>
+              </tr>
+            </thead>
+            <tbody>
+              {actors.map((actor, ai) => {
+                const rowStages = getRowStages(actor);
+                const nonEmpty = rowStages.filter(Boolean);
+                const latestStage = nonEmpty[nonEmpty.length - 1];
+                const latestColor = latestStage ? AAER_STAGE_COLORS[latestStage] : null;
+                return (
+                  <tr key={actor} className={`border-b border-border/50 last:border-0 ${ai % 2 === 0 ? "bg-background" : "bg-muted/20"} hover:bg-violet-50/40 transition-colors`}>
+                    <td className="px-4 py-3 sticky left-0 z-10 border-r border-border/30"
+                      style={{ background: ai % 2 === 0 ? "white" : "rgb(249 250 251 / 0.8)" }}>
+                      <div className="text-sm font-semibold text-foreground leading-tight">{actor}</div>
+                      {latestColor && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border mt-1 inline-block ${latestColor.bg} ${latestColor.text} ${latestColor.border}`}>
+                          Currently: {latestColor.label}
+                        </span>
+                      )}
+                    </td>
+                    {periods.map(period => {
+                      const entry = index[`${actor}::${period}`];
+                      const stage = entry ? AAER_STAGE_COLORS[entry.frameworkTag] : null;
+                      const confOpt = entry ? fw.statusOptions.find(s => s.value === entry.status) : null;
+                      return (
+                        <td key={period} className="px-1.5 py-2 text-center">
+                          <button onClick={() => onCellClick(actor, period, entry ?? null)}
+                            className={`w-full min-h-[52px] rounded-lg border-2 transition-all hover:shadow-sm flex flex-col items-center justify-center gap-1 px-1 py-1.5 ${
+                              stage
+                                ? `${stage.bg} ${stage.border} hover:opacity-80`
+                                : "border-dashed border-border/40 bg-transparent hover:border-violet-300 hover:bg-violet-50/50"
+                            }`}>
+                            {stage ? (
+                              <>
+                                <span className={`text-xs font-black ${stage.text}`}>{stage.abbr}</span>
+                                {confOpt && (
+                                  <span className="text-[9px] leading-none text-center opacity-70 font-medium">
+                                    {confOpt.label}
+                                  </span>
+                                )}
+                              </>
+                            ) : (
+                              <Plus className="w-3.5 h-3.5 text-muted-foreground/30" />
+                            )}
+                          </button>
+                        </td>
+                      );
+                    })}
+                    {/* Progress column */}
+                    <td className="px-3 py-2 text-center">
+                      <div className="flex items-center justify-center gap-0.5">
+                        {rowStages.map((s, i) => {
+                          const col = s ? AAER_STAGE_COLORS[s] : null;
+                          return col ? (
+                            <span key={i} className={`w-2.5 h-2.5 rounded-full ${col.bg.replace("bg-", "bg-").replace("-100", "-400")}`} title={col.label} />
+                          ) : (
+                            <span key={i} className="w-2.5 h-2.5 rounded-full bg-muted/40" />
+                          );
+                        })}
+                      </div>
+                      <span className="text-[10px] text-muted-foreground mt-1 block">{nonEmpty.length}/{periods.length}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {/* Add actor row */}
+              <tr className="border-t border-dashed border-border/40 bg-muted/10">
+                <td colSpan={periods.length + 2} className="px-4 py-3">
+                  {addingActor ? (
+                    <div className="flex items-center gap-2">
+                      <input autoFocus value={newActor} onChange={e => setNewActor(e.target.value)}
+                        onKeyDown={e => { if (e.key === "Enter") handleAddActor(); if (e.key === "Escape") setAddingActor(false); }}
+                        className="text-sm h-8 px-3 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-violet-400 w-64"
+                        placeholder="Actor or firm name…" />
+                      <Button size="sm" className="h-8 bg-violet-600 hover:bg-violet-700 text-white" onClick={handleAddActor}>Add</Button>
+                      <Button size="sm" variant="ghost" className="h-8" onClick={() => setAddingActor(false)}>Cancel</Button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setAddingActor(true)}
+                      className="flex items-center gap-2 text-sm text-violet-600 hover:text-violet-800 font-medium transition-colors">
+                      <Plus className="w-4 h-4" />Add Actor / Market Firm
+                    </button>
+                  )}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Detail cards for entries with descriptions */}
+      {entries.filter(e => e.description || e.changeObserved).length > 0 && (
+        <div>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Entry Details</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {entries.filter(e => e.description || e.changeObserved).map(e => {
+              const s = AAER_STAGE_COLORS[e.frameworkTag];
+              const levelLabel = fw.levelOptions.find(l => l.value === e.level)?.label ?? e.level;
+              return (
+                <div key={e.id} className={`rounded-lg border p-3 ${s?.bg ?? "bg-muted/30"} ${s?.border ?? "border-border"}`}>
+                  <div className="flex items-start gap-2 mb-2">
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border shrink-0 ${s?.bg} ${s?.text} ${s?.border}`}>{s?.label}</span>
+                    <span className="text-xs font-semibold text-foreground">{e.dimension}</span>
+                    <span className="text-xs text-muted-foreground ml-auto shrink-0">{e.periodLabel}</span>
+                  </div>
+                  {e.description && <p className="text-xs text-foreground/80 leading-relaxed mb-1.5">{e.description}</p>}
+                  {e.changeObserved && (
+                    <p className="text-[11px] text-muted-foreground bg-white/60 rounded px-2 py-1 border border-white/80">
+                      <span className="font-semibold">Evidence: </span>{e.changeObserved}
+                    </p>
+                  )}
+                  <div className="flex gap-2 mt-2">
+                    <span className="text-[10px] text-muted-foreground bg-white/60 border border-white/80 px-2 py-0.5 rounded-full">{levelLabel}</span>
+                    {(() => { const c = fw.statusOptions.find(o => o.value === e.status); return c ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${c.color}`}>{c.label}</span> : null; })()}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -439,9 +844,7 @@ export default function SystemicChange() {
   const id = Number(params?.id);
   const { data: theory, isLoading: theoryLoading } = useGetTheory(id);
   const updateTheory = useUpdateTheory({
-    mutation: {
-      onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(id) }),
-    },
+    mutation: { onSuccess: () => queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(id) }) },
   });
 
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -450,8 +853,10 @@ export default function SystemicChange() {
   const [addingRow, setAddingRow] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [showSelector, setShowSelector] = useState(false);
-  // Local framework key — set immediately on click, synced with theory on load
   const [localFrameworkKey, setLocalFrameworkKey] = useState<FrameworkKey | null>(null);
+  const [cellModal, setCellModal] = useState<CellModalState | null>(null);
+  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual" });
+  const [settingsSynced, setSettingsSynced] = useState(false);
 
   const loadEntries = async () => {
     if (!id || loading) return;
@@ -462,16 +867,22 @@ export default function SystemicChange() {
       setEntries(await res.json());
     } catch (err) {
       toast({ title: "Failed to load entries", description: String(err), variant: "destructive" });
-    } finally {
-      setLoading(false);
-      setLoaded(true);
-    }
+    } finally { setLoading(false); setLoaded(true); }
   };
 
-  // Seed local state from server once theory loads
   useEffect(() => {
-    const key = (theory as any)?.systemicChangeFramework as FrameworkKey | null | undefined;
+    const t = theory as any;
+    if (!t) return;
+    const key = t.systemicChangeFramework as FrameworkKey | null | undefined;
     if (key && !localFrameworkKey) setLocalFrameworkKey(key);
+    if (!settingsSynced && (t.interventionStartYear || t.interventionEndYear)) {
+      setLocalSettings({
+        startYear:   t.interventionStartYear ?? 0,
+        endYear:     t.interventionEndYear   ?? 0,
+        granularity: (t.periodGranularity as Granularity) ?? "annual",
+      });
+      setSettingsSynced(true);
+    }
   }, [theory]);
 
   if (!loaded && !loading && id) loadEntries();
@@ -482,18 +893,29 @@ export default function SystemicChange() {
     updateTheory.mutate({ id, data: { systemicChangeFramework: key } as any });
   };
 
+  const saveSettings = (s: AaerSettings) => {
+    setLocalSettings(s);
+    setSettingsSynced(true);
+    updateTheory.mutate({
+      id, data: {
+        interventionStartYear: s.startYear,
+        interventionEndYear: s.endYear,
+        periodGranularity: s.granularity,
+      } as any,
+    });
+  };
+
   const handleCreate = async (data: Omit<Entry, "id" | "theoryId" | "position">) => {
     try {
       const res = await fetch(`${API_BASE}/theories/${id}/systemic-changes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
         body: JSON.stringify({ ...data, position: entries.length }),
       });
       if (!res.ok) throw new Error(await res.text());
       const created = await res.json() as Entry;
       setEntries(prev => [...prev, created]);
       setAddingRow(false);
+      setCellModal(null);
     } catch (err) {
       toast({ title: "Failed to create entry", description: String(err), variant: "destructive" });
     }
@@ -502,15 +924,14 @@ export default function SystemicChange() {
   const handleUpdate = async (entryId: number, data: Omit<Entry, "id" | "theoryId" | "position">) => {
     try {
       const res = await fetch(`${API_BASE}/theories/${id}/systemic-changes/${entryId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
+        method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include",
         body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error(await res.text());
       const updated = await res.json() as Entry;
       setEntries(prev => prev.map(e => e.id === entryId ? updated : e));
       setEditingId(null);
+      setCellModal(null);
     } catch (err) {
       toast({ title: "Failed to update entry", description: String(err), variant: "destructive" });
     }
@@ -519,27 +940,27 @@ export default function SystemicChange() {
   const handleDelete = async (entryId: number) => {
     if (!window.confirm("Delete this entry?")) return;
     try {
-      await fetch(`${API_BASE}/theories/${id}/systemic-changes/${entryId}`, {
-        method: "DELETE", credentials: "include",
-      });
+      await fetch(`${API_BASE}/theories/${id}/systemic-changes/${entryId}`, { method: "DELETE", credentials: "include" });
       setEntries(prev => prev.filter(e => e.id !== entryId));
+      setCellModal(null);
     } catch (err) {
-      toast({ title: "Failed to delete entry", description: String(err), variant: "destructive" });
+      toast({ title: "Failed to delete", description: String(err), variant: "destructive" });
     }
   };
 
-  // ── Loading ──
+  const handleCellSave = (data: Omit<Entry, "id" | "theoryId" | "position">) => {
+    if (cellModal?.entry) {
+      handleUpdate(cellModal.entry.id, data);
+    } else {
+      handleCreate(data);
+    }
+  };
+
   if (theoryLoading || !theory) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-      </div>
-    );
+    return <div className="flex h-full items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
   }
 
   const fw = FRAMEWORKS.find(f => f.key === localFrameworkKey);
-
-  // ── Framework selector screen ──
   if (!localFrameworkKey || showSelector) {
     return (
       <div className="flex flex-col h-full overflow-auto bg-background">
@@ -549,7 +970,7 @@ export default function SystemicChange() {
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-foreground leading-tight truncate">{theory.title}</h1>
+            <h1 className="text-lg font-bold leading-tight truncate">{theory.title}</h1>
             <p className="text-xs text-muted-foreground">Systemic Change — Select Framework</p>
           </div>
         </header>
@@ -558,154 +979,143 @@ export default function SystemicChange() {
     );
   }
 
-  // ── Framework tracker ──
-  const statusCounts = fw!.statusOptions.reduce((acc, s) => {
-    acc[s.value] = entries.filter(e => e.status === s.value).length;
-    return acc;
-  }, {} as Record<string, number>);
+  const isAaer = localFrameworkKey === "aaer";
+  const periods = localSettings.startYear && localSettings.endYear
+    ? generatePeriods(localSettings.startYear, localSettings.endYear, localSettings.granularity)
+    : [];
 
   return (
     <div className="flex flex-col h-full overflow-auto bg-background">
 
-      {/* ── Header ── */}
+      {/* Header */}
       <header className="flex items-center gap-3 px-6 py-4 border-b border-border bg-background/95 sticky top-0 z-10">
-        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0"
-          onClick={() => setLocation(`/theory/${id}`)}>
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setLocation(`/theory/${id}`)}>
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-bold text-foreground leading-tight truncate">{theory.title}</h1>
+          <h1 className="text-lg font-bold leading-tight truncate">{theory.title}</h1>
           <div className="flex items-center gap-2 mt-0.5">
             <p className="text-xs text-muted-foreground">Systemic Change</p>
-            <span className={`text-[10px] font-bold uppercase tracking-widest text-white px-2 py-0.5 rounded-full ${fw!.accent}`}>
-              {fw!.abbr}
-            </span>
+            <span className={`text-[10px] font-bold uppercase tracking-widest text-white px-2 py-0.5 rounded-full ${fw!.accent}`}>{fw!.abbr}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {fw!.statusOptions.map(s => (statusCounts[s.value] ?? 0) > 0 && (
-            <span key={s.value}
-              className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full border ${s.color}`}>
-              {statusCounts[s.value]} {s.label}
-            </span>
-          ))}
+        <div className="flex gap-2">
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowSelector(true)}>
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Switch Framework</span>
+            <RefreshCw className="w-3.5 h-3.5" /><span className="hidden sm:inline">Switch Framework</span>
           </Button>
-          <Button size="sm" className="gap-2"
-            onClick={() => { setAddingRow(true); setEditingId(null); }}>
-            <Plus className="w-4 h-4" />
-            Add Entry
-          </Button>
+          {!isAaer && (
+            <Button size="sm" className="gap-2" onClick={() => { setAddingRow(true); setEditingId(null); }}>
+              <Plus className="w-4 h-4" />Add Entry
+            </Button>
+          )}
         </div>
       </header>
 
       <div className="max-w-7xl mx-auto w-full px-6 py-6 space-y-6">
 
-        {/* ── Framework info banner ── */}
+        {/* Framework info */}
         <div className={`rounded-xl border-2 p-4 flex gap-4 items-start ${fw!.color}`}>
           <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${fw!.accent}`}>
             <Info className="w-4 h-4 text-white" />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="text-sm font-bold text-foreground">{fw!.label}</span>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-sm font-bold">{fw!.label}</span>
               <span className="text-[10px] text-muted-foreground">· {fw!.org}</span>
             </div>
             <p className="text-xs text-foreground/80 leading-relaxed">{fw!.description}</p>
           </div>
         </div>
 
-        {/* ── Table ── */}
-        <div className="rounded-xl border border-border overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse min-w-[900px]">
-              <thead>
-                <tr className="bg-muted/60 border-b border-border">
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-10">#</th>
-                  {fw!.cols.map(col => (
-                    <th key={col.key} className={`text-left px-3 py-3 font-semibold text-muted-foreground text-xs ${col.width ?? ""}`}>
-                      <div className="flex items-center gap-1">
-                        {col.header}
-                        {col.tooltip && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="w-3 h-3 text-muted-foreground/50 cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-[200px] text-xs">
-                              {col.tooltip}
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
-                    </th>
-                  ))}
-                  <th className="w-20 px-3 py-3" />
-                </tr>
-              </thead>
-              <tbody>
-                {entries.map((entry, i) =>
-                  editingId === entry.id ? (
-                    <EditRow key={entry.id} initial={entry} rowNum={i + 1} fw={fw!}
-                      onSave={d => handleUpdate(entry.id, d)}
-                      onCancel={() => setEditingId(null)} />
-                  ) : (
-                    <EntryRow key={entry.id} entry={entry} rowNum={i + 1} fw={fw!}
-                      onEdit={() => { setEditingId(entry.id); setAddingRow(false); }}
-                      onDelete={() => handleDelete(entry.id)} />
-                  )
-                )}
-
-                {addingRow && (
-                  <EditRow initial={{}} rowNum={entries.length + 1} fw={fw!}
-                    onSave={handleCreate}
-                    onCancel={() => setAddingRow(false)} />
-                )}
-
-                {entries.length === 0 && !addingRow && (
-                  <tr>
-                    <td colSpan={fw!.cols.length + 2} className="px-4 py-14 text-center">
-                      <GitBranch className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-sm font-medium text-muted-foreground">No entries yet</p>
-                      <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs mx-auto">
-                        Click "Add Entry" to start recording systemic changes using the {fw!.abbr} framework.
-                      </p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {!addingRow && entries.length > 0 && (
-          <Button variant="outline" size="sm" className="gap-2"
-            onClick={() => { setAddingRow(true); setEditingId(null); }}>
-            <Plus className="w-4 h-4" />Add Entry
-          </Button>
+        {/* AAER: Settings + Matrix */}
+        {isAaer && (
+          <>
+            <AaerSettingsPanel settings={localSettings} onSave={saveSettings} />
+            <AaerMatrix
+              entries={entries}
+              periods={periods}
+              fw={fw!}
+              theory={theory}
+              onCellClick={(actor, period, entry) => setCellModal({ actor, period, entry })}
+            />
+          </>
         )}
 
-        {/* ── Tag reference ── */}
-        <div className="rounded-xl border border-border bg-muted/20 p-5">
-          <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
-            {fw!.key === "aaer" ? "AAER Stage Reference" :
-             fw!.key === "msr"  ? "MSR Resilience Dimensions" :
-             fw!.key === "oh"   ? "Outcome Types" : "Story Domains"}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {fw!.tagOptions.map(tag => (
-              <div key={tag.value} className="rounded-lg border border-border bg-background p-3">
-                <div className="flex items-center gap-2 mb-1">
-                  <TagBadge value={tag.value} fw={fw!} />
-                </div>
-                {tag.desc && <p className="text-xs text-muted-foreground leading-relaxed">{tag.desc}</p>}
+        {/* Non-AAER: Table */}
+        {!isAaer && fw!.cols.length > 0 && (
+          <>
+            <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse min-w-[900px]">
+                  <thead>
+                    <tr className="bg-muted/60 border-b border-border">
+                      <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-10">#</th>
+                      {fw!.cols.map(col => (
+                        <th key={col.key} className={`text-left px-3 py-3 font-semibold text-muted-foreground text-xs ${col.width ?? ""}`}>
+                          <div className="flex items-center gap-1">
+                            {col.header}
+                            {col.tooltip && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Info className="w-3 h-3 text-muted-foreground/50 cursor-help" />
+                                </TooltipTrigger>
+                                <TooltipContent side="top" className="max-w-[200px] text-xs">{col.tooltip}</TooltipContent>
+                              </Tooltip>
+                            )}
+                          </div>
+                        </th>
+                      ))}
+                      <th className="w-20 px-3 py-3" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((entry, i) =>
+                      editingId === entry.id ? (
+                        <EditRow key={entry.id} initial={entry} rowNum={i + 1} fw={fw!}
+                          onSave={d => handleUpdate(entry.id, d)} onCancel={() => setEditingId(null)} />
+                      ) : (
+                        <EntryRow key={entry.id} entry={entry} rowNum={i + 1} fw={fw!}
+                          onEdit={() => { setEditingId(entry.id); setAddingRow(false); }}
+                          onDelete={() => handleDelete(entry.id)} />
+                      )
+                    )}
+                    {addingRow && (
+                      <EditRow initial={{}} rowNum={entries.length + 1} fw={fw!}
+                        onSave={handleCreate} onCancel={() => setAddingRow(false)} />
+                    )}
+                    {entries.length === 0 && !addingRow && (
+                      <tr>
+                        <td colSpan={fw!.cols.length + 2} className="px-4 py-14 text-center">
+                          <GitBranch className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+                          <p className="text-sm font-medium text-muted-foreground">No entries yet</p>
+                          <p className="text-xs text-muted-foreground/60 mt-1">Click "Add Entry" to start recording systemic changes.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+            {!addingRow && entries.length > 0 && (
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => { setAddingRow(true); setEditingId(null); }}>
+                <Plus className="w-4 h-4" />Add Entry
+              </Button>
+            )}
+          </>
+        )}
 
       </div>
+
+      {/* AAER cell modal */}
+      {cellModal && (
+        <AaerCellModal
+          state={cellModal}
+          fw={fw!}
+          onClose={() => setCellModal(null)}
+          onSave={handleCellSave}
+          onDelete={() => cellModal.entry && handleDelete(cellModal.entry.id)}
+        />
+      )}
     </div>
   );
 }

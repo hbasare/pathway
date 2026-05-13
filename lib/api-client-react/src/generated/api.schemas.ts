@@ -155,6 +155,9 @@ export interface TheoryDetail {
   strategyDocumentPath?: string;
   strategyDocumentName?: string;
   systemicChangeFramework?: string | null;
+  interventionStartYear?: number | null;
+  interventionEndYear?: number | null;
+  periodGranularity?: string;
   businessModelImagePath?: string;
   components: Component[];
   connections: Connection[];
@@ -184,6 +187,9 @@ export interface CreateTheory {
   strategyDocumentPath?: string;
   strategyDocumentName?: string;
   systemicChangeFramework?: string | null;
+  interventionStartYear?: number | null;
+  interventionEndYear?: number | null;
+  periodGranularity?: string;
   businessModelImagePath?: string;
 }
 
@@ -461,6 +467,7 @@ export interface SystemicChange {
   level: string;
   status: string;
   frameworkTag?: string;
+  periodLabel?: string;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -473,6 +480,7 @@ export interface CreateSystemicChange {
   level?: string;
   status?: string;
   frameworkTag?: string;
+  periodLabel?: string;
   position?: number;
 }
 

@@ -1139,6 +1139,14 @@ components:
         systemicChangeFramework:
           type: string
           nullable: true
+        interventionStartYear:
+          type: integer
+          nullable: true
+        interventionEndYear:
+          type: integer
+          nullable: true
+        periodGranularity:
+          type: string
         businessModelImagePath:
           type: string
         components:
@@ -1211,6 +1219,14 @@ components:
         systemicChangeFramework:
           type: string
           nullable: true
+        interventionStartYear:
+          type: integer
+          nullable: true
+        interventionEndYear:
+          type: integer
+          nullable: true
+        periodGranularity:
+          type: string
         businessModelImagePath:
           type: string
       required:
@@ -2004,6 +2020,8 @@ components:
           type: string
         frameworkTag:
           type: string
+        periodLabel:
+          type: string
         position:
           type: integer
         createdAt:
@@ -2038,6 +2056,8 @@ components:
         status:
           type: string
         frameworkTag:
+          type: string
+        periodLabel:
           type: string
         position:
           type: integer

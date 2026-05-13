@@ -13,5 +13,6 @@ export interface CreateSystemicChange {
   level?: string;
   status?: string;
   frameworkTag?: string;
+  periodLabel?: string;
   position?: number;
 }

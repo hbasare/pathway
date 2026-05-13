@@ -31,6 +31,9 @@ export interface TheoryDetail {
   strategyDocumentPath?: string;
   strategyDocumentName?: string;
   systemicChangeFramework?: string | null;
+  interventionStartYear?: number | null;
+  interventionEndYear?: number | null;
+  periodGranularity?: string;
   businessModelImagePath?: string;
   components: Component[];
   connections: Connection[];

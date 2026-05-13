@@ -385,6 +385,9 @@ export const CreateTheoryBody = zod.object({
   strategyDocumentPath: zod.string().optional(),
   strategyDocumentName: zod.string().optional(),
   systemicChangeFramework: zod.string().nullish(),
+  interventionStartYear: zod.number().nullish(),
+  interventionEndYear: zod.number().nullish(),
+  periodGranularity: zod.string().optional(),
   businessModelImagePath: zod.string().optional(),
 });
 
@@ -418,6 +421,9 @@ export const GetTheoryResponse = zod.object({
   strategyDocumentPath: zod.string().optional(),
   strategyDocumentName: zod.string().optional(),
   systemicChangeFramework: zod.string().nullish(),
+  interventionStartYear: zod.number().nullish(),
+  interventionEndYear: zod.number().nullish(),
+  periodGranularity: zod.string().optional(),
   businessModelImagePath: zod.string().optional(),
   components: zod.array(
     zod.object({
@@ -539,6 +545,9 @@ export const UpdateTheoryBody = zod.object({
   strategyDocumentPath: zod.string().optional(),
   strategyDocumentName: zod.string().optional(),
   systemicChangeFramework: zod.string().nullish(),
+  interventionStartYear: zod.number().nullish(),
+  interventionEndYear: zod.number().nullish(),
+  periodGranularity: zod.string().optional(),
   businessModelImagePath: zod.string().optional(),
 });
 
@@ -1304,6 +1313,7 @@ export const ListSystemicChangesResponseItem = zod.object({
   level: zod.string(),
   status: zod.string(),
   frameworkTag: zod.string().optional(),
+  periodLabel: zod.string().optional(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
@@ -1326,6 +1336,7 @@ export const CreateSystemicChangeBody = zod.object({
   level: zod.string().optional(),
   status: zod.string().optional(),
   frameworkTag: zod.string().optional(),
+  periodLabel: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -1344,6 +1355,7 @@ export const UpdateSystemicChangeBody = zod.object({
   level: zod.string().optional(),
   status: zod.string().optional(),
   frameworkTag: zod.string().optional(),
+  periodLabel: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -1356,6 +1368,7 @@ export const UpdateSystemicChangeResponse = zod.object({
   level: zod.string(),
   status: zod.string(),
   frameworkTag: zod.string().optional(),
+  periodLabel: zod.string().optional(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
