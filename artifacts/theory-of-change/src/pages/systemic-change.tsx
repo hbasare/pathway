@@ -205,6 +205,7 @@ interface Entry {
   status: string;
   frameworkTag: string;
   periodLabel: string;
+  stageData: string; // JSON: stage-specific guided answers
   position: number;
 }
 
@@ -507,6 +508,148 @@ function AaerSettingsPanel({ settings, onSave }: {
   );
 }
 
+// ─── Adopt guided questions ───────────────────────────────────────────────────
+interface AdoptData {
+  q1: string;
+  q2: string;
+  q3: { answer: string; notes: string };
+  q4: { answer: string; notes: string };
+  q5: { answer: string; notes: string };
+  q6: { answer: string; notes: string };
+  q7: { answer: string; notes: string };
+  keyQuestion: string;
+}
+
+const ADOPT_QUESTIONS = [
+  { id: "q1", num: 1, type: "number", label: "No. of partner(s)/market player(s) who have adopted the new business model (incremental).", unit: "partners" },
+  { id: "q2", num: 2, type: "percent", label: "Partner(s) contribution to the pilot.", unit: "%" },
+  { id: "q3", num: 3, type: "ynp", label: "Are the partners satisfied with the pilot? Are they able and willing to continue with the business model?" },
+  { id: "q4", num: 4, type: "ynp", label: "Has the pilot resulted in increased revenue/profit for the partner(s)?" },
+  { id: "q5", num: 5, type: "ynp", label: "Is the target group benefitting from and satisfied with the business model?" },
+  { id: "q6", num: 6, type: "yn", label: "Is there an agent within the organisation who believes in the intervention and champions the cause?" },
+  { id: "q7", num: 7, type: "ynu", label: "Will the organisation continue with the intervention in the absence of the champion/change agent?" },
+] as const;
+
+const DEFAULT_ADOPT: AdoptData = {
+  q1: "", q2: "",
+  q3: { answer: "", notes: "" }, q4: { answer: "", notes: "" },
+  q5: { answer: "", notes: "" }, q6: { answer: "", notes: "" },
+  q7: { answer: "", notes: "" },
+  keyQuestion: "",
+};
+
+function parseAdoptData(raw: string): AdoptData {
+  try {
+    const p = JSON.parse(raw || "{}");
+    return p.adopt ?? DEFAULT_ADOPT;
+  } catch { return DEFAULT_ADOPT; }
+}
+
+function YNButtons({ value, onChange, options }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string; active: string; inactive: string }[];
+}) {
+  return (
+    <div className="flex gap-1.5 flex-wrap">
+      {options.map(o => (
+        <button key={o.value} onClick={() => onChange(value === o.value ? "" : o.value)}
+          className={`text-xs font-semibold px-3 py-1 rounded-full border-2 transition-all ${value === o.value ? o.active : o.inactive}`}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const YNP_OPTS = [
+  { value: "yes",     label: "Yes",       active: "bg-emerald-100 text-emerald-800 border-emerald-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "partial", label: "Partially", active: "bg-amber-100 text-amber-800 border-amber-400",       inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "no",      label: "No",        active: "bg-red-100 text-red-800 border-red-400",             inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+];
+const YN_OPTS = [
+  { value: "yes", label: "Yes", active: "bg-emerald-100 text-emerald-800 border-emerald-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "no",  label: "No",  active: "bg-red-100 text-red-800 border-red-400",             inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+];
+const YNU_OPTS = [
+  { value: "yes",       label: "Yes",       active: "bg-emerald-100 text-emerald-800 border-emerald-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "uncertain", label: "Uncertain", active: "bg-amber-100 text-amber-800 border-amber-400",       inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "no",        label: "No",        active: "bg-red-100 text-red-800 border-red-400",             inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+];
+const KQ_OPTS = [
+  { value: "yes",       label: "Yes — likely to revert",   active: "bg-red-100 text-red-800 border-red-400",             inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "uncertain", label: "Uncertain",                active: "bg-amber-100 text-amber-800 border-amber-400",       inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+  { value: "no",        label: "No — they'd continue",     active: "bg-emerald-100 text-emerald-800 border-emerald-400", inactive: "border-border bg-background text-muted-foreground hover:bg-muted" },
+];
+
+function AdoptQuestionsPanel({ data, onChange }: { data: AdoptData; onChange: (d: AdoptData) => void }) {
+  const set = (key: keyof AdoptData, val: any) => onChange({ ...data, [key]: val });
+  const setQA = (key: keyof AdoptData, field: "answer" | "notes", val: string) =>
+    onChange({ ...data, [key]: { ...(data[key] as any), [field]: val } });
+
+  return (
+    <div className="space-y-3">
+      {/* Key Question */}
+      <div className="rounded-xl border-2 border-violet-300 bg-violet-50 p-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-violet-600 mb-1">Key Question</p>
+        <p className="text-xs font-semibold text-violet-900 mb-2.5 leading-snug">
+          If you left now, would partners return to their previous way of working?
+        </p>
+        <YNButtons value={data.keyQuestion} onChange={v => set("keyQuestion", v)} options={KQ_OPTS} />
+      </div>
+
+      {/* Q1 & Q2 side by side */}
+      <div className="grid grid-cols-2 gap-3">
+        {[{ id: "q1" as const, label: "Partners adopted", unit: "no." }, { id: "q2" as const, label: "Pilot contribution", unit: "%" }].map(q => (
+          <div key={q.id} className="rounded-lg border border-border bg-muted/30 p-3">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wide mb-1">
+              {q.id === "q1" ? "Q1" : "Q2"}
+            </p>
+            <p className="text-[11px] text-foreground leading-snug mb-2">
+              {q.id === "q1"
+                ? "No. of partners/market players who have adopted the new business model (incremental)"
+                : "Partner(s) contribution to the pilot"}
+            </p>
+            <div className="flex items-center gap-2">
+              <input type="number" min="0"
+                value={data[q.id]}
+                onChange={e => set(q.id, e.target.value)}
+                className="w-20 text-sm h-8 px-2 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-violet-400 text-center font-bold"
+                placeholder="0" />
+              <span className="text-xs text-muted-foreground">{q.unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Q3–Q7 */}
+      {ADOPT_QUESTIONS.filter(q => q.type !== "number" && q.type !== "percent").map(q => {
+        const qData = data[q.id as keyof AdoptData] as { answer: string; notes: string };
+        const opts = q.type === "ynp" ? YNP_OPTS : q.type === "yn" ? YN_OPTS : YNU_OPTS;
+        return (
+          <div key={q.id} className="rounded-lg border border-border bg-background p-3">
+            <div className="flex gap-2 mb-2">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-black shrink-0 mt-0.5">
+                {q.num}
+              </span>
+              <p className="text-xs text-foreground leading-snug">{q.label}</p>
+            </div>
+            <YNButtons value={qData.answer} onChange={v => setQA(q.id as any, "answer", v)} options={opts} />
+            {qData.answer && (
+              <input
+                value={qData.notes}
+                onChange={e => setQA(q.id as any, "notes", e.target.value)}
+                placeholder="Add notes (optional)…"
+                className="mt-2 w-full text-xs h-7 px-2 rounded border border-input bg-muted/40 focus:outline-none focus:ring-1 focus:ring-violet-300 text-muted-foreground placeholder:text-muted-foreground/50"
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── AAER cell modal ──────────────────────────────────────────────────────────
 interface CellModalState {
   actor: string;
@@ -521,6 +664,7 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
   onDelete: () => void;
   fw: FrameworkDef;
 }) {
+  const existingAdopt = parseAdoptData(state.entry?.stageData ?? "{}");
   const [vals, setVals] = useState({
     frameworkTag:   state.entry?.frameworkTag   ?? "adopt",
     description:    state.entry?.description    ?? "",
@@ -528,9 +672,13 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
     level:          state.entry?.level          ?? "actor",
     status:         state.entry?.status         ?? "plausible",
   });
+  const [adoptData, setAdoptData] = useState<AdoptData>(existingAdopt);
   const set = (k: string, v: string) => setVals(p => ({ ...p, [k]: v }));
 
   const handleSave = () => {
+    const stageData = vals.frameworkTag === "adopt"
+      ? JSON.stringify({ adopt: adoptData })
+      : state.entry?.stageData ?? "{}";
     onSave({
       dimension:      state.actor,
       frameworkTag:   vals.frameworkTag,
@@ -539,25 +687,28 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
       level:          vals.level,
       status:         vals.status,
       periodLabel:    state.period,
+      stageData,
     });
   };
 
   const stage = AAER_STAGE_COLORS[vals.frameworkTag];
+  const isAdopt = vals.frameworkTag === "adopt";
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className={`${isAdopt ? "max-w-2xl" : "max-w-lg"} max-h-[90vh] flex flex-col`}>
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2 text-base">
-            <span className="font-bold">{state.actor}</span>
-            <span className="text-muted-foreground">·</span>
-            <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${stage?.bg} ${stage?.text} ${stage?.border}`}>
+            <span className="font-bold truncate">{state.actor}</span>
+            <span className="text-muted-foreground shrink-0">·</span>
+            <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0 ${stage?.bg} ${stage?.text} ${stage?.border}`}>
               {state.period}
             </span>
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 py-1">
+        <div className="overflow-y-auto flex-1 space-y-4 py-1 pr-1">
+          {/* Stage selector */}
           <div>
             <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">AAER Stage</Label>
             <div className="grid grid-cols-4 gap-2">
@@ -577,41 +728,54 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Scale / Reach</Label>
-              <Select value={vals.level} onValueChange={v => set("level", v)}>
-                <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          {/* Adopt: guided questions */}
+          {isAdopt && (
+            <div className="border-t border-violet-200 pt-4">
+              <p className="text-xs font-bold text-violet-700 uppercase tracking-widest mb-3">Adoption Assessment</p>
+              <AdoptQuestionsPanel data={adoptData} onChange={setAdoptData} />
+            </div>
+          )}
+
+          {/* Common fields */}
+          <div className={`${isAdopt ? "border-t border-border pt-4" : ""} space-y-3`}>
+            {isAdopt && <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Additional Notes</p>}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Scale / Reach</Label>
+                <Select value={vals.level} onValueChange={v => set("level", v)}>
+                  <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Confidence</Label>
+                <Select value={vals.status} onValueChange={v => set("status", v)}>
+                  <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Confidence</Label>
-              <Select value={vals.status} onValueChange={v => set("status", v)}>
-                <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
+                {isAdopt ? "What did they adopt / narrative summary" : "What changed / what they did"}
+              </Label>
+              <Textarea value={vals.description} onChange={e => set("description", e.target.value)}
+                className="text-sm min-h-[64px]"
+                placeholder={isAdopt ? "Describe what this actor adopted and how…" : "Describe what this actor did during this period…"} />
             </div>
-          </div>
-
-          <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">What changed / what they did</Label>
-            <Textarea value={vals.description} onChange={e => set("description", e.target.value)}
-              className="text-sm min-h-[72px]" placeholder="Describe what this actor did during this period…" />
-          </div>
-
-          <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Evidence / Source</Label>
-            <Textarea value={vals.changeObserved} onChange={e => set("changeObserved", e.target.value)}
-              className="text-sm min-h-[56px]" placeholder="Data, observations, or sources confirming this change…" />
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Evidence / Source</Label>
+              <Textarea value={vals.changeObserved} onChange={e => set("changeObserved", e.target.value)}
+                className="text-sm min-h-[48px]" placeholder="Data, observations, or sources confirming this change…" />
+            </div>
           </div>
         </div>
 
-        <DialogFooter className="flex items-center gap-2">
+        <DialogFooter className="flex items-center gap-2 shrink-0 pt-2 border-t border-border">
           {state.entry && (
             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive mr-auto" onClick={onDelete}>
               <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
@@ -799,14 +963,31 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
         </div>
       </div>
 
-      {/* Detail cards for entries with descriptions */}
-      {entries.filter(e => e.description || e.changeObserved).length > 0 && (
+      {/* Detail cards for entries */}
+      {entries.length > 0 && (
         <div>
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Entry Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {entries.filter(e => e.description || e.changeObserved).map(e => {
+            {entries.map(e => {
               const s = AAER_STAGE_COLORS[e.frameworkTag];
               const levelLabel = fw.levelOptions.find(l => l.value === e.level)?.label ?? e.level;
+              const isAdopt = e.frameworkTag === "adopt";
+              const adoptD = isAdopt ? parseAdoptData(e.stageData ?? "{}") : null;
+              const kqColors: Record<string, string> = {
+                yes: "bg-red-100 text-red-700 border-red-300",
+                uncertain: "bg-amber-100 text-amber-700 border-amber-300",
+                no: "bg-emerald-100 text-emerald-700 border-emerald-300",
+              };
+              const kqLabels: Record<string, string> = {
+                yes: "Would revert", uncertain: "Uncertain", no: "Would continue",
+              };
+              const answerColor = (a: string) =>
+                a === "yes" ? "text-emerald-700" : a === "partial" ? "text-amber-700" : a === "no" ? "text-red-700" : a === "uncertain" ? "text-amber-700" : "text-muted-foreground";
+              const answerLabel = (a: string) =>
+                a === "yes" ? "Yes" : a === "partial" ? "Partially" : a === "no" ? "No" : a === "uncertain" ? "Uncertain" : "—";
+              const hasAdoptContent = adoptD && (adoptD.q1 || adoptD.q2 || adoptD.q3.answer || adoptD.q4.answer || adoptD.q5.answer || adoptD.q6.answer || adoptD.q7.answer || adoptD.keyQuestion);
+              const hasBasicContent = e.description || e.changeObserved;
+              if (!hasAdoptContent && !hasBasicContent) return null;
               return (
                 <div key={e.id} className={`rounded-lg border p-3 ${s?.bg ?? "bg-muted/30"} ${s?.border ?? "border-border"}`}>
                   <div className="flex items-start gap-2 mb-2">
@@ -814,6 +995,58 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
                     <span className="text-xs font-semibold text-foreground">{e.dimension}</span>
                     <span className="text-xs text-muted-foreground ml-auto shrink-0">{e.periodLabel}</span>
                   </div>
+
+                  {/* Adopt assessment summary */}
+                  {adoptD && hasAdoptContent && (
+                    <div className="mb-2 space-y-1.5">
+                      {/* Key question */}
+                      {adoptD.keyQuestion && (
+                        <div className={`rounded-lg border px-2.5 py-1.5 ${kqColors[adoptD.keyQuestion] ?? "bg-muted border-border"}`}>
+                          <p className="text-[10px] font-bold uppercase tracking-wide opacity-60 mb-0.5">Key Question</p>
+                          <p className="text-xs font-semibold">{kqLabels[adoptD.keyQuestion] ?? adoptD.keyQuestion}</p>
+                        </div>
+                      )}
+                      {/* Q1 & Q2 */}
+                      {(adoptD.q1 || adoptD.q2) && (
+                        <div className="flex gap-2">
+                          {adoptD.q1 && (
+                            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1 text-center">
+                              <p className="text-[10px] text-muted-foreground font-semibold">Partners Adopted</p>
+                              <p className="text-sm font-black text-foreground">{adoptD.q1}</p>
+                            </div>
+                          )}
+                          {adoptD.q2 && (
+                            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1 text-center">
+                              <p className="text-[10px] text-muted-foreground font-semibold">Pilot Contribution</p>
+                              <p className="text-sm font-black text-foreground">{adoptD.q2}%</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {/* Q3–Q7 compact */}
+                      {(["q3","q4","q5","q6","q7"] as const).some(k => (adoptD[k] as any).answer) && (
+                        <div className="bg-white/50 rounded border border-white/80 divide-y divide-white/80">
+                          {([
+                            { k: "q3", short: "Partners satisfied & willing to continue?" },
+                            { k: "q4", short: "Increased revenue/profit?" },
+                            { k: "q5", short: "Target group benefitting?" },
+                            { k: "q6", short: "Champion/change agent in org?" },
+                            { k: "q7", short: "Org continues without champion?" },
+                          ] as const).filter(row => (adoptD[row.k] as any).answer).map(row => {
+                            const qd = adoptD[row.k] as { answer: string; notes: string };
+                            return (
+                              <div key={row.k} className="px-2 py-1 flex items-start gap-2">
+                                <span className={`text-[10px] font-black shrink-0 mt-0.5 ${answerColor(qd.answer)}`}>{answerLabel(qd.answer)}</span>
+                                <span className="text-[11px] text-foreground/75 leading-snug">{row.short}</span>
+                                {qd.notes && <span className="text-[10px] text-muted-foreground italic ml-auto shrink-0 max-w-[100px] truncate" title={qd.notes}>{qd.notes}</span>}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {e.description && <p className="text-xs text-foreground/80 leading-relaxed mb-1.5">{e.description}</p>}
                   {e.changeObserved && (
                     <p className="text-[11px] text-muted-foreground bg-white/60 rounded px-2 py-1 border border-white/80">

@@ -2022,6 +2022,8 @@ components:
           type: string
         periodLabel:
           type: string
+        stageData:
+          type: string
         position:
           type: integer
         createdAt:
@@ -2058,6 +2060,8 @@ components:
         frameworkTag:
           type: string
         periodLabel:
+          type: string
+        stageData:
           type: string
         position:
           type: integer

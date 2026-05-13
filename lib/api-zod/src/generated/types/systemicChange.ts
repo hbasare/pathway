@@ -16,6 +16,7 @@ export interface SystemicChange {
   status: string;
   frameworkTag?: string;
   periodLabel?: string;
+  stageData?: string;
   position: number;
   createdAt: Date;
   updatedAt: Date;

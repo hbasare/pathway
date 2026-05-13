@@ -236,7 +236,8 @@ export const systemicChangesTable = pgTable("systemic_changes", {
   level: text("level").notNull().default("meso"),
   status: text("status").notNull().default("emerging"),
   frameworkTag: text("framework_tag").notNull().default(""), // AAER stage, MSR dimension, OH scope, MSC domain
-  periodLabel: text("period_label").notNull().default(""), // e.g. "Q1 Y1", "Y2", "H2 Y3"
+  periodLabel: text("period_label").notNull().default(""),
+  stageData: text("stage_data").notNull().default("{}"), // JSON: stage-specific guided answers
   position: integer("position").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

@@ -1314,6 +1314,7 @@ export const ListSystemicChangesResponseItem = zod.object({
   status: zod.string(),
   frameworkTag: zod.string().optional(),
   periodLabel: zod.string().optional(),
+  stageData: zod.string().optional(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),
@@ -1337,6 +1338,7 @@ export const CreateSystemicChangeBody = zod.object({
   status: zod.string().optional(),
   frameworkTag: zod.string().optional(),
   periodLabel: zod.string().optional(),
+  stageData: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -1356,6 +1358,7 @@ export const UpdateSystemicChangeBody = zod.object({
   status: zod.string().optional(),
   frameworkTag: zod.string().optional(),
   periodLabel: zod.string().optional(),
+  stageData: zod.string().optional(),
   position: zod.number().optional(),
 });
 
@@ -1369,6 +1372,7 @@ export const UpdateSystemicChangeResponse = zod.object({
   status: zod.string(),
   frameworkTag: zod.string().optional(),
   periodLabel: zod.string().optional(),
+  stageData: zod.string().optional(),
   position: zod.number(),
   createdAt: zod.date(),
   updatedAt: zod.date(),

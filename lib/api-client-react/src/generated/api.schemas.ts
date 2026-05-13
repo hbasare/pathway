@@ -468,6 +468,7 @@ export interface SystemicChange {
   status: string;
   frameworkTag?: string;
   periodLabel?: string;
+  stageData?: string;
   position: number;
   createdAt: string;
   updatedAt: string;
@@ -481,6 +482,7 @@ export interface CreateSystemicChange {
   status?: string;
   frameworkTag?: string;
   periodLabel?: string;
+  stageData?: string;
   position?: number;
 }
 
