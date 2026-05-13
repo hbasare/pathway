@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
-import { useGetTheory, useUpdateTheory, getGetTheoryQueryKey } from "@workspace/api-client-react";
+import { useGetTheory, useUpdateTheory, getGetTheoryQueryKey, useAnalyzeSystemicChange } from "@workspace/api-client-react";
+import type { SystemicChangeAnalysis, StageAnalysis } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Plus, Trash2, Pencil, Check, X, Loader2, GitBranch,
   ChevronRight, RefreshCw, Info, Settings, ChevronDown, ChevronUp,
+  Sparkles, AlertCircle, TrendingUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -364,7 +366,7 @@ function EditRow({ initial, rowNum, fw, onSave, onCancel }: {
       <td className="px-3 py-2">
         <div className="flex gap-1 pt-1">
           <Button size="icon" variant="ghost" className="h-7 w-7 text-emerald-600"
-            onClick={() => onSave({ dimension: vals.dimension, description: vals.description, changeObserved: vals.changeObserved, level: vals.level, status: vals.status, frameworkTag: vals.frameworkTag, periodLabel: vals.periodLabel })}>
+            onClick={() => onSave({ dimension: vals.dimension, description: vals.description, changeObserved: vals.changeObserved, level: vals.level, status: vals.status, frameworkTag: vals.frameworkTag, periodLabel: vals.periodLabel, stageData: "{}" })}>
             <Check className="w-3.5 h-3.5" />
           </Button>
           <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground" onClick={onCancel}>
@@ -1519,6 +1521,332 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
   );
 }
 
+// ─── AI Analysis ──────────────────────────────────────────────────────────────
+const STAGE_AI_CONFIG: Record<string, {
+  label: string; stroke: string; trackStroke: string; bg: string; text: string;
+  border: string; badgeBg: string; headingColor: string;
+}> = {
+  adopt: {
+    label: "Adopt", stroke: "#7c3aed", trackStroke: "#ede9fe",
+    bg: "bg-violet-50", text: "text-violet-800", border: "border-violet-200",
+    badgeBg: "bg-violet-100", headingColor: "text-violet-700",
+  },
+  adapt: {
+    label: "Adapt", stroke: "#1d4ed8", trackStroke: "#dbeafe",
+    bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-200",
+    badgeBg: "bg-blue-100", headingColor: "text-blue-700",
+  },
+  expand: {
+    label: "Expand", stroke: "#059669", trackStroke: "#d1fae5",
+    bg: "bg-emerald-50", text: "text-emerald-800", border: "border-emerald-200",
+    badgeBg: "bg-emerald-100", headingColor: "text-emerald-700",
+  },
+  respond: {
+    label: "Respond", stroke: "#c2410c", trackStroke: "#ffedd5",
+    bg: "bg-orange-50", text: "text-orange-800", border: "border-orange-200",
+    badgeBg: "bg-orange-100", headingColor: "text-orange-700",
+  },
+};
+
+const STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  strong:   { label: "Strong",   color: "bg-emerald-100 text-emerald-800 border-emerald-300" },
+  moderate: { label: "Moderate", color: "bg-amber-100 text-amber-800 border-amber-300" },
+  emerging: { label: "Emerging", color: "bg-blue-100 text-blue-800 border-blue-300" },
+  nascent:  { label: "Nascent",  color: "bg-slate-100 text-slate-600 border-slate-300" },
+  "no-data":{ label: "No data",  color: "bg-muted text-muted-foreground border-border" },
+};
+
+function StageRing({ score, stageKey, size = 96 }: { score: number; stageKey: string; size?: number }) {
+  const cfg = STAGE_AI_CONFIG[stageKey];
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 9;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (Math.min(score, 100) / 100) * circ;
+  return (
+    <svg width={size} height={size} className="rotate-[-90deg]">
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={cfg.trackStroke} strokeWidth={8} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={cfg.stroke} strokeWidth={8}
+        strokeDasharray={circ} strokeDashoffset={offset}
+        strokeLinecap="round"
+        style={{ transition: "stroke-dashoffset 0.8s ease" }} />
+    </svg>
+  );
+}
+
+function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
+  const stages = ["adopt", "adapt", "expand", "respond"] as const;
+  const stageData: Record<string, StageAnalysis> = {
+    adopt: analysis.adopt, adapt: analysis.adapt,
+    expand: analysis.expand, respond: analysis.respond,
+  };
+  const totalScore = analysis.overallScore;
+
+  return (
+    <div className="space-y-4">
+      {/* Overall score bar */}
+      <div className="flex items-center gap-4 bg-muted/30 rounded-xl border border-border p-4">
+        <div className="shrink-0 text-center w-20">
+          <div className="text-3xl font-black text-foreground">{totalScore}</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">/ 100</div>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-bold text-foreground">Pathway to Sustainable Change</span>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              totalScore >= 76 ? STATUS_LABELS.strong.color :
+              totalScore >= 51 ? STATUS_LABELS.moderate.color :
+              totalScore >= 26 ? STATUS_LABELS.emerging.color :
+              totalScore > 0  ? STATUS_LABELS.nascent.color :
+              STATUS_LABELS["no-data"].color
+            }`}>
+              {totalScore >= 76 ? "Strong" : totalScore >= 51 ? "Moderate" : totalScore >= 26 ? "Emerging" : totalScore > 0 ? "Nascent" : "No data"}
+            </span>
+          </div>
+          <div className="h-3 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${totalScore}%`,
+                background: "linear-gradient(to right, #7c3aed, #1d4ed8, #059669, #c2410c)",
+              }}
+            />
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug italic">{analysis.pathwayNarrative}</p>
+        </div>
+      </div>
+
+      {/* 4-stage node diagram */}
+      <div className="relative">
+        {/* Connector line */}
+        <div className="absolute top-[52px] left-[calc(12.5%)] right-[calc(12.5%)] h-0.5 bg-gradient-to-r from-violet-300 via-blue-300 via-emerald-300 to-orange-300 z-0" />
+        <div className="grid grid-cols-4 gap-3 relative z-10">
+          {stages.map((stage, i) => {
+            const cfg = STAGE_AI_CONFIG[stage];
+            const sd = stageData[stage];
+            const statusCfg = STATUS_LABELS[sd.status] ?? STATUS_LABELS["no-data"];
+            return (
+              <div key={stage} className="flex flex-col items-center gap-2">
+                {/* Ring + score */}
+                <div className="relative">
+                  <StageRing score={sd.score} stageKey={stage} size={104} />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className={`text-xl font-black ${cfg.text}`}>{sd.score}</span>
+                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">/ 100</span>
+                  </div>
+                </div>
+                {/* Stage label */}
+                <span className={`text-xs font-bold px-3 py-1 rounded-full border ${cfg.badgeBg} ${cfg.text} ${cfg.border}`}>
+                  {cfg.label}
+                </span>
+                {/* Status badge */}
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${statusCfg.color}`}>
+                  {statusCfg.label}
+                </span>
+                {/* Arrow between stages */}
+                {i < stages.length - 1 && (
+                  <div className="hidden" />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Stage headlines grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {stages.map(stage => {
+          const cfg = STAGE_AI_CONFIG[stage];
+          const sd = stageData[stage];
+          return (
+            <div key={stage} className={`rounded-lg border p-2.5 ${cfg.bg} ${cfg.border}`}>
+              <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${cfg.headingColor}`}>{cfg.label}</p>
+              <p className="text-[11px] text-foreground/80 leading-snug">{sd.headline}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function StageAnalysisCard({ stageKey, data }: { stageKey: string; data: StageAnalysis }) {
+  const cfg = STAGE_AI_CONFIG[stageKey];
+  const statusCfg = STATUS_LABELS[data.status] ?? STATUS_LABELS["no-data"];
+  const [expanded, setExpanded] = useState(false);
+  const hasContent = data.findings.length > 0 || data.recommendations.length > 0;
+  return (
+    <div className={`rounded-xl border-2 overflow-hidden ${cfg.border}`}>
+      <button
+        className={`w-full flex items-center gap-3 px-4 py-3 text-left ${cfg.bg} hover:brightness-95 transition-all`}
+        onClick={() => setExpanded(p => !p)}
+        disabled={!hasContent}
+      >
+        <div className="shrink-0">
+          <StageRing score={data.score} stageKey={stageKey} size={52} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className={`text-sm font-bold ${cfg.text}`}>{cfg.label}</span>
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${statusCfg.color}`}>
+              {statusCfg.label}
+            </span>
+          </div>
+          <p className="text-[11px] text-foreground/75 leading-snug line-clamp-2">{data.headline}</p>
+        </div>
+        {hasContent && (
+          expanded ? <ChevronUp className={`w-4 h-4 shrink-0 ${cfg.text}`} /> : <ChevronDown className={`w-4 h-4 shrink-0 ${cfg.text}`} />
+        )}
+      </button>
+
+      {expanded && hasContent && (
+        <div className="px-4 py-3 bg-white/60 border-t border-border/40 space-y-3">
+          {data.findings.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Key Findings</p>
+              <ul className="space-y-1">
+                {data.findings.map((f, i) => (
+                  <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
+                    <span className={`shrink-0 font-black mt-0.5 ${cfg.headingColor}`}>·</span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {data.recommendations.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Recommendations</p>
+              <ul className="space-y-1">
+                {data.recommendations.map((r, i) => (
+                  <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
+                    <TrendingUp className={`w-3 h-3 shrink-0 mt-0.5 ${cfg.headingColor}`} />
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; hasEntries: boolean }) {
+  const { toast } = useToast();
+  const [analysis, setAnalysis] = useState<SystemicChangeAnalysis | null>(null);
+  const mutation = useAnalyzeSystemicChange();
+
+  const generate = async () => {
+    try {
+      const result = await mutation.mutateAsync({ theoryId });
+      setAnalysis(result as SystemicChangeAnalysis);
+    } catch (err) {
+      toast({ title: "Analysis failed", description: String(err), variant: "destructive" });
+    }
+  };
+
+  const stages = ["adopt", "adapt", "expand", "respond"] as const;
+
+  return (
+    <div className="rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 via-background to-blue-50 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-violet-200 bg-white/60">
+        <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center shrink-0">
+          <Sparkles className="w-4 h-4 text-white" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-bold text-foreground">AI Progress Analysis</h3>
+          <p className="text-xs text-muted-foreground">AI-powered assessment of your progress towards sustainable systemic change</p>
+        </div>
+        <Button
+          size="sm"
+          onClick={generate}
+          disabled={mutation.isPending || !hasEntries}
+          className="bg-violet-600 hover:bg-violet-700 text-white shrink-0 gap-1.5"
+        >
+          {mutation.isPending
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Analysing…</>
+            : <><Sparkles className="w-3.5 h-3.5" />{analysis ? "Regenerate" : "Generate Analysis"}</>
+          }
+        </Button>
+      </div>
+
+      {/* Body */}
+      <div className="px-5 py-4 space-y-5">
+        {!hasEntries && !analysis && (
+          <div className="flex flex-col items-center gap-2 py-8 text-center">
+            <AlertCircle className="w-8 h-8 text-muted-foreground/30" />
+            <p className="text-sm font-medium text-muted-foreground">No entries yet</p>
+            <p className="text-xs text-muted-foreground/70">Add AAER entries to the matrix above, then generate an AI analysis.</p>
+          </div>
+        )}
+
+        {hasEntries && !analysis && !mutation.isPending && (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <div className="w-14 h-14 rounded-full bg-violet-100 flex items-center justify-center">
+              <Sparkles className="w-7 h-7 text-violet-500" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Ready to analyse</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                Click "Generate Analysis" to have AI study your AAER data and produce a visual pathway diagram with per-stage findings and recommendations.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {mutation.isPending && (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+            <p className="text-sm font-semibold text-foreground">Analysing your progress…</p>
+            <p className="text-xs text-muted-foreground">Studying AAER evidence across all stages and periods</p>
+          </div>
+        )}
+
+        {analysis && !mutation.isPending && (
+          <>
+            {/* Pathway diagram */}
+            <PathwayDiagram analysis={analysis} />
+
+            {/* Overall assessment */}
+            <div className="rounded-xl border border-border bg-white/60 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Overall Assessment</p>
+              <p className="text-sm text-foreground leading-relaxed">{analysis.overallAssessment}</p>
+            </div>
+
+            {/* Per-stage cards */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Stage-by-Stage Analysis</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {stages.map(stage => (
+                  <StageAnalysisCard key={stage} stageKey={stage} data={(analysis as unknown as Record<string, StageAnalysis>)[stage]} />
+                ))}
+              </div>
+            </div>
+
+            {/* Priority actions */}
+            {analysis.nextPriorityActions.length > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">Next Priority Actions</p>
+                <ul className="space-y-1.5">
+                  {analysis.nextPriorityActions.map((a, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-amber-900 leading-relaxed">
+                      <span className="shrink-0 font-black text-amber-600">{i + 1}.</span>
+                      <span>{a}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SystemicChange() {
   const [, params] = useRoute("/theory/:id/systemic-change");
@@ -1723,6 +2051,7 @@ export default function SystemicChange() {
               theory={theory}
               onCellClick={(actor, period, entry) => setCellModal({ actor, period, entry })}
             />
+            <SystemicChangeAIAnalysis theoryId={id} hasEntries={entries.length > 0} />
           </>
         )}
 

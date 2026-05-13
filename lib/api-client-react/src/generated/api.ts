@@ -38,6 +38,7 @@ import type {
   PortfolioLogframe,
   ProgramLogframe,
   SystemicChange,
+  SystemicChangeAnalysis,
   Theory,
   TheoryDetail,
   TheoryDocument,
@@ -3812,6 +3813,93 @@ export const useDeleteTheoryNoteUpdate = <
   TContext
 > => {
   return useMutation(getDeleteTheoryNoteUpdateMutationOptions(options));
+};
+
+/**
+ * @summary Generate AI analysis of systemic change progress
+ */
+export const getAnalyzeSystemicChangeUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/systemic-changes/ai-analysis`;
+};
+
+export const analyzeSystemicChange = async (
+  theoryId: number,
+  options?: RequestInit,
+): Promise<SystemicChangeAnalysis> => {
+  return customFetch<SystemicChangeAnalysis>(
+    getAnalyzeSystemicChangeUrl(theoryId),
+    {
+      ...options,
+      method: "POST",
+    },
+  );
+};
+
+export const getAnalyzeSystemicChangeMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeSystemicChange>>,
+    TError,
+    { theoryId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof analyzeSystemicChange>>,
+  TError,
+  { theoryId: number },
+  TContext
+> => {
+  const mutationKey = ["analyzeSystemicChange"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof analyzeSystemicChange>>,
+    { theoryId: number }
+  > = (props) => {
+    const { theoryId } = props ?? {};
+
+    return analyzeSystemicChange(theoryId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AnalyzeSystemicChangeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof analyzeSystemicChange>>
+>;
+
+export type AnalyzeSystemicChangeMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Generate AI analysis of systemic change progress
+ */
+export const useAnalyzeSystemicChange = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeSystemicChange>>,
+    TError,
+    { theoryId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof analyzeSystemicChange>>,
+  TError,
+  { theoryId: number },
+  TContext
+> => {
+  return useMutation(getAnalyzeSystemicChangeMutationOptions(options));
 };
 
 /**

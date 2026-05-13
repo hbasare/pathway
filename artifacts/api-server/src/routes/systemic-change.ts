@@ -2,8 +2,92 @@ import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { systemicChangesTable, insertSystemicChangeSchema } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { openai } from "@workspace/integrations-openai-ai-server";
 
 const router: IRouter = Router();
+
+router.post("/theories/:theoryId/systemic-changes/ai-analysis", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const entries = await db
+    .select()
+    .from(systemicChangesTable)
+    .where(eq(systemicChangesTable.theoryId, theoryId))
+    .orderBy(systemicChangesTable.position, systemicChangesTable.createdAt);
+
+  const entrySummaries = entries.map(e => {
+    let stageObj: Record<string, unknown> = {};
+    try { stageObj = JSON.parse(e.stageData ?? "{}"); } catch {}
+    return {
+      dimension: e.dimension,
+      frameworkTag: e.frameworkTag,
+      periodLabel: e.periodLabel,
+      description: e.description,
+      changeObserved: e.changeObserved,
+      level: e.level,
+      status: e.status,
+      stageData: stageObj,
+    };
+  });
+
+  const systemPrompt = `You are an expert in market systems development and Theory of Change analysis, specialising in the AAER (Adopt, Adapt, Expand, Respond) framework for measuring progress towards sustainable systemic change.
+
+You will receive AAER tracking data for a development intervention. Your task is to analyse the evidence and produce a structured assessment of progress towards sustainable systemic change.
+
+For each stage, score 0–100 based on the evidence provided:
+- 0–25: Nascent — very limited or no evidence
+- 26–50: Emerging — some early signs but fragile
+- 51–75: Moderate — clear progress, some gaps remain
+- 76–100: Strong — robust, self-sustaining evidence
+
+Also compute an overall score (weighted: Adopt 25%, Adapt 30%, Expand 25%, Respond 20% — since adoption is a prerequisite but respond is the ultimate goal).
+
+Return ONLY valid JSON matching this exact structure (no markdown, no extra text):
+{
+  "overallScore": <integer 0-100>,
+  "overallAssessment": "<2-3 sentence overall narrative>",
+  "pathwayNarrative": "<1-2 sentence description of where the intervention sits on the pathway to sustainable change>",
+  "adopt": {
+    "score": <integer 0-100>,
+    "status": "<nascent|emerging|moderate|strong|no-data>",
+    "headline": "<one sentence headline finding>",
+    "findings": ["<finding 1>", "<finding 2>"],
+    "recommendations": ["<recommendation 1>"]
+  },
+  "adapt": { <same structure> },
+  "expand": { <same structure> },
+  "respond": { <same structure> },
+  "nextPriorityActions": ["<action 1>", "<action 2>", "<action 3>"]
+}
+
+If a stage has no data entries at all, set status to "no-data", score to 0, headline to "No data recorded for this stage yet", findings to [], and recommendations to ["Begin recording observations for this stage"].`;
+
+  const userMessage = `Here is the AAER tracking data for this intervention:\n\n${JSON.stringify(entrySummaries, null, 2)}\n\nPlease analyse this data and return the structured JSON assessment.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.4",
+      max_completion_tokens: 8192,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+    });
+
+    const raw = response.choices[0]?.message?.content ?? "{}";
+    let analysis: Record<string, unknown>;
+    try {
+      analysis = JSON.parse(raw);
+    } catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON found in response");
+      analysis = JSON.parse(match[0]);
+    }
+    res.json(analysis);
+  } catch (err) {
+    console.error("AI analysis error:", err);
+    res.status(500).json({ error: "Failed to generate AI analysis" });
+  }
+});
 
 router.get("/theories/:theoryId/systemic-changes", async (req, res) => {
   const theoryId = Number(req.params.theoryId);

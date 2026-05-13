@@ -931,6 +931,25 @@ paths:
         "204":
           description: Deleted
 
+  /theories/{theoryId}/systemic-changes/ai-analysis:
+    post:
+      operationId: analyzeSystemicChange
+      tags: [theories]
+      summary: Generate AI analysis of systemic change progress
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: AI-generated systemic change analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SystemicChangeAnalysis"
+
   /theories/{theoryId}/systemic-changes:
     get:
       operationId: listSystemicChanges
@@ -2000,6 +2019,61 @@ components:
             $ref: "#/components/schemas/ProgramLogframeEntry"
       required:
         - portfolios
+
+    StageAnalysis:
+      type: object
+      properties:
+        score:
+          type: integer
+        status:
+          type: string
+        headline:
+          type: string
+        findings:
+          type: array
+          items:
+            type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+      required:
+        - score
+        - status
+        - headline
+        - findings
+        - recommendations
+
+    SystemicChangeAnalysis:
+      type: object
+      properties:
+        overallScore:
+          type: integer
+        overallAssessment:
+          type: string
+        pathwayNarrative:
+          type: string
+        adopt:
+          $ref: "#/components/schemas/StageAnalysis"
+        adapt:
+          $ref: "#/components/schemas/StageAnalysis"
+        expand:
+          $ref: "#/components/schemas/StageAnalysis"
+        respond:
+          $ref: "#/components/schemas/StageAnalysis"
+        nextPriorityActions:
+          type: array
+          items:
+            type: string
+      required:
+        - overallScore
+        - overallAssessment
+        - pathwayNarrative
+        - adopt
+        - adapt
+        - expand
+        - respond
+        - nextPriorityActions
 
     SystemicChange:
       type: object

@@ -458,6 +458,25 @@ export interface ProgramLogframe {
   portfolios: ProgramLogframeEntry[];
 }
 
+export interface StageAnalysis {
+  score: number;
+  status: string;
+  headline: string;
+  findings: string[];
+  recommendations: string[];
+}
+
+export interface SystemicChangeAnalysis {
+  overallScore: number;
+  overallAssessment: string;
+  pathwayNarrative: string;
+  adopt: StageAnalysis;
+  adapt: StageAnalysis;
+  expand: StageAnalysis;
+  respond: StageAnalysis;
+  nextPriorityActions: string[];
+}
+
 export interface SystemicChange {
   id: number;
   theoryId: number;

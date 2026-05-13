@@ -1298,6 +1298,48 @@ export const DeleteTheoryNoteUpdateParams = zod.object({
 });
 
 /**
+ * @summary Generate AI analysis of systemic change progress
+ */
+export const AnalyzeSystemicChangeParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const AnalyzeSystemicChangeResponse = zod.object({
+  overallScore: zod.number(),
+  overallAssessment: zod.string(),
+  pathwayNarrative: zod.string(),
+  adopt: zod.object({
+    score: zod.number(),
+    status: zod.string(),
+    headline: zod.string(),
+    findings: zod.array(zod.string()),
+    recommendations: zod.array(zod.string()),
+  }),
+  adapt: zod.object({
+    score: zod.number(),
+    status: zod.string(),
+    headline: zod.string(),
+    findings: zod.array(zod.string()),
+    recommendations: zod.array(zod.string()),
+  }),
+  expand: zod.object({
+    score: zod.number(),
+    status: zod.string(),
+    headline: zod.string(),
+    findings: zod.array(zod.string()),
+    recommendations: zod.array(zod.string()),
+  }),
+  respond: zod.object({
+    score: zod.number(),
+    status: zod.string(),
+    headline: zod.string(),
+    findings: zod.array(zod.string()),
+    recommendations: zod.array(zod.string()),
+  }),
+  nextPriorityActions: zod.array(zod.string()),
+});
+
+/**
  * @summary List systemic change entries for a theory
  */
 export const ListSystemicChangesParams = zod.object({
