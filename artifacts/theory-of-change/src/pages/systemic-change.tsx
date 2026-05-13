@@ -434,7 +434,7 @@ function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void
 }
 
 // ─── AAER Settings panel ──────────────────────────────────────────────────────
-interface AaerSettings { startYear: number; endYear: number; granularity: Granularity; pilotDuration: PilotDuration }
+interface AaerSettings { startYear: number; endYear: number; granularity: Granularity; pilotDuration: PilotDuration; enabledStages: string[] }
 
 const PILOT_DURATION_OPTIONS: { value: PilotDuration; label: string; desc: string }[] = [
   { value: "none",  label: "No pilot phase",  desc: "Tracking starts at Y1" },
@@ -490,6 +490,40 @@ function AaerSettingsPanel({ settings, onSave }: {
 
       {open && (
         <div className="border-t border-violet-200 px-5 py-4 bg-white/70 space-y-4">
+          {/* Enabled AAER Phases */}
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-2 block">Enabled AAER Phases</Label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {(["adopt","adapt","expand","respond"] as const).map(stage => {
+                const s = AAER_STAGE_COLORS[stage];
+                const isOn = local.enabledStages.includes(stage);
+                const isLast = local.enabledStages.length === 1 && isOn;
+                const toggle = () => {
+                  if (isLast) return; // must keep at least one
+                  setLocal(p => ({
+                    ...p,
+                    enabledStages: isOn
+                      ? p.enabledStages.filter(x => x !== stage)
+                      : [...p.enabledStages, stage],
+                  }));
+                };
+                return (
+                  <button key={stage} onClick={toggle}
+                    title={isLast ? "At least one phase must be enabled" : undefined}
+                    className={`rounded-lg border-2 px-3 py-2 text-center transition-all relative ${
+                      isOn
+                        ? `${s.bg} ${s.border} ${s.text} shadow-sm`
+                        : "border-border bg-background text-muted-foreground/50 opacity-60"
+                    } ${isLast ? "cursor-not-allowed" : "hover:opacity-90"}`}>
+                    <div className="text-xs font-bold capitalize">{stage}</div>
+                    <div className="text-[10px] mt-0.5 opacity-70 leading-tight">{isOn ? "Included" : "Excluded"}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground/70 mt-1.5">Toggle which stages actors can be assessed against. At least one must remain active.</p>
+          </div>
+
           {/* Pilot duration */}
           <div>
             <Label className="text-xs font-semibold text-muted-foreground mb-2 block">Pilot Phase Duration</Label>
@@ -1147,13 +1181,16 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <Label className="text-xs font-semibold text-muted-foreground">AAER Stage</Label>
-              {isPilot ? (
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">Pilot phase — all stages available</span>
-              ) : (
-                <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full">Adopt is pilot-only · tracked in Y1</span>
-              )}
+              {(() => {
+                const adoptEnabled = fw.tagOptions.some(o => o.value === "adopt");
+                if (!adoptEnabled) return null;
+                return isPilot
+                  ? <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">Pilot phase — Adopt available</span>
+                  : <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full">Adopt is pilot-only · tracked in Y1</span>;
+              })()}
             </div>
-            <div className={`grid gap-2 ${isPilot ? "grid-cols-4" : "grid-cols-3"}`}>
+            <div className="grid gap-2"
+              style={{ gridTemplateColumns: `repeat(${Math.min(fw.tagOptions.filter(o => isPilot || o.value !== "adopt").length, 4)}, minmax(0,1fr))` }}>
               {fw.tagOptions.filter(o => isPilot || o.value !== "adopt").map(opt => {
                 const s = AAER_STAGE_COLORS[opt.value];
                 const active = vals.frameworkTag === opt.value;
@@ -1955,7 +1992,7 @@ export default function SystemicChange() {
   const [showSelector, setShowSelector] = useState(false);
   const [localFrameworkKey, setLocalFrameworkKey] = useState<FrameworkKey | null>(null);
   const [cellModal, setCellModal] = useState<CellModalState | null>(null);
-  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none" });
+  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none", enabledStages: ["adopt","adapt","expand","respond"] });
   const [settingsSynced, setSettingsSynced] = useState(false);
 
   const loadEntries = async () => {
@@ -1981,6 +2018,7 @@ export default function SystemicChange() {
         endYear:        t.interventionEndYear   ?? 0,
         granularity:    (t.periodGranularity as Granularity) ?? "annual",
         pilotDuration:  (t.pilotDuration as PilotDuration)  ?? "none",
+        enabledStages:  t.enabledStages ? String(t.enabledStages).split(",").filter(Boolean) : ["adopt","adapt","expand","respond"],
       });
       setSettingsSynced(true);
     }
@@ -2003,6 +2041,7 @@ export default function SystemicChange() {
         interventionEndYear: s.endYear,
         periodGranularity: s.granularity,
         pilotDuration: s.pilotDuration,
+        enabledStages: s.enabledStages.join(","),
       } as any,
     });
   };
@@ -2082,6 +2121,13 @@ export default function SystemicChange() {
   }
 
   const isAaer = localFrameworkKey === "aaer";
+
+  // Filter fw.tagOptions to only the stages the user has enabled
+  const effectiveFw = fw ? {
+    ...fw,
+    tagOptions: fw.tagOptions.filter(o => localSettings.enabledStages.includes(o.value)),
+  } : null;
+
   const periods = localSettings.startYear && localSettings.endYear
     ? [
         ...generatePilotPeriods(localSettings.pilotDuration, localSettings.granularity),
@@ -2139,7 +2185,7 @@ export default function SystemicChange() {
             <AaerMatrix
               entries={entries}
               periods={periods}
-              fw={fw!}
+              fw={effectiveFw!}
               theory={theory}
               onCellClick={(actor, period, entry) => setCellModal({ actor, period, entry })}
             />
@@ -2213,10 +2259,10 @@ export default function SystemicChange() {
       </div>
 
       {/* AAER cell modal */}
-      {cellModal && (
+      {cellModal && effectiveFw && (
         <AaerCellModal
           state={cellModal}
-          fw={fw!}
+          fw={effectiveFw}
           onClose={() => setCellModal(null)}
           onSave={handleCellSave}
           onDelete={() => cellModal.entry && handleDelete(cellModal.entry.id)}
