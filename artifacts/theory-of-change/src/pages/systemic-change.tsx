@@ -2375,12 +2375,37 @@ const MSR_DOMAINS: MsrDomain[] = [
         desc: "Extent to which actors use data and evidence to inform choices",
         indicatorGroups: [
           {
-            group: "Evidence Use",
+            group: "Investments in Evidence to Support Decision-Making",
             indicators: [
-              { id: "edm_eu_1", label: "Use of market data for business decisions", type: "F" },
-              { id: "edm_eu_2", label: "Presence of feedback and learning mechanisms", type: "S" },
-              { id: "edm_eu_3", label: "Investment in monitoring and evaluation by actors", type: "F" },
-              { id: "edm_eu_4", label: "Responsiveness to customer/beneficiary feedback", type: "S" },
+              { id: "edm_ie_1", label: "Level of spend on market research", type: "F" },
+              { id: "edm_ie_2", label: "Investments in information gathering and analysis at agent/firm level", type: "F" },
+              { id: "edm_ie_3", label: "Presence of industry journals, networks and meetings", type: "F" },
+              { id: "edm_ie_4", label: "Number of alliances between academia and businesses", type: "F" },
+              { id: "edm_ie_5", label: "Extent to which companies segment customers by socio-economic demographic" },
+            ],
+          },
+          {
+            group: "Use of Evidence in Decision-Making",
+            indicators: [
+              { id: "edm_ue_1", label: "Use of digital Customer Relationship Management (CRM) systems", type: "F" },
+              { id: "edm_ue_2", label: "Depth of market for evidence-based services", type: "S" },
+              { id: "edm_ue_3", label: "Influence of science on social and market systems", type: "S" },
+            ],
+          },
+          {
+            group: "Information Flows",
+            indicators: [
+              { id: "edm_if_1", label: "Collective response patterns to information flows — customer feedback response" },
+              { id: "edm_if_2", label: "Level of academic connectivity to private sector", type: "S" },
+              { id: "edm_if_3", label: "Patterns of information flows", type: "S" },
+            ],
+          },
+          {
+            group: "Quality of Evidence",
+            indicators: [
+              { id: "edm_qe_1", label: "Level of academic orientation to value addition and away from political patronage" },
+              { id: "edm_qe_2", label: "Management of content by media on journalism ethics", type: "S" },
+              { id: "edm_qe_3", label: "Maturity of ICT B2B market (targeting SMEs)", type: "S" },
             ],
           },
         ],
