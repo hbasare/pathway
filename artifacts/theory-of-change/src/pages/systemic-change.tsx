@@ -3318,6 +3318,418 @@ function MsrSynthesisImage({
   );
 }
 
+// ─── MSR AI Analysis ──────────────────────────────────────────────────────────
+
+interface MsrDomainAnalysis {
+  score: number;
+  status: "reactive" | "emerging" | "transitioning" | "proactive" | "no-data";
+  headline: string;
+  findings: string[];
+  recommendations: string[];
+  strongComponents: string[];
+  weakComponents: string[];
+}
+
+interface MsrAnalysisResult {
+  overallScore: number;
+  overallAssessment: string;
+  trajectoryNarrative: string;
+  structural: MsrDomainAnalysis;
+  behavioural: MsrDomainAnalysis;
+  enablingEnvironment: MsrDomainAnalysis;
+  relational: MsrDomainAnalysis;
+  priorityActions: string[];
+}
+
+const MSR_DOMAIN_AI_CONFIG: Record<string, {
+  label: string; stroke: string; trackStroke: string;
+  bg: string; text: string; border: string; accentBorder: string;
+  badgeBg: string; headingColor: string;
+  quadBg: string; quadText: string; quadSub: string;
+}> = {
+  structural: {
+    label: "Structural", stroke: "#7c3aed", trackStroke: "#ede9fe",
+    bg: "bg-white", text: "text-violet-700", border: "border-border",
+    accentBorder: "border-l-violet-400", badgeBg: "bg-violet-50", headingColor: "text-violet-600",
+    quadBg: "#ede9fe", quadText: "#5b21b6", quadSub: "#6d28d9",
+  },
+  behavioural: {
+    label: "Behavioural", stroke: "#b45309", trackStroke: "#fef3c7",
+    bg: "bg-white", text: "text-amber-700", border: "border-border",
+    accentBorder: "border-l-amber-400", badgeBg: "bg-amber-50", headingColor: "text-amber-600",
+    quadBg: "#fef3c7", quadText: "#78350f", quadSub: "#b45309",
+  },
+  enablingEnvironment: {
+    label: "Enabling Environment", stroke: "#047857", trackStroke: "#d1fae5",
+    bg: "bg-white", text: "text-emerald-700", border: "border-border",
+    accentBorder: "border-l-emerald-400", badgeBg: "bg-emerald-50", headingColor: "text-emerald-600",
+    quadBg: "#d1fae5", quadText: "#064e3b", quadSub: "#047857",
+  },
+  relational: {
+    label: "Relational", stroke: "#1d4ed8", trackStroke: "#dbeafe",
+    bg: "bg-white", text: "text-blue-700", border: "border-border",
+    accentBorder: "border-l-blue-400", badgeBg: "bg-blue-50", headingColor: "text-blue-600",
+    quadBg: "#dbeafe", quadText: "#1e3a8a", quadSub: "#1d4ed8",
+  },
+};
+
+const MSR_STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  proactive:    { label: "Proactive",    color: "bg-emerald-100 text-emerald-800 border-emerald-300" },
+  transitioning:{ label: "Transitioning",color: "bg-amber-100 text-amber-800 border-amber-300" },
+  emerging:     { label: "Emerging",     color: "bg-blue-100 text-blue-800 border-blue-300" },
+  reactive:     { label: "Reactive",     color: "bg-rose-100 text-rose-700 border-rose-300" },
+  "no-data":    { label: "No data",      color: "bg-muted text-muted-foreground border-border" },
+};
+
+function MsrDomainRing({ score, domainKey, size = 52 }: { score: number; domainKey: string; size?: number }) {
+  const cfg = MSR_DOMAIN_AI_CONFIG[domainKey];
+  const cx = size / 2, cy = size / 2, r = size / 2 - 8;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (Math.min(score, 100) / 100) * circ;
+  return (
+    <svg width={size} height={size} className="rotate-[-90deg]">
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={cfg.trackStroke} strokeWidth={7} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke={cfg.stroke} strokeWidth={7}
+        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+        style={{ transition: "stroke-dashoffset 0.8s ease" }} />
+    </svg>
+  );
+}
+
+function MsrQuadrantDiagram({ analysis }: { analysis: MsrAnalysisResult }) {
+  const domainMap: Record<string, MsrDomainAnalysis> = {
+    structural: analysis.structural,
+    relational: analysis.relational,
+    behavioural: analysis.behavioural,
+    enablingEnvironment: analysis.enablingEnvironment,
+  };
+  // Layout: top-left=Structural, top-right=Relational, bottom-left=Behavioural, bottom-right=Enabling
+  const quads = [
+    { key: "structural",         row: 0, col: 0 },
+    { key: "relational",         row: 0, col: 1 },
+    { key: "behavioural",        row: 1, col: 0 },
+    { key: "enablingEnvironment",row: 1, col: 1 },
+  ];
+  return (
+    <div className="space-y-4">
+      {/* Overall score bar */}
+      <div className="flex items-center gap-4 bg-muted/30 rounded-xl border border-border p-4">
+        <div className="shrink-0 text-center w-20">
+          <div className="text-3xl font-black text-foreground">{analysis.overallScore}</div>
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">/ 100</div>
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-bold text-foreground">Market System Resilience</span>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+              analysis.overallScore >= 76 ? MSR_STATUS_LABELS.proactive.color :
+              analysis.overallScore >= 51 ? MSR_STATUS_LABELS.transitioning.color :
+              analysis.overallScore >= 26 ? MSR_STATUS_LABELS.emerging.color :
+              analysis.overallScore > 0   ? MSR_STATUS_LABELS.reactive.color :
+              MSR_STATUS_LABELS["no-data"].color
+            }`}>
+              {analysis.overallScore >= 76 ? "Proactive" : analysis.overallScore >= 51 ? "Transitioning" : analysis.overallScore >= 26 ? "Emerging" : analysis.overallScore > 0 ? "Reactive" : "No data"}
+            </span>
+          </div>
+          <div className="h-3 rounded-full bg-muted overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${analysis.overallScore}%`, background: "linear-gradient(to right, #ef4444, #f97316, #eab308, #22c55e)" }} />
+          </div>
+          <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug italic">{analysis.trajectoryNarrative}</p>
+        </div>
+      </div>
+
+      {/* 2×2 domain quadrant */}
+      <div className="rounded-xl overflow-hidden border border-border/60 shadow-sm">
+        <div className="flex">
+          <div className="flex flex-col items-center justify-between py-3 px-1.5 bg-zinc-900 shrink-0 w-9">
+            <span className="text-amber-400 font-black text-lg leading-none">↑</span>
+            <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-amber-100/80"
+              style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
+              Proactivity
+            </span>
+            <span className="opacity-0 text-lg">↑</span>
+          </div>
+          <div className="flex-1 flex flex-col bg-zinc-900">
+            <div className="grid grid-cols-2 flex-1">
+              {quads.map(({ key }) => {
+                const d = domainMap[key];
+                const cfg = MSR_DOMAIN_AI_CONFIG[key];
+                const statusCfg = MSR_STATUS_LABELS[d.status] ?? MSR_STATUS_LABELS["no-data"];
+                return (
+                  <div key={key} className="relative p-4 flex flex-col gap-1.5 min-h-[130px]"
+                    style={{ backgroundColor: cfg.quadBg }}>
+                    <div className="font-black text-base tracking-wide" style={{ color: cfg.quadText }}>{cfg.label}</div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-black" style={{ color: cfg.quadText }}>{d.score}</span>
+                      <span className="text-[9px] font-bold" style={{ color: cfg.quadSub }}>/100</span>
+                    </div>
+                    <span className="inline-flex text-[9px] font-bold px-1.5 py-0.5 rounded-full w-fit border"
+                      style={{ backgroundColor: "rgba(255,255,255,0.55)", color: cfg.quadText, borderColor: cfg.quadSub + "55" }}>
+                      {statusCfg.label}
+                    </span>
+                    <p className="text-[10px] leading-snug mt-0.5 line-clamp-2" style={{ color: cfg.quadSub }}>{d.headline}</p>
+                    {d.strongComponents && d.strongComponents.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {d.strongComponents.slice(0, 3).map((c, i) => (
+                          <span key={i} className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
+                            style={{ backgroundColor: "rgba(255,255,255,0.65)", color: cfg.quadText, border: `1px solid ${cfg.quadSub}44` }}>
+                            ↑ {c}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-zinc-900">
+              <div className="flex-1 h-px bg-amber-400/30" />
+              <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-amber-100/80">Breadth</span>
+              <span className="text-amber-400 font-black text-lg leading-none">→</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomainAnalysis }) {
+  const cfg = MSR_DOMAIN_AI_CONFIG[domainKey];
+  const statusCfg = MSR_STATUS_LABELS[data.status] ?? MSR_STATUS_LABELS["no-data"];
+  const [expanded, setExpanded] = useState(false);
+  const hasContent = data.findings.length > 0 || data.recommendations.length > 0;
+  return (
+    <div className={`rounded-xl border overflow-hidden border-l-4 ${cfg.border} ${cfg.accentBorder}`}>
+      <button
+        className={`w-full flex items-center gap-3 px-4 py-3 text-left ${cfg.bg} hover:bg-muted/30 transition-all`}
+        onClick={() => setExpanded(p => !p)}
+        disabled={!hasContent}
+      >
+        <div className="shrink-0">
+          <MsrDomainRing score={data.score} domainKey={domainKey} size={52} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className={`text-sm font-bold ${cfg.text}`}>{cfg.label}</span>
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${statusCfg.color}`}>
+              {statusCfg.label}
+            </span>
+          </div>
+          <p className="text-[11px] text-foreground/75 leading-snug line-clamp-2">{data.headline}</p>
+        </div>
+        {hasContent && (
+          expanded
+            ? <ChevronUp className={`w-4 h-4 shrink-0 ${cfg.text}`} />
+            : <ChevronDown className={`w-4 h-4 shrink-0 ${cfg.text}`} />
+        )}
+      </button>
+      {expanded && hasContent && (
+        <div className="px-4 py-3 bg-white/60 border-t border-border/40 space-y-3">
+          {data.findings.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Key Findings</p>
+              <ul className="space-y-1">
+                {data.findings.map((f, i) => (
+                  <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
+                    <span className={`shrink-0 font-black mt-0.5 ${cfg.headingColor}`}>·</span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {data.recommendations.length > 0 && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Recommendations</p>
+              <ul className="space-y-1">
+                {data.recommendations.map((r, i) => (
+                  <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
+                    <TrendingUp className={`w-3 h-3 shrink-0 mt-0.5 ${cfg.headingColor}`} />
+                    <span>{r}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {(data.weakComponents && data.weakComponents.length > 0) && (
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Components to Prioritise</p>
+              <div className="flex flex-wrap gap-1.5">
+                {data.weakComponents.map((c, i) => (
+                  <span key={i} className="text-[10px] px-2 py-0.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MsrAIAnalysis({
+  msrData, periods, apiBase, theoryId,
+}: {
+  msrData: MsrData; periods: string[]; apiBase: string; theoryId: number;
+}) {
+  const { toast } = useToast();
+  const [analysis, setAnalysis] = useState<MsrAnalysisResult | null>(null);
+  const [pending, setPending] = useState(false);
+
+  const buildScoreSummary = () =>
+    MSR_DOMAINS.map(domain => ({
+      domain: domain.label,
+      components: domain.components.map(comp => {
+        const ids = msrData.sel[comp.key] ?? [];
+        const allVals = periods.flatMap(p =>
+          ids.map(id => msrData.scores[p]?.[id]?.score).filter((v): v is number => v != null)
+        );
+        const overallAvg = allVals.length
+          ? Math.round((allVals.reduce((a, b) => a + b, 0) / allVals.length) * 10) / 10
+          : null;
+        const byPeriod: Record<string, number | null> = {};
+        periods.forEach(p => {
+          const vals = ids
+            .map(id => msrData.scores[p]?.[id]?.score)
+            .filter((v): v is number => v != null);
+          byPeriod[p] = vals.length
+            ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+            : null;
+        });
+        return { component: comp.label, overallAvg, byPeriod };
+      }),
+    }));
+
+  const hasScores = MSR_DOMAINS.some(domain =>
+    domain.components.some(comp => {
+      const ids = msrData.sel[comp.key] ?? [];
+      return periods.some(p => ids.some(id => msrData.scores[p]?.[id]?.score != null));
+    })
+  );
+
+  const generate = async () => {
+    setPending(true);
+    try {
+      const res = await fetch(`${apiBase}/theories/${theoryId}/msr-ai-analysis`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ scoreSummary: buildScoreSummary() }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json() as MsrAnalysisResult;
+      setAnalysis(data);
+    } catch (err) {
+      toast({ title: "Analysis failed", description: String(err), variant: "destructive" });
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const domainKeys = ["structural", "behavioural", "enablingEnvironment", "relational"] as const;
+
+  return (
+    <div className="rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 via-background to-blue-50 overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-violet-200 bg-white/60">
+        <div className="w-8 h-8 rounded-full bg-violet-600 flex items-center justify-center shrink-0">
+          <Sparkles className="w-4 h-4 text-white" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-bold text-foreground">AI Resilience Analysis</h3>
+          <p className="text-xs text-muted-foreground">AI-powered assessment of market system resilience across all four MSR domains</p>
+        </div>
+        <Button
+          size="sm"
+          onClick={generate}
+          disabled={pending || !hasScores}
+          className="bg-violet-600 hover:bg-violet-700 text-white shrink-0 gap-1.5"
+        >
+          {pending
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Analysing…</>
+            : <><Sparkles className="w-3.5 h-3.5" />{analysis ? "Regenerate" : "Generate Analysis"}</>
+          }
+        </Button>
+      </div>
+
+      {/* Body */}
+      <div className="px-5 py-4 space-y-5">
+        {!hasScores && !analysis && (
+          <div className="flex flex-col items-center gap-2 py-8 text-center">
+            <AlertCircle className="w-8 h-8 text-muted-foreground/30" />
+            <p className="text-sm font-medium text-muted-foreground">No scores yet</p>
+            <p className="text-xs text-muted-foreground/70">Score some indicators in the matrix above, then generate an AI analysis.</p>
+          </div>
+        )}
+
+        {hasScores && !analysis && !pending && (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <div className="w-14 h-14 rounded-full bg-violet-100 flex items-center justify-center">
+              <Sparkles className="w-7 h-7 text-violet-500" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Ready to analyse</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                Click "Generate Analysis" to have AI interpret your MSR scores and produce a domain-by-domain resilience assessment with findings and recommendations.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {pending && (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
+            <p className="text-sm font-semibold text-foreground">Analysing market system resilience…</p>
+            <p className="text-xs text-muted-foreground">Interpreting MSR scores across all domains and components</p>
+          </div>
+        )}
+
+        {analysis && !pending && (
+          <>
+            {/* Quadrant diagram */}
+            <MsrQuadrantDiagram analysis={analysis} />
+
+            {/* Overall assessment */}
+            <div className="rounded-xl border border-border bg-white/60 p-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Overall Assessment</p>
+              <p className="text-sm text-foreground leading-relaxed">{analysis.overallAssessment}</p>
+            </div>
+
+            {/* Per-domain cards */}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Domain-by-Domain Analysis</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {domainKeys.map(k => (
+                  <MsrDomainCard key={k} domainKey={k} data={analysis[k]} />
+                ))}
+              </div>
+            </div>
+
+            {/* Priority actions */}
+            {analysis.priorityActions && analysis.priorityActions.length > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">Priority Actions</p>
+                <ul className="space-y-1.5">
+                  {analysis.priorityActions.map((a, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-amber-900 leading-relaxed">
+                      <span className="shrink-0 font-black text-amber-600">{i + 1}.</span>
+                      <span>{a}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
   const { msrData, msrSettings, loaded, load, saveData, saveSettings } = useMsrData(theoryId, apiBase);
 
@@ -3460,8 +3872,16 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
       {/* Radar charts — one per domain */}
       <MsrRadarCharts msrData={msrData} periods={periods} />
 
-      {/* AI synthesis image */}
+      {/* Score infographic */}
       <MsrSynthesisImage
+        msrData={msrData}
+        periods={periods}
+        apiBase={apiBase}
+        theoryId={theoryId}
+      />
+
+      {/* AI resilience analysis */}
+      <MsrAIAnalysis
         msrData={msrData}
         periods={periods}
         apiBase={apiBase}
