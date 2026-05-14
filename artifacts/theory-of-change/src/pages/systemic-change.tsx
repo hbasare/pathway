@@ -2101,14 +2101,12 @@ const MSR_SCALE = [
   { value: 4, label: "Much more proactive",    short: "4",  bg: "#dbeafe", text: "#1e3a8a", border: "#93c5fd" },
 ];
 
-const MSR_DOMAINS: {
-  key: string;
-  label: string;
-  bg: string;
-  text: string;
-  border: string;
-  components: { key: string; label: string; desc: string; indicators: string[] }[];
-}[] = [
+interface MsrIndicator { id: string; label: string; type?: "F" | "S" }
+interface MsrIndicatorGroup { group: string; indicators: MsrIndicator[] }
+interface MsrComponent { key: string; label: string; desc: string; indicatorGroups: MsrIndicatorGroup[] }
+interface MsrDomain { key: string; label: string; bg: string; text: string; border: string; components: MsrComponent[] }
+
+const MSR_DOMAINS: MsrDomain[] = [
   {
     key: "structural",
     label: "Structural Domain",
@@ -2118,44 +2116,86 @@ const MSR_DOMAINS: {
         key: "connectivity",
         label: "Connectivity",
         desc: "Linkages and relationships between market actors and support systems",
-        indicators: [
-          "Density and diversity of relationships between actors",
-          "Information flows between market layers",
-          "Access to markets for marginalised groups",
-          "Presence of platforms / convening mechanisms",
+        indicatorGroups: [
+          {
+            group: "Types of Cooperation",
+            indicators: [
+              { id: "conn_tc_1", label: "Number of joint initiatives/partnerships", type: "F" },
+              { id: "conn_tc_2", label: "Agent response pattern to cooperation pressures (i.e. add value or extract)", type: "F" },
+              { id: "conn_tc_3", label: "Co-investment alliances", type: "F" },
+              { id: "conn_tc_4", label: "Investment in suppliers and service providers", type: "F" },
+              { id: "conn_tc_5", label: "Emergence of industry associations", type: "F" },
+              { id: "conn_tc_6", label: "Extent of practice of collective bargaining agreements", type: "S" },
+              { id: "conn_tc_7", label: "Incidence of joint efforts around threats and opportunities", type: "F" },
+            ],
+          },
+          {
+            group: "Motivation for Cooperation",
+            indicators: [
+              { id: "conn_mc_1", label: "Cooperation to gain unfair advantage (e.g. fix prices, shift grades, other)", type: "F" },
+              { id: "conn_mc_2", label: "Cooperation to add value (e.g. joint marketing or branding, advocacy to improve policies and regulations, agreements on standards to increase industry)" },
+              { id: "conn_mc_3", label: "Emergence of specialised business-to-business services", type: "S" },
+              { id: "conn_mc_4", label: "Cooperation to gain fair advantage (level the playing field)" },
+              { id: "conn_mc_5", label: "Collective response patterns to joint threats and opportunities", type: "S" },
+            ],
+          },
+          {
+            group: "Mediating Factors",
+            indicators: [
+              { id: "conn_mf_1", label: "Stringency of anti-trust laws", type: "S" },
+              { id: "conn_mf_2", label: "Level of perceived collusion", type: "S" },
+              { id: "conn_mf_3", label: "Extent to which freedom of association is practised", type: "S" },
+              { id: "conn_mf_4", label: "Formalisation of alliances via co-investment, joint ownership, formal agreements etc." },
+            ],
+          },
         ],
       },
       {
         key: "diversity",
         label: "Diversity",
         desc: "Variety of actors, approaches, and options within the system",
-        indicators: [
-          "Number and variety of service/product providers",
-          "Range of business models and strategies",
-          "Presence of alternative suppliers / routes to market",
-          "Gender and inclusion diversity of actors",
+        indicatorGroups: [
+          {
+            group: "Actor Diversity",
+            indicators: [
+              { id: "div_ad_1", label: "Number and variety of service/product providers", type: "F" },
+              { id: "div_ad_2", label: "Range of business models and strategies", type: "F" },
+              { id: "div_ad_3", label: "Presence of alternative suppliers / routes to market", type: "F" },
+              { id: "div_ad_4", label: "Gender and inclusion diversity of actors", type: "S" },
+            ],
+          },
         ],
       },
       {
         key: "power_dynamics",
         label: "Power Dynamics",
         desc: "Distribution of power and ability to influence rules and norms",
-        indicators: [
-          "Concentration of market power among actors",
-          "Voice of marginalised actors in system decisions",
-          "Transparency of decision-making processes",
-          "Ability of new entrants to challenge incumbents",
+        indicatorGroups: [
+          {
+            group: "Power Distribution",
+            indicators: [
+              { id: "pow_pd_1", label: "Concentration of market power among actors", type: "F" },
+              { id: "pow_pd_2", label: "Voice of marginalised actors in system decisions", type: "S" },
+              { id: "pow_pd_3", label: "Transparency of decision-making processes", type: "S" },
+              { id: "pow_pd_4", label: "Ability of new entrants to challenge incumbents", type: "F" },
+            ],
+          },
         ],
       },
       {
         key: "rule_of_law",
         label: "Rule of Law",
         desc: "Functioning of formal rules, regulations, and enforcement",
-        indicators: [
-          "Clarity and fairness of regulatory framework",
-          "Consistency of enforcement",
-          "Contract enforcement mechanisms",
-          "Absence of corruption / rent-seeking behaviour",
+        indicatorGroups: [
+          {
+            group: "Regulatory Environment",
+            indicators: [
+              { id: "rol_re_1", label: "Clarity and fairness of regulatory framework", type: "S" },
+              { id: "rol_re_2", label: "Consistency of enforcement", type: "F" },
+              { id: "rol_re_3", label: "Contract enforcement mechanisms", type: "S" },
+              { id: "rol_re_4", label: "Absence of corruption / rent-seeking behaviour", type: "S" },
+            ],
+          },
         ],
       },
     ],
@@ -2169,40 +2209,55 @@ const MSR_DOMAINS: {
         key: "cooperation_competition",
         label: "Cooperation & Competition",
         desc: "Balance between collaborative and competitive behaviours among actors",
-        indicators: [
-          "Willingness to share information and collaborate",
-          "Healthy competition driving innovation and quality",
-          "Industry associations or collective action bodies",
-          "Trust between market actors",
+        indicatorGroups: [
+          {
+            group: "Collaborative Behaviour",
+            indicators: [
+              { id: "coc_cb_1", label: "Willingness to share information and collaborate", type: "F" },
+              { id: "coc_cb_2", label: "Healthy competition driving innovation and quality", type: "F" },
+              { id: "coc_cb_3", label: "Industry associations or collective action bodies", type: "F" },
+              { id: "coc_cb_4", label: "Trust between market actors", type: "S" },
+            ],
+          },
         ],
       },
       {
         key: "evidence_decision",
         label: "Evidence-based Decision Making",
         desc: "Extent to which actors use data and evidence to inform choices",
-        indicators: [
-          "Use of market data for business decisions",
-          "Presence of feedback and learning mechanisms",
-          "Investment in monitoring and evaluation by actors",
-          "Responsiveness to customer/beneficiary feedback",
+        indicatorGroups: [
+          {
+            group: "Evidence Use",
+            indicators: [
+              { id: "edm_eu_1", label: "Use of market data for business decisions", type: "F" },
+              { id: "edm_eu_2", label: "Presence of feedback and learning mechanisms", type: "S" },
+              { id: "edm_eu_3", label: "Investment in monitoring and evaluation by actors", type: "F" },
+              { id: "edm_eu_4", label: "Responsiveness to customer/beneficiary feedback", type: "S" },
+            ],
+          },
         ],
       },
       {
         key: "business_strategy",
         label: "Business Strategy",
         desc: "Quality and long-term orientation of strategic planning",
-        indicators: [
-          "Presence of documented business strategies",
-          "Investment in R&D and innovation",
-          "Long-term vs short-term orientation of decisions",
-          "Adaptation of strategy in response to market changes",
+        indicatorGroups: [
+          {
+            group: "Strategic Orientation",
+            indicators: [
+              { id: "bst_so_1", label: "Presence of documented business strategies", type: "F" },
+              { id: "bst_so_2", label: "Investment in R&D and innovation", type: "F" },
+              { id: "bst_so_3", label: "Long-term vs short-term orientation of decisions", type: "S" },
+              { id: "bst_so_4", label: "Adaptation of strategy in response to market changes", type: "S" },
+            ],
+          },
         ],
       },
     ],
   },
 ];
 
-interface MsrCellData { score: number | null; notes: string }
+interface MsrCellData { score: number | null; notes: string; selectedIndicators?: string[] }
 type MsrData = Record<string, Record<string, MsrCellData>>; // period → componentKey → data
 
 function msrAvg(data: MsrData, componentKey: string, periods: string[]): number | null {
@@ -2253,14 +2308,34 @@ function MsrCell({ data, onClick, isSelected }: {
 
 function MsrCellPanel({ period, component, domain, data, onSave, onClose }: {
   period: string;
-  component: { key: string; label: string; desc: string; indicators: string[] };
-  domain: typeof MSR_DOMAINS[0];
+  component: MsrComponent;
+  domain: MsrDomain;
   data: MsrCellData;
   onSave: (d: MsrCellData) => void;
   onClose: () => void;
 }) {
   const [score, setScore] = useState<number | null>(data.score);
   const [notes, setNotes] = useState(data.notes ?? "");
+  const [selected, setSelected] = useState<Set<string>>(new Set(data.selectedIndicators ?? []));
+
+  const allIds = component.indicatorGroups.flatMap(g => g.indicators.map(i => i.id));
+  const noneSelected = selected.size === 0;
+
+  const toggle = (id: string) =>
+    setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+
+  const toggleGroup = (group: MsrIndicatorGroup) => {
+    const ids = group.indicators.map(i => i.id);
+    const allOn = ids.every(id => selected.has(id));
+    setSelected(prev => {
+      const next = new Set(prev);
+      ids.forEach(id => allOn ? next.delete(id) : next.add(id));
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelected(new Set(allIds));
+  const clearAll = () => setSelected(new Set());
 
   return (
     <div className="rounded-xl border-2 border-teal-200 bg-white overflow-hidden flex flex-col shadow-lg">
@@ -2269,7 +2344,7 @@ function MsrCellPanel({ period, component, domain, data, onSave, onClose }: {
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${domain.bg} ${domain.text}`}>
-              {domain.label.replace(" Domain","")}
+              {domain.label.replace(" Domain", "")}
             </span>
             <span className="text-xs text-muted-foreground">· {period}</span>
           </div>
@@ -2282,6 +2357,7 @@ function MsrCellPanel({ period, component, domain, data, onSave, onClose }: {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+
         {/* Score selector */}
         <div>
           <Label className="text-xs font-semibold text-muted-foreground mb-2 block">
@@ -2303,20 +2379,94 @@ function MsrCellPanel({ period, component, domain, data, onSave, onClose }: {
           </div>
         </div>
 
-        {/* Indicators reference */}
-        <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Indicator Prompts</p>
-          <ul className="space-y-1">
-            {component.indicators.map((ind, i) => (
-              <li key={i} className="flex gap-2 text-[11px] text-foreground/70 leading-snug">
-                <span className="shrink-0 text-muted-foreground/50 font-bold mt-0.5">·</span>
-                <span>{ind}</span>
-              </li>
-            ))}
-          </ul>
+        {/* Grouped indicator selector */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              Relevant Indicators
+            </Label>
+            <div className="flex gap-2">
+              <button onClick={selectAll}
+                className="text-[10px] font-semibold text-teal-600 hover:text-teal-800 underline underline-offset-2">
+                Select all
+              </button>
+              {!noneSelected && (
+                <button onClick={clearAll}
+                  className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline underline-offset-2">
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-muted-foreground/70 mb-2 leading-snug">
+            Tick the indicators that are relevant to this intervention — they will be tracked for this component.
+          </p>
+
+          <div className="space-y-3">
+            {component.indicatorGroups.map(grp => {
+              const grpIds = grp.indicators.map(i => i.id);
+              const allOn = grpIds.every(id => selected.has(id));
+              const someOn = grpIds.some(id => selected.has(id));
+              return (
+                <div key={grp.group} className="rounded-lg border border-border/60 overflow-hidden">
+                  {/* Group header — click to toggle all in group */}
+                  <button
+                    onClick={() => toggleGroup(grp)}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                      allOn ? "bg-teal-50 border-b border-teal-100" : someOn ? "bg-amber-50 border-b border-amber-100" : "bg-muted/30 border-b border-border/40"
+                    }`}>
+                    <span className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      allOn ? "bg-teal-500 border-teal-500" : someOn ? "bg-amber-400 border-amber-400" : "border-border bg-white"
+                    }`}>
+                      {(allOn || someOn) && <Check className="w-2 h-2 text-white" />}
+                    </span>
+                    <span className="text-[11px] font-bold text-foreground/80">{grp.group}</span>
+                    <span className="ml-auto text-[10px] text-muted-foreground">
+                      {grpIds.filter(id => selected.has(id)).length}/{grpIds.length}
+                    </span>
+                  </button>
+
+                  {/* Individual indicators */}
+                  <ul className="divide-y divide-border/30">
+                    {grp.indicators.map(ind => {
+                      const on = selected.has(ind.id);
+                      return (
+                        <li key={ind.id}>
+                          <button
+                            onClick={() => toggle(ind.id)}
+                            className={`w-full flex items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-muted/30 ${on ? "bg-teal-50/60" : ""}`}>
+                            <span className={`mt-0.5 w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                              on ? "bg-teal-500 border-teal-500" : "border-border bg-white"
+                            }`}>
+                              {on && <Check className="w-2 h-2 text-white" />}
+                            </span>
+                            <span className={`text-[11px] leading-snug flex-1 ${on ? "text-foreground font-medium" : "text-foreground/60"}`}>
+                              {ind.label}
+                            </span>
+                            {ind.type && (
+                              <span className={`text-[9px] font-black px-1 py-0.5 rounded shrink-0 mt-0.5 ${
+                                ind.type === "F" ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"
+                              }`}>{ind.type}</span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
+
+          {selected.size > 0 && (
+            <p className="text-[10px] text-teal-600 font-semibold mt-2">
+              {selected.size} indicator{selected.size !== 1 ? "s" : ""} selected for this cell
+            </p>
+          )}
         </div>
 
-        {/* Notes */}
+        {/* Evidence notes */}
         <div>
           <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
             Evidence & Justification
@@ -2325,11 +2475,13 @@ function MsrCellPanel({ period, component, domain, data, onSave, onClose }: {
             className="text-sm min-h-[80px]"
             placeholder="Describe the evidence for your score — name specific actors, data sources, or observations…" />
         </div>
+
       </div>
 
       <div className="flex items-center gap-2 px-4 py-3 border-t border-border shrink-0">
         <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-        <Button size="sm" onClick={() => onSave({ score, notes })}
+        <Button size="sm"
+          onClick={() => onSave({ score, notes, selectedIndicators: Array.from(selected) })}
           className="bg-teal-600 hover:bg-teal-700 text-white ml-auto">
           <Check className="w-3.5 h-3.5 mr-1.5" />Save
         </Button>
