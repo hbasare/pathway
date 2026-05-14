@@ -434,7 +434,8 @@ function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void
 }
 
 // ─── AAER Settings panel ──────────────────────────────────────────────────────
-interface AaerSettings { startYear: number; endYear: number; granularity: Granularity; pilotDuration: PilotDuration; enabledStages: string[]; periodStageMap: Record<string, string> }
+interface CustomQuestion { id: string; label: string; type: "yn" | "number" | "notes" }
+interface AaerSettings { startYear: number; endYear: number; granularity: Granularity; pilotDuration: PilotDuration; enabledStages: string[]; periodStageMap: Record<string, string>; customQuestions: Record<string, CustomQuestion[]> }
 
 const PILOT_DURATION_OPTIONS: { value: PilotDuration; label: string; desc: string }[] = [
   { value: "none",  label: "No pilot phase",  desc: "Tracking starts at Y1" },
@@ -1096,12 +1097,13 @@ const STAGE_LABEL_COLOR: Record<string, string> = {
   expand: "text-emerald-700", respond: "text-orange-700",
 };
 
-function AaerCellPanel({ state, onClose, onSave, onDelete, fw }: {
+function AaerCellPanel({ state, onClose, onSave, onDelete, fw, customQuestions }: {
   state: CellModalState;
   onClose: () => void;
   onSave: (data: Omit<Entry, "id" | "theoryId" | "position">) => void;
   onDelete: () => void;
   fw: FrameworkDef;
+  customQuestions?: CustomQuestion[];
 }) {
   const raw = state.entry?.stageData ?? "{}";
   const isPilot = isPilotPeriod(state.period);
@@ -1119,13 +1121,25 @@ function AaerCellPanel({ state, onClose, onSave, onDelete, fw }: {
   const [adaptData,    setAdaptData]    = useState<AdaptData>(parseAdaptData(raw));
   const [expansionData, setExpansionData] = useState<ExpansionData>(parseExpansionData(raw));
   const [responseData, setResponseData] = useState<ResponseData>(parseResponseData(raw));
+  const [customAnswers, setCustomAnswers] = useState<Record<string, { answer?: string; value?: string; notes?: string }>>(() => {
+    try {
+      const p = JSON.parse(raw || "{}");
+      const stageRaw = p[state.actor] ?? {};
+      const result: Record<string, { answer?: string; value?: string; notes?: string }> = {};
+      for (const cq of (customQuestions ?? [])) result[cq.id] = stageRaw[cq.id] ?? {};
+      return result;
+    } catch { return {}; }
+  });
   const set = (k: string, v: string) => setVals(p => ({ ...p, [k]: v }));
+  const setCustomAns = (id: string, updates: { answer?: string; value?: string; notes?: string }) =>
+    setCustomAnswers(p => ({ ...p, [id]: { ...p[id], ...updates } }));
 
   const handleSave = () => {
-    const stageData = JSON.stringify({
-      adopt: adoptData, adapt: adaptData,
-      expand: expansionData, respond: responseData,
-    });
+    const stageMap: Record<string, any> = {
+      adopt: adoptData, adapt: adaptData, expand: expansionData, respond: responseData,
+    };
+    stageMap[vals.frameworkTag] = { ...stageMap[vals.frameworkTag], ...customAnswers };
+    const stageData = JSON.stringify(stageMap);
     onSave({
       dimension:      state.actor,
       frameworkTag:   vals.frameworkTag,
@@ -1205,6 +1219,47 @@ function AaerCellPanel({ state, onClose, onSave, onDelete, fw }: {
             {vals.frameworkTag === "adapt"  && <AdaptQuestionsPanel     data={adaptData}     onChange={setAdaptData} />}
             {vals.frameworkTag === "expand" && <ExpansionQuestionsPanel data={expansionData} onChange={setExpansionData} />}
             {vals.frameworkTag === "respond"&& <ResponseQuestionsPanel  data={responseData}  onChange={setResponseData} />}
+          </div>
+        )}
+
+        {/* Custom questions */}
+        {(customQuestions?.length ?? 0) > 0 && (
+          <div className={`border-t ${STAGE_BORDER_COLOR[vals.frameworkTag]} pt-4 space-y-3`}>
+            <p className={`text-xs font-bold uppercase tracking-widest ${STAGE_LABEL_COLOR[vals.frameworkTag]}`}>
+              Custom Questions
+            </p>
+            {customQuestions!.map(cq => {
+              const ans = customAnswers[cq.id] ?? {};
+              return (
+                <div key={cq.id} className="space-y-1.5">
+                  <Label className="text-xs font-semibold text-muted-foreground block">{cq.label}</Label>
+                  {cq.type === "yn" && (
+                    <div className="flex gap-1.5 flex-wrap">
+                      {(["yes","no","partial","uncertain"] as const).map(v => (
+                        <button key={v} onClick={() => setCustomAns(cq.id, { answer: ans.answer === v ? "" : v })}
+                          className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-all ${
+                            ans.answer === v ? ANSWER_COLORS[v] : "bg-background border-border text-muted-foreground hover:bg-muted"
+                          }`}>
+                          {ANSWER_LABELS[v]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {cq.type === "number" && (
+                    <Input type="number" value={ans.value ?? ""} onChange={e => setCustomAns(cq.id, { value: e.target.value })}
+                      className="text-sm h-9" placeholder="Enter value…" />
+                  )}
+                  {cq.type === "notes" && (
+                    <Textarea value={ans.value ?? ""} onChange={e => setCustomAns(cq.id, { value: e.target.value })}
+                      className="text-sm min-h-[64px]" placeholder="Enter notes…" />
+                  )}
+                  {cq.type !== "notes" && (
+                    <Textarea value={ans.notes ?? ""} onChange={e => setCustomAns(cq.id, { notes: e.target.value })}
+                      className="text-sm min-h-[40px]" placeholder="Notes (optional)…" />
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -1354,7 +1409,7 @@ const ANSWER_LABELS: Record<string, string> = {
 };
 
 // ─── AAER Matrix view ─────────────────────────────────────────────────────────
-function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, periodStageMap, onPeriodStageChange }: {
+function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, periodStageMap, onPeriodStageChange, customQuestions = {}, onCustomQuestionsChange }: {
   selectedCell?: { actor: string; period: string } | null;
   entries: Entry[];
   periods: string[];
@@ -1363,10 +1418,24 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, p
   theory: any;
   periodStageMap: Record<string, string>;
   onPeriodStageChange: (period: string, stage: string | null) => void;
+  customQuestions: Record<string, CustomQuestion[]>;
+  onCustomQuestionsChange: (stage: string, questions: CustomQuestion[]) => void;
 }) {
   /** Returns the stage locked to a period (pilot→adopt, mapped→that stage, else null=any) */
   const stageForPeriod = (p: string): string | null =>
     isPilotPeriod(p) ? "adopt" : (periodStageMap[p] ?? null);
+
+  const [addingStage, setAddingStage] = useState<string | null>(null);
+  const [newLabel, setNewLabel] = useState("");
+  const [newType, setNewType] = useState<"yn" | "number" | "notes">("yn");
+
+  const saveNewQuestion = (stage: string) => {
+    if (!newLabel.trim()) return;
+    const id = `cq_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    onCustomQuestionsChange(stage, [...(customQuestions[stage] ?? []), { id, label: newLabel.trim(), type: newType }]);
+    setAddingStage(null);
+    setNewLabel("");
+  };
   // Index entries by frameworkTag::period
   const index: Record<string, Entry> = {};
   entries.forEach(e => {
@@ -1517,6 +1586,124 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, p
                       })}
                     </tr>
                   ))}
+
+                  {/* ── Custom question rows ── */}
+                  {(customQuestions[stageOpt.value] ?? []).map((cq, cqi) => {
+                    const qi = qDefs.length + cqi;
+                    return (
+                      <tr key={cq.id} className={`group border-b border-border/20 ${qi % 2 === 0 ? "bg-white" : "bg-muted/10"} hover:bg-violet-50/20 transition-colors`}>
+                        <td className="px-4 py-2.5 sticky left-0 z-10 border-r border-border/20 align-top"
+                          style={{ background: qi % 2 === 0 ? "white" : "rgb(249 250 251 / 0.8)" }}>
+                          <div className="flex gap-2 items-start justify-between">
+                            <div className="flex gap-2 items-start min-w-0">
+                              <span className={`text-[10px] font-black shrink-0 mt-0.5 ${sc.text} opacity-50`}>{qi + 1}.</span>
+                              <span className="text-[11px] text-foreground leading-snug">{cq.label}</span>
+                            </div>
+                            <button
+                              onClick={() => onCustomQuestionsChange(stageOpt.value, (customQuestions[stageOpt.value] ?? []).filter(q => q.id !== cq.id))}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-1 text-muted-foreground hover:text-destructive"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </td>
+                        {periods.map((period, pi) => {
+                          const locked = stageForPeriod(period);
+                          const isBlocked = locked !== null && locked !== stageOpt.value;
+                          if (isBlocked) return (
+                            <td key={period} className={`px-2 py-1 align-top ${qi % 2 === 0 ? "bg-muted/5" : "bg-muted/10"}`}>
+                              <div className="min-h-[36px] flex items-center justify-center opacity-15">
+                                <span className="text-xs text-muted-foreground">—</span>
+                              </div>
+                            </td>
+                          );
+                          const d = parsedData[pi] as any;
+                          const qData = d?.[cq.id] ?? null;
+                          const entry = periodEntries[pi];
+                          const isSelected = selectedCell?.actor === stageOpt.value && selectedCell?.period === period;
+                          let mainDisplay: React.ReactNode = null;
+                          if (qData) {
+                            if (cq.type === "number" && qData.value) {
+                              mainDisplay = <span className="font-bold text-sm text-foreground">{qData.value}</span>;
+                            } else if (cq.type === "yn" && qData.answer) {
+                              const col = ANSWER_COLORS[qData.answer] ?? "bg-muted text-muted-foreground border-border";
+                              mainDisplay = <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${col}`}>{ANSWER_LABELS[qData.answer] ?? qData.answer}</span>;
+                            }
+                          }
+                          const hasContent = mainDisplay || qData?.notes || qData?.value;
+                          return (
+                            <td key={period} className="px-2 py-2 align-top">
+                              <button onClick={() => onCellClick(stageOpt.value, period, entry ?? null)}
+                                className={`w-full min-h-[36px] rounded-md px-2 py-1.5 text-left transition-all hover:ring-1 hover:ring-violet-300 hover:bg-violet-50/40 ${
+                                  isSelected ? `ring-2 ring-offset-1 ${sc.border.replace("border-", "ring-")} ${sc.bg}` : ""
+                                }`}>
+                                {hasContent ? (
+                                  <div className="flex flex-col gap-1">
+                                    {mainDisplay}
+                                    {qData?.notes && <p className="text-[10px] text-muted-foreground italic leading-snug">{qData.notes}</p>}
+                                    {cq.type === "notes" && qData?.value && <p className="text-[11px] text-foreground leading-snug">{qData.value}</p>}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-center h-5">
+                                    <span className="text-muted-foreground/25 text-xs">—</span>
+                                  </div>
+                                )}
+                              </button>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    );
+                  })}
+
+                  {/* ── Add question row ── */}
+                  {addingStage === stageOpt.value ? (
+                    <tr className="border-b border-border/20 bg-violet-50/30">
+                      <td colSpan={periods.length + 1} className="px-4 py-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <input
+                            autoFocus
+                            type="text"
+                            value={newLabel}
+                            onChange={e => setNewLabel(e.target.value)}
+                            placeholder="Question label…"
+                            className="flex-1 min-w-[200px] text-sm rounded border border-border px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-violet-400 bg-background"
+                            onKeyDown={e => {
+                              if (e.key === "Enter") saveNewQuestion(stageOpt.value);
+                              if (e.key === "Escape") { setAddingStage(null); setNewLabel(""); }
+                            }}
+                          />
+                          <select value={newType} onChange={e => setNewType(e.target.value as any)}
+                            className="text-sm rounded border border-border px-2 py-1.5 bg-background focus:outline-none">
+                            <option value="yn">Yes / No</option>
+                            <option value="number">Number</option>
+                            <option value="notes">Notes</option>
+                          </select>
+                          <button onClick={() => saveNewQuestion(stageOpt.value)}
+                            className={`text-sm font-semibold ${sc.text} px-3 py-1.5 rounded border ${sc.border} ${sc.bg} hover:opacity-80 transition-opacity`}>
+                            Add
+                          </button>
+                          <button onClick={() => { setAddingStage(null); setNewLabel(""); }}
+                            className="text-sm text-muted-foreground hover:text-foreground px-2 py-1.5">
+                            Cancel
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr className="border-b border-border/10 bg-muted/5">
+                      <td colSpan={periods.length + 1} className="px-4 py-2">
+                        <button
+                          onClick={() => { setAddingStage(stageOpt.value); setNewLabel(""); setNewType("yn"); }}
+                          className={`flex items-center gap-1.5 text-[11px] font-semibold ${sc.text} opacity-50 hover:opacity-100 transition-opacity`}
+                        >
+                          <Plus className="w-3 h-3" />
+                          Add question
+                        </button>
+                      </td>
+                    </tr>
+                  )}
+
                 </Fragment>
               );
             })}
@@ -1874,7 +2061,7 @@ export default function SystemicChange() {
   const [showSelector, setShowSelector] = useState(false);
   const [localFrameworkKey, setLocalFrameworkKey] = useState<FrameworkKey | null>(null);
   const [cellModal, setCellModal] = useState<CellModalState | null>(null);
-  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none", enabledStages: ["adopt","adapt","expand","respond"], periodStageMap: {} });
+  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none", enabledStages: ["adopt","adapt","expand","respond"], periodStageMap: {}, customQuestions: {} });
   const [settingsSynced, setSettingsSynced] = useState(false);
 
   const loadEntries = async () => {
@@ -1902,6 +2089,7 @@ export default function SystemicChange() {
         pilotDuration:  (t.pilotDuration as PilotDuration)  ?? "none",
         enabledStages:  t.enabledStages ? String(t.enabledStages).split(",").filter(Boolean) : ["adopt","adapt","expand","respond"],
         periodStageMap: (() => { try { return JSON.parse(String(t.periodStageMap ?? "{}")); } catch { return {}; } })(),
+        customQuestions: (() => { try { return JSON.parse(String((t as any).customQuestions ?? "{}")); } catch { return {}; } })(),
       });
       setSettingsSynced(true);
     }
@@ -1926,6 +2114,7 @@ export default function SystemicChange() {
         pilotDuration: s.pilotDuration,
         enabledStages: s.enabledStages.join(","),
         periodStageMap: JSON.stringify(s.periodStageMap),
+        customQuestions: JSON.stringify(s.customQuestions),
       } as any,
     });
   };
@@ -2079,9 +2268,14 @@ export default function SystemicChange() {
                   onPeriodStageChange={(period, stage) => {
                     const next = { ...localSettings.periodStageMap };
                     if (stage) next[period] = stage; else delete next[period];
-                    const updated = { ...localSettings, periodStageMap: next };
-                    setLocalSettings(updated);
+                    setLocalSettings(s => ({ ...s, periodStageMap: next }));
                     updateTheory.mutate({ id, data: { periodStageMap: JSON.stringify(next) } as any });
+                  }}
+                  customQuestions={localSettings.customQuestions}
+                  onCustomQuestionsChange={(stage, questions) => {
+                    const next = { ...localSettings.customQuestions, [stage]: questions };
+                    setLocalSettings(s => ({ ...s, customQuestions: next }));
+                    updateTheory.mutate({ id, data: { customQuestions: JSON.stringify(next) } as any });
                   }}
                 />
               </div>
@@ -2093,6 +2287,7 @@ export default function SystemicChange() {
                     onClose={() => setCellModal(null)}
                     onSave={handleCellSave}
                     onDelete={() => { cellModal.entry && handleDelete(cellModal.entry.id); setCellModal(null); }}
+                    customQuestions={localSettings.customQuestions[cellModal.actor] ?? []}
                   />
                 </div>
               )}
