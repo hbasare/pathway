@@ -435,7 +435,7 @@ function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void
 
 // ─── AAER Settings panel ──────────────────────────────────────────────────────
 interface CustomQuestion { id: string; label: string; type: "yn" | "number" | "notes" }
-interface AaerSettings { startYear: number; endYear: number; granularity: Granularity; pilotDuration: PilotDuration; enabledStages: string[]; periodStageMap: Record<string, string>; customQuestions: Record<string, CustomQuestion[]> }
+interface AaerSettings { startYear: number; endYear: number; granularity: Granularity; pilotDuration: PilotDuration; enabledStages: string[]; periodStageMap: Record<string, string>; customQuestions: Record<string, CustomQuestion[]>; pilotPeriods: string[] }
 
 const PILOT_DURATION_OPTIONS: { value: PilotDuration; label: string; desc: string }[] = [
   { value: "none",  label: "No pilot phase",  desc: "Tracking starts at Y1" },
@@ -525,12 +525,17 @@ function AaerSettingsPanel({ settings, onSave }: {
             <p className="text-[11px] text-muted-foreground/70 mt-1.5">Toggle which stages actors can be assessed against. At least one must remain active.</p>
           </div>
 
-          {/* Pilot duration */}
+          {/* Pilot periods */}
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-2 block">Pilot Phase Duration</Label>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Pilot Phase</Label>
+            <p className="text-[11px] text-muted-foreground/70 mb-2">Use the quick-select presets, or click any period in the timeline preview below to manually toggle it as a pilot period.</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {PILOT_DURATION_OPTIONS.map(opt => (
-                <button key={opt.value} onClick={() => setLocal(p => ({ ...p, pilotDuration: opt.value }))}
+                <button key={opt.value} onClick={() => setLocal(p => ({
+                  ...p,
+                  pilotDuration: opt.value,
+                  pilotPeriods: opt.value === "none" ? [] : generatePilotPeriods(opt.value, p.granularity),
+                }))}
                   className={`rounded-lg border-2 px-3 py-2 text-center transition-all ${
                     local.pilotDuration === opt.value
                       ? "bg-amber-100 border-amber-400 text-amber-900"
@@ -576,24 +581,35 @@ function AaerSettingsPanel({ settings, onSave }: {
             </div>
           </div>
 
-          {/* Period preview */}
+          {/* Period preview — clickable toggles */}
           {allPeriods.length > 0 && (
             <div>
               <p className="text-[11px] font-semibold text-muted-foreground mb-2">
-                Full timeline preview ({allPeriods.length} periods
-                {pilotPeriods.length > 0 && `, incl. ${pilotPeriods.length} pilot`}):
+                Full timeline ({allPeriods.length} periods
+                {local.pilotPeriods.length > 0 && `, ${local.pilotPeriods.length} pilot`}) — click to toggle pilot:
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {allPeriods.map(p => (
-                  <span key={p} className={`text-[11px] px-2 py-0.5 rounded-full font-medium border inline-flex items-center gap-1 ${
-                    isPilotPeriod(p)
-                      ? "bg-amber-100 text-amber-800 border-amber-300"
-                      : "bg-violet-100 text-violet-700 border-violet-200"
-                  }`}>
-                    {p}
-                    {isPilotPeriod(p) && <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">· Pilot</span>}
-                  </span>
-                ))}
+                {allPeriods.map(p => {
+                  const isP = local.pilotPeriods.includes(p);
+                  return (
+                    <button key={p}
+                      onClick={() => setLocal(prev => ({
+                        ...prev,
+                        pilotPeriods: isP
+                          ? prev.pilotPeriods.filter(x => x !== p)
+                          : [...prev.pilotPeriods, p],
+                        pilotDuration: "none", // custom selection overrides preset
+                      }))}
+                      className={`text-[11px] px-2 py-0.5 rounded-full font-medium border inline-flex items-center gap-1 transition-all cursor-pointer select-none ${
+                        isP
+                          ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
+                          : "bg-violet-100 text-violet-700 border-violet-200 hover:bg-violet-200"
+                      }`}>
+                      {p}
+                      {isP && <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">· Pilot</span>}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1097,16 +1113,17 @@ const STAGE_LABEL_COLOR: Record<string, string> = {
   expand: "text-emerald-700", respond: "text-orange-700",
 };
 
-function AaerCellPanel({ state, onClose, onSave, onDelete, fw, customQuestions }: {
+function AaerCellPanel({ state, onClose, onSave, onDelete, fw, customQuestions, pilotPeriods = [] }: {
   state: CellModalState;
   onClose: () => void;
   onSave: (data: Omit<Entry, "id" | "theoryId" | "position">) => void;
   onDelete: () => void;
   fw: FrameworkDef;
   customQuestions?: CustomQuestion[];
+  pilotPeriods?: string[];
 }) {
   const raw = state.entry?.stageData ?? "{}";
-  const isPilot = isPilotPeriod(state.period);
+  const isPilot = pilotPeriods.includes(state.period);
   const [vals, setVals] = useState({
     frameworkTag: (() => {
       const tag = state.entry?.frameworkTag ?? (isPilot ? "adopt" : "adapt");
@@ -1409,7 +1426,7 @@ const ANSWER_LABELS: Record<string, string> = {
 };
 
 // ─── AAER Matrix view ─────────────────────────────────────────────────────────
-function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, periodStageMap, onPeriodStageChange, customQuestions = {}, onCustomQuestionsChange }: {
+function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, periodStageMap, onPeriodStageChange, customQuestions = {}, onCustomQuestionsChange, pilotPeriods = [] }: {
   selectedCell?: { actor: string; period: string } | null;
   entries: Entry[];
   periods: string[];
@@ -1420,10 +1437,12 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, p
   onPeriodStageChange: (period: string, stage: string | null) => void;
   customQuestions: Record<string, CustomQuestion[]>;
   onCustomQuestionsChange: (stage: string, questions: CustomQuestion[]) => void;
+  pilotPeriods?: string[];
 }) {
+  const isPilot = (p: string) => pilotPeriods.includes(p);
   /** Returns the stage locked to a period (pilot→adopt, mapped→that stage, else null=any) */
   const stageForPeriod = (p: string): string | null =>
-    isPilotPeriod(p) ? "adopt" : (periodStageMap[p] ?? null);
+    isPilot(p) ? "adopt" : (periodStageMap[p] ?? null);
 
   const [addingStage, setAddingStage] = useState<string | null>(null);
   const [newLabel, setNewLabel] = useState("");
@@ -1462,9 +1481,9 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, p
                 Question
               </th>
               {periods.map(p => (
-                <th key={p} className={`px-3 py-3 text-center text-[11px] font-bold min-w-[110px] ${isPilotPeriod(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
+                <th key={p} className={`px-3 py-3 text-center text-[11px] font-bold min-w-[110px] ${isPilot(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
                   {p}
-                  {isPilotPeriod(p) && (
+                  {isPilot(p) && (
                     <div className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mt-0.5 opacity-80">Pilot</div>
                   )}
                 </th>
@@ -2080,7 +2099,7 @@ export default function SystemicChange() {
   const [showSelector, setShowSelector] = useState(false);
   const [localFrameworkKey, setLocalFrameworkKey] = useState<FrameworkKey | null>(null);
   const [cellModal, setCellModal] = useState<CellModalState | null>(null);
-  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none", enabledStages: ["adopt","adapt","expand","respond"], periodStageMap: {}, customQuestions: {} });
+  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none", enabledStages: ["adopt","adapt","expand","respond"], periodStageMap: {}, customQuestions: {}, pilotPeriods: [] });
   const [settingsSynced, setSettingsSynced] = useState(false);
 
   const loadEntries = async () => {
@@ -2109,6 +2128,15 @@ export default function SystemicChange() {
         enabledStages:  t.enabledStages ? String(t.enabledStages).split(",").filter(Boolean) : ["adopt","adapt","expand","respond"],
         periodStageMap: (() => { try { return JSON.parse(String(t.periodStageMap ?? "{}")); } catch { return {}; } })(),
         customQuestions: (() => { try { return JSON.parse(String((t as any).customQuestions ?? "{}")); } catch { return {}; } })(),
+        pilotPeriods: (() => {
+          try {
+            const arr = JSON.parse(String((t as any).pilotPeriods ?? "[]"));
+            if (Array.isArray(arr) && arr.length > 0) return arr;
+          } catch { /* fall through */ }
+          const dur = (t.pilotDuration as PilotDuration) ?? "none";
+          const gran = (t.periodGranularity as Granularity) ?? "annual";
+          return generatePilotPeriods(dur, gran);
+        })(),
       });
       setSettingsSynced(true);
     }
@@ -2134,6 +2162,7 @@ export default function SystemicChange() {
         enabledStages: s.enabledStages.join(","),
         periodStageMap: JSON.stringify(s.periodStageMap),
         customQuestions: JSON.stringify(s.customQuestions),
+        pilotPeriods: JSON.stringify(s.pilotPeriods),
       } as any,
     });
   };
@@ -2296,6 +2325,7 @@ export default function SystemicChange() {
                     setLocalSettings(s => ({ ...s, customQuestions: next }));
                     updateTheory.mutate({ id, data: { customQuestions: JSON.stringify(next) } as any });
                   }}
+                  pilotPeriods={localSettings.pilotPeriods}
                 />
               </div>
               {cellModal && effectiveFw && (
@@ -2307,6 +2337,7 @@ export default function SystemicChange() {
                     onSave={handleCellSave}
                     onDelete={() => { cellModal.entry && handleDelete(cellModal.entry.id); setCellModal(null); }}
                     customQuestions={localSettings.customQuestions[cellModal.actor] ?? []}
+                    pilotPeriods={localSettings.pilotPeriods}
                   />
                 </div>
               )}
