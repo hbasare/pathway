@@ -1263,6 +1263,52 @@ function AaerCellPanel({ state, onClose, onSave, onDelete, fw }: {
   );
 }
 
+// ─── Stage questions summary (for first column) ───────────────────────────────
+const STAGE_QUESTIONS_SUMMARY: Record<string, { keyQ: string; questions: string[] }> = {
+  adopt: {
+    keyQ: "If you left now, would partners return to their previous way of working?",
+    questions: [
+      "No. of partners who adopted the new business model",
+      "Partner(s) contribution to the pilot (%)",
+      "Partners satisfied and willing to continue?",
+      "Has the pilot resulted in increased revenue/profit?",
+      "Is the target group benefitting from the model?",
+      "Is there a champion/change agent in the organisation?",
+      "Will the organisation continue without the champion?",
+    ],
+  },
+  adapt: {
+    keyQ: "If you left now, would partners build upon the changes they've adopted, without us?",
+    questions: [
+      "Have partners made autonomous changes to the model?",
+      "Have partners increased their share of costs/investment?",
+      "If yes, what is their increased contribution (%)?",
+      "Have partners autonomously expanded to other areas?",
+      "If yes, how many new locations have they expanded to?",
+    ],
+  },
+  expand: {
+    keyQ: "If you left now, would target group benefits depend on too few?",
+    questions: [
+      "Have competitors or others crowded in?",
+      "If yes, how many have crowded in?",
+      "Combined market share of partners and others (%)",
+      "Have others started copying the target group behaviour?",
+      "Ratio of direct to indirect beneficiaries (e.g. 1:2)",
+    ],
+  },
+  respond: {
+    keyQ: "If you left now, would the system be supportive of the changes introduced?",
+    questions: [
+      "Have there been any changes in policy or business conduct?",
+      "Have others from interconnected markets reacted/responded?",
+      "If yes, how many have responded?",
+      "Has the market been able to withstand and cope with shocks?",
+      "Other relevant observations about systemic response",
+    ],
+  },
+};
+
 // ─── AAER Matrix view ─────────────────────────────────────────────────────────
 function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }: {
   selectedCell?: { actor: string; period: string } | null;
@@ -1272,34 +1318,11 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }:
   onCellClick: (actor: string, period: string, entry: Entry | null) => void;
   theory: any;
 }) {
-  // Derive unique actors from entries (preserving order of first appearance)
-  const actorOrder = useRef<string[]>([]);
-  const [newActor, setNewActor] = useState("");
-  const [addingActor, setAddingActor] = useState(false);
-
-  // Collect actors from entries + any locally added ones
-  const entryActors = entries.map(e => e.dimension).filter(Boolean);
-  entryActors.forEach(a => {
-    if (!actorOrder.current.includes(a)) actorOrder.current.push(a);
-  });
-  const actors = actorOrder.current.length > 0 ? actorOrder.current : [];
-
-  // Index entries by actor::period
+  // Index entries by frameworkTag::period
   const index: Record<string, Entry> = {};
   entries.forEach(e => {
-    if (e.dimension && e.periodLabel) index[`${e.dimension}::${e.periodLabel}`] = e;
+    if (e.frameworkTag && e.periodLabel) index[`${e.frameworkTag}::${e.periodLabel}`] = e;
   });
-
-  const handleAddActor = () => {
-    const name = newActor.trim();
-    if (name && !actorOrder.current.includes(name)) {
-      actorOrder.current = [...actorOrder.current, name];
-      // Trigger a click on the first period for this actor
-      if (periods.length > 0) onCellClick(name, periods[0], null);
-    }
-    setNewActor("");
-    setAddingActor(false);
-  };
 
   if (periods.length === 0) {
     return (
@@ -1311,317 +1334,108 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }:
     );
   }
 
-  // Stage progression arrow for a row
-  const getRowStages = (actor: string) =>
-    periods.map(p => index[`${actor}::${p}`]?.frameworkTag ?? null);
-
   return (
-    <div className="space-y-4">
-      {/* Legend */}
-      <div className="flex flex-wrap gap-2 items-center">
-        <span className="text-xs font-semibold text-muted-foreground mr-1">AAER Stages:</span>
-        {fw.tagOptions.map(opt => {
-          const s = AAER_STAGE_COLORS[opt.value];
-          return (
-            <span key={opt.value} className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${s.bg} ${s.text} ${s.border}`}>
-              {opt.label}
-            </span>
-          );
-        })}
-        <span className="text-[11px] border border-dashed border-border text-muted-foreground/50 px-2.5 py-0.5 rounded-full">No data</span>
-      </div>
-
-      {/* Matrix table */}
-      <div className="rounded-xl border border-border overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="border-collapse w-full" style={{ minWidth: `${Math.max(400, periods.length * 80)}px` }}>
-            <thead>
-              <tr className="bg-muted/70 border-b border-border">
-                {periods.map(p => (
-                  <th key={p} className={`px-2 py-3 text-center text-[11px] font-bold min-w-[72px] ${isPilotPeriod(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
-                    <div>{p}</div>
-                    {isPilotPeriod(p) && (
-                      <div className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mt-0.5 opacity-80">Pilot</div>
-                    )}
-                  </th>
-                ))}
-                <th className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground w-24">Progress</th>
-              </tr>
-            </thead>
-            <tbody>
-              {actors.map((actor, ai) => {
-                const rowStages = getRowStages(actor);
-                const nonEmpty = rowStages.filter(Boolean);
-                const latestStage = nonEmpty[nonEmpty.length - 1];
-                const latestColor = latestStage ? AAER_STAGE_COLORS[latestStage] : null;
-                return (
-                  <tr key={actor} className={`border-b border-border/50 last:border-0 ${ai % 2 === 0 ? "bg-background" : "bg-muted/20"} hover:bg-violet-50/40 transition-colors`}>
-                    {periods.map(period => {
-                      const entry = index[`${actor}::${period}`];
-                      const stage = entry ? AAER_STAGE_COLORS[entry.frameworkTag] : null;
-                      const confOpt = entry ? fw.statusOptions.find(s => s.value === entry.status) : null;
-                      const isSelected = selectedCell?.actor === actor && selectedCell?.period === period;
-                      return (
-                        <td key={period} className="px-1.5 py-2 text-center">
-                          <button onClick={() => onCellClick(actor, period, entry ?? null)}
-                            className={`w-full min-h-[52px] rounded-lg border-2 transition-all hover:shadow-sm flex flex-col items-center justify-center gap-1 px-1 py-1.5 ${
-                              isSelected
-                                ? "ring-2 ring-violet-500 ring-offset-1 " + (stage ? `${stage.bg} ${stage.border}` : "border-violet-400 bg-violet-50")
-                                : stage
-                                  ? `${stage.bg} ${stage.border} hover:opacity-80`
-                                  : "border-dashed border-border/40 bg-transparent hover:border-violet-300 hover:bg-violet-50/50"
-                            }`}>
-                            {stage ? (
-                              <>
-                                <span className={`text-xs font-black ${stage.text}`}>{stage.abbr}</span>
-                                {confOpt && (
-                                  <span className="text-[9px] leading-none text-center opacity-70 font-medium">
-                                    {confOpt.label}
-                                  </span>
-                                )}
-                              </>
-                            ) : (
-                              <Plus className="w-3.5 h-3.5 text-muted-foreground/30" />
-                            )}
-                          </button>
-                        </td>
-                      );
-                    })}
-                    {/* Progress column */}
-                    <td className="px-3 py-2 text-center">
-                      <div className="flex items-center justify-center gap-0.5">
-                        {rowStages.map((s, i) => {
-                          const col = s ? AAER_STAGE_COLORS[s] : null;
-                          return col ? (
-                            <span key={i} className={`w-2.5 h-2.5 rounded-full ${col.bg.replace("bg-", "bg-").replace("-100", "-400")}`} title={col.label} />
-                          ) : (
-                            <span key={i} className="w-2.5 h-2.5 rounded-full bg-muted/40" />
-                          );
-                        })}
-                      </div>
-                      <span className="text-[10px] text-muted-foreground mt-1 block">{nonEmpty.length}/{periods.length}</span>
-                    </td>
-                  </tr>
-                );
-              })}
-
-              {/* Add actor row */}
-              <tr className="border-t border-dashed border-border/40 bg-muted/10">
-                <td colSpan={periods.length + 2} className="px-4 py-3">
-                  {addingActor ? (
-                    <div className="flex items-center gap-2">
-                      <input autoFocus value={newActor} onChange={e => setNewActor(e.target.value)}
-                        onKeyDown={e => { if (e.key === "Enter") handleAddActor(); if (e.key === "Escape") setAddingActor(false); }}
-                        className="text-sm h-8 px-3 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-violet-400 w-64"
-                        placeholder="Actor or firm name…" />
-                      <Button size="sm" className="h-8 bg-violet-600 hover:bg-violet-700 text-white" onClick={handleAddActor}>Add</Button>
-                      <Button size="sm" variant="ghost" className="h-8" onClick={() => setAddingActor(false)}>Cancel</Button>
-                    </div>
-                  ) : (
-                    <button onClick={() => setAddingActor(true)}
-                      className="flex items-center gap-2 text-sm text-violet-600 hover:text-violet-800 font-medium transition-colors">
-                      <Plus className="w-4 h-4" />Add Actor
-                    </button>
+    <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="border-collapse w-full" style={{ minWidth: `${Math.max(500, 260 + periods.length * 80)}px` }}>
+          <thead>
+            <tr className="bg-muted/70 border-b border-border">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-64 min-w-[260px]">
+                Stage &amp; Questions
+              </th>
+              {periods.map(p => (
+                <th key={p} className={`px-2 py-3 text-center text-[11px] font-bold min-w-[72px] ${isPilotPeriod(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
+                  <div>{p}</div>
+                  {isPilotPeriod(p) && (
+                    <div className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mt-0.5 opacity-80">Pilot</div>
                   )}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Detail cards for entries — hidden for now */}
-      {false && entries.length > 0 && (() => {
-        const answerColor = (a: string) =>
-          a === "yes" ? "text-emerald-700" : a === "no" ? "text-red-700" : a === "uncertain" || a === "partial" ? "text-amber-700" : "text-muted-foreground";
-        const answerLabel = (a: string) =>
-          a === "yes" ? "Yes" : a === "partial" ? "Partially" : a === "no" ? "No" : a === "uncertain" ? "Uncertain" : "—";
-        const kqColor = (a: string, positive: string) =>
-          a === positive ? "bg-emerald-100 text-emerald-800 border-emerald-300"
-          : a === "uncertain" ? "bg-amber-100 text-amber-800 border-amber-300"
-          : a ? "bg-red-100 text-red-800 border-red-300" : "bg-muted border-border";
-
-        const KQBlock = ({ kq, kqNotes, kqLabel, positive }: { kq: string; kqNotes: string; kqLabel: string; positive: string }) =>
-          kq ? (
-            <div className={`rounded-lg border px-2.5 py-1.5 ${kqColor(kq, positive)}`}>
-              <p className="text-[10px] font-bold uppercase tracking-wide opacity-60 mb-0.5">Key Question</p>
-              <p className="text-xs font-semibold">{kqLabel}</p>
-              {kqNotes && <p className="text-[11px] text-foreground/70 mt-1 italic leading-snug">{kqNotes}</p>}
-            </div>
-          ) : null;
-
-        const StatTile = ({ label, value, suffix = "" }: { label: string; value: string; suffix?: string }) =>
-          value ? (
-            <div className="bg-white/60 border border-white/80 rounded px-2 py-1 flex-1 text-center">
-              <p className="text-[10px] text-muted-foreground font-semibold">{label}</p>
-              <p className="text-sm font-black text-foreground">{value}{suffix}</p>
-            </div>
-          ) : null;
-
-        const YNList = ({ rows }: { rows: { short: string; answer: string; notes: string }[] }) => {
-          const filled = rows.filter(r => r.answer);
-          return filled.length > 0 ? (
-            <div className="bg-white/50 rounded border border-white/80 divide-y divide-white/80">
-              {filled.map((r, i) => (
-                <div key={i} className="px-2 py-1.5">
-                  <div className="flex items-start gap-2">
-                    <span className={`text-[10px] font-black shrink-0 mt-0.5 ${answerColor(r.answer)}`}>{answerLabel(r.answer)}</span>
-                    <span className="text-[11px] text-foreground/75 leading-snug">{r.short}</span>
-                  </div>
-                  {r.notes && <p className="text-[10px] text-muted-foreground italic mt-0.5 pl-5 leading-snug">{r.notes}</p>}
-                </div>
+                </th>
               ))}
-            </div>
-          ) : null;
-        };
-
-        const sorted = [...entries].sort((a, b) => {
-          const dimCmp = (a.dimension ?? "").localeCompare(b.dimension ?? "");
-          return dimCmp !== 0 ? dimCmp : (a.periodLabel ?? "").localeCompare(b.periodLabel ?? "");
-        });
-
-        const cards = sorted.map(e => {
-          const s = AAER_STAGE_COLORS[e.frameworkTag];
-          const levelLabel = fw.levelOptions.find(l => l.value === e.level)?.label ?? e.level;
-          const raw = e.stageData ?? "{}";
-          const ft = e.frameworkTag;
-
-          // Parse the active stage's data
-          const adoptD  = ft === "adopt"  ? parseAdoptData(raw)     : null;
-          const adaptD  = ft === "adapt"  ? parseAdaptData(raw)     : null;
-          const expandD = ft === "expand" ? parseExpansionData(raw) : null;
-          const respondD= ft === "respond"? parseResponseData(raw)  : null;
-
-          const hasAdoptContent  = adoptD  && (adoptD.q1.value || adoptD.q2.value || adoptD.q3.answer || adoptD.q4.answer || adoptD.q5.answer || adoptD.q6.answer || adoptD.q7.answer || adoptD.keyQuestion);
-          const hasAdaptContent  = adaptD  && (adaptD.q1.answer || adaptD.q2.answer || adaptD.q3.value || adaptD.q4.answer || adaptD.q5.value || adaptD.keyQuestion);
-          const hasExpandContent = expandD && (expandD.q1.answer || expandD.q2.value || expandD.q3.value || expandD.q4.answer || expandD.q5.value || expandD.keyQuestion);
-          const hasRespondContent= respondD&& (respondD.q1.answer || respondD.q2.answer || respondD.q3.value || respondD.q4.answer || respondD.q5.notes || respondD.keyQuestion);
-          const hasGuidedContent = hasAdoptContent || hasAdaptContent || hasExpandContent || hasRespondContent;
-
-          const kqLabelMap: Record<string, Record<string, string>> = {
-            adopt:  { yes: "Would revert",          uncertain: "Uncertain", no: "Would continue" },
-            adapt:  { yes: "Yes — independently",   uncertain: "Uncertain", no: "No — still need us" },
-            expand: { yes: "Yes — too concentrated",uncertain: "Uncertain", no: "No — spread widely" },
-            respond:{ yes: "Yes — supportive",      uncertain: "Uncertain", no: "No — not yet" },
-          };
-          const positiveKQ: Record<string, string> = { adopt: "no", adapt: "yes", expand: "no", respond: "yes" };
-          const kqLbl = kqLabelMap[ft]?.[adoptD?.keyQuestion || adaptD?.keyQuestion || expandD?.keyQuestion || respondD?.keyQuestion || ""] ?? "";
-
-          return (
-            <div key={e.id} className={`rounded-lg border p-3 ${s?.bg ?? "bg-muted/30"} ${s?.border ?? "border-border"}`}>
-              <div className="flex items-start gap-2 mb-2">
-                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border shrink-0 ${s?.bg} ${s?.text} ${s?.border}`}>{s?.label}</span>
-                <span className="text-xs font-semibold text-foreground">{e.dimension}</span>
-                <span className="text-xs text-muted-foreground ml-auto shrink-0">{e.periodLabel}</span>
-              </div>
-
-              {hasGuidedContent && (
-                <div className="mb-2 space-y-1.5">
-                  {/* ── ADOPT ── */}
-                  {adoptD && hasAdoptContent && (<>
-                    <KQBlock kq={adoptD.keyQuestion} kqNotes={adoptD.keyQuestionNotes}
-                      kqLabel={kqLabelMap.adopt[adoptD.keyQuestion] ?? adoptD.keyQuestion} positive="no" />
-                    {(adoptD.q1.value || adoptD.q2.value) && (
-                      <div className="flex gap-2">
-                        <StatTile label="Partners Adopted" value={adoptD.q1.value} />
-                        <StatTile label="Pilot Contribution" value={adoptD.q2.value} suffix="%" />
-                      </div>
+              <th className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground w-24">Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            {fw.tagOptions.map((stageOpt, si) => {
+              const sc = AAER_STAGE_COLORS[stageOpt.value];
+              const summary = STAGE_QUESTIONS_SUMMARY[stageOpt.value];
+              const rowEntries = periods.map(p => index[`${stageOpt.value}::${p}`] ?? null);
+              const filledCount = rowEntries.filter(Boolean).length;
+              return (
+                <tr key={stageOpt.value} className={`border-b border-border/50 last:border-0 ${si % 2 === 0 ? "bg-background" : "bg-muted/20"}`}>
+                  {/* Stage + questions column */}
+                  <td className="px-4 py-4 sticky left-0 z-10 border-r border-border/30 align-top"
+                    style={{ background: si % 2 === 0 ? "white" : "rgb(249 250 251 / 0.8)" }}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-bold mb-2 ${sc.bg} ${sc.text} ${sc.border}`}>
+                      {stageOpt.label}
+                    </span>
+                    {summary && (
+                      <>
+                        <p className={`text-[10px] font-semibold leading-snug mb-2.5 ${sc.text}`}>
+                          {summary.keyQ}
+                        </p>
+                        <ol className="space-y-1">
+                          {summary.questions.map((q, i) => (
+                            <li key={i} className="flex gap-1.5 text-[10px] text-muted-foreground leading-snug">
+                              <span className={`font-black shrink-0 ${sc.text} opacity-60`}>{i + 1}.</span>
+                              <span>{q}</span>
+                            </li>
+                          ))}
+                        </ol>
+                      </>
                     )}
-                    <YNList rows={[
-                      { short: "Partners satisfied & willing to continue?", ...adoptD.q3 },
-                      { short: "Increased revenue/profit?",                 ...adoptD.q4 },
-                      { short: "Target group benefitting?",                 ...adoptD.q5 },
-                      { short: "Champion/change agent in org?",             ...adoptD.q6 },
-                      { short: "Org continues without champion?",           answer: adoptD.q7.answer, notes: adoptD.q7.notes },
-                    ]} />
-                  </>)}
+                  </td>
 
-                  {/* ── ADAPT ── */}
-                  {adaptD && hasAdaptContent && (<>
-                    <KQBlock kq={adaptD.keyQuestion} kqNotes={adaptD.keyQuestionNotes}
-                      kqLabel={kqLabelMap.adapt[adaptD.keyQuestion] ?? adaptD.keyQuestion} positive="yes" />
-                    <YNList rows={[
-                      { short: "Partners made autonomous changes to model?", ...adaptD.q1 },
-                      { short: "Partners increased cost/investment share?",  ...adaptD.q2 },
-                    ]} />
-                    {adaptD.q3.value && (
-                      <div className="flex gap-2">
-                        <StatTile label="Increased Contribution" value={adaptD.q3.value} suffix="%" />
-                      </div>
-                    )}
-                    <YNList rows={[{ short: "Partners autonomously expanded to other areas?", ...adaptD.q4 }]} />
-                    {adaptD.q5.value && (
-                      <div className="flex gap-2">
-                        <StatTile label="New Locations" value={adaptD.q5.value} />
-                      </div>
-                    )}
-                  </>)}
+                  {/* Period cells */}
+                  {periods.map((period, pi) => {
+                    const entry = rowEntries[pi];
+                    const confOpt = entry ? fw.statusOptions.find(s => s.value === entry.status) : null;
+                    const isSelected = selectedCell?.actor === stageOpt.value && selectedCell?.period === period;
+                    return (
+                      <td key={period} className="px-1.5 py-2 text-center align-middle">
+                        <button onClick={() => onCellClick(stageOpt.value, period, entry ?? null)}
+                          className={`w-full min-h-[52px] rounded-lg border-2 transition-all hover:shadow-sm flex flex-col items-center justify-center gap-1 px-1 py-1.5 ${
+                            isSelected
+                              ? `ring-2 ring-offset-1 ${sc.border.replace("border-", "ring-")} ${sc.bg} ${sc.border}`
+                              : entry
+                                ? `${sc.bg} ${sc.border} hover:opacity-80`
+                                : "border-dashed border-border/40 bg-transparent hover:border-violet-300 hover:bg-violet-50/50"
+                          }`}>
+                          {entry ? (
+                            <>
+                              <Check className={`w-3.5 h-3.5 ${sc.text}`} />
+                              {confOpt && (
+                                <span className="text-[9px] leading-none text-center opacity-70 font-medium">
+                                  {confOpt.label}
+                                </span>
+                              )}
+                            </>
+                          ) : (
+                            <Plus className="w-3.5 h-3.5 text-muted-foreground/30" />
+                          )}
+                        </button>
+                      </td>
+                    );
+                  })}
 
-                  {/* ── EXPAND ── */}
-                  {expandD && hasExpandContent && (<>
-                    <KQBlock kq={expandD.keyQuestion} kqNotes={expandD.keyQuestionNotes}
-                      kqLabel={kqLabelMap.expand[expandD.keyQuestion] ?? expandD.keyQuestion} positive="no" />
-                    <YNList rows={[{ short: "Competitors or others crowded in?", ...expandD.q1 }]} />
-                    {(expandD.q2.value || expandD.q3.value || expandD.q5.value) && (
-                      <div className="flex gap-2 flex-wrap">
-                        <StatTile label="Players Crowded In" value={expandD.q2.value} />
-                        <StatTile label="Combined Market Share" value={expandD.q3.value} suffix="%" />
-                        <StatTile label="Direct : Indirect Ratio" value={expandD.q5.value} />
-                      </div>
-                    )}
-                    <YNList rows={[{ short: "Others copying target group behaviour?", ...expandD.q4 }]} />
-                  </>)}
-
-                  {/* ── RESPOND ── */}
-                  {respondD && hasRespondContent && (<>
-                    <KQBlock kq={respondD.keyQuestion} kqNotes={respondD.keyQuestionNotes}
-                      kqLabel={kqLabelMap.respond[respondD.keyQuestion] ?? respondD.keyQuestion} positive="yes" />
-                    <YNList rows={[
-                      { short: "Changes in policy/business conduct impacted intervention?", ...respondD.q1 },
-                      { short: "Others from interconnected markets reacted/responded?",      ...respondD.q2 },
-                    ]} />
-                    {respondD.q3.value && (
-                      <div className="flex gap-2">
-                        <StatTile label="Market Players Responded" value={respondD.q3.value} />
-                      </div>
-                    )}
-                    <YNList rows={[{ short: "Market withstood and coped with shocks?", ...respondD.q4 }]} />
-                    {respondD.q5.notes && (
-                      <p className="text-[11px] text-muted-foreground bg-white/50 rounded border border-white/80 px-2 py-1 italic">{respondD.q5.notes}</p>
-                    )}
-                  </>)}
-                </div>
-              )}
-
-              {e.description && <p className="text-xs text-foreground/80 leading-relaxed mb-1.5">{e.description}</p>}
-              {e.changeObserved && (
-                <p className="text-[11px] text-muted-foreground bg-white/60 rounded px-2 py-1 border border-white/80">
-                  <span className="font-semibold">Evidence: </span>{e.changeObserved}
-                </p>
-              )}
-              {!hasGuidedContent && !e.description && !e.changeObserved && (
-                <p className="text-[11px] text-muted-foreground/50 italic py-1">
-                  No details recorded yet — click the cell to add guided responses.
-                </p>
-              )}
-              <div className="flex gap-2 mt-2">
-                <span className="text-[10px] text-muted-foreground bg-white/60 border border-white/80 px-2 py-0.5 rounded-full">{levelLabel}</span>
-                {(() => { const c = fw.statusOptions.find(o => o.value === e.status); return c ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${c.color}`}>{c.label}</span> : null; })()}
-              </div>
-            </div>
-          );
-        });
-
-        return cards.length > 0 ? (
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-              Entry Details <span className="font-normal text-muted-foreground/60 normal-case tracking-normal">({cards.length})</span>
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{cards}</div>
-          </div>
-        ) : null;
-      })()}
+                  {/* Progress column */}
+                  <td className="px-3 py-2 text-center align-middle">
+                    <div className="flex items-center justify-center gap-0.5 flex-wrap">
+                      {rowEntries.map((e, i) => (
+                        e
+                          ? <span key={i} className={`w-2.5 h-2.5 rounded-full ${sc.bg.replace("-100", "-400")}`} />
+                          : <span key={i} className="w-2.5 h-2.5 rounded-full bg-muted/40" />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground mt-1 block">{filledCount}/{periods.length}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
+
   );
 }
 
