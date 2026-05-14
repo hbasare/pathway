@@ -2416,12 +2416,51 @@ const MSR_DOMAINS: MsrDomain[] = [
         desc: "Quality and long-term orientation of strategic planning",
         indicatorGroups: [
           {
-            group: "Strategic Orientation",
+            group: "Growth Orientation",
             indicators: [
-              { id: "bst_so_1", label: "Presence of documented business strategies", type: "F" },
-              { id: "bst_so_2", label: "Investment in R&D and innovation", type: "F" },
-              { id: "bst_so_3", label: "Long-term vs short-term orientation of decisions", type: "S" },
-              { id: "bst_so_4", label: "Adaptation of strategy in response to market changes", type: "S" },
+              { id: "bst_go_1", label: "YTD R&D expenditure", type: "F" },
+              { id: "bst_go_2", label: "YTD capital expenditure", type: "F" },
+              { id: "bst_go_3", label: "Investment in data gathering and analysis", type: "F" },
+              { id: "bst_go_4", label: "Reinvestment rates by owner", type: "F" },
+              { id: "bst_go_5", label: "Capital expenditure (5/10 year trend)", type: "S" },
+              { id: "bst_go_6", label: "R&D expenditure (5/10 year trend)", type: "S" },
+              { id: "bst_go_7", label: "Maintenance-growth ratio", type: "S" },
+            ],
+          },
+          {
+            group: "Formalization",
+            indicators: [
+              { id: "bst_fm_1", label: "Existence of specialised hiring services", type: "F" },
+              { id: "bst_fm_2", label: "Maturity of public equity markets", type: "S" },
+              { id: "bst_fm_3", label: "Level of SME informality", type: "F" },
+              { id: "bst_fm_4", label: "Level of sophistication in branding", type: "F" },
+            ],
+          },
+          {
+            group: "Customer Orientation",
+            indicators: [
+              { id: "bst_co_1", label: "Investment in customer service", type: "F" },
+              { id: "bst_co_2", label: "Customer loyalty trends", type: "S" },
+              { id: "bst_co_3", label: "Maturity of market for stakeholder/customer centric solutions", type: "S" },
+            ],
+          },
+          {
+            group: "Employee Orientation",
+            indicators: [
+              { id: "bst_eo_1", label: "Unemployment rate", type: "S" },
+              { id: "bst_eo_2", label: "Job satisfaction level", type: "S" },
+              { id: "bst_eo_3", label: "Level of investment in staff/organisational capacity development and retention" },
+              { id: "bst_eo_4", label: "Staff turnover", type: "F" },
+              { id: "bst_eo_5", label: "Coverage of merit-based performance incentives", type: "S" },
+            ],
+          },
+          {
+            group: "Mediating Factors",
+            indicators: [
+              { id: "bst_mf_1", label: "Access to finance", type: "S" },
+              { id: "bst_mf_2", label: "Access to premises, utilities, other services", type: "S" },
+              { id: "bst_mf_3", label: "Tax system", type: "F" },
+              { id: "bst_mf_4", label: "Labour markets", type: "S" },
             ],
           },
         ],
