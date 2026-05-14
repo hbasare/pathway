@@ -1096,7 +1096,7 @@ const STAGE_LABEL_COLOR: Record<string, string> = {
   expand: "text-emerald-700", respond: "text-orange-700",
 };
 
-function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
+function AaerCellPanel({ state, onClose, onSave, onDelete, fw }: {
   state: CellModalState;
   onClose: () => void;
   onSave: (data: Omit<Entry, "id" | "theoryId" | "position">) => void;
@@ -1148,119 +1148,124 @@ function AaerCellModal({ state, onClose, onSave, onDelete, fw }: {
   };
 
   return (
-    <Dialog open onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader className="shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <span className="font-bold truncate">{state.actor}</span>
-            <span className="text-muted-foreground shrink-0">·</span>
-            <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0 ${stage?.bg} ${stage?.text} ${stage?.border}`}>
-              {state.period}
-            </span>
-          </DialogTitle>
-        </DialogHeader>
+    <div className="rounded-xl border border-border bg-background shadow-lg flex flex-col" style={{ maxHeight: "calc(100vh - 180px)" }}>
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-bold text-sm truncate">{state.actor}</span>
+          <span className="text-muted-foreground shrink-0">·</span>
+          <span className={`text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border shrink-0 ${stage?.bg} ${stage?.text} ${stage?.border}`}>
+            {state.period}
+          </span>
+        </div>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted transition-colors">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
 
-        <div className="overflow-y-auto flex-1 space-y-4 py-1 pr-1">
-          {/* Stage selector */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <Label className="text-xs font-semibold text-muted-foreground">AAER Stage</Label>
-              {(() => {
-                const adoptEnabled = fw.tagOptions.some(o => o.value === "adopt");
-                if (!adoptEnabled) return null;
-                return isPilot
-                  ? <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">Pilot phase — Adopt available</span>
-                  : <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full">Adopt is pilot-only · tracked in Y1</span>;
-              })()}
-            </div>
-            <div className="grid gap-2"
-              style={{ gridTemplateColumns: `repeat(${Math.min(fw.tagOptions.filter(o => isPilot || o.value !== "adopt").length, 4)}, minmax(0,1fr))` }}>
-              {fw.tagOptions.filter(o => isPilot || o.value !== "adopt").map(opt => {
-                const s = AAER_STAGE_COLORS[opt.value];
-                const active = vals.frameworkTag === opt.value;
-                return (
-                  <button key={opt.value} onClick={() => set("frameworkTag", opt.value)}
-                    className={`rounded-lg border-2 px-3 py-2 text-center transition-all ${active
-                      ? `${s.bg} ${s.text} ${s.border} shadow-sm`
-                      : "border-border bg-background hover:bg-muted text-muted-foreground"}`}>
-                    <div className="text-sm font-bold">{opt.label}</div>
-                    <div className="text-[10px] mt-0.5 leading-tight opacity-75">{opt.desc?.split(" ").slice(0, 4).join(" ")}…</div>
-                  </button>
-                );
-              })}
-            </div>
+      {/* Scrollable content */}
+      <div className="overflow-y-auto flex-1 px-4 py-3 space-y-4">
+        {/* Stage selector */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <Label className="text-xs font-semibold text-muted-foreground">AAER Stage</Label>
+            {(() => {
+              const adoptEnabled = fw.tagOptions.some(o => o.value === "adopt");
+              if (!adoptEnabled) return null;
+              return isPilot
+                ? <span className="text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded-full">Pilot phase — Adopt available</span>
+                : <span className="text-[10px] text-muted-foreground bg-muted border border-border px-2 py-0.5 rounded-full">Adopt is pilot-only · tracked in Y1</span>;
+            })()}
           </div>
-
-          {/* Guided assessment panel per stage */}
-          {hasGuidedPanel && (
-            <div className={`border-t ${STAGE_BORDER_COLOR[vals.frameworkTag]} pt-4`}>
-              <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${STAGE_LABEL_COLOR[vals.frameworkTag]}`}>
-                {STAGE_LABELS[vals.frameworkTag]}
-              </p>
-              {vals.frameworkTag === "adopt"  && <AdoptQuestionsPanel     data={adoptData}     onChange={setAdoptData} />}
-              {vals.frameworkTag === "adapt"  && <AdaptQuestionsPanel     data={adaptData}     onChange={setAdaptData} />}
-              {vals.frameworkTag === "expand" && <ExpansionQuestionsPanel data={expansionData} onChange={setExpansionData} />}
-              {vals.frameworkTag === "respond"&& <ResponseQuestionsPanel  data={responseData}  onChange={setResponseData} />}
-            </div>
-          )}
-
-          {/* Common fields */}
-          <div className={`border-t border-border pt-4 space-y-3`}>
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Additional Notes</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Scale / Reach</Label>
-                <Select value={vals.level} onValueChange={v => set("level", v)}>
-                  <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Confidence</Label>
-                <Select value={vals.status} onValueChange={v => set("status", v)}>
-                  <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
-                {descLabel[vals.frameworkTag] ?? "What changed / what they did"}
-              </Label>
-              <Textarea value={vals.description} onChange={e => set("description", e.target.value)}
-                className="text-sm min-h-[64px]"
-                placeholder="Describe what this actor did during this period…" />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Evidence / Source</Label>
-              <Textarea value={vals.changeObserved} onChange={e => set("changeObserved", e.target.value)}
-                className="text-sm min-h-[48px]" placeholder="Data, observations, or sources confirming this change…" />
-            </div>
+          <div className="grid gap-2"
+            style={{ gridTemplateColumns: `repeat(${Math.min(fw.tagOptions.filter(o => isPilot || o.value !== "adopt").length, 4)}, minmax(0,1fr))` }}>
+            {fw.tagOptions.filter(o => isPilot || o.value !== "adopt").map(opt => {
+              const s = AAER_STAGE_COLORS[opt.value];
+              const active = vals.frameworkTag === opt.value;
+              return (
+                <button key={opt.value} onClick={() => set("frameworkTag", opt.value)}
+                  className={`rounded-lg border-2 px-3 py-2 text-center transition-all ${active
+                    ? `${s.bg} ${s.text} ${s.border} shadow-sm`
+                    : "border-border bg-background hover:bg-muted text-muted-foreground"}`}>
+                  <div className="text-sm font-bold">{opt.label}</div>
+                  <div className="text-[10px] mt-0.5 leading-tight opacity-75">{opt.desc?.split(" ").slice(0, 4).join(" ")}…</div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <DialogFooter className="flex items-center gap-2 shrink-0 pt-2 border-t border-border">
-          {state.entry && (
-            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive mr-auto" onClick={onDelete}>
-              <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
-            </Button>
-          )}
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button size="sm" onClick={handleSave} className="bg-violet-600 hover:bg-violet-700 text-white">
-            <Check className="w-3.5 h-3.5 mr-1.5" />{state.entry ? "Update" : "Save"}
+        {/* Guided assessment panel per stage */}
+        {hasGuidedPanel && (
+          <div className={`border-t ${STAGE_BORDER_COLOR[vals.frameworkTag]} pt-4`}>
+            <p className={`text-xs font-bold uppercase tracking-widest mb-3 ${STAGE_LABEL_COLOR[vals.frameworkTag]}`}>
+              {STAGE_LABELS[vals.frameworkTag]}
+            </p>
+            {vals.frameworkTag === "adopt"  && <AdoptQuestionsPanel     data={adoptData}     onChange={setAdoptData} />}
+            {vals.frameworkTag === "adapt"  && <AdaptQuestionsPanel     data={adaptData}     onChange={setAdaptData} />}
+            {vals.frameworkTag === "expand" && <ExpansionQuestionsPanel data={expansionData} onChange={setExpansionData} />}
+            {vals.frameworkTag === "respond"&& <ResponseQuestionsPanel  data={responseData}  onChange={setResponseData} />}
+          </div>
+        )}
+
+        {/* Common fields */}
+        <div className="border-t border-border pt-4 space-y-3">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Additional Notes</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Scale / Reach</Label>
+              <Select value={vals.level} onValueChange={v => set("level", v)}>
+                <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Confidence</Label>
+              <Select value={vals.status} onValueChange={v => set("status", v)}>
+                <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
+              {descLabel[vals.frameworkTag] ?? "What changed / what they did"}
+            </Label>
+            <Textarea value={vals.description} onChange={e => set("description", e.target.value)}
+              className="text-sm min-h-[64px]"
+              placeholder="Describe what this actor did during this period…" />
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Evidence / Source</Label>
+            <Textarea value={vals.changeObserved} onChange={e => set("changeObserved", e.target.value)}
+              className="text-sm min-h-[48px]" placeholder="Data, observations, or sources confirming this change…" />
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-center gap-2 px-4 py-3 border-t border-border shrink-0">
+        {state.entry && (
+          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive mr-auto" onClick={onDelete}>
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
           </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        )}
+        <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+        <Button size="sm" onClick={handleSave} className="bg-violet-600 hover:bg-violet-700 text-white">
+          <Check className="w-3.5 h-3.5 mr-1.5" />{state.entry ? "Update" : "Save"}
+        </Button>
+      </div>
+    </div>
   );
 }
 
 // ─── AAER Matrix view ─────────────────────────────────────────────────────────
-function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
+function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }: {
+  selectedCell?: { actor: string; period: string } | null;
   entries: Entry[];
   periods: string[];
   fw: FrameworkDef;
@@ -1367,13 +1372,16 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
                       const entry = index[`${actor}::${period}`];
                       const stage = entry ? AAER_STAGE_COLORS[entry.frameworkTag] : null;
                       const confOpt = entry ? fw.statusOptions.find(s => s.value === entry.status) : null;
+                      const isSelected = selectedCell?.actor === actor && selectedCell?.period === period;
                       return (
                         <td key={period} className="px-1.5 py-2 text-center">
                           <button onClick={() => onCellClick(actor, period, entry ?? null)}
                             className={`w-full min-h-[52px] rounded-lg border-2 transition-all hover:shadow-sm flex flex-col items-center justify-center gap-1 px-1 py-1.5 ${
-                              stage
-                                ? `${stage.bg} ${stage.border} hover:opacity-80`
-                                : "border-dashed border-border/40 bg-transparent hover:border-violet-300 hover:bg-violet-50/50"
+                              isSelected
+                                ? "ring-2 ring-violet-500 ring-offset-1 " + (stage ? `${stage.bg} ${stage.border}` : "border-violet-400 bg-violet-50")
+                                : stage
+                                  ? `${stage.bg} ${stage.border} hover:opacity-80`
+                                  : "border-dashed border-border/40 bg-transparent hover:border-violet-300 hover:bg-violet-50/50"
                             }`}>
                             {stage ? (
                               <>
@@ -2162,17 +2170,33 @@ export default function SystemicChange() {
           </div>
         </div>
 
-        {/* AAER: Settings + Matrix */}
+        {/* AAER: Settings + Matrix + Side Panel */}
         {isAaer && (
           <>
             <AaerSettingsPanel settings={localSettings} onSave={saveSettings} />
-            <AaerMatrix
-              entries={entries}
-              periods={periods}
-              fw={effectiveFw!}
-              theory={theory}
-              onCellClick={(actor, period, entry) => setCellModal({ actor, period, entry })}
-            />
+            <div className={cellModal ? "flex gap-4 items-start" : ""}>
+              <div className={cellModal ? "flex-1 min-w-0 overflow-x-auto" : ""}>
+                <AaerMatrix
+                  entries={entries}
+                  periods={periods}
+                  fw={effectiveFw!}
+                  theory={theory}
+                  selectedCell={cellModal}
+                  onCellClick={(actor, period, entry) => setCellModal({ actor, period, entry })}
+                />
+              </div>
+              {cellModal && effectiveFw && (
+                <div className="w-[380px] shrink-0 sticky top-4">
+                  <AaerCellPanel
+                    state={cellModal}
+                    fw={effectiveFw}
+                    onClose={() => setCellModal(null)}
+                    onSave={handleCellSave}
+                    onDelete={() => { cellModal.entry && handleDelete(cellModal.entry.id); setCellModal(null); }}
+                  />
+                </div>
+              )}
+            </div>
             <SystemicChangeAIAnalysis theoryId={id} hasEntries={entries.length > 0} />
           </>
         )}
@@ -2242,16 +2266,6 @@ export default function SystemicChange() {
 
       </div>
 
-      {/* AAER cell modal */}
-      {cellModal && effectiveFw && (
-        <AaerCellModal
-          state={cellModal}
-          fw={effectiveFw}
-          onClose={() => setCellModal(null)}
-          onSave={handleCellSave}
-          onDelete={() => cellModal.entry && handleDelete(cellModal.entry.id)}
-        />
-      )}
     </div>
   );
 }
