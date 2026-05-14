@@ -2156,12 +2156,46 @@ const MSR_DOMAINS: MsrDomain[] = [
         desc: "Variety of actors, approaches, and options within the system",
         indicatorGroups: [
           {
-            group: "Actor Diversity",
+            group: "Variation",
             indicators: [
-              { id: "div_ad_1", label: "Number and variety of service/product providers", type: "F" },
-              { id: "div_ad_2", label: "Range of business models and strategies", type: "F" },
-              { id: "div_ad_3", label: "Presence of alternative suppliers / routes to market", type: "F" },
-              { id: "div_ad_4", label: "Gender and inclusion diversity of actors", type: "S" },
+              { id: "div_vr_1", label: "Count of different sizes of businesses", type: "F" },
+              { id: "div_vr_2", label: "Number of different categories of business risk profiles" },
+              { id: "div_vr_3", label: "Redundancy rate", type: "F" },
+              { id: "div_vr_4", label: "Business failure rate", type: "S" },
+              { id: "div_vr_5", label: "Business start up rate", type: "F" },
+            ],
+          },
+          {
+            group: "Diversity of Types and Kinds",
+            indicators: [
+              { id: "div_tk_1", label: "Level of business model diversity", type: "S" },
+              { id: "div_tk_2", label: "Diversity of types of products services, etc in a sector", type: "F" },
+              { id: "div_tk_3", label: "Level of investments value addition within key value chains (i.e. processing, increasing segmentation/specialization)" },
+              { id: "div_tk_4", label: "Growth of specialised services targeting businesses within an industry", type: "F" },
+            ],
+          },
+          {
+            group: "Diversity of Composition",
+            indicators: [
+              { id: "div_dc_1", label: "Diversity of channels", type: "S" },
+              { id: "div_dc_2", label: "Count of different supply and distribution channels" },
+              { id: "div_dc_3", label: "Count of different marketing channels" },
+            ],
+          },
+          {
+            group: "Mediating Factors",
+            indicators: [
+              { id: "div_mf_1", label: "Variation in financial services" },
+              { id: "div_mf_2", label: "Innovation Index", type: "S" },
+              { id: "div_mf_3", label: "Perception about risk taking", type: "S" },
+              { id: "div_mf_4", label: "Fragmentation of land", type: "S" },
+              { id: "div_mf_5", label: "Sedentarization" },
+              { id: "div_mf_6", label: "Social Norms regarding gender, age, wealth, ethnicity" },
+              { id: "div_mf_7", label: "Financial flows — public investment, private investment" },
+              { id: "div_mf_8", label: "Roads/infrastructure" },
+              { id: "div_mf_9", label: "Labour markets (labour shortages or surplus)" },
+              { id: "div_mf_10", label: "Variety of ways businesses are structurally related (slow)" },
+              { id: "div_mf_11", label: "Number of geographic production nodes (slow)" },
             ],
           },
         ],
