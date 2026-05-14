@@ -2172,12 +2172,43 @@ const MSR_DOMAINS: MsrDomain[] = [
         desc: "Distribution of power and ability to influence rules and norms",
         indicatorGroups: [
           {
-            group: "Power Distribution",
+            group: "Concentration of Power",
             indicators: [
-              { id: "pow_pd_1", label: "Concentration of market power among actors", type: "F" },
-              { id: "pow_pd_2", label: "Voice of marginalised actors in system decisions", type: "S" },
-              { id: "pow_pd_3", label: "Transparency of decision-making processes", type: "S" },
-              { id: "pow_pd_4", label: "Ability of new entrants to challenge incumbents", type: "F" },
+              { id: "pow_cp_1", label: "Extent of stakeholder participation in development and review of policies" },
+              { id: "pow_cp_2", label: "Counter-balancing forces", type: "F" },
+              { id: "pow_cp_3", label: "Existence/reach of special interest groups", type: "S" },
+              { id: "pow_cp_4", label: "Influence of investigative journalism/media", type: "F" },
+              { id: "pow_cp_5", label: "Existence of independent advocacy services", type: "F" },
+              { id: "pow_cp_6", label: "Market structure", type: "S" },
+            ],
+          },
+          {
+            group: "Exercise of Power",
+            indicators: [
+              { id: "pow_ep_1", label: "Perceived levels of corruption", type: "F" },
+              { id: "pow_ep_2", label: "Government investment in formal social safety net programs", type: "F" },
+              { id: "pow_ep_3", label: "Level of pricing control", type: "S" },
+              { id: "pow_ep_4", label: "Government investment in road utilities, health education", type: "F" },
+            ],
+          },
+          {
+            group: "Inequality",
+            indicators: [
+              { id: "pow_in_1", label: "Income inequality", type: "S" },
+              { id: "pow_in_2", label: "Geographic concentration of wealth", type: "S" },
+            ],
+          },
+          {
+            group: "Inclusiveness",
+            indicators: [
+              { id: "pow_ic_1", label: "Government orientation", type: "S" },
+              { id: "pow_ic_2", label: "Liberal Democracy Index", type: "S" },
+            ],
+          },
+          {
+            group: "Mediating Factors",
+            indicators: [
+              { id: "pow_mf_1", label: "Health of civil society", type: "S" },
             ],
           },
         ],
