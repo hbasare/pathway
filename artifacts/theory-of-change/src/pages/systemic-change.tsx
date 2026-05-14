@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Fragment } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useUpdateTheory, getGetTheoryQueryKey, useAnalyzeSystemicChange } from "@workspace/api-client-react";
 import type { SystemicChangeAnalysis, StageAnalysis } from "@workspace/api-client-react";
@@ -1309,6 +1309,50 @@ const STAGE_QUESTIONS_SUMMARY: Record<string, { keyQ: string; questions: string[
   },
 };
 
+// ─── Per-stage question type definitions ──────────────────────────────────────
+const STAGE_Q_DEFS: Record<string, { id: string; label: string; type: "number" | "percent" | "ynp" | "yn" | "ynu" | "notes"; unit?: string }[]> = {
+  adopt: [
+    { id: "q1", type: "number",  label: "No. of partners who adopted the model",            unit: "partners" },
+    { id: "q2", type: "percent", label: "Partner contribution to pilot",                     unit: "%" },
+    { id: "q3", type: "ynp",     label: "Partners satisfied & willing to continue?" },
+    { id: "q4", type: "ynp",     label: "Pilot resulted in increased revenue / profit?" },
+    { id: "q5", type: "ynp",     label: "Target group benefitting from model?" },
+    { id: "q6", type: "yn",      label: "Champion / change agent present in organisation?" },
+    { id: "q7", type: "ynu",     label: "Organisation continues without the champion?" },
+  ],
+  adapt: [
+    { id: "q1", type: "ynp",     label: "Partners made autonomous changes to model?" },
+    { id: "q2", type: "ynp",     label: "Partners increased cost / investment share?" },
+    { id: "q3", type: "percent", label: "Increased partner contribution",                    unit: "%" },
+    { id: "q4", type: "ynp",     label: "Partners autonomously expanded to new areas?" },
+    { id: "q5", type: "number",  label: "New locations expanded to",                         unit: "locations" },
+  ],
+  expand: [
+    { id: "q1", type: "ynp",     label: "Competitors or others crowded in?" },
+    { id: "q2", type: "number",  label: "Number of players crowded in",                      unit: "players" },
+    { id: "q3", type: "percent", label: "Combined market share of partners & others",        unit: "%" },
+    { id: "q4", type: "ynp",     label: "Others copying target group behaviour?" },
+    { id: "q5", type: "notes",   label: "Direct : indirect beneficiary ratio" },
+  ],
+  respond: [
+    { id: "q1", type: "yn",      label: "Changes in policy or business conduct?" },
+    { id: "q2", type: "yn",      label: "Others from interconnected markets responded?" },
+    { id: "q3", type: "number",  label: "Number who responded",                              unit: "actors" },
+    { id: "q4", type: "yn",      label: "Market withstood and coped with shocks?" },
+    { id: "q5", type: "notes",   label: "Other systemic observations" },
+  ],
+};
+
+const ANSWER_COLORS: Record<string, string> = {
+  yes:       "bg-emerald-100 text-emerald-800 border-emerald-300",
+  no:        "bg-red-100 text-red-800 border-red-300",
+  partial:   "bg-amber-100 text-amber-800 border-amber-300",
+  uncertain: "bg-amber-100 text-amber-800 border-amber-300",
+};
+const ANSWER_LABELS: Record<string, string> = {
+  yes: "Yes", no: "No", partial: "Partially", uncertain: "Uncertain",
+};
+
 // ─── AAER Matrix view ─────────────────────────────────────────────────────────
 function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }: {
   selectedCell?: { actor: string; period: string } | null;
@@ -1337,105 +1381,173 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }:
   return (
     <div className="rounded-xl border border-border overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
-        <table className="border-collapse w-full" style={{ minWidth: `${Math.max(500, 260 + periods.length * 80)}px` }}>
+        <table className="border-collapse w-full" style={{ minWidth: `${Math.max(540, 240 + periods.length * 120)}px` }}>
           <thead>
-            <tr className="bg-muted/70 border-b border-border">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-64 min-w-[260px]">
-                Stage &amp; Questions
+            <tr className="bg-muted/70 border-b-2 border-border">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-60 min-w-[240px]">
+                Question
               </th>
               {periods.map(p => (
-                <th key={p} className={`px-2 py-3 text-center text-[11px] font-bold min-w-[72px] ${isPilotPeriod(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
+                <th key={p} className={`px-3 py-3 text-center text-[11px] font-bold min-w-[110px] ${isPilotPeriod(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
                   <div>{p}</div>
                   {isPilotPeriod(p) && (
                     <div className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mt-0.5 opacity-80">Pilot</div>
                   )}
                 </th>
               ))}
-              <th className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground w-24">Progress</th>
             </tr>
           </thead>
           <tbody>
-            {fw.tagOptions.map((stageOpt, si) => {
+            {fw.tagOptions.map((stageOpt) => {
               const sc = AAER_STAGE_COLORS[stageOpt.value];
+              const qDefs = STAGE_Q_DEFS[stageOpt.value] ?? [];
               const summary = STAGE_QUESTIONS_SUMMARY[stageOpt.value];
-              const rowEntries = periods.map(p => index[`${stageOpt.value}::${p}`] ?? null);
-              const filledCount = rowEntries.filter(Boolean).length;
+              const periodEntries = periods.map(p => index[`${stageOpt.value}::${p}`] ?? null);
+
+              // Parse each period's stageData once
+              const parsedData = periodEntries.map(e => {
+                if (!e?.stageData) return null;
+                switch (stageOpt.value) {
+                  case "adopt":   return parseAdoptData(e.stageData);
+                  case "adapt":   return parseAdaptData(e.stageData);
+                  case "expand":  return parseExpansionData(e.stageData);
+                  case "respond": return parseResponseData(e.stageData);
+                  default: return null;
+                }
+              });
+
               return (
-                <tr key={stageOpt.value} className={`border-b border-border/50 last:border-0 ${si % 2 === 0 ? "bg-background" : "bg-muted/20"}`}>
-                  {/* Stage + questions column */}
-                  <td className="px-4 py-4 sticky left-0 z-10 border-r border-border/30 align-top"
-                    style={{ background: si % 2 === 0 ? "white" : "rgb(249 250 251 / 0.8)" }}>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-bold mb-2 ${sc.bg} ${sc.text} ${sc.border}`}>
-                      {stageOpt.label}
-                    </span>
-                    {summary && (
-                      <>
-                        <p className={`text-[10px] font-semibold leading-snug mb-2.5 ${sc.text}`}>
-                          {summary.keyQ}
-                        </p>
-                        <ol className="space-y-1">
-                          {summary.questions.map((q, i) => (
-                            <li key={i} className="flex gap-1.5 text-[10px] text-muted-foreground leading-snug">
-                              <span className={`font-black shrink-0 ${sc.text} opacity-60`}>{i + 1}.</span>
-                              <span>{q}</span>
-                            </li>
-                          ))}
-                        </ol>
-                      </>
-                    )}
-                  </td>
+                <Fragment key={stageOpt.value}>
+                  {/* ── Stage header row ── */}
+                  <tr className={`border-t-2 ${sc.border} ${sc.bg}`}>
+                    <td colSpan={periods.length + 1} className={`px-4 py-2.5`}>
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full border text-xs font-black ${sc.bg} ${sc.text} ${sc.border}`}>
+                          {stageOpt.label}
+                        </span>
+                        <span className={`text-[11px] font-semibold italic ${sc.text} opacity-80 leading-snug`}>
+                          {summary?.keyQ}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
 
-                  {/* Period cells */}
-                  {periods.map((period, pi) => {
-                    const entry = rowEntries[pi];
-                    const confOpt = entry ? fw.statusOptions.find(s => s.value === entry.status) : null;
-                    const isSelected = selectedCell?.actor === stageOpt.value && selectedCell?.period === period;
-                    return (
-                      <td key={period} className="px-1.5 py-2 text-center align-middle">
-                        <button onClick={() => onCellClick(stageOpt.value, period, entry ?? null)}
-                          className={`w-full min-h-[52px] rounded-lg border-2 transition-all hover:shadow-sm flex flex-col items-center justify-center gap-1 px-1 py-1.5 ${
-                            isSelected
-                              ? `ring-2 ring-offset-1 ${sc.border.replace("border-", "ring-")} ${sc.bg} ${sc.border}`
-                              : entry
-                                ? `${sc.bg} ${sc.border} hover:opacity-80`
-                                : "border-dashed border-border/40 bg-transparent hover:border-violet-300 hover:bg-violet-50/50"
-                          }`}>
-                          {entry ? (
-                            <>
-                              <Check className={`w-3.5 h-3.5 ${sc.text}`} />
-                              {confOpt && (
-                                <span className="text-[9px] leading-none text-center opacity-70 font-medium">
-                                  {confOpt.label}
+                  {/* ── Key question answer row ── */}
+                  <tr className={`border-b border-border/30`} style={{ background: "white" }}>
+                    <td className="px-4 py-2.5 sticky left-0 z-10 border-r border-border/20 align-top bg-white">
+                      <div className="flex gap-2 items-start">
+                        <span className={`text-[10px] font-black shrink-0 mt-0.5 ${sc.text} opacity-50`}>KQ</span>
+                        <span className="text-[11px] text-muted-foreground leading-snug italic">Key Question response</span>
+                      </div>
+                    </td>
+                    {periods.map((period, pi) => {
+                      const entry = periodEntries[pi];
+                      const d = parsedData[pi] as any;
+                      const kq: string = d?.keyQuestion ?? "";
+                      const kqNotes: string = d?.keyQuestionNotes ?? "";
+                      const isSelected = selectedCell?.actor === stageOpt.value && selectedCell?.period === period;
+                      return (
+                        <td key={period} className="px-2 py-2 align-top">
+                          <button onClick={() => onCellClick(stageOpt.value, period, entry ?? null)}
+                            className={`w-full min-h-[38px] rounded-md px-2 py-1.5 text-left transition-all hover:ring-1 hover:ring-violet-300 hover:bg-violet-50/40 ${
+                              isSelected ? `ring-2 ring-offset-1 ${sc.border.replace("border-", "ring-")} ${sc.bg}` : ""
+                            }`}>
+                            {kq ? (
+                              <div className="flex flex-col gap-1">
+                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border inline-block w-fit ${ANSWER_COLORS[kq] ?? "bg-muted text-muted-foreground border-border"}`}>
+                                  {ANSWER_LABELS[kq] ?? kq}
                                 </span>
-                              )}
-                            </>
-                          ) : (
-                            <Plus className="w-3.5 h-3.5 text-muted-foreground/30" />
-                          )}
-                        </button>
-                      </td>
-                    );
-                  })}
+                                {kqNotes && <p className="text-[10px] italic text-muted-foreground leading-snug">{kqNotes}</p>}
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center h-6">
+                                <Plus className="w-3 h-3 text-muted-foreground/20" />
+                              </div>
+                            )}
+                          </button>
+                        </td>
+                      );
+                    })}
+                  </tr>
 
-                  {/* Progress column */}
-                  <td className="px-3 py-2 text-center align-middle">
-                    <div className="flex items-center justify-center gap-0.5 flex-wrap">
-                      {rowEntries.map((e, i) => (
-                        e
-                          ? <span key={i} className={`w-2.5 h-2.5 rounded-full ${sc.bg.replace("-100", "-400")}`} />
-                          : <span key={i} className="w-2.5 h-2.5 rounded-full bg-muted/40" />
-                      ))}
-                    </div>
-                    <span className="text-[10px] text-muted-foreground mt-1 block">{filledCount}/{periods.length}</span>
-                  </td>
-                </tr>
+                  {/* ── Per-question rows ── */}
+                  {qDefs.map((qDef, qi) => (
+                    <tr key={qDef.id} className={`border-b border-border/20 ${qi % 2 === 0 ? "bg-white" : "bg-muted/10"} hover:bg-violet-50/20 transition-colors`}>
+                      {/* Question label */}
+                      <td className="px-4 py-2.5 sticky left-0 z-10 border-r border-border/20 align-top"
+                        style={{ background: qi % 2 === 0 ? "white" : "rgb(249 250 251 / 0.8)" }}>
+                        <div className="flex gap-2 items-start">
+                          <span className={`text-[10px] font-black shrink-0 mt-0.5 ${sc.text} opacity-50`}>{qi + 1}.</span>
+                          <span className="text-[11px] text-foreground leading-snug">{qDef.label}</span>
+                        </div>
+                      </td>
+
+                      {/* Answer per period */}
+                      {periods.map((period, pi) => {
+                        const d = parsedData[pi] as any;
+                        const qData = d?.[qDef.id] ?? null;
+                        const entry = periodEntries[pi];
+                        const isSelected = selectedCell?.actor === stageOpt.value && selectedCell?.period === period;
+
+                        let mainDisplay: React.ReactNode = null;
+                        if (qData) {
+                          if (qDef.type === "number" || qDef.type === "percent") {
+                            if (qData.value) {
+                              mainDisplay = (
+                                <span className="font-bold text-sm text-foreground">
+                                  {qData.value}{qDef.unit === "%" ? "%" : ""}
+                                  {qDef.unit && qDef.unit !== "%" && (
+                                    <span className="text-[9px] font-normal text-muted-foreground ml-0.5">{qDef.unit}</span>
+                                  )}
+                                </span>
+                              );
+                            }
+                          } else if (qDef.type !== "notes" && qData.answer) {
+                            const col = ANSWER_COLORS[qData.answer] ?? "bg-muted text-muted-foreground border-border";
+                            mainDisplay = (
+                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${col}`}>
+                                {ANSWER_LABELS[qData.answer] ?? qData.answer}
+                              </span>
+                            );
+                          }
+                        }
+
+                        const hasContent = mainDisplay || qData?.notes || qData?.value;
+
+                        return (
+                          <td key={period} className="px-2 py-2 align-top">
+                            <button onClick={() => onCellClick(stageOpt.value, period, entry ?? null)}
+                              className={`w-full min-h-[36px] rounded-md px-2 py-1.5 text-left transition-all hover:ring-1 hover:ring-violet-300 hover:bg-violet-50/40 ${
+                                isSelected ? `ring-2 ring-offset-1 ${sc.border.replace("border-", "ring-")} ${sc.bg}` : ""
+                              }`}>
+                              {hasContent ? (
+                                <div className="flex flex-col gap-1">
+                                  {mainDisplay}
+                                  {qData?.notes && (
+                                    <p className="text-[10px] text-muted-foreground italic leading-snug">{qData.notes}</p>
+                                  )}
+                                  {qDef.type === "notes" && qData?.value && (
+                                    <p className="text-[11px] text-foreground leading-snug">{qData.value}</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-center h-5">
+                                  <span className="text-muted-foreground/25 text-xs">—</span>
+                                </div>
+                              )}
+                            </button>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </Fragment>
               );
             })}
           </tbody>
         </table>
       </div>
     </div>
-
   );
 }
 
