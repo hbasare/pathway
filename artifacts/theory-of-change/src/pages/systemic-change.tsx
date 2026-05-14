@@ -18,6 +18,12 @@ import {
   Tooltip, TooltipContent, TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  Legend as RechartsLegend,
+} from "recharts";
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -3051,6 +3057,123 @@ function useMsrData(theoryId: number, apiBase: string) {
   return { msrData, msrSettings, loaded, load, saveData, saveSettings };
 }
 
+const RADAR_COLORS = ["#6366f1","#f43f5e","#f59e0b","#10b981","#8b5cf6","#06b6d4","#ec4899","#84cc16"];
+
+function MsrRadarCharts({ msrData, periods }: { msrData: MsrData; periods: string[] }) {
+  const [open, setOpen] = useState(true);
+
+  const shortLabel = (label: string) => label.length > 14 ? label.slice(0, 13) + "…" : label;
+
+  // Only include periods that actually have at least one score anywhere
+  const activePeriods = periods.filter(p =>
+    MSR_DOMAINS.some(d => d.components.some(comp => {
+      const ids = msrData.sel[comp.key] ?? [];
+      return ids.some(id => msrData.scores[p]?.[id]?.score != null);
+    }))
+  );
+
+  const hasScores = activePeriods.length > 0;
+
+  return (
+    <div className="rounded-xl border border-border overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-5 py-3 text-left bg-muted/30 hover:bg-muted/50 transition-colors border-b border-border">
+        <TrendingUp className="w-4 h-4 text-muted-foreground shrink-0" />
+        <span className="text-sm font-semibold flex-1">Domain Radar Charts</span>
+        <span className="text-[10px] text-muted-foreground mr-1">
+          {hasScores
+            ? `${activePeriods.length} period${activePeriods.length !== 1 ? "s" : ""} with scores`
+            : "Score indicators above to generate charts"}
+        </span>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+      </button>
+
+      {open && (
+        <div className="p-4">
+          {!hasScores ? (
+            <div className="text-center py-10">
+              <TrendingUp className="w-8 h-8 text-muted-foreground/20 mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">Score some indicators in the matrix to generate radar charts.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {MSR_DOMAINS.map(domain => {
+                const domainHasScores = domain.components.some(comp => {
+                  const ids = msrData.sel[comp.key] ?? [];
+                  return ids.some(id => activePeriods.some(p => msrData.scores[p]?.[id]?.score != null));
+                });
+
+                const data = domain.components.map(comp => {
+                  const entry: Record<string, string | number> = { subject: shortLabel(comp.label) };
+                  activePeriods.forEach(p => {
+                    const ids = msrData.sel[comp.key] ?? [];
+                    const vals = ids
+                      .map(id => msrData.scores[p]?.[id]?.score)
+                      .filter((v): v is number => v != null);
+                    entry[p] = vals.length
+                      ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+                      : 0;
+                  });
+                  return entry;
+                });
+
+                return (
+                  <div key={domain.key} className={`rounded-xl border p-4 space-y-2 ${domain.bg}`}>
+                    <p className={`text-[11px] font-bold uppercase tracking-widest ${domain.text}`}>
+                      {domain.label}
+                    </p>
+                    {!domainHasScores ? (
+                      <div className="flex items-center justify-center h-[200px]">
+                        <p className="text-[11px] text-muted-foreground/50 italic">No scores for this domain yet</p>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={260}>
+                        <RadarChart data={data} margin={{ top: 16, right: 28, bottom: 16, left: 28 }}>
+                          <PolarGrid stroke="#cbd5e1" />
+                          <PolarAngleAxis
+                            dataKey="subject"
+                            tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }}
+                          />
+                          <PolarRadiusAxis
+                            angle={90}
+                            domain={[0, 4]}
+                            tickCount={5}
+                            tick={{ fontSize: 8, fill: "#94a3b8" }}
+                          />
+                          {activePeriods.map((p, i) => (
+                            <Radar
+                              key={p}
+                              name={p}
+                              dataKey={p}
+                              stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
+                              fill={RADAR_COLORS[i % RADAR_COLORS.length]}
+                              fillOpacity={0.12}
+                              strokeWidth={2}
+                              dot={{ r: 3 } as any}
+                            />
+                          ))}
+                          <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+                          <RechartsTooltip
+                            formatter={(value: number) => [
+                              `${Number(value).toFixed(1)} / 4`,
+                            ]}
+                            contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }}
+                          />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
   const { msrData, msrSettings, loaded, load, saveData, saveSettings } = useMsrData(theoryId, apiBase);
 
@@ -3189,6 +3312,9 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
           </div>
         )}
       </div>
+
+      {/* Radar charts — one per domain */}
+      <MsrRadarCharts msrData={msrData} periods={periods} />
     </div>
   );
 }
