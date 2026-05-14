@@ -1790,12 +1790,12 @@ function StageRing({ score, stageKey, size = 96 }: { score: number; stageKey: st
   );
 }
 
-// DCED quadrant colours (DCED standard palette from reference)
-const DCED_QUAD: Record<string, { bg: string; label: string }> = {
-  adopt:   { bg: "#E86427", label: "Adopt" },
-  adapt:   { bg: "#C0272D", label: "Adapt" },
-  expand:  { bg: "#8B1538", label: "Expand" },
-  respond: { bg: "#E8417A", label: "Respond" },
+// DCED quadrant colours — matching the AAER table stage palette (pastel tints)
+const DCED_QUAD: Record<string, { bg: string; text: string; subText: string; label: string }> = {
+  adopt:   { bg: "#ede9fe", text: "#5b21b6", subText: "#6d28d9", label: "Adopt" },
+  adapt:   { bg: "#dbeafe", text: "#1e40af", subText: "#1d4ed8", label: "Adapt" },
+  expand:  { bg: "#d1fae5", text: "#065f46", subText: "#059669", label: "Expand" },
+  respond: { bg: "#ffedd5", text: "#9a3412", subText: "#c2410c", label: "Respond" },
 };
 
 function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
@@ -1866,27 +1866,16 @@ function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
                 return (
                   <div key={stage} className="relative p-4 flex flex-col gap-1.5 min-h-[130px]"
                     style={{ backgroundColor: qc.bg }}>
-                    {/* Quadrant arrows (outer edges) */}
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-0">
-                      {(stage === "adopt" || stage === "adapt") && (
-                        <span className="text-white/40 font-black text-sm pl-1">◄</span>
-                      )}
-                    </div>
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                      {(stage === "expand" || stage === "respond") && (
-                        <span className="text-white/40 font-black text-sm pr-1">►</span>
-                      )}
-                    </div>
-
-                    <div className="text-white font-black text-base tracking-wide">{qc.label}</div>
+                    <div className="font-black text-base tracking-wide" style={{ color: qc.text }}>{qc.label}</div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-black text-white">{sd.score}</span>
-                      <span className="text-[9px] font-bold text-white/60">/100</span>
+                      <span className="text-2xl font-black" style={{ color: qc.text }}>{sd.score}</span>
+                      <span className="text-[9px] font-bold" style={{ color: qc.subText }}>/100</span>
                     </div>
-                    <span className="inline-flex text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-black/25 text-white/90 w-fit border border-white/10">
+                    <span className="inline-flex text-[9px] font-bold px-1.5 py-0.5 rounded-full w-fit border"
+                      style={{ backgroundColor: "rgba(255,255,255,0.55)", color: qc.text, borderColor: qc.subText + "55" }}>
                       {statusCfg.label}
                     </span>
-                    <p className="text-[10px] leading-snug text-white/75 mt-0.5 line-clamp-2">{sd.headline}</p>
+                    <p className="text-[10px] leading-snug mt-0.5 line-clamp-2" style={{ color: qc.subText }}>{sd.headline}</p>
                   </div>
                 );
               })}
