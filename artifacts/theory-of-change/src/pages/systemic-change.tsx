@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Plus, Trash2, Pencil, Check, X, Loader2, GitBranch,
   ChevronRight, RefreshCw, Info, Settings, ChevronDown, ChevronUp,
-  Sparkles, AlertCircle, TrendingUp, ListChecks,
+  Sparkles, AlertCircle, TrendingUp, ListChecks, BarChart2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -3186,8 +3186,7 @@ function MsrSynthesisImage({
   theoryId: number;
 }) {
   const [open, setOpen] = useState(true);
-  const [imageB64, setImageB64] = useState<string | null>(null);
-  const [prompt, setPrompt] = useState<string>("");
+  const [svgB64, setSvgB64] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const { toast } = useToast();
 
@@ -3233,10 +3232,9 @@ function MsrSynthesisImage({
       });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
-      setImageB64(data.b64_json);
-      setPrompt(data.prompt ?? "");
+      setSvgB64(data.b64_svg);
     } catch (err) {
-      toast({ title: "Image generation failed", description: String(err), variant: "destructive" });
+      toast({ title: "Infographic generation failed", description: String(err), variant: "destructive" });
     } finally {
       setGenerating(false);
     }
@@ -3248,10 +3246,10 @@ function MsrSynthesisImage({
         onClick={() => setOpen(o => !o)}
         className="w-full flex items-center gap-3 px-5 py-3 text-left bg-muted/30 hover:bg-muted/50 transition-colors border-b border-border"
       >
-        <Sparkles className="w-4 h-4 text-violet-500 shrink-0" />
-        <span className="text-sm font-semibold flex-1">AI Synthesis</span>
+        <BarChart2 className="w-4 h-4 text-violet-500 shrink-0" />
+        <span className="text-sm font-semibold flex-1">Score Infographic</span>
         <span className="text-[10px] text-muted-foreground mr-1">
-          Visual narrative of market system progress
+          Exportable summary of all domain &amp; component scores
         </span>
         {open ? (
           <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -3264,10 +3262,10 @@ function MsrSynthesisImage({
         <div className="p-5 space-y-4">
           <div className="flex items-start gap-4">
             <p className="flex-1 text-[11px] text-muted-foreground leading-relaxed">
-              Generate an AI-created image that synthesises the current state of this
-              market system's journey towards greater resilience and proactivity. The
-              image is derived from your MSR scoring data and rendered as an evocative
-              visual metaphor — not a chart.
+              Generate a structured infographic showing your MSR scores across all four
+              domains and every component — colour-coded by resilience level
+              (Reactive → Emerging → Transitioning → Proactive). Right-click the image
+              to save it.
             </p>
             <Button
               size="sm"
@@ -3278,52 +3276,40 @@ function MsrSynthesisImage({
               {generating ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Generating…
+                  Building…
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  {imageB64 ? "Regenerate" : "Generate"}
+                  <BarChart2 className="w-3.5 h-3.5" />
+                  {svgB64 ? "Refresh" : "Generate"}
                 </>
               )}
             </Button>
           </div>
 
-          {!hasScores && !imageB64 && (
+          {!hasScores && !svgB64 && (
             <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl text-center">
-              <Sparkles className="w-8 h-8 text-muted-foreground/20 mb-2" />
+              <BarChart2 className="w-8 h-8 text-muted-foreground/20 mb-2" />
               <p className="text-sm text-muted-foreground">
-                Score some indicators in the matrix above to unlock synthesis.
+                Score some indicators in the matrix above to generate the infographic.
               </p>
             </div>
           )}
 
-          {generating && !imageB64 && (
-            <div className="flex flex-col items-center justify-center py-14 border border-dashed border-violet-200 dark:border-violet-900 rounded-xl bg-violet-50/30 dark:bg-violet-950/20 gap-3">
-              <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
-              <p className="text-sm text-violet-500 font-medium">
-                Composing your synthesis image…
-              </p>
-              <p className="text-[10px] text-muted-foreground">
-                This takes about 20–30 seconds
-              </p>
+          {generating && !svgB64 && (
+            <div className="flex flex-col items-center justify-center py-10 border border-dashed border-violet-200 dark:border-violet-900 rounded-xl bg-violet-50/30 dark:bg-violet-950/20 gap-2">
+              <Loader2 className="w-7 h-7 text-violet-400 animate-spin" />
+              <p className="text-sm text-violet-500 font-medium">Building infographic…</p>
             </div>
           )}
 
-          {imageB64 && (
+          {svgB64 && (
             <div className="rounded-xl overflow-hidden border border-border shadow-md">
               <img
-                src={`data:image/png;base64,${imageB64}`}
-                alt="AI synthesis of market system progress"
-                className="w-full object-cover"
+                src={`data:image/svg+xml;base64,${svgB64}`}
+                alt="MSR score infographic"
+                className="w-full"
               />
-              {prompt && (
-                <div className="bg-muted/40 px-4 py-2.5 border-t border-border">
-                  <p className="text-[10px] text-muted-foreground/70 italic leading-relaxed">
-                    {prompt}
-                  </p>
-                </div>
-              )}
             </div>
           )}
         </div>
