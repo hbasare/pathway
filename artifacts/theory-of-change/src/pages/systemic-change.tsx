@@ -1461,53 +1461,6 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, p
                     </td>
                   </tr>
 
-                  {/* ── Key question answer row ── */}
-                  <tr className={`border-b border-border/30`} style={{ background: "white" }}>
-                    <td className="px-4 py-2.5 sticky left-0 z-10 border-r border-border/20 align-top bg-white">
-                      <div className="flex gap-2 items-start">
-                        <span className={`text-[10px] font-black shrink-0 mt-0.5 ${sc.text} opacity-50`}>KQ</span>
-                        <span className="text-[11px] text-muted-foreground leading-snug italic">Key Question response</span>
-                      </div>
-                    </td>
-                    {periods.map((period, pi) => {
-                      const locked = stageForPeriod(period);
-                      const isBlocked = locked !== null && locked !== stageOpt.value;
-                      if (isBlocked) return (
-                        <td key={period} className="px-2 py-2 align-top bg-muted/5">
-                          <div className="min-h-[38px] flex items-center justify-center opacity-20">
-                            <span className="text-xs text-muted-foreground">—</span>
-                          </div>
-                        </td>
-                      );
-                      const entry = periodEntries[pi];
-                      const d = parsedData[pi] as any;
-                      const kq: string = d?.keyQuestion ?? "";
-                      const kqNotes: string = d?.keyQuestionNotes ?? "";
-                      const isSelected = selectedCell?.actor === stageOpt.value && selectedCell?.period === period;
-                      return (
-                        <td key={period} className="px-2 py-2 align-top">
-                          <button onClick={() => onCellClick(stageOpt.value, period, entry ?? null)}
-                            className={`w-full min-h-[38px] rounded-md px-2 py-1.5 text-left transition-all hover:ring-1 hover:ring-violet-300 hover:bg-violet-50/40 ${
-                              isSelected ? `ring-2 ring-offset-1 ${sc.border.replace("border-", "ring-")} ${sc.bg}` : ""
-                            }`}>
-                            {kq ? (
-                              <div className="flex flex-col gap-1">
-                                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border inline-block w-fit ${ANSWER_COLORS[kq] ?? "bg-muted text-muted-foreground border-border"}`}>
-                                  {ANSWER_LABELS[kq] ?? kq}
-                                </span>
-                                {kqNotes && <p className="text-[10px] italic text-muted-foreground leading-snug">{kqNotes}</p>}
-                              </div>
-                            ) : (
-                              <div className="flex items-center justify-center h-6">
-                                <Plus className="w-3 h-3 text-muted-foreground/20" />
-                              </div>
-                            )}
-                          </button>
-                        </td>
-                      );
-                    })}
-                  </tr>
-
                   {/* ── Per-question rows ── */}
                   {qDefs.map((qDef, qi) => (
                     <tr key={qDef.id} className={`border-b border-border/20 ${qi % 2 === 0 ? "bg-white" : "bg-muted/10"} hover:bg-violet-50/20 transition-colors`}>
