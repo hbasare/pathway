@@ -2253,12 +2253,40 @@ const MSR_DOMAINS: MsrDomain[] = [
         desc: "Functioning of formal rules, regulations, and enforcement",
         indicatorGroups: [
           {
-            group: "Regulatory Environment",
+            group: "Regulations and Standards",
             indicators: [
-              { id: "rol_re_1", label: "Clarity and fairness of regulatory framework", type: "S" },
-              { id: "rol_re_2", label: "Consistency of enforcement", type: "F" },
-              { id: "rol_re_3", label: "Contract enforcement mechanisms", type: "S" },
-              { id: "rol_re_4", label: "Absence of corruption / rent-seeking behaviour", type: "S" },
+              { id: "rol_rs_1", label: "Existence of uniform grades and standards", type: "F" },
+              { id: "rol_rs_2", label: "World Justice Project Rule of Law Index", type: "S" },
+              { id: "rol_rs_3", label: "Awareness of laws and regulations", type: "F" },
+            ],
+          },
+          {
+            group: "Supporting Services",
+            indicators: [
+              { id: "rol_ss_1", label: "Viability of advocacy services", type: "F" },
+              { id: "rol_ss_2", label: "Investment in research on judiciary", type: "F" },
+              { id: "rol_ss_3", label: "Access to legal services", type: "F" },
+              { id: "rol_ss_4", label: "Press Freedom Index", type: "S" },
+            ],
+          },
+          {
+            group: "Practices",
+            indicators: [
+              { id: "rol_pr_1", label: "Adherence" },
+              { id: "rol_pr_2", label: "Level of corruption in regulatory interactions with market actors", type: "F" },
+              { id: "rol_pr_3", label: "Cost/fairness of formal judiciary interactions with market actors", type: "F" },
+              { id: "rol_pr_4", label: "Government hiring practices", type: "F" },
+              { id: "rol_pr_5", label: "Diagonal Accountability Index", type: "S" },
+              { id: "rol_pr_6", label: "Corruption Perceptions", type: "S" },
+            ],
+          },
+          {
+            group: "Mediating Factors",
+            indicators: [
+              { id: "rol_mf_1", label: "Orientation to equity — an index around consumer protection, number, management orientation, funding etc." },
+              { id: "rol_mf_2", label: "System legitimacy (perception of courts, obeying the law)", type: "S" },
+              { id: "rol_mf_3", label: "Level of horizontal accountability (perception of checks and balances on Executive branch)" },
+              { id: "rol_mf_4", label: "Media business orientation (audience driven as opposed to owners interest driven)", type: "S" },
             ],
           },
         ],
