@@ -2299,17 +2299,29 @@ const MSR_DOMAINS: MsrDomain[] = [
     bg: "bg-teal-50", text: "text-teal-800", border: "border-teal-300",
     components: [
       {
-        key: "cooperation_competition",
-        label: "Cooperation & Competition",
-        desc: "Balance between collaborative and competitive behaviours among actors",
+        key: "cooperation",
+        label: "Cooperation",
+        desc: "Collaborative behaviours, joint action, and information sharing among market actors",
         indicatorGroups: [
           {
             group: "Collaborative Behaviour",
             indicators: [
-              { id: "coc_cb_1", label: "Willingness to share information and collaborate", type: "F" },
-              { id: "coc_cb_2", label: "Healthy competition driving innovation and quality", type: "F" },
-              { id: "coc_cb_3", label: "Industry associations or collective action bodies", type: "F" },
-              { id: "coc_cb_4", label: "Trust between market actors", type: "S" },
+              { id: "coo_cb_1", label: "Willingness to share information and collaborate", type: "F" },
+              { id: "coo_cb_2", label: "Industry associations or collective action bodies", type: "F" },
+              { id: "coo_cb_3", label: "Trust between market actors", type: "S" },
+            ],
+          },
+        ],
+      },
+      {
+        key: "competition",
+        label: "Competition",
+        desc: "Competitive dynamics, market contestability, and rivalry that drives innovation and quality",
+        indicatorGroups: [
+          {
+            group: "Competitive Dynamics",
+            indicators: [
+              { id: "com_cd_1", label: "Healthy competition driving innovation and quality", type: "F" },
             ],
           },
         ],
