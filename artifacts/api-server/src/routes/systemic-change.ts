@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { systemicChangesTable, insertSystemicChangeSchema } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { generateImageBuffer } from "@workspace/integrations-openai-ai-server/image";
 
 const router: IRouter = Router();
 
@@ -94,6 +95,56 @@ If a stage has no data entries at all, set status to "no-data", score to 0, head
   } catch (err) {
     console.error("AI analysis error:", err);
     res.status(500).json({ error: "Failed to generate AI analysis" });
+  }
+});
+
+router.post("/theories/:theoryId/msr-synthesis-image", async (req, res) => {
+  const { scoreSummary, interventionTitle } = req.body as {
+    scoreSummary: Array<{
+      domain: string;
+      components: Array<{ component: string; overallAvg: number | null; byPeriod: Record<string, number | null> }>;
+    }>;
+    interventionTitle?: string;
+  };
+
+  try {
+    // Step 1: Use GPT to write a rich, evocative image prompt from the score data
+    const promptResponse = await openai.chat.completions.create({
+      model: "gpt-5.4",
+      max_completion_tokens: 400,
+      messages: [
+        {
+          role: "system",
+          content: `You are an expert at creating evocative visual metaphors for market systems development. 
+Generate a single detailed prompt for an AI image generator that artistically represents a market system's journey from reactive to proactive resilience.
+Use vivid metaphorical imagery — living ecosystems, interconnected networks, natural landscapes, emerging light, pathways, webs of relationships.
+The image must be painterly, artistic, and inspiring — never a chart, diagram, or text. 
+Style: rich digital illustration or oil painting, warm hopeful tones, sense of emergence and growth.
+Output ONLY the image generation prompt — no preamble, no explanation.`,
+        },
+        {
+          role: "user",
+          content: `Create an image prompt synthesising this MSR assessment for "${interventionTitle ?? "this market intervention"}":
+
+${JSON.stringify(scoreSummary, null, 2)}
+
+Higher scores (closer to 4) mean more proactive behaviour. Lower scores (closer to 1) mean reactive. 
+Reflect the overall state of the system — which domains are stronger, which are emerging — in the visual metaphor.
+The image should feel forward-looking and show the potential for transformation.`,
+        },
+      ],
+    });
+
+    const imagePrompt = promptResponse.choices[0]?.message?.content?.trim()
+      ?? "A luminous network of interconnected market actors — farmers, traders, processors — woven into a thriving ecosystem, sunrise breaking through, symbolising the transformation from reactive survival to proactive market leadership, digital painting, warm golden tones";
+
+    // Step 2: Generate the image
+    const buffer = await generateImageBuffer(imagePrompt, "1536x1024");
+
+    res.json({ b64_json: buffer.toString("base64"), prompt: imagePrompt });
+  } catch (err) {
+    console.error("MSR synthesis image error:", err);
+    res.status(500).json({ error: "Failed to generate synthesis image" });
   }
 });
 

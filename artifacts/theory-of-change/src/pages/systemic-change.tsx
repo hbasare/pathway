@@ -3174,6 +3174,164 @@ function MsrRadarCharts({ msrData, periods }: { msrData: MsrData; periods: strin
   );
 }
 
+function MsrSynthesisImage({
+  msrData,
+  periods,
+  apiBase,
+  theoryId,
+}: {
+  msrData: MsrData;
+  periods: string[];
+  apiBase: string;
+  theoryId: number;
+}) {
+  const [open, setOpen] = useState(true);
+  const [imageB64, setImageB64] = useState<string | null>(null);
+  const [prompt, setPrompt] = useState<string>("");
+  const [generating, setGenerating] = useState(false);
+  const { toast } = useToast();
+
+  const buildScoreSummary = () =>
+    MSR_DOMAINS.map(domain => ({
+      domain: domain.label,
+      components: domain.components.map(comp => {
+        const ids = msrData.sel[comp.key] ?? [];
+        const allVals = periods.flatMap(p =>
+          ids.map(id => msrData.scores[p]?.[id]?.score).filter((v): v is number => v != null)
+        );
+        const overallAvg = allVals.length
+          ? Math.round((allVals.reduce((a, b) => a + b, 0) / allVals.length) * 10) / 10
+          : null;
+        const byPeriod: Record<string, number | null> = {};
+        periods.forEach(p => {
+          const vals = ids
+            .map(id => msrData.scores[p]?.[id]?.score)
+            .filter((v): v is number => v != null);
+          byPeriod[p] = vals.length
+            ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+            : null;
+        });
+        return { component: comp.label, overallAvg, byPeriod };
+      }),
+    }));
+
+  const hasScores = MSR_DOMAINS.some(domain =>
+    domain.components.some(comp => {
+      const ids = msrData.sel[comp.key] ?? [];
+      return periods.some(p => ids.some(id => msrData.scores[p]?.[id]?.score != null));
+    })
+  );
+
+  const generate = async () => {
+    setGenerating(true);
+    try {
+      const res = await fetch(`${apiBase}/theories/${theoryId}/msr-synthesis-image`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ scoreSummary: buildScoreSummary() }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      setImageB64(data.b64_json);
+      setPrompt(data.prompt ?? "");
+    } catch (err) {
+      toast({ title: "Image generation failed", description: String(err), variant: "destructive" });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-border overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-5 py-3 text-left bg-muted/30 hover:bg-muted/50 transition-colors border-b border-border"
+      >
+        <Sparkles className="w-4 h-4 text-violet-500 shrink-0" />
+        <span className="text-sm font-semibold flex-1">AI Synthesis</span>
+        <span className="text-[10px] text-muted-foreground mr-1">
+          Visual narrative of market system progress
+        </span>
+        {open ? (
+          <ChevronUp className="w-4 h-4 text-muted-foreground" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        )}
+      </button>
+
+      {open && (
+        <div className="p-5 space-y-4">
+          <div className="flex items-start gap-4">
+            <p className="flex-1 text-[11px] text-muted-foreground leading-relaxed">
+              Generate an AI-created image that synthesises the current state of this
+              market system's journey towards greater resilience and proactivity. The
+              image is derived from your MSR scoring data and rendered as an evocative
+              visual metaphor — not a chart.
+            </p>
+            <Button
+              size="sm"
+              onClick={generate}
+              disabled={generating || !hasScores}
+              className="shrink-0 bg-violet-600 hover:bg-violet-700 text-white gap-1.5"
+            >
+              {generating ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  Generating…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {imageB64 ? "Regenerate" : "Generate"}
+                </>
+              )}
+            </Button>
+          </div>
+
+          {!hasScores && !imageB64 && (
+            <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl text-center">
+              <Sparkles className="w-8 h-8 text-muted-foreground/20 mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Score some indicators in the matrix above to unlock synthesis.
+              </p>
+            </div>
+          )}
+
+          {generating && !imageB64 && (
+            <div className="flex flex-col items-center justify-center py-14 border border-dashed border-violet-200 dark:border-violet-900 rounded-xl bg-violet-50/30 dark:bg-violet-950/20 gap-3">
+              <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+              <p className="text-sm text-violet-500 font-medium">
+                Composing your synthesis image…
+              </p>
+              <p className="text-[10px] text-muted-foreground">
+                This takes about 20–30 seconds
+              </p>
+            </div>
+          )}
+
+          {imageB64 && (
+            <div className="rounded-xl overflow-hidden border border-border shadow-md">
+              <img
+                src={`data:image/png;base64,${imageB64}`}
+                alt="AI synthesis of market system progress"
+                className="w-full object-cover"
+              />
+              {prompt && (
+                <div className="bg-muted/40 px-4 py-2.5 border-t border-border">
+                  <p className="text-[10px] text-muted-foreground/70 italic leading-relaxed">
+                    {prompt}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
   const { msrData, msrSettings, loaded, load, saveData, saveSettings } = useMsrData(theoryId, apiBase);
 
@@ -3315,6 +3473,14 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
 
       {/* Radar charts — one per domain */}
       <MsrRadarCharts msrData={msrData} periods={periods} />
+
+      {/* AI synthesis image */}
+      <MsrSynthesisImage
+        msrData={msrData}
+        periods={periods}
+        apiBase={apiBase}
+        theoryId={theoryId}
+      />
     </div>
   );
 }
