@@ -760,16 +760,9 @@ function AdoptQuestionsPanel({ data, onChange }: { data: AdoptData; onChange: (d
       {/* Key Question */}
       <div className="rounded-xl border-2 border-violet-300 bg-violet-50 p-3">
         <p className="text-[10px] font-black uppercase tracking-widest text-violet-600 mb-1">Key Question</p>
-        <p className="text-xs font-semibold text-violet-900 mb-2.5 leading-snug">
+        <p className="text-xs font-semibold text-violet-900 leading-snug">
           If you left now, would partners return to their previous way of working?
         </p>
-        <YNButtons value={data.keyQuestion} onChange={v => setField("keyQuestion", v)} options={KQ_OPTS} />
-        <textarea
-          value={data.keyQuestionNotes}
-          onChange={e => setField("keyQuestionNotes", e.target.value)}
-          placeholder="Comments — explain your assessment…"
-          className={`${commentClass} bg-violet-50/80`}
-        />
       </div>
 
       {/* Q1 — number + comments */}
@@ -863,12 +856,9 @@ function AdaptQuestionsPanel({ data, onChange }: { data: AdaptData; onChange: (d
     <div className="space-y-3">
       <div className="rounded-xl border-2 border-blue-300 bg-blue-50 p-3">
         <p className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-1">Key Question</p>
-        <p className="text-xs font-semibold text-blue-900 mb-2.5 leading-snug">
+        <p className="text-xs font-semibold text-blue-900 leading-snug">
           If you left now, would partners build upon the changes they've adopted, without us?
         </p>
-        <YNButtons value={data.keyQuestion} onChange={v => setField("keyQuestion", v)} options={ADAPT_KQ_OPTS} />
-        <textarea value={data.keyQuestionNotes} onChange={e => setField("keyQuestionNotes", e.target.value)}
-          placeholder="Comments — explain your assessment…" className={`${cc} bg-blue-50/80`} />
       </div>
 
       {[
@@ -944,12 +934,9 @@ function ExpansionQuestionsPanel({ data, onChange }: { data: ExpansionData; onCh
     <div className="space-y-3">
       <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3">
         <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-1">Key Question</p>
-        <p className="text-xs font-semibold text-emerald-900 mb-2.5 leading-snug">
+        <p className="text-xs font-semibold text-emerald-900 leading-snug">
           If you left now, would target group benefits depend on too few people, firms, or organisations?
         </p>
-        <YNButtons value={data.keyQuestion} onChange={v => setField("keyQuestion", v)} options={EXPANSION_KQ_OPTS} />
-        <textarea value={data.keyQuestionNotes} onChange={e => setField("keyQuestionNotes", e.target.value)}
-          placeholder="Comments — explain your assessment…" className={`${cc} bg-emerald-50/80`} />
       </div>
 
       <div className="rounded-lg border border-border bg-background p-3">
@@ -1033,12 +1020,9 @@ function ResponseQuestionsPanel({ data, onChange }: { data: ResponseData; onChan
     <div className="space-y-3">
       <div className="rounded-xl border-2 border-orange-300 bg-orange-50 p-3">
         <p className="text-[10px] font-black uppercase tracking-widest text-orange-600 mb-1">Key Question</p>
-        <p className="text-xs font-semibold text-orange-900 mb-2.5 leading-snug">
+        <p className="text-xs font-semibold text-orange-900 leading-snug">
           If you left now, would the system be supportive of the changes introduced (allowing them to be upheld, grow, evolve)?
         </p>
-        <YNButtons value={data.keyQuestion} onChange={v => setField("keyQuestion", v)} options={RESPONSE_KQ_OPTS} />
-        <textarea value={data.keyQuestionNotes} onChange={e => setField("keyQuestionNotes", e.target.value)}
-          placeholder="Comments — explain your assessment…" className={`${cc} bg-orange-50/80`} />
       </div>
 
       {[
