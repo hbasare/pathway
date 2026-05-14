@@ -1767,13 +1767,28 @@ function StageRing({ score, stageKey, size = 96 }: { score: number; stageKey: st
   );
 }
 
+// DCED quadrant colours (matching the standard)
+const DCED_QUAD: Record<string, { bg: string; label: string }> = {
+  adopt:   { bg: "#E86427", label: "Adopt" },
+  adapt:   { bg: "#C0272D", label: "Adapt" },
+  expand:  { bg: "#8B1538", label: "Expand" },
+  respond: { bg: "#E8417A", label: "Respond" },
+};
+
 function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
-  const stages = ["adopt", "adapt", "expand", "respond"] as const;
-  const stageData: Record<string, StageAnalysis> = {
+  const stageDataMap: Record<string, StageAnalysis> = {
     adopt: analysis.adopt, adapt: analysis.adapt,
     expand: analysis.expand, respond: analysis.respond,
   };
   const totalScore = analysis.overallScore;
+
+  // Layout: top-left=Adapt, top-right=Respond, bottom-left=Adopt, bottom-right=Expand
+  const quadrants: Array<{ stage: string; row: number; col: number }> = [
+    { stage: "adapt",   row: 0, col: 0 },
+    { stage: "respond", row: 0, col: 1 },
+    { stage: "adopt",   row: 1, col: 0 },
+    { stage: "expand",  row: 1, col: 1 },
+  ];
 
   return (
     <div className="space-y-4">
@@ -1797,67 +1812,71 @@ function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
             </span>
           </div>
           <div className="h-3 rounded-full bg-muted overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${totalScore}%`,
-                background: "linear-gradient(to right, #7c3aed, #1d4ed8, #059669, #c2410c)",
-              }}
-            />
+            <div className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${totalScore}%`, background: "linear-gradient(to right, #E86427, #C0272D, #8B1538, #E8417A)" }} />
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug italic">{analysis.pathwayNarrative}</p>
         </div>
       </div>
 
-      {/* 4-stage node diagram */}
-      <div className="relative">
-        {/* Connector line */}
-        <div className="absolute top-[52px] left-[calc(12.5%)] right-[calc(12.5%)] h-0.5 bg-gradient-to-r from-violet-300 via-blue-300 via-emerald-300 to-orange-300 z-0" />
-        <div className="grid grid-cols-4 gap-3 relative z-10">
-          {stages.map((stage, i) => {
-            const cfg = STAGE_AI_CONFIG[stage];
-            const sd = stageData[stage];
-            const statusCfg = STATUS_LABELS[sd.status] ?? STATUS_LABELS["no-data"];
-            return (
-              <div key={stage} className="flex flex-col items-center gap-2">
-                {/* Ring + score */}
-                <div className="relative">
-                  <StageRing score={sd.score} stageKey={stage} size={104} />
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className={`text-xl font-black ${cfg.text}`}>{sd.score}</span>
-                    <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider">/ 100</span>
-                  </div>
-                </div>
-                {/* Stage label */}
-                <span className={`text-xs font-bold px-3 py-1 rounded-full border ${cfg.badgeBg} ${cfg.text} ${cfg.border}`}>
-                  {cfg.label}
-                </span>
-                {/* Status badge */}
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${statusCfg.color}`}>
-                  {statusCfg.label}
-                </span>
-                {/* Arrow between stages */}
-                {i < stages.length - 1 && (
-                  <div className="hidden" />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* DCED Quadrant */}
+      <div className="rounded-xl overflow-hidden border border-border/60 shadow-sm">
+        <div className="flex">
+          {/* Y-axis — Sustainability */}
+          <div className="flex flex-col items-center justify-between py-3 px-1.5 bg-zinc-900 shrink-0 w-9">
+            <span className="text-amber-400 font-black text-lg leading-none">↑</span>
+            <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-amber-100/80"
+              style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", letterSpacing: "0.18em" }}>
+              Sustainability
+            </span>
+            <span className="opacity-0 text-lg">↑</span>
+          </div>
 
-      {/* Stage headlines grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-        {stages.map(stage => {
-          const cfg = STAGE_AI_CONFIG[stage];
-          const sd = stageData[stage];
-          return (
-            <div key={stage} className={`rounded-lg border p-2.5 ${cfg.bg} ${cfg.border}`}>
-              <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${cfg.headingColor}`}>{cfg.label}</p>
-              <p className="text-[11px] text-foreground/80 leading-snug">{sd.headline}</p>
+          {/* Main grid + X-axis */}
+          <div className="flex-1 flex flex-col bg-zinc-900">
+            {/* 2×2 grid */}
+            <div className="grid grid-cols-2 flex-1">
+              {quadrants.map(({ stage }) => {
+                const sd = stageDataMap[stage];
+                const qc = DCED_QUAD[stage];
+                const statusCfg = STATUS_LABELS[sd.status] ?? STATUS_LABELS["no-data"];
+                return (
+                  <div key={stage} className="relative p-4 flex flex-col gap-1.5 min-h-[130px]"
+                    style={{ backgroundColor: qc.bg }}>
+                    {/* Quadrant arrows (outer edges) */}
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-0">
+                      {(stage === "adopt" || stage === "adapt") && (
+                        <span className="text-white/40 font-black text-sm pl-1">◄</span>
+                      )}
+                    </div>
+                    <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                      {(stage === "expand" || stage === "respond") && (
+                        <span className="text-white/40 font-black text-sm pr-1">►</span>
+                      )}
+                    </div>
+
+                    <div className="text-white font-black text-base tracking-wide">{qc.label}</div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-black text-white">{sd.score}</span>
+                      <span className="text-[9px] font-bold text-white/60">/100</span>
+                    </div>
+                    <span className="inline-flex text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-black/25 text-white/90 w-fit border border-white/10">
+                      {statusCfg.label}
+                    </span>
+                    <p className="text-[10px] leading-snug text-white/75 mt-0.5 line-clamp-2">{sd.headline}</p>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+
+            {/* X-axis — Scale */}
+            <div className="flex items-center gap-2 px-4 py-2 bg-zinc-900">
+              <div className="flex-1 h-px bg-amber-400/30" />
+              <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-amber-100/80">Scale</span>
+              <span className="text-amber-400 font-black text-lg leading-none">→</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
