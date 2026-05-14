@@ -2342,9 +2342,29 @@ const MSR_DOMAINS: MsrDomain[] = [
         desc: "Competitive dynamics, market contestability, and rivalry that drives innovation and quality",
         indicatorGroups: [
           {
-            group: "Competitive Dynamics",
+            group: "Zero Sum Competition",
             indicators: [
-              { id: "com_cd_1", label: "Healthy competition driving innovation and quality", type: "F" },
+              { id: "com_zs_1", label: "Growth in alternative dispute services", type: "F" },
+              { id: "com_zs_2", label: "Number and nature of transactional disputes", type: "F" },
+              { id: "com_zs_3", label: "Proportion of disputes fairly resolved", type: "S" },
+              { id: "com_zs_4", label: "Incidence of zero sum tactics in spot markets", type: "F" },
+              { id: "com_zs_5", label: "Availability of alternative dispute resolution options — mediation, arbitration etc." },
+              { id: "com_zs_6", label: "Perceptions of outcomes from disputes", type: "F" },
+              { id: "com_zs_7", label: "Extent of labour violations" },
+              { id: "com_zs_8", label: "Level of Protectionism", type: "S" },
+              { id: "com_zs_9", label: "Perceptions of being cheated (perceptions of trust by consumers)", type: "S" },
+              { id: "com_zs_10", label: "Transactional fraud (rates of adulteration, fake, misinformation, practices etc.)" },
+              { id: "com_zs_11", label: "Perceived subsidy capture", type: "S" },
+            ],
+          },
+          {
+            group: "Value Creating Competition",
+            indicators: [
+              { id: "com_vc_1", label: "Number of new market entrants", type: "F" },
+              { id: "com_vc_2", label: "Co-investment along value chains", type: "F" },
+              { id: "com_vc_3", label: "Existence of/level of adherence to trading standards", type: "F" },
+              { id: "com_vc_4", label: "Number of repeat customers", type: "F" },
+              { id: "com_vc_5", label: "Collective response patterns to competitive response (pace of innovation versus lack of innovation)" },
             ],
           },
         ],
