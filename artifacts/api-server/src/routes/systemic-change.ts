@@ -143,8 +143,10 @@ The image should feel forward-looking and show the potential for transformation.
 
     res.json({ b64_json: buffer.toString("base64"), prompt: imagePrompt });
   } catch (err) {
-    console.error("MSR synthesis image error:", err);
-    res.status(500).json({ error: "Failed to generate synthesis image" });
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error("MSR synthesis image error:", message, stack);
+    res.status(500).json({ error: message });
   }
 });
 
