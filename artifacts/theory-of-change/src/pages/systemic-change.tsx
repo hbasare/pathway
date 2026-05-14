@@ -1392,26 +1392,35 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, p
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-60 min-w-[240px]">
                 Question
               </th>
+              {periods.map(p => (
+                <th key={p} className={`px-3 py-3 text-center text-[11px] font-bold min-w-[110px] ${isPilotPeriod(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
+                  {p}
+                  {isPilotPeriod(p) && (
+                    <div className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mt-0.5 opacity-80">Pilot</div>
+                  )}
+                </th>
+              ))}
+            </tr>
+            <tr className="bg-muted/40 border-b border-border/50">
+              <th className="sticky left-0 bg-muted/40 z-10 px-4 py-1.5 text-left text-[10px] font-semibold text-muted-foreground w-60 min-w-[240px]">
+                Stage
+              </th>
               {periods.map(p => {
                 const locked = isPilotPeriod(p);
                 const assigned = locked ? "adopt" : (periodStageMap[p] ?? "");
                 const asc = assigned ? AAER_STAGE_COLORS[assigned] : null;
                 return (
-                  <th key={p} className={`px-3 py-2 text-center text-[11px] font-bold min-w-[110px] align-top ${locked ? "bg-amber-50/60" : "text-muted-foreground"}`}>
-                    <div className={locked ? "text-amber-700" : ""}>{p}</div>
+                  <th key={p} className={`px-2 py-1.5 text-center min-w-[110px] ${locked ? "bg-amber-50/40" : ""}`}>
                     {locked ? (
-                      <div className="mt-1">
-                        <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wider opacity-80 block">Pilot</span>
-                        <span className={`mt-0.5 inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${asc!.bg} ${asc!.text} ${asc!.border}`}>
-                          🔒 Adopt
-                        </span>
-                      </div>
+                      <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${asc!.bg} ${asc!.text} ${asc!.border}`}>
+                        🔒 Adopt
+                      </span>
                     ) : (
                       <select
                         value={assigned}
                         onChange={e => onPeriodStageChange(p, e.target.value || null)}
                         onClick={e => e.stopPropagation()}
-                        className={`mt-1 w-full text-[10px] rounded border px-1 py-0.5 font-semibold focus:outline-none focus:ring-1 focus:ring-violet-300 cursor-pointer ${
+                        className={`w-full text-[10px] rounded border px-1 py-0.5 font-semibold focus:outline-none focus:ring-1 focus:ring-violet-300 cursor-pointer ${
                           asc ? `${asc.bg} ${asc.text} border-current` : "bg-background border-border/50 text-muted-foreground"
                         }`}
                       >
