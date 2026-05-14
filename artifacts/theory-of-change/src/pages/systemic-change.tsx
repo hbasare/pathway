@@ -1334,12 +1334,9 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }:
       {/* Matrix table */}
       <div className="rounded-xl border border-border overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
-          <table className="border-collapse w-full" style={{ minWidth: `${Math.max(600, 160 + periods.length * 80)}px` }}>
+          <table className="border-collapse w-full" style={{ minWidth: `${Math.max(400, periods.length * 80)}px` }}>
             <thead>
               <tr className="bg-muted/70 border-b border-border">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-40 min-w-[160px]">
-                  Actor / Market Firm
-                </th>
                 {periods.map(p => (
                   <th key={p} className={`px-2 py-3 text-center text-[11px] font-bold min-w-[72px] ${isPilotPeriod(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
                     <div>{p}</div>
@@ -1359,15 +1356,6 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }:
                 const latestColor = latestStage ? AAER_STAGE_COLORS[latestStage] : null;
                 return (
                   <tr key={actor} className={`border-b border-border/50 last:border-0 ${ai % 2 === 0 ? "bg-background" : "bg-muted/20"} hover:bg-violet-50/40 transition-colors`}>
-                    <td className="px-4 py-3 sticky left-0 z-10 border-r border-border/30"
-                      style={{ background: ai % 2 === 0 ? "white" : "rgb(249 250 251 / 0.8)" }}>
-                      <div className="text-sm font-semibold text-foreground leading-tight">{actor}</div>
-                      {latestColor && (
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border mt-1 inline-block ${latestColor.bg} ${latestColor.text} ${latestColor.border}`}>
-                          Currently: {latestColor.label}
-                        </span>
-                      )}
-                    </td>
                     {periods.map(period => {
                       const entry = index[`${actor}::${period}`];
                       const stage = entry ? AAER_STAGE_COLORS[entry.frameworkTag] : null;
@@ -1432,7 +1420,7 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }:
                   ) : (
                     <button onClick={() => setAddingActor(true)}
                       className="flex items-center gap-2 text-sm text-violet-600 hover:text-violet-800 font-medium transition-colors">
-                      <Plus className="w-4 h-4" />Add Actor / Market Firm
+                      <Plus className="w-4 h-4" />Add Actor
                     </button>
                   )}
                 </td>
