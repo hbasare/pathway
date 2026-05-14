@@ -2304,11 +2304,34 @@ const MSR_DOMAINS: MsrDomain[] = [
         desc: "Collaborative behaviours, joint action, and information sharing among market actors",
         indicatorGroups: [
           {
-            group: "Collaborative Behaviour",
+            group: "Types of Cooperation",
             indicators: [
-              { id: "coo_cb_1", label: "Willingness to share information and collaborate", type: "F" },
-              { id: "coo_cb_2", label: "Industry associations or collective action bodies", type: "F" },
-              { id: "coo_cb_3", label: "Trust between market actors", type: "S" },
+              { id: "coo_tc_1", label: "Number of joint initiatives/partnerships", type: "F" },
+              { id: "coo_tc_2", label: "Agent response pattern to cooperation pressures (i.e. add value or extract)", type: "F" },
+              { id: "coo_tc_3", label: "Co-investment alliances", type: "F" },
+              { id: "coo_tc_4", label: "Investment in suppliers and service providers", type: "F" },
+              { id: "coo_tc_5", label: "Emergence of industry associations", type: "F" },
+              { id: "coo_tc_6", label: "Extent of practice of collective bargaining agreements", type: "S" },
+              { id: "coo_tc_7", label: "Incidence of joint efforts around threats and opportunities", type: "F" },
+            ],
+          },
+          {
+            group: "Motivation for Cooperation",
+            indicators: [
+              { id: "coo_mc_1", label: "Cooperation to gain unfair advantage (e.g. fix prices, shift grades, other)", type: "F" },
+              { id: "coo_mc_2", label: "Cooperation to add value (e.g. joint marketing or branding, advocacy to improve policies and regulations, agreements on standards to increase industry)" },
+              { id: "coo_mc_3", label: "Emergence of specialised business-to-business services", type: "S" },
+              { id: "coo_mc_4", label: "Cooperation to gain fair advantage (level the playing field)" },
+              { id: "coo_mc_5", label: "Collective response patterns to joint threats and opportunities", type: "S" },
+            ],
+          },
+          {
+            group: "Mediating Factors",
+            indicators: [
+              { id: "coo_mf_1", label: "Stringency of anti-trust laws", type: "S" },
+              { id: "coo_mf_2", label: "Level of perceived collusion", type: "S" },
+              { id: "coo_mf_3", label: "Extent to which freedom of association is practised", type: "S" },
+              { id: "coo_mf_4", label: "Formalisation of alliances via co-investment, joint ownership, formal agreements etc.", type: "S" },
             ],
           },
         ],
