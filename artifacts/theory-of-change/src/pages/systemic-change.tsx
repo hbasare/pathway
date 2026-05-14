@@ -1736,27 +1736,31 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, p
 // ─── AI Analysis ──────────────────────────────────────────────────────────────
 const STAGE_AI_CONFIG: Record<string, {
   label: string; stroke: string; trackStroke: string; bg: string; text: string;
-  border: string; badgeBg: string; headingColor: string;
+  border: string; accentBorder: string; badgeBg: string; headingColor: string;
 }> = {
   adopt: {
     label: "Adopt", stroke: "#7c3aed", trackStroke: "#ede9fe",
-    bg: "bg-violet-50", text: "text-violet-800", border: "border-violet-200",
-    badgeBg: "bg-violet-100", headingColor: "text-violet-700",
+    bg: "bg-white", text: "text-violet-700", border: "border-border",
+    accentBorder: "border-l-violet-400",
+    badgeBg: "bg-violet-50", headingColor: "text-violet-600",
   },
   adapt: {
     label: "Adapt", stroke: "#1d4ed8", trackStroke: "#dbeafe",
-    bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-200",
-    badgeBg: "bg-blue-100", headingColor: "text-blue-700",
+    bg: "bg-white", text: "text-blue-700", border: "border-border",
+    accentBorder: "border-l-blue-400",
+    badgeBg: "bg-blue-50", headingColor: "text-blue-600",
   },
   expand: {
     label: "Expand", stroke: "#059669", trackStroke: "#d1fae5",
-    bg: "bg-emerald-50", text: "text-emerald-800", border: "border-emerald-200",
-    badgeBg: "bg-emerald-100", headingColor: "text-emerald-700",
+    bg: "bg-white", text: "text-emerald-700", border: "border-border",
+    accentBorder: "border-l-emerald-400",
+    badgeBg: "bg-emerald-50", headingColor: "text-emerald-600",
   },
   respond: {
     label: "Respond", stroke: "#c2410c", trackStroke: "#ffedd5",
-    bg: "bg-orange-50", text: "text-orange-800", border: "border-orange-200",
-    badgeBg: "bg-orange-100", headingColor: "text-orange-700",
+    bg: "bg-white", text: "text-orange-700", border: "border-border",
+    accentBorder: "border-l-orange-400",
+    badgeBg: "bg-orange-50", headingColor: "text-orange-600",
   },
 };
 
@@ -1786,12 +1790,12 @@ function StageRing({ score, stageKey, size = 96 }: { score: number; stageKey: st
   );
 }
 
-// DCED quadrant colours — using the app's own stage palette
+// DCED quadrant colours (DCED standard palette from reference)
 const DCED_QUAD: Record<string, { bg: string; label: string }> = {
-  adopt:   { bg: "#7c3aed", label: "Adopt" },
-  adapt:   { bg: "#1d4ed8", label: "Adapt" },
-  expand:  { bg: "#059669", label: "Expand" },
-  respond: { bg: "#c2410c", label: "Respond" },
+  adopt:   { bg: "#E86427", label: "Adopt" },
+  adapt:   { bg: "#C0272D", label: "Adapt" },
+  expand:  { bg: "#8B1538", label: "Expand" },
+  respond: { bg: "#E8417A", label: "Respond" },
 };
 
 function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
@@ -1832,7 +1836,7 @@ function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
           </div>
           <div className="h-3 rounded-full bg-muted overflow-hidden">
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${totalScore}%`, background: "linear-gradient(to right, #7c3aed, #1d4ed8, #059669, #c2410c)" }} />
+              style={{ width: `${totalScore}%`, background: "linear-gradient(to right, #E86427, #C0272D, #8B1538, #E8417A)" }} />
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug italic">{analysis.pathwayNarrative}</p>
         </div>
@@ -1907,9 +1911,9 @@ function StageAnalysisCard({ stageKey, data }: { stageKey: string; data: StageAn
   const [expanded, setExpanded] = useState(false);
   const hasContent = data.findings.length > 0 || data.recommendations.length > 0;
   return (
-    <div className={`rounded-xl border-2 overflow-hidden ${cfg.border}`}>
+    <div className={`rounded-xl border overflow-hidden border-l-4 ${cfg.border} ${cfg.accentBorder}`}>
       <button
-        className={`w-full flex items-center gap-3 px-4 py-3 text-left ${cfg.bg} hover:brightness-95 transition-all`}
+        className={`w-full flex items-center gap-3 px-4 py-3 text-left ${cfg.bg} hover:bg-muted/30 transition-all`}
         onClick={() => setExpanded(p => !p)}
         disabled={!hasContent}
       >
