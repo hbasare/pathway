@@ -2092,6 +2092,452 @@ function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; 
   );
 }
 
+// ─── MSR Module ───────────────────────────────────────────────────────────────
+
+const MSR_SCALE = [
+  { value: 1, label: "Much more reactive",     short: "1",  bg: "#fee2e2", text: "#991b1b", border: "#fca5a5" },
+  { value: 2, label: "Sometimes reactive",     short: "2",  bg: "#fef9c3", text: "#854d0e", border: "#fde047" },
+  { value: 3, label: "Somewhat proactive",     short: "3",  bg: "#d1fae5", text: "#065f46", border: "#6ee7b7" },
+  { value: 4, label: "Much more proactive",    short: "4",  bg: "#dbeafe", text: "#1e3a8a", border: "#93c5fd" },
+];
+
+const MSR_DOMAINS: {
+  key: string;
+  label: string;
+  bg: string;
+  text: string;
+  border: string;
+  components: { key: string; label: string; desc: string; indicators: string[] }[];
+}[] = [
+  {
+    key: "structural",
+    label: "Structural Domain",
+    bg: "bg-violet-50", text: "text-violet-800", border: "border-violet-300",
+    components: [
+      {
+        key: "connectivity",
+        label: "Connectivity",
+        desc: "Linkages and relationships between market actors and support systems",
+        indicators: [
+          "Density and diversity of relationships between actors",
+          "Information flows between market layers",
+          "Access to markets for marginalised groups",
+          "Presence of platforms / convening mechanisms",
+        ],
+      },
+      {
+        key: "diversity",
+        label: "Diversity",
+        desc: "Variety of actors, approaches, and options within the system",
+        indicators: [
+          "Number and variety of service/product providers",
+          "Range of business models and strategies",
+          "Presence of alternative suppliers / routes to market",
+          "Gender and inclusion diversity of actors",
+        ],
+      },
+      {
+        key: "power_dynamics",
+        label: "Power Dynamics",
+        desc: "Distribution of power and ability to influence rules and norms",
+        indicators: [
+          "Concentration of market power among actors",
+          "Voice of marginalised actors in system decisions",
+          "Transparency of decision-making processes",
+          "Ability of new entrants to challenge incumbents",
+        ],
+      },
+      {
+        key: "rule_of_law",
+        label: "Rule of Law",
+        desc: "Functioning of formal rules, regulations, and enforcement",
+        indicators: [
+          "Clarity and fairness of regulatory framework",
+          "Consistency of enforcement",
+          "Contract enforcement mechanisms",
+          "Absence of corruption / rent-seeking behaviour",
+        ],
+      },
+    ],
+  },
+  {
+    key: "behavioural",
+    label: "Behavioural Domain",
+    bg: "bg-teal-50", text: "text-teal-800", border: "border-teal-300",
+    components: [
+      {
+        key: "cooperation_competition",
+        label: "Cooperation & Competition",
+        desc: "Balance between collaborative and competitive behaviours among actors",
+        indicators: [
+          "Willingness to share information and collaborate",
+          "Healthy competition driving innovation and quality",
+          "Industry associations or collective action bodies",
+          "Trust between market actors",
+        ],
+      },
+      {
+        key: "evidence_decision",
+        label: "Evidence-based Decision Making",
+        desc: "Extent to which actors use data and evidence to inform choices",
+        indicators: [
+          "Use of market data for business decisions",
+          "Presence of feedback and learning mechanisms",
+          "Investment in monitoring and evaluation by actors",
+          "Responsiveness to customer/beneficiary feedback",
+        ],
+      },
+      {
+        key: "business_strategy",
+        label: "Business Strategy",
+        desc: "Quality and long-term orientation of strategic planning",
+        indicators: [
+          "Presence of documented business strategies",
+          "Investment in R&D and innovation",
+          "Long-term vs short-term orientation of decisions",
+          "Adaptation of strategy in response to market changes",
+        ],
+      },
+    ],
+  },
+];
+
+interface MsrCellData { score: number | null; notes: string }
+type MsrData = Record<string, Record<string, MsrCellData>>; // period → componentKey → data
+
+function msrAvg(data: MsrData, componentKey: string, periods: string[]): number | null {
+  const vals = periods.map(p => data[p]?.[componentKey]?.score).filter((v): v is number => v != null);
+  return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
+}
+
+function MsrScoreChip({ score, size = "md" }: { score: number | null; size?: "sm" | "md" | "lg" }) {
+  if (score == null) return <span className="text-muted-foreground/30 text-[11px]">—</span>;
+  const cfg = MSR_SCALE[score - 1];
+  const cls = size === "sm" ? "text-[10px] px-1.5 py-0.5" : size === "lg" ? "text-sm px-2.5 py-1" : "text-xs px-2 py-0.5";
+  return (
+    <span className={`inline-flex items-center rounded-full font-bold border leading-none ${cls}`}
+      style={{ backgroundColor: cfg.bg, color: cfg.text, borderColor: cfg.border }}>
+      {cfg.short}
+    </span>
+  );
+}
+
+function MsrCell({ data, onClick, isSelected }: {
+  data: MsrCellData | undefined;
+  onClick: () => void;
+  isSelected: boolean;
+}) {
+  const score = data?.score ?? null;
+  const cfg = score != null ? MSR_SCALE[score - 1] : null;
+  return (
+    <td className="px-1 py-1 text-center border-b border-border/30">
+      <button onClick={onClick}
+        className={`w-full min-w-[80px] rounded-lg px-2 py-3 text-center transition-all border-2 ${
+          isSelected ? "ring-2 ring-violet-400 ring-offset-1" : ""
+        } ${cfg ? "" : "border-dashed border-border/40 hover:border-border/70 hover:bg-muted/30"}`}
+        style={cfg ? { backgroundColor: cfg.bg, borderColor: cfg.border } : undefined}>
+        {cfg ? (
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-lg font-black leading-none" style={{ color: cfg.text }}>{score}</span>
+            <span className="text-[8px] font-semibold leading-tight max-w-[70px]" style={{ color: cfg.text, opacity: 0.75 }}>
+              {cfg.label.split(" ").slice(0,2).join(" ")}
+            </span>
+          </div>
+        ) : (
+          <span className="text-[10px] text-muted-foreground/40">+</span>
+        )}
+      </button>
+    </td>
+  );
+}
+
+function MsrCellPanel({ period, component, domain, data, onSave, onClose }: {
+  period: string;
+  component: { key: string; label: string; desc: string; indicators: string[] };
+  domain: typeof MSR_DOMAINS[0];
+  data: MsrCellData;
+  onSave: (d: MsrCellData) => void;
+  onClose: () => void;
+}) {
+  const [score, setScore] = useState<number | null>(data.score);
+  const [notes, setNotes] = useState(data.notes ?? "");
+
+  return (
+    <div className="rounded-xl border-2 border-teal-200 bg-white overflow-hidden flex flex-col shadow-lg">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-border bg-teal-50">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${domain.bg} ${domain.text}`}>
+              {domain.label.replace(" Domain","")}
+            </span>
+            <span className="text-xs text-muted-foreground">· {period}</span>
+          </div>
+          <h3 className="text-sm font-bold text-foreground">{component.label}</h3>
+          <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{component.desc}</p>
+        </div>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground shrink-0 mt-0.5">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+        {/* Score selector */}
+        <div>
+          <Label className="text-xs font-semibold text-muted-foreground mb-2 block">
+            Score — Reactive → Proactive Continuum
+          </Label>
+          <div className="grid grid-cols-2 gap-2">
+            {MSR_SCALE.map(s => (
+              <button key={s.value} onClick={() => setScore(score === s.value ? null : s.value)}
+                className={`rounded-lg border-2 px-3 py-2.5 text-left transition-all ${
+                  score === s.value ? "ring-2 ring-offset-1 ring-violet-400" : "opacity-70 hover:opacity-100"
+                }`}
+                style={{ backgroundColor: s.bg, borderColor: s.border }}>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-xl font-black leading-none" style={{ color: s.text }}>{s.value}</span>
+                  <span className="text-[10px] font-semibold leading-snug" style={{ color: s.text }}>{s.label}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Indicators reference */}
+        <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Indicator Prompts</p>
+          <ul className="space-y-1">
+            {component.indicators.map((ind, i) => (
+              <li key={i} className="flex gap-2 text-[11px] text-foreground/70 leading-snug">
+                <span className="shrink-0 text-muted-foreground/50 font-bold mt-0.5">·</span>
+                <span>{ind}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Notes */}
+        <div>
+          <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
+            Evidence & Justification
+          </Label>
+          <Textarea value={notes} onChange={e => setNotes(e.target.value)}
+            className="text-sm min-h-[80px]"
+            placeholder="Describe the evidence for your score — name specific actors, data sources, or observations…" />
+        </div>
+      </div>
+
+      <div className="flex items-center gap-2 px-4 py-3 border-t border-border shrink-0">
+        <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+        <Button size="sm" onClick={() => onSave({ score, notes })}
+          className="bg-teal-600 hover:bg-teal-700 text-white ml-auto">
+          <Check className="w-3.5 h-3.5 mr-1.5" />Save
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function MsrMatrix({ periods, msrData, onCellChange, selectedCell, onSelectCell }: {
+  periods: string[];
+  msrData: MsrData;
+  onCellChange: (period: string, componentKey: string, data: MsrCellData) => void;
+  selectedCell: { period: string; componentKey: string } | null;
+  onSelectCell: (period: string, componentKey: string) => void;
+}) {
+  if (periods.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border py-12 text-center">
+        <Settings className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+        <p className="text-sm font-medium text-muted-foreground">No timeline configured</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Set up the intervention timeline in the settings above to begin scoring.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse" style={{ minWidth: `${280 + periods.length * 100}px` }}>
+          <thead>
+            <tr className="bg-muted/70 border-b-2 border-border">
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-64 min-w-[256px]">
+                Component
+              </th>
+              <th className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground w-12">Avg</th>
+              {periods.map(p => (
+                <th key={p} className="px-2 py-3 text-center text-[11px] font-bold text-muted-foreground min-w-[90px]">{p}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {MSR_DOMAINS.map(domain => (
+              <Fragment key={domain.key}>
+                {/* Domain header row */}
+                <tr>
+                  <td colSpan={2 + periods.length}
+                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-b border-t border-border sticky left-0 ${domain.bg} ${domain.text}`}>
+                    {domain.label}
+                  </td>
+                </tr>
+                {/* Component rows */}
+                {domain.components.map(comp => {
+                  const avg = msrAvg(msrData, comp.key, periods);
+                  return (
+                    <tr key={comp.key} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+                      {/* Label */}
+                      <td className={`px-4 py-2 sticky left-0 bg-background z-10 border-r border-border/30`}>
+                        <div className="text-xs font-semibold text-foreground">{comp.label}</div>
+                        <div className="text-[10px] text-muted-foreground/70 leading-snug mt-0.5 max-w-[200px]">{comp.desc}</div>
+                      </td>
+                      {/* Average */}
+                      <td className="px-2 py-2 text-center border-r border-border/30">
+                        <MsrScoreChip score={avg != null ? Math.round(avg) : null} size="sm" />
+                      </td>
+                      {/* Period cells */}
+                      {periods.map(p => (
+                        <MsrCell key={p}
+                          data={msrData[p]?.[comp.key]}
+                          isSelected={selectedCell?.period === p && selectedCell?.componentKey === comp.key}
+                          onClick={() => onSelectCell(p, comp.key)}
+                        />
+                      ))}
+                    </tr>
+                  );
+                })}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+/** Loads/saves msrData as JSON in the theory's `stageData` field via a dedicated DB entry */
+function useMsrData(theoryId: number, apiBase: string) {
+  const { toast } = useToast();
+  const [msrData, setMsrData] = useState<MsrData>({});
+  const [msrEntryId, setMsrEntryId] = useState<number | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  const load = async () => {
+    try {
+      const res = await fetch(`${apiBase}/theories/${theoryId}/systemic-changes`, { credentials: "include" });
+      if (!res.ok) return;
+      const rows: any[] = await res.json();
+      const msrRow = rows.find(r => r.frameworkTag === "__msr__");
+      if (msrRow) {
+        setMsrEntryId(msrRow.id);
+        try { setMsrData(JSON.parse(msrRow.stageData ?? "{}")); } catch {}
+      }
+    } finally { setLoaded(true); }
+  };
+
+  const save = async (data: MsrData) => {
+    setMsrData(data);
+    const body = { frameworkTag: "__msr__", dimension: "msr", description: "", changeObserved: "", level: "", status: "", stageData: JSON.stringify(data) };
+    try {
+      if (msrEntryId) {
+        await fetch(`${apiBase}/theories/${theoryId}/systemic-changes/${msrEntryId}`, {
+          method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include",
+          body: JSON.stringify(body),
+        });
+      } else {
+        const res = await fetch(`${apiBase}/theories/${theoryId}/systemic-changes`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
+          body: JSON.stringify(body),
+        });
+        if (res.ok) { const row = await res.json(); setMsrEntryId(row.id); }
+      }
+    } catch (err) {
+      toast({ title: "Failed to save MSR data", description: String(err), variant: "destructive" });
+    }
+  };
+
+  return { msrData, msrEntryId, loaded, load, save };
+}
+
+function MsrView({ theoryId, apiBase, settings, onSaveSettings }: {
+  theoryId: number;
+  apiBase: string;
+  settings: AaerSettings;
+  onSaveSettings: (s: AaerSettings) => void;
+}) {
+  const { msrData, loaded, load, save } = useMsrData(theoryId, apiBase);
+  const [selectedCell, setSelectedCell] = useState<{ period: string; componentKey: string } | null>(null);
+
+  useEffect(() => { load(); }, [theoryId]);
+
+  const periods = settings.startYear && settings.endYear
+    ? [
+        ...generatePilotPeriods(settings.pilotDuration, settings.granularity),
+        ...generatePeriods(settings.startYear, settings.endYear, settings.granularity),
+      ]
+    : [];
+
+  const handleCellChange = (period: string, componentKey: string, data: MsrCellData) => {
+    const next = { ...msrData, [period]: { ...msrData[period], [componentKey]: data } };
+    save(next);
+  };
+
+  const selectedDomain = selectedCell
+    ? MSR_DOMAINS.find(d => d.components.some(c => c.key === selectedCell.componentKey)) ?? null
+    : null;
+  const selectedComponent = selectedCell
+    ? selectedDomain?.components.find(c => c.key === selectedCell.componentKey) ?? null
+    : null;
+
+  if (!loaded) {
+    return <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Legend */}
+      <div className="flex flex-wrap gap-2 items-center">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mr-1">Scale:</span>
+        {MSR_SCALE.map(s => (
+          <span key={s.value} className="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-1 rounded-full border"
+            style={{ backgroundColor: s.bg, color: s.text, borderColor: s.border }}>
+            <span className="font-black">{s.value}</span> = {s.label}
+          </span>
+        ))}
+      </div>
+
+      {/* Matrix + side panel */}
+      <div className={selectedCell ? "flex gap-4 items-start" : ""}>
+        <div className={selectedCell ? "flex-1 min-w-0 overflow-x-auto" : ""}>
+          <MsrMatrix
+            periods={periods}
+            msrData={msrData}
+            onCellChange={handleCellChange}
+            selectedCell={selectedCell}
+            onSelectCell={(period, componentKey) =>
+              setSelectedCell(prev =>
+                prev?.period === period && prev?.componentKey === componentKey ? null : { period, componentKey }
+              )
+            }
+          />
+        </div>
+
+        {selectedCell && selectedComponent && selectedDomain && (
+          <div className="w-[380px] shrink-0 sticky top-4">
+            <MsrCellPanel
+              period={selectedCell.period}
+              component={selectedComponent}
+              domain={selectedDomain}
+              data={msrData[selectedCell.period]?.[selectedCell.componentKey] ?? { score: null, notes: "" }}
+              onSave={(d) => { handleCellChange(selectedCell.period, selectedCell.componentKey, d); setSelectedCell(null); }}
+              onClose={() => setSelectedCell(null)}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SystemicChange() {
   const [, params] = useRoute("/theory/:id/systemic-change");
@@ -2256,6 +2702,7 @@ export default function SystemicChange() {
   }
 
   const isAaer = localFrameworkKey === "aaer";
+  const isMsr  = localFrameworkKey === "msr";
 
   // Filter fw.tagOptions to only the stages the user has enabled
   const effectiveFw = fw ? {
@@ -2289,7 +2736,7 @@ export default function SystemicChange() {
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowSelector(true)}>
             <RefreshCw className="w-3.5 h-3.5" /><span className="hidden sm:inline">Switch Framework</span>
           </Button>
-          {!isAaer && (
+          {!isAaer && !isMsr && (
             <Button size="sm" className="gap-2" onClick={() => { setAddingRow(true); setEditingId(null); }}>
               <Plus className="w-4 h-4" />Add Entry
             </Button>
@@ -2312,6 +2759,19 @@ export default function SystemicChange() {
             <p className="text-xs text-foreground/80 leading-relaxed">{fw!.description}</p>
           </div>
         </div>
+
+        {/* MSR: Settings + Heatmap matrix */}
+        {isMsr && (
+          <>
+            <AaerSettingsPanel settings={localSettings} onSave={saveSettings} />
+            <MsrView
+              theoryId={id}
+              apiBase={API_BASE}
+              settings={localSettings}
+              onSaveSettings={saveSettings}
+            />
+          </>
+        )}
 
         {/* AAER: Settings + Matrix + Side Panel */}
         {isAaer && (
@@ -2360,8 +2820,8 @@ export default function SystemicChange() {
           </>
         )}
 
-        {/* Non-AAER: Table */}
-        {!isAaer && fw!.cols.length > 0 && (
+        {/* Non-AAER / Non-MSR: Table */}
+        {!isAaer && !isMsr && fw!.cols.length > 0 && (
           <>
             <div className="rounded-xl border border-border overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
