@@ -7,7 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Plus, Trash2, Pencil, Check, X, Loader2, GitBranch,
   ChevronRight, RefreshCw, Info, Settings, ChevronDown, ChevronUp,
-  Sparkles, AlertCircle, TrendingUp,
+  Sparkles, AlertCircle, TrendingUp, ListChecks,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -2469,11 +2469,27 @@ const MSR_DOMAINS: MsrDomain[] = [
   },
 ];
 
-interface MsrCellData { score: number | null; notes: string; selectedIndicators?: string[] }
-type MsrData = Record<string, Record<string, MsrCellData>>; // period → componentKey → data
+// Per-indicator score for one period
+interface MsrScore { score: number | null; notes: string }
+// Top-level data for the whole MSR assessment
+interface MsrData {
+  v: 2;
+  sel: Record<string, string[]>;                        // componentKey → selected indicatorId[]
+  scores: Record<string, Record<string, MsrScore>>;     // period → indicatorId → score
+}
+const MSR_DATA_EMPTY: MsrData = { v: 2, sel: {}, scores: {} };
 
-function msrAvg(data: MsrData, componentKey: string, periods: string[]): number | null {
-  const vals = periods.map(p => data[p]?.[componentKey]?.score).filter((v): v is number => v != null);
+function msrIndicatorAvg(data: MsrData, indicatorId: string, periods: string[]): number | null {
+  const vals = periods.map(p => data.scores[p]?.[indicatorId]?.score).filter((v): v is number => v != null);
+  return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
+}
+
+function msrComponentAvg(data: MsrData, componentKey: string, periods: string[]): number | null {
+  const ids = data.sel[componentKey] ?? [];
+  if (!ids.length) return null;
+  const vals: number[] = ids.flatMap(id =>
+    periods.map(p => data.scores[p]?.[id]?.score).filter((v): v is number => v != null)
+  );
   return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
 }
 
@@ -2489,98 +2505,172 @@ function MsrScoreChip({ score, size = "md" }: { score: number | null; size?: "sm
   );
 }
 
-function MsrCell({ data, onClick, isSelected }: {
-  data: MsrCellData | undefined;
+function MsrScoreCell({ score, onClick, isSelected }: {
+  score: MsrScore | undefined;
   onClick: () => void;
   isSelected: boolean;
 }) {
-  const score = data?.score ?? null;
-  const cfg = score != null ? MSR_SCALE[score - 1] : null;
+  const s = score?.score ?? null;
+  const cfg = s != null ? MSR_SCALE[s - 1] : null;
   return (
-    <td className="px-1 py-1 text-center border-b border-border/30">
+    <td className="px-1 py-0.5 text-center border-b border-border/20">
       <button onClick={onClick}
-        className={`w-full min-w-[80px] rounded-lg px-2 py-3 text-center transition-all border-2 ${
-          isSelected ? "ring-2 ring-violet-400 ring-offset-1" : ""
-        } ${cfg ? "" : "border-dashed border-border/40 hover:border-border/70 hover:bg-muted/30"}`}
+        className={`w-full min-w-[72px] rounded-md px-1 py-2 text-center transition-all border ${
+          isSelected ? "ring-2 ring-teal-400 ring-offset-1" : ""
+        } ${cfg ? "" : "border-dashed border-border/30 hover:border-border/60 hover:bg-muted/20"}`}
         style={cfg ? { backgroundColor: cfg.bg, borderColor: cfg.border } : undefined}>
-        {cfg ? (
-          <div className="flex flex-col items-center gap-0.5">
-            <span className="text-lg font-black leading-none" style={{ color: cfg.text }}>{score}</span>
-            <span className="text-[8px] font-semibold leading-tight max-w-[70px]" style={{ color: cfg.text, opacity: 0.75 }}>
-              {cfg.label.split(" ").slice(0,2).join(" ")}
-            </span>
-          </div>
-        ) : (
-          <span className="text-[10px] text-muted-foreground/40">+</span>
-        )}
+        {cfg
+          ? <span className="text-sm font-black leading-none" style={{ color: cfg.text }}>{s}</span>
+          : <span className="text-[10px] text-muted-foreground/30">+</span>
+        }
       </button>
     </td>
   );
 }
 
-function MsrCellPanel({ period, component, domain, data, onSave, onClose }: {
-  period: string;
+function MsrIndicatorSelectPanel({ component, domain, selectedIds, onSave, onClose }: {
   component: MsrComponent;
   domain: MsrDomain;
-  data: MsrCellData;
-  onSave: (d: MsrCellData) => void;
+  selectedIds: string[];
+  onSave: (ids: string[]) => void;
   onClose: () => void;
 }) {
-  const [score, setScore] = useState<number | null>(data.score);
-  const [notes, setNotes] = useState(data.notes ?? "");
-  const [selected, setSelected] = useState<Set<string>>(new Set(data.selectedIndicators ?? []));
-
+  const [selected, setSelected] = useState<Set<string>>(new Set(selectedIds));
   const allIds = component.indicatorGroups.flatMap(g => g.indicators.map(i => i.id));
-  const noneSelected = selected.size === 0;
 
   const toggle = (id: string) =>
-    setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+    setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
-  const toggleGroup = (group: MsrIndicatorGroup) => {
-    const ids = group.indicators.map(i => i.id);
+  const toggleGroup = (grp: MsrIndicatorGroup) => {
+    const ids = grp.indicators.map(i => i.id);
     const allOn = ids.every(id => selected.has(id));
-    setSelected(prev => {
-      const next = new Set(prev);
-      ids.forEach(id => allOn ? next.delete(id) : next.add(id));
-      return next;
-    });
+    setSelected(prev => { const n = new Set(prev); ids.forEach(id => allOn ? n.delete(id) : n.add(id)); return n; });
   };
 
-  const selectAll = () => setSelected(new Set(allIds));
-  const clearAll = () => setSelected(new Set());
-
   return (
-    <div className="rounded-xl border-2 border-teal-200 bg-white overflow-hidden flex flex-col shadow-lg">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-border bg-teal-50">
+    <div className="rounded-xl border-2 border-violet-200 bg-white overflow-hidden flex flex-col shadow-lg">
+      <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-border bg-violet-50">
         <div className="min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${domain.bg} ${domain.text}`}>
               {domain.label.replace(" Domain", "")}
             </span>
-            <span className="text-xs text-muted-foreground">· {period}</span>
+            <span className="text-xs text-muted-foreground">· Select Indicators</span>
           </div>
-          <h3 className="text-sm font-bold text-foreground">{component.label}</h3>
+          <h3 className="text-sm font-bold">{component.label}</h3>
           <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">{component.desc}</p>
         </div>
-        <button onClick={onClose} className="text-muted-foreground hover:text-foreground shrink-0 mt-0.5">
-          <X className="w-4 h-4" />
-        </button>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground shrink-0"><X className="w-4 h-4" /></button>
+      </div>
+
+      <div className="px-4 py-2 border-b border-border/40 flex items-center gap-3 bg-muted/20">
+        <p className="text-[11px] text-muted-foreground flex-1 leading-snug">
+          Tick the indicators relevant to this intervention — they will appear as rows in the matrix.
+        </p>
+        <div className="flex gap-2 shrink-0">
+          <button onClick={() => setSelected(new Set(allIds))} className="text-[10px] font-semibold text-violet-600 hover:text-violet-800 underline underline-offset-2">All</button>
+          <button onClick={() => setSelected(new Set())} className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline underline-offset-2">None</button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+        {component.indicatorGroups.map(grp => {
+          const grpIds = grp.indicators.map(i => i.id);
+          const allOn = grpIds.every(id => selected.has(id));
+          const someOn = grpIds.some(id => selected.has(id));
+          return (
+            <div key={grp.group} className="rounded-lg border border-border/60 overflow-hidden">
+              <button onClick={() => toggleGroup(grp)}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                  allOn ? "bg-violet-50 border-b border-violet-100" : someOn ? "bg-amber-50 border-b border-amber-100" : "bg-muted/30 border-b border-border/40"
+                }`}>
+                <span className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 ${
+                  allOn ? "bg-violet-500 border-violet-500" : someOn ? "bg-amber-400 border-amber-400" : "border-border bg-white"
+                }`}>
+                  {(allOn || someOn) && <Check className="w-2 h-2 text-white" />}
+                </span>
+                <span className="text-[11px] font-bold text-foreground/80 flex-1">{grp.group}</span>
+                <span className="text-[10px] text-muted-foreground">{grpIds.filter(id => selected.has(id)).length}/{grpIds.length}</span>
+              </button>
+              <ul className="divide-y divide-border/30">
+                {grp.indicators.map(ind => {
+                  const on = selected.has(ind.id);
+                  return (
+                    <li key={ind.id}>
+                      <button onClick={() => toggle(ind.id)}
+                        className={`w-full flex items-start gap-2.5 px-3 py-2 text-left hover:bg-muted/20 transition-colors ${on ? "bg-violet-50/50" : ""}`}>
+                        <span className={`mt-0.5 w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 ${on ? "bg-violet-500 border-violet-500" : "border-border bg-white"}`}>
+                          {on && <Check className="w-2 h-2 text-white" />}
+                        </span>
+                        <span className={`text-[11px] leading-snug flex-1 ${on ? "text-foreground font-medium" : "text-foreground/55"}`}>{ind.label}</span>
+                        {ind.type && (
+                          <span className={`text-[9px] font-black px-1 py-0.5 rounded shrink-0 mt-0.5 ${ind.type === "F" ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"}`}>{ind.type}</span>
+                        )}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="flex items-center gap-2 px-4 py-3 border-t border-border shrink-0">
+        <span className="text-[11px] text-muted-foreground flex-1">{selected.size} indicator{selected.size !== 1 ? "s" : ""} selected</span>
+        <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+        <Button size="sm" className="bg-violet-600 hover:bg-violet-700 text-white"
+          onClick={() => { onSave(Array.from(selected)); onClose(); }}>
+          <Check className="w-3.5 h-3.5 mr-1.5" />Apply
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function MsrIndicatorScorePanel({ period, indicator, groupLabel, domain, component, score, onSave, onClose }: {
+  period: string;
+  indicator: MsrIndicator;
+  groupLabel: string;
+  domain: MsrDomain;
+  component: MsrComponent;
+  score: MsrScore;
+  onSave: (s: MsrScore) => void;
+  onClose: () => void;
+}) {
+  const [val, setVal] = useState<number | null>(score.score);
+  const [notes, setNotes] = useState(score.notes ?? "");
+
+  return (
+    <div className="rounded-xl border-2 border-teal-200 bg-white overflow-hidden flex flex-col shadow-lg">
+      <div className="flex items-start justify-between gap-2 px-4 py-3 border-b border-border bg-teal-50">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full ${domain.bg} ${domain.text}`}>
+              {domain.label.replace(" Domain", "")}
+            </span>
+            <span className="text-[10px] text-muted-foreground">· {component.label} · {period}</span>
+          </div>
+          <h3 className="text-sm font-bold leading-snug">{indicator.label}</h3>
+          <div className="flex items-center gap-2 mt-0.5">
+            <span className="text-[10px] text-muted-foreground/70">{groupLabel}</span>
+            {indicator.type && (
+              <span className={`text-[9px] font-black px-1 py-0.5 rounded ${indicator.type === "F" ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"}`}>
+                {indicator.type}
+              </span>
+            )}
+          </div>
+        </div>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground shrink-0 mt-0.5"><X className="w-4 h-4" /></button>
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-
-        {/* Score selector */}
         <div>
-          <Label className="text-xs font-semibold text-muted-foreground mb-2 block">
-            Score — Reactive → Proactive Continuum
-          </Label>
+          <Label className="text-xs font-semibold text-muted-foreground mb-2 block">Score — Reactive → Proactive</Label>
           <div className="grid grid-cols-2 gap-2">
             {MSR_SCALE.map(s => (
-              <button key={s.value} onClick={() => setScore(score === s.value ? null : s.value)}
-                className={`rounded-lg border-2 px-3 py-2.5 text-left transition-all ${
-                  score === s.value ? "ring-2 ring-offset-1 ring-violet-400" : "opacity-70 hover:opacity-100"
-                }`}
+              <button key={s.value} onClick={() => setVal(val === s.value ? null : s.value)}
+                className={`rounded-lg border-2 px-3 py-2.5 text-left transition-all ${val === s.value ? "ring-2 ring-offset-1 ring-teal-400" : "opacity-70 hover:opacity-100"}`}
                 style={{ backgroundColor: s.bg, borderColor: s.border }}>
                 <div className="flex items-baseline gap-1.5">
                   <span className="text-xl font-black leading-none" style={{ color: s.text }}>{s.value}</span>
@@ -2590,111 +2680,16 @@ function MsrCellPanel({ period, component, domain, data, onSave, onClose }: {
             ))}
           </div>
         </div>
-
-        {/* Grouped indicator selector */}
         <div>
-          <div className="flex items-center justify-between mb-2">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-              Relevant Indicators
-            </Label>
-            <div className="flex gap-2">
-              <button onClick={selectAll}
-                className="text-[10px] font-semibold text-teal-600 hover:text-teal-800 underline underline-offset-2">
-                Select all
-              </button>
-              {!noneSelected && (
-                <button onClick={clearAll}
-                  className="text-[10px] font-semibold text-muted-foreground hover:text-foreground underline underline-offset-2">
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-
-          <p className="text-[11px] text-muted-foreground/70 mb-2 leading-snug">
-            Tick the indicators that are relevant to this intervention — they will be tracked for this component.
-          </p>
-
-          <div className="space-y-3">
-            {component.indicatorGroups.map(grp => {
-              const grpIds = grp.indicators.map(i => i.id);
-              const allOn = grpIds.every(id => selected.has(id));
-              const someOn = grpIds.some(id => selected.has(id));
-              return (
-                <div key={grp.group} className="rounded-lg border border-border/60 overflow-hidden">
-                  {/* Group header — click to toggle all in group */}
-                  <button
-                    onClick={() => toggleGroup(grp)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
-                      allOn ? "bg-teal-50 border-b border-teal-100" : someOn ? "bg-amber-50 border-b border-amber-100" : "bg-muted/30 border-b border-border/40"
-                    }`}>
-                    <span className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                      allOn ? "bg-teal-500 border-teal-500" : someOn ? "bg-amber-400 border-amber-400" : "border-border bg-white"
-                    }`}>
-                      {(allOn || someOn) && <Check className="w-2 h-2 text-white" />}
-                    </span>
-                    <span className="text-[11px] font-bold text-foreground/80">{grp.group}</span>
-                    <span className="ml-auto text-[10px] text-muted-foreground">
-                      {grpIds.filter(id => selected.has(id)).length}/{grpIds.length}
-                    </span>
-                  </button>
-
-                  {/* Individual indicators */}
-                  <ul className="divide-y divide-border/30">
-                    {grp.indicators.map(ind => {
-                      const on = selected.has(ind.id);
-                      return (
-                        <li key={ind.id}>
-                          <button
-                            onClick={() => toggle(ind.id)}
-                            className={`w-full flex items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-muted/30 ${on ? "bg-teal-50/60" : ""}`}>
-                            <span className={`mt-0.5 w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
-                              on ? "bg-teal-500 border-teal-500" : "border-border bg-white"
-                            }`}>
-                              {on && <Check className="w-2 h-2 text-white" />}
-                            </span>
-                            <span className={`text-[11px] leading-snug flex-1 ${on ? "text-foreground font-medium" : "text-foreground/60"}`}>
-                              {ind.label}
-                            </span>
-                            {ind.type && (
-                              <span className={`text-[9px] font-black px-1 py-0.5 rounded shrink-0 mt-0.5 ${
-                                ind.type === "F" ? "bg-blue-100 text-blue-600" : "bg-purple-100 text-purple-600"
-                              }`}>{ind.type}</span>
-                            )}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-
-          {selected.size > 0 && (
-            <p className="text-[10px] text-teal-600 font-semibold mt-2">
-              {selected.size} indicator{selected.size !== 1 ? "s" : ""} selected for this cell
-            </p>
-          )}
+          <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Evidence & Notes</Label>
+          <Textarea value={notes} onChange={e => setNotes(e.target.value)} className="text-sm min-h-[80px]"
+            placeholder="Describe the evidence for this score…" />
         </div>
-
-        {/* Evidence notes */}
-        <div>
-          <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">
-            Evidence & Justification
-          </Label>
-          <Textarea value={notes} onChange={e => setNotes(e.target.value)}
-            className="text-sm min-h-[80px]"
-            placeholder="Describe the evidence for your score — name specific actors, data sources, or observations…" />
-        </div>
-
       </div>
 
       <div className="flex items-center gap-2 px-4 py-3 border-t border-border shrink-0">
         <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-        <Button size="sm"
-          onClick={() => onSave({ score, notes, selectedIndicators: Array.from(selected) })}
-          className="bg-teal-600 hover:bg-teal-700 text-white ml-auto">
+        <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white ml-auto" onClick={() => onSave({ score: val, notes })}>
           <Check className="w-3.5 h-3.5 mr-1.5" />Save
         </Button>
       </div>
@@ -2702,19 +2697,20 @@ function MsrCellPanel({ period, component, domain, data, onSave, onClose }: {
   );
 }
 
-function MsrMatrix({ periods, msrData, onCellChange, selectedCell, onSelectCell }: {
+function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, onEditIndicators }: {
   periods: string[];
   msrData: MsrData;
-  onCellChange: (period: string, componentKey: string, data: MsrCellData) => void;
-  selectedCell: { period: string; componentKey: string } | null;
-  onSelectCell: (period: string, componentKey: string) => void;
+  scoringCell: { period: string; indicatorId: string } | null;
+  selectingFor: string | null;
+  onSelectCell: (period: string, indicatorId: string, componentKey: string) => void;
+  onEditIndicators: (componentKey: string) => void;
 }) {
   if (periods.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border py-12 text-center">
         <Settings className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
         <p className="text-sm font-medium text-muted-foreground">No timeline configured</p>
-        <p className="text-xs text-muted-foreground/60 mt-1">Set up the intervention timeline in the settings above to begin scoring.</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Set up the assessment timeline above to begin scoring.</p>
       </div>
     );
   }
@@ -2722,51 +2718,125 @@ function MsrMatrix({ periods, msrData, onCellChange, selectedCell, onSelectCell 
   return (
     <div className="rounded-xl border border-border overflow-hidden shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full text-sm border-collapse" style={{ minWidth: `${280 + periods.length * 100}px` }}>
+        <table className="w-full text-sm border-collapse" style={{ minWidth: `${320 + periods.length * 90}px` }}>
           <thead>
             <tr className="bg-muted/70 border-b-2 border-border">
-              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-64 min-w-[256px]">
-                Component
+              <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-80 min-w-[320px]">
+                Indicator
               </th>
-              <th className="px-3 py-3 text-center text-[11px] font-semibold text-muted-foreground w-12">Avg</th>
+              <th className="px-2 py-3 text-center text-[11px] font-semibold text-muted-foreground min-w-[52px]">Avg</th>
               {periods.map(p => (
-                <th key={p} className="px-2 py-3 text-center text-[11px] font-bold text-muted-foreground min-w-[90px]">{p}</th>
+                <th key={p} className="px-2 py-3 text-center text-[11px] font-bold text-muted-foreground min-w-[80px]">{p}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {MSR_DOMAINS.map(domain => (
               <Fragment key={domain.key}>
-                {/* Domain header row */}
+                {/* Domain header */}
                 <tr>
                   <td colSpan={2 + periods.length}
-                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-b border-t border-border sticky left-0 ${domain.bg} ${domain.text}`}>
+                    className={`px-4 py-2 text-[10px] font-bold uppercase tracking-widest border-y border-border ${domain.bg} ${domain.text}`}>
                     {domain.label}
                   </td>
                 </tr>
-                {/* Component rows */}
+
                 {domain.components.map(comp => {
-                  const avg = msrAvg(msrData, comp.key, periods);
+                  const selectedIds = msrData.sel[comp.key] ?? [];
+                  const compAvg = msrComponentAvg(msrData, comp.key, periods);
+                  const isSelectingThis = selectingFor === comp.key;
+
+                  // Build a lookup: indicatorId → { indicator, groupLabel }
+                  const indMap = new Map<string, { indicator: MsrIndicator; groupLabel: string }>();
+                  comp.indicatorGroups.forEach(g => g.indicators.forEach(i => indMap.set(i.id, { indicator: i, groupLabel: g.group })));
+
                   return (
-                    <tr key={comp.key} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
-                      {/* Label */}
-                      <td className={`px-4 py-2 sticky left-0 bg-background z-10 border-r border-border/30`}>
-                        <div className="text-xs font-semibold text-foreground">{comp.label}</div>
-                        <div className="text-[10px] text-muted-foreground/70 leading-snug mt-0.5 max-w-[200px]">{comp.desc}</div>
-                      </td>
-                      {/* Average */}
-                      <td className="px-2 py-2 text-center border-r border-border/30">
-                        <MsrScoreChip score={avg != null ? Math.round(avg) : null} size="sm" />
-                      </td>
-                      {/* Period cells */}
-                      {periods.map(p => (
-                        <MsrCell key={p}
-                          data={msrData[p]?.[comp.key]}
-                          isSelected={selectedCell?.period === p && selectedCell?.componentKey === comp.key}
-                          onClick={() => onSelectCell(p, comp.key)}
-                        />
-                      ))}
-                    </tr>
+                    <Fragment key={comp.key}>
+                      {/* Component header row */}
+                      <tr className={`border-b border-border/50 ${isSelectingThis ? "bg-violet-50/70" : "bg-muted/20"}`}>
+                        <td className="px-4 py-2.5 sticky left-0 bg-inherit z-10 border-r border-border/30">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-foreground">{comp.label}</span>
+                              <span className="ml-2 text-[10px] text-muted-foreground/60 hidden sm:inline">{comp.desc}</span>
+                            </div>
+                            <button
+                              onClick={() => onEditIndicators(comp.key)}
+                              className={`shrink-0 flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-md border transition-colors ${
+                                isSelectingThis
+                                  ? "bg-violet-600 text-white border-violet-600"
+                                  : selectedIds.length > 0
+                                    ? "text-violet-600 border-violet-200 bg-violet-50 hover:bg-violet-100"
+                                    : "text-muted-foreground border-border hover:border-violet-300 hover:text-violet-600"
+                              }`}>
+                              <ListChecks className="w-3 h-3" />
+                              {selectedIds.length > 0 ? `${selectedIds.length} indicators` : "Select indicators"}
+                            </button>
+                          </div>
+                        </td>
+                        <td className="px-2 py-2 text-center border-r border-border/30">
+                          <MsrScoreChip score={compAvg != null ? Math.round(compAvg) : null} size="sm" />
+                        </td>
+                        {periods.map(p => {
+                          const pVals = selectedIds.map(id => msrData.scores[p]?.[id]?.score).filter((v): v is number => v != null);
+                          const pAvg = pVals.length ? Math.round(pVals.reduce((a, b) => a + b, 0) / pVals.length) : null;
+                          return (
+                            <td key={p} className="px-1 py-1.5 text-center border-b border-border/20">
+                              <div className="flex items-center justify-center min-h-[28px]">
+                                <MsrScoreChip score={pAvg} size="sm" />
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+
+                      {/* Indicator sub-rows */}
+                      {selectedIds.length === 0 ? (
+                        <tr>
+                          <td colSpan={2 + periods.length}
+                            className="pl-10 pr-4 py-2 text-[11px] text-muted-foreground/40 italic border-b border-border/20 bg-background">
+                            No indicators selected — click "Select indicators" to add rows for this component
+                          </td>
+                        </tr>
+                      ) : (
+                        selectedIds.map(indId => {
+                          const entry = indMap.get(indId);
+                          if (!entry) return null;
+                          const { indicator, groupLabel } = entry;
+                          const indAvg = msrIndicatorAvg(msrData, indId, periods);
+                          return (
+                            <tr key={indId} className="border-b border-border/20 hover:bg-muted/10 transition-colors bg-background">
+                              <td className="pl-8 pr-3 py-1.5 sticky left-0 bg-background z-10 border-r border-border/20">
+                                <div className="flex items-start gap-2">
+                                  <span className="text-muted-foreground/25 text-xs mt-0.5 shrink-0">↳</span>
+                                  <div className="min-w-0">
+                                    <span className="text-[11px] text-foreground/80 leading-snug block">{indicator.label}</span>
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <span className="text-[9px] text-muted-foreground/50">{groupLabel}</span>
+                                      {indicator.type && (
+                                        <span className={`text-[8px] font-black px-1 rounded ${indicator.type === "F" ? "bg-blue-100 text-blue-500" : "bg-purple-100 text-purple-500"}`}>
+                                          {indicator.type}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-2 py-1.5 text-center border-r border-border/20">
+                                <MsrScoreChip score={indAvg != null ? Math.round(indAvg) : null} size="sm" />
+                              </td>
+                              {periods.map(p => (
+                                <MsrScoreCell key={p}
+                                  score={msrData.scores[p]?.[indId]}
+                                  isSelected={scoringCell?.period === p && scoringCell?.indicatorId === indId}
+                                  onClick={() => onSelectCell(p, indId, comp.key)}
+                                />
+                              ))}
+                            </tr>
+                          );
+                        })
+                      )}
+                    </Fragment>
                   );
                 })}
               </Fragment>
@@ -2875,7 +2945,7 @@ function MsrSettingsPanel({ settings, onSave }: { settings: MsrSettings; onSave:
 
 function useMsrData(theoryId: number, apiBase: string) {
   const { toast } = useToast();
-  const [msrData, setMsrData] = useState<MsrData>({});
+  const [msrData, setMsrData] = useState<MsrData>(MSR_DATA_EMPTY);
   const [msrSettings, setMsrSettings] = useState<MsrSettings>(MSR_SETTINGS_EMPTY);
   const [msrEntryId, setMsrEntryId] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -2888,7 +2958,11 @@ function useMsrData(theoryId: number, apiBase: string) {
       const msrRow = rows.find(r => r.frameworkTag === "__msr__");
       if (msrRow) {
         setMsrEntryId(msrRow.id);
-        try { setMsrData(JSON.parse(msrRow.stageData ?? "{}")); } catch {}
+        try {
+          const parsed = JSON.parse(msrRow.stageData ?? "{}");
+          // Migrate old format (v !== 2) to new — start fresh
+          setMsrData(parsed.v === 2 ? parsed as MsrData : MSR_DATA_EMPTY);
+        } catch {}
         try {
           const s = JSON.parse(msrRow.description ?? "{}");
           if (s.startYear) setMsrSettings(s as MsrSettings);
@@ -2930,7 +3004,11 @@ function useMsrData(theoryId: number, apiBase: string) {
 
 function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
   const { msrData, msrSettings, loaded, load, saveData, saveSettings } = useMsrData(theoryId, apiBase);
-  const [selectedCell, setSelectedCell] = useState<{ period: string; componentKey: string } | null>(null);
+
+  // Which indicator cell is open for scoring
+  const [scoringCell, setScoringCell] = useState<{ period: string; indicatorId: string; componentKey: string } | null>(null);
+  // Which component's indicator list is open for selection
+  const [selectingFor, setSelectingFor] = useState<string | null>(null);
 
   useEffect(() => { load(); }, [theoryId]);
 
@@ -2938,16 +3016,61 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
     ? generatePeriods(msrSettings.startYear, msrSettings.endYear, msrSettings.granularity)
     : [];
 
-  const handleCellChange = (period: string, componentKey: string, data: MsrCellData) => {
-    saveData({ ...msrData, [period]: { ...msrData[period], [componentKey]: data } });
+  const hasSidePanel = !!(scoringCell || selectingFor);
+
+  // Resolve metadata for the scoring panel
+  const scoringMeta = (() => {
+    if (!scoringCell) return null;
+    const domain = MSR_DOMAINS.find(d => d.components.some(c => c.key === scoringCell.componentKey));
+    if (!domain) return null;
+    const component = domain.components.find(c => c.key === scoringCell.componentKey);
+    if (!component) return null;
+    let indicator: MsrIndicator | null = null;
+    let groupLabel = "";
+    for (const g of component.indicatorGroups) {
+      const found = g.indicators.find(i => i.id === scoringCell.indicatorId);
+      if (found) { indicator = found; groupLabel = g.group; break; }
+    }
+    if (!indicator) return null;
+    return { domain, component, indicator, groupLabel };
+  })();
+
+  // Resolve metadata for the indicator-select panel
+  const selectingMeta = (() => {
+    if (!selectingFor) return null;
+    const domain = MSR_DOMAINS.find(d => d.components.some(c => c.key === selectingFor));
+    if (!domain) return null;
+    const component = domain.components.find(c => c.key === selectingFor);
+    if (!component) return null;
+    return { domain, component };
+  })();
+
+  const handleEditIndicators = (componentKey: string) => {
+    setScoringCell(null);
+    setSelectingFor(prev => prev === componentKey ? null : componentKey);
   };
 
-  const selectedDomain = selectedCell
-    ? MSR_DOMAINS.find(d => d.components.some(c => c.key === selectedCell.componentKey)) ?? null
-    : null;
-  const selectedComponent = selectedCell
-    ? selectedDomain?.components.find(c => c.key === selectedCell.componentKey) ?? null
-    : null;
+  const handleSelectCell = (period: string, indicatorId: string, componentKey: string) => {
+    setSelectingFor(null);
+    setScoringCell(prev =>
+      prev?.period === period && prev?.indicatorId === indicatorId ? null : { period, indicatorId, componentKey }
+    );
+  };
+
+  const handleSaveIndicators = (componentKey: string, ids: string[]) => {
+    saveData({ ...msrData, sel: { ...msrData.sel, [componentKey]: ids } });
+  };
+
+  const handleSaveScore = (period: string, indicatorId: string, score: MsrScore) => {
+    saveData({
+      ...msrData,
+      scores: {
+        ...msrData.scores,
+        [period]: { ...(msrData.scores[period] ?? {}), [indicatorId]: score },
+      },
+    });
+    setScoringCell(null);
+  };
 
   if (!loaded) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div>;
@@ -2955,7 +3078,6 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
 
   return (
     <div className="space-y-4">
-      {/* MSR-specific timeline settings */}
       <MsrSettingsPanel settings={msrSettings} onSave={saveSettings} />
 
       {/* Scale legend */}
@@ -2969,31 +3091,51 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
         ))}
       </div>
 
+      {/* Legend for indicator types */}
+      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+        <span className="font-semibold uppercase tracking-wide">Indicator types:</span>
+        <span className="bg-blue-100 text-blue-600 font-black px-1.5 py-0.5 rounded">F</span>
+        <span className="-ml-1.5">Function</span>
+        <span className="bg-purple-100 text-purple-600 font-black px-1.5 py-0.5 rounded">S</span>
+        <span className="-ml-1.5">Structure</span>
+      </div>
+
       {/* Matrix + side panel */}
-      <div className={selectedCell ? "flex gap-4 items-start" : ""}>
-        <div className={selectedCell ? "flex-1 min-w-0 overflow-x-auto" : ""}>
+      <div className={hasSidePanel ? "flex gap-4 items-start" : ""}>
+        <div className={hasSidePanel ? "flex-1 min-w-0 overflow-x-auto" : ""}>
           <MsrMatrix
             periods={periods}
             msrData={msrData}
-            onCellChange={handleCellChange}
-            selectedCell={selectedCell}
-            onSelectCell={(period, componentKey) =>
-              setSelectedCell(prev =>
-                prev?.period === period && prev?.componentKey === componentKey ? null : { period, componentKey }
-              )
-            }
+            scoringCell={scoringCell}
+            selectingFor={selectingFor}
+            onSelectCell={handleSelectCell}
+            onEditIndicators={handleEditIndicators}
           />
         </div>
 
-        {selectedCell && selectedComponent && selectedDomain && (
+        {scoringCell && scoringMeta && (
           <div className="w-[380px] shrink-0 sticky top-4">
-            <MsrCellPanel
-              period={selectedCell.period}
-              component={selectedComponent}
-              domain={selectedDomain}
-              data={msrData[selectedCell.period]?.[selectedCell.componentKey] ?? { score: null, notes: "" }}
-              onSave={(d) => { handleCellChange(selectedCell.period, selectedCell.componentKey, d); setSelectedCell(null); }}
-              onClose={() => setSelectedCell(null)}
+            <MsrIndicatorScorePanel
+              period={scoringCell.period}
+              indicator={scoringMeta.indicator}
+              groupLabel={scoringMeta.groupLabel}
+              domain={scoringMeta.domain}
+              component={scoringMeta.component}
+              score={msrData.scores[scoringCell.period]?.[scoringCell.indicatorId] ?? { score: null, notes: "" }}
+              onSave={s => handleSaveScore(scoringCell.period, scoringCell.indicatorId, s)}
+              onClose={() => setScoringCell(null)}
+            />
+          </div>
+        )}
+
+        {selectingFor && selectingMeta && (
+          <div className="w-[420px] shrink-0 sticky top-4 max-h-[80vh] flex flex-col">
+            <MsrIndicatorSelectPanel
+              component={selectingMeta.component}
+              domain={selectingMeta.domain}
+              selectedIds={msrData.sel[selectingFor] ?? []}
+              onSave={ids => handleSaveIndicators(selectingFor, ids)}
+              onClose={() => setSelectingFor(null)}
             />
           </div>
         )}
