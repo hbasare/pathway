@@ -1786,12 +1786,12 @@ function StageRing({ score, stageKey, size = 96 }: { score: number; stageKey: st
   );
 }
 
-// DCED quadrant colours (matching the standard)
+// DCED quadrant colours — using the app's own stage palette
 const DCED_QUAD: Record<string, { bg: string; label: string }> = {
-  adopt:   { bg: "#E86427", label: "Adopt" },
-  adapt:   { bg: "#C0272D", label: "Adapt" },
-  expand:  { bg: "#8B1538", label: "Expand" },
-  respond: { bg: "#E8417A", label: "Respond" },
+  adopt:   { bg: "#7c3aed", label: "Adopt" },
+  adapt:   { bg: "#1d4ed8", label: "Adapt" },
+  expand:  { bg: "#059669", label: "Expand" },
+  respond: { bg: "#c2410c", label: "Respond" },
 };
 
 function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
@@ -1832,7 +1832,7 @@ function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
           </div>
           <div className="h-3 rounded-full bg-muted overflow-hidden">
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${totalScore}%`, background: "linear-gradient(to right, #E86427, #C0272D, #8B1538, #E8417A)" }} />
+              style={{ width: `${totalScore}%`, background: "linear-gradient(to right, #7c3aed, #1d4ed8, #059669, #c2410c)" }} />
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug italic">{analysis.pathwayNarrative}</p>
         </div>
