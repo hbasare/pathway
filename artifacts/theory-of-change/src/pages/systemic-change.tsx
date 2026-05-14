@@ -621,7 +621,7 @@ interface AdoptData {
 }
 
 const ADOPT_QUESTIONS = [
-  { id: "q1", num: 1, type: "number", label: "No. of partner(s)/market player(s) who have adopted the new business model (incremental).", unit: "partners" },
+  { id: "q1", num: 1, type: "number", label: "No. of partner(s) who have adopted the new business model (incremental).", unit: "partners" },
   { id: "q2", num: 2, type: "percent", label: "Partner(s) contribution to the pilot.", unit: "%" },
   { id: "q3", num: 3, type: "ynp", label: "Are the partners satisfied with the pilot? Are they able and willing to continue with the business model?" },
   { id: "q4", num: 4, type: "ynp", label: "Has the pilot resulted in increased revenue/profit for the partner(s)?" },
@@ -770,7 +770,7 @@ function AdoptQuestionsPanel({ data, onChange }: { data: AdoptData; onChange: (d
         <div className="flex gap-2 mb-2">
           <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 text-violet-700 text-[10px] font-black shrink-0">1</span>
           <p className="text-xs text-foreground leading-snug">
-            No. of partner(s)/market player(s) who have adopted the new business model (incremental).
+            No. of partner(s) who have adopted the new business model (incremental).
           </p>
         </div>
         <div className="flex items-center gap-2 mb-2">
@@ -942,7 +942,7 @@ function ExpansionQuestionsPanel({ data, onChange }: { data: ExpansionData; onCh
       <div className="rounded-lg border border-border bg-background p-3">
         <div className="flex gap-2 mb-2.5">
           <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black shrink-0 mt-0.5">1</span>
-          <p className="text-xs text-foreground leading-snug">Have competitors or other market players crowded in?</p>
+          <p className="text-xs text-foreground leading-snug">Have competitors or others crowded in?</p>
         </div>
         <YNButtons value={data.q1.answer} onChange={v => setNested("q1", "answer", v)} options={YN_OPTS} />
         <textarea value={data.q1.notes} onChange={e => setNested("q1", "notes", e.target.value)}
@@ -952,7 +952,7 @@ function ExpansionQuestionsPanel({ data, onChange }: { data: ExpansionData; onCh
       <div className="rounded-lg border border-border bg-muted/30 p-3">
         <div className="flex gap-2 mb-2">
           <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black shrink-0">2</span>
-          <p className="text-xs text-foreground leading-snug">If yes, how many market player(s) have crowded in?</p>
+          <p className="text-xs text-foreground leading-snug">If yes, how many have crowded in?</p>
         </div>
         <div className="flex items-center gap-2 mb-2">
           <input type="number" min="0" value={data.q2.value} onChange={e => setNested("q2", "value", e.target.value)}
@@ -1027,7 +1027,7 @@ function ResponseQuestionsPanel({ data, onChange }: { data: ResponseData; onChan
 
       {[
         { key: "q1" as const, n: 1, label: "Have there been any changes in policy or the way business is conducted that have impacted the intervention?", ph: "Describe the policy or business conduct changes…" },
-        { key: "q2" as const, n: 2, label: "Have market players from interconnected/supporting markets reacted/responded to the new business model?", ph: "Describe how related markets have responded…" },
+        { key: "q2" as const, n: 2, label: "Have others from interconnected/supporting markets reacted/responded to the new business model?", ph: "Describe how related markets have responded…" },
       ].map(q => (
         <div key={q.key} className="rounded-lg border border-border bg-background p-3">
           <div className="flex gap-2 mb-2.5">
@@ -1043,7 +1043,7 @@ function ResponseQuestionsPanel({ data, onChange }: { data: ResponseData; onChan
       <div className="rounded-lg border border-border bg-muted/30 p-3">
         <div className="flex gap-2 mb-2">
           <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-black shrink-0">3</span>
-          <p className="text-xs text-foreground leading-snug">If yes, how many market players have responded?</p>
+          <p className="text-xs text-foreground leading-snug">If yes, how many have responded?</p>
         </div>
         <div className="flex items-center gap-2 mb-2">
           <input type="number" min="0" value={data.q3.value} onChange={e => setNested("q3", "value", e.target.value)}
@@ -1565,7 +1565,7 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
                   {expandD && hasExpandContent && (<>
                     <KQBlock kq={expandD.keyQuestion} kqNotes={expandD.keyQuestionNotes}
                       kqLabel={kqLabelMap.expand[expandD.keyQuestion] ?? expandD.keyQuestion} positive="no" />
-                    <YNList rows={[{ short: "Competitors / other market players crowded in?", ...expandD.q1 }]} />
+                    <YNList rows={[{ short: "Competitors or others crowded in?", ...expandD.q1 }]} />
                     {(expandD.q2.value || expandD.q3.value || expandD.q5.value) && (
                       <div className="flex gap-2 flex-wrap">
                         <StatTile label="Players Crowded In" value={expandD.q2.value} />
@@ -1582,7 +1582,7 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
                       kqLabel={kqLabelMap.respond[respondD.keyQuestion] ?? respondD.keyQuestion} positive="yes" />
                     <YNList rows={[
                       { short: "Changes in policy/business conduct impacted intervention?", ...respondD.q1 },
-                      { short: "Interconnected market players reacted/responded?",          ...respondD.q2 },
+                      { short: "Others from interconnected markets reacted/responded?",      ...respondD.q2 },
                     ]} />
                     {respondD.q3.value && (
                       <div className="flex gap-2">
