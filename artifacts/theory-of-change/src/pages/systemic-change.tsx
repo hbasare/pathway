@@ -1026,7 +1026,7 @@ function ResponseQuestionsPanel({ data, onChange }: { data: ResponseData; onChan
       </div>
 
       {[
-        { key: "q1" as const, n: 1, label: "Has there been any changes in policy or the way business is conducted that has impacted the intervention?", ph: "Describe the policy or business conduct changes…" },
+        { key: "q1" as const, n: 1, label: "Have there been any changes in policy or the way business is conducted that have impacted the intervention?", ph: "Describe the policy or business conduct changes…" },
         { key: "q2" as const, n: 2, label: "Have market players from interconnected/supporting markets reacted/responded to the new business model?", ph: "Describe how related markets have responded…" },
       ].map(q => (
         <div key={q.key} className="rounded-lg border border-border bg-background p-3">
