@@ -1434,8 +1434,8 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory }: {
         </div>
       </div>
 
-      {/* Detail cards for entries */}
-      {entries.length > 0 && (() => {
+      {/* Detail cards for entries — hidden for now */}
+      {false && entries.length > 0 && (() => {
         const answerColor = (a: string) =>
           a === "yes" ? "text-emerald-700" : a === "no" ? "text-red-700" : a === "uncertain" || a === "partial" ? "text-amber-700" : "text-muted-foreground";
         const answerLabel = (a: string) =>
