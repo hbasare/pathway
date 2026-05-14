@@ -2037,12 +2037,17 @@ components:
           type: array
           items:
             type: string
+        partners:
+          type: array
+          items:
+            type: string
       required:
         - score
         - status
         - headline
         - findings
         - recommendations
+        - partners
 
     SystemicChangeAnalysis:
       type: object

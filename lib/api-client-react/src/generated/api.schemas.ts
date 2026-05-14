@@ -464,6 +464,7 @@ export interface StageAnalysis {
   headline: string;
   findings: string[];
   recommendations: string[];
+  partners: string[];
 }
 
 export interface SystemicChangeAnalysis {

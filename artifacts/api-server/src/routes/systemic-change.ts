@@ -18,9 +18,9 @@ router.post("/theories/:theoryId/systemic-changes/ai-analysis", async (req, res)
     let stageObj: Record<string, unknown> = {};
     try { stageObj = JSON.parse(e.stageData ?? "{}"); } catch {}
     return {
-      dimension: e.dimension,
-      frameworkTag: e.frameworkTag,
-      periodLabel: e.periodLabel,
+      partnerName: e.dimension,   // actor/partner name — use this for the partners array
+      stage: e.frameworkTag,      // adopt | adapt | expand | respond
+      period: e.periodLabel,
       description: e.description,
       changeObserved: e.changeObserved,
       level: e.level,
@@ -31,7 +31,9 @@ router.post("/theories/:theoryId/systemic-changes/ai-analysis", async (req, res)
 
   const systemPrompt = `You are an expert in market systems development and Theory of Change analysis, specialising in the AAER (Adopt, Adapt, Expand, Respond) framework for measuring progress towards sustainable systemic change.
 
-You will receive AAER tracking data for a development intervention. Your task is to analyse the evidence and produce a structured assessment of progress towards sustainable systemic change.
+You will receive AAER tracking data for a development intervention. Each entry has a "partnerName" field — this is the actor or market participant being tracked at that stage.
+
+Your task is to analyse the evidence and produce a structured assessment of progress towards sustainable systemic change.
 
 For each stage, score 0–100 based on the evidence provided:
 - 0–25: Nascent — very limited or no evidence
@@ -39,7 +41,12 @@ For each stage, score 0–100 based on the evidence provided:
 - 51–75: Moderate — clear progress, some gaps remain
 - 76–100: Strong — robust, self-sustaining evidence
 
-Also compute an overall score (weighted: Adopt 25%, Adapt 30%, Expand 25%, Respond 20% — since adoption is a prerequisite but respond is the ultimate goal).
+Also compute an overall score (weighted: Adopt 25%, Adapt 30%, Expand 25%, Respond 20%).
+
+IMPORTANT — for the "partners" field in each stage:
+- adopt / adapt / expand: list the unique partnerNames from entries recorded at that stage. If a partner name is mentioned in description or changeObserved text, include it too.
+- respond: list potential NEW market entrants (organisations or actor types not currently in the adopt/adapt/expand data) that could scale or replicate the model — infer these from context in the evidence. These are new-to-market players, not existing tracked partners.
+- If no partners can be identified, return an empty array.
 
 Return ONLY valid JSON matching this exact structure (no markdown, no extra text):
 {
@@ -51,15 +58,16 @@ Return ONLY valid JSON matching this exact structure (no markdown, no extra text
     "status": "<nascent|emerging|moderate|strong|no-data>",
     "headline": "<one sentence headline finding>",
     "findings": ["<finding 1>", "<finding 2>"],
-    "recommendations": ["<recommendation 1>"]
+    "recommendations": ["<recommendation 1>"],
+    "partners": ["<partner name>"]
   },
   "adapt": { <same structure> },
   "expand": { <same structure> },
-  "respond": { <same structure> },
+  "respond": { <same structure with new entrant names/types> },
   "nextPriorityActions": ["<action 1>", "<action 2>", "<action 3>"]
 }
 
-If a stage has no data entries at all, set status to "no-data", score to 0, headline to "No data recorded for this stage yet", findings to [], and recommendations to ["Begin recording observations for this stage"].`;
+If a stage has no data entries at all, set status to "no-data", score to 0, headline to "No data recorded for this stage yet", findings to [], recommendations to ["Begin recording observations for this stage"], and partners to [].`;
 
   const userMessage = `Here is the AAER tracking data for this intervention:\n\n${JSON.stringify(entrySummaries, null, 2)}\n\nPlease analyse this data and return the structured JSON assessment.`;
 
