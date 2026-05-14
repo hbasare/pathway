@@ -2414,10 +2414,105 @@ function MsrMatrix({ periods, msrData, onCellChange, selectedCell, onSelectCell 
   );
 }
 
-/** Loads/saves msrData as JSON in the theory's `stageData` field via a dedicated DB entry */
+// MSR-specific settings — completely independent of AAER
+interface MsrSettings { startYear: number; endYear: number; granularity: Granularity }
+const MSR_SETTINGS_EMPTY: MsrSettings = { startYear: 0, endYear: 0, granularity: "annual" };
+
+function MsrSettingsPanel({ settings, onSave }: { settings: MsrSettings; onSave: (s: MsrSettings) => void }) {
+  const [open, setOpen] = useState(!settings.startYear);
+  const [local, setLocal] = useState(settings);
+  const curYear = new Date().getFullYear();
+  const years = Array.from({ length: 20 }, (_, i) => curYear - 5 + i);
+
+  const regularPeriods = local.startYear && local.endYear
+    ? generatePeriods(local.startYear, local.endYear, local.granularity)
+    : [];
+
+  const handleSave = () => {
+    if (local.startYear && local.endYear && local.endYear >= local.startYear) {
+      onSave(local);
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border border-teal-200 bg-teal-50 overflow-hidden mb-4">
+      <button onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-teal-100 transition-colors">
+        <Settings className="w-4 h-4 text-teal-600 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-semibold text-teal-900">Assessment Timeline</span>
+          {settings.startYear && settings.endYear ? (
+            <span className="ml-3 text-xs text-teal-600">
+              {settings.startYear}–{settings.endYear} · {settings.granularity} · {generatePeriods(settings.startYear, settings.endYear, settings.granularity).length} periods
+            </span>
+          ) : (
+            <span className="ml-3 text-xs text-teal-500 italic">Not configured — click to set up</span>
+          )}
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 text-teal-500" /> : <ChevronDown className="w-4 h-4 text-teal-500" />}
+      </button>
+
+      {open && (
+        <div className="border-t border-teal-200 px-5 py-4 bg-white/70 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Start Year</Label>
+              <Select value={String(local.startYear || "")} onValueChange={v => setLocal(p => ({ ...p, startYear: Number(v) }))}>
+                <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Select year" /></SelectTrigger>
+                <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">End Year</Label>
+              <Select value={String(local.endYear || "")} onValueChange={v => setLocal(p => ({ ...p, endYear: Number(v) }))}>
+                <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Select year" /></SelectTrigger>
+                <SelectContent>{years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Period Granularity</Label>
+              <Select value={local.granularity} onValueChange={v => setLocal(p => ({ ...p, granularity: v as Granularity }))}>
+                <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="annual">Annual (Y1, Y2…)</SelectItem>
+                  <SelectItem value="biannual">Bi-annual (H1 Y1, H2 Y1…)</SelectItem>
+                  <SelectItem value="quarterly">Quarterly (Q1 Y1, Q2 Y1…)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {regularPeriods.length > 0 && (
+            <div>
+              <p className="text-[11px] font-semibold text-muted-foreground mb-2">
+                Assessment periods ({regularPeriods.length}):
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {regularPeriods.map(p => (
+                  <span key={p} className="text-[11px] px-2 py-0.5 rounded-full font-medium border bg-teal-100 text-teal-700 border-teal-200">
+                    {p}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Button size="sm" className="bg-teal-600 hover:bg-teal-700 text-white"
+            onClick={handleSave}
+            disabled={!local.startYear || !local.endYear || local.endYear < local.startYear}>
+            <Check className="w-3.5 h-3.5 mr-1.5" />Apply Timeline
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function useMsrData(theoryId: number, apiBase: string) {
   const { toast } = useToast();
   const [msrData, setMsrData] = useState<MsrData>({});
+  const [msrSettings, setMsrSettings] = useState<MsrSettings>(MSR_SETTINGS_EMPTY);
   const [msrEntryId, setMsrEntryId] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
 
@@ -2430,13 +2525,21 @@ function useMsrData(theoryId: number, apiBase: string) {
       if (msrRow) {
         setMsrEntryId(msrRow.id);
         try { setMsrData(JSON.parse(msrRow.stageData ?? "{}")); } catch {}
+        try {
+          const s = JSON.parse(msrRow.description ?? "{}");
+          if (s.startYear) setMsrSettings(s as MsrSettings);
+        } catch {}
       }
     } finally { setLoaded(true); }
   };
 
-  const save = async (data: MsrData) => {
-    setMsrData(data);
-    const body = { frameworkTag: "__msr__", dimension: "msr", description: "", changeObserved: "", level: "", status: "", stageData: JSON.stringify(data) };
+  const persist = async (data: MsrData, settings: MsrSettings) => {
+    const body = {
+      frameworkTag: "__msr__", dimension: "msr",
+      description: JSON.stringify(settings),
+      changeObserved: "", level: "", status: "",
+      stageData: JSON.stringify(data),
+    };
     try {
       if (msrEntryId) {
         await fetch(`${apiBase}/theories/${theoryId}/systemic-changes/${msrEntryId}`, {
@@ -2455,30 +2558,24 @@ function useMsrData(theoryId: number, apiBase: string) {
     }
   };
 
-  return { msrData, msrEntryId, loaded, load, save };
+  const saveData = (data: MsrData) => { setMsrData(data); persist(data, msrSettings); };
+  const saveSettings = (s: MsrSettings) => { setMsrSettings(s); persist(msrData, s); };
+
+  return { msrData, msrSettings, loaded, load, saveData, saveSettings };
 }
 
-function MsrView({ theoryId, apiBase, settings, onSaveSettings }: {
-  theoryId: number;
-  apiBase: string;
-  settings: AaerSettings;
-  onSaveSettings: (s: AaerSettings) => void;
-}) {
-  const { msrData, loaded, load, save } = useMsrData(theoryId, apiBase);
+function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
+  const { msrData, msrSettings, loaded, load, saveData, saveSettings } = useMsrData(theoryId, apiBase);
   const [selectedCell, setSelectedCell] = useState<{ period: string; componentKey: string } | null>(null);
 
   useEffect(() => { load(); }, [theoryId]);
 
-  const periods = settings.startYear && settings.endYear
-    ? [
-        ...generatePilotPeriods(settings.pilotDuration, settings.granularity),
-        ...generatePeriods(settings.startYear, settings.endYear, settings.granularity),
-      ]
+  const periods = msrSettings.startYear && msrSettings.endYear
+    ? generatePeriods(msrSettings.startYear, msrSettings.endYear, msrSettings.granularity)
     : [];
 
   const handleCellChange = (period: string, componentKey: string, data: MsrCellData) => {
-    const next = { ...msrData, [period]: { ...msrData[period], [componentKey]: data } };
-    save(next);
+    saveData({ ...msrData, [period]: { ...msrData[period], [componentKey]: data } });
   };
 
   const selectedDomain = selectedCell
@@ -2494,7 +2591,10 @@ function MsrView({ theoryId, apiBase, settings, onSaveSettings }: {
 
   return (
     <div className="space-y-4">
-      {/* Legend */}
+      {/* MSR-specific timeline settings */}
+      <MsrSettingsPanel settings={msrSettings} onSave={saveSettings} />
+
+      {/* Scale legend */}
       <div className="flex flex-wrap gap-2 items-center">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mr-1">Scale:</span>
         {MSR_SCALE.map(s => (
@@ -2760,17 +2860,9 @@ export default function SystemicChange() {
           </div>
         </div>
 
-        {/* MSR: Settings + Heatmap matrix */}
+        {/* MSR: independent heatmap — settings are managed inside MsrView */}
         {isMsr && (
-          <>
-            <AaerSettingsPanel settings={localSettings} onSave={saveSettings} />
-            <MsrView
-              theoryId={id}
-              apiBase={API_BASE}
-              settings={localSettings}
-              onSaveSettings={saveSettings}
-            />
-          </>
+          <MsrView theoryId={id} apiBase={API_BASE} />
         )}
 
         {/* AAER: Settings + Matrix + Side Panel */}
