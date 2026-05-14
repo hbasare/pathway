@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { systemicChangesTable, insertSystemicChangeSchema } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { generateMsrInfographic, type ScoreSummaryEntry } from "../lib/msr-infographic";
 
 const router: IRouter = Router();
 
@@ -172,22 +171,6 @@ If a domain has no scores (all null), set status to "no-data", score to 0, headl
   }
 });
 
-router.post("/theories/:theoryId/msr-synthesis-image", async (req, res) => {
-  const { scoreSummary, interventionTitle } = req.body as {
-    scoreSummary: ScoreSummaryEntry[];
-    interventionTitle?: string;
-  };
-
-  try {
-    const svg = generateMsrInfographic(scoreSummary ?? [], interventionTitle);
-    const b64 = Buffer.from(svg, "utf-8").toString("base64");
-    res.json({ b64_svg: b64 });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("MSR infographic error:", message);
-    res.status(500).json({ error: message });
-  }
-});
 
 router.get("/theories/:theoryId/systemic-changes", async (req, res) => {
   const theoryId = Number(req.params.theoryId);
