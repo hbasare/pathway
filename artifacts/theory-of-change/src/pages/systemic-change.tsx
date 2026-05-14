@@ -2705,6 +2705,10 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
   onSelectCell: (period: string, indicatorId: string, componentKey: string) => void;
   onEditIndicators: (componentKey: string) => void;
 }) {
+  // Tracks which "componentKey::groupName" pairs are collapsed
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const toggleGroup = (key: string) =>
+    setCollapsed(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
   if (periods.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border py-12 text-center">
@@ -2798,26 +2802,39 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                             No indicators selected — click "Select indicators" to add rows for this component
                           </td>
                         </tr>
-                      ) : (
-                        comp.indicatorGroups.flatMap(grp => {
-                          const grpSelected = grp.indicators.filter(i => selectedIds.includes(i.id));
-                          if (grpSelected.length === 0) return [];
+                      ) : comp.indicatorGroups.map(grp => {
+                        const grpSelected = grp.indicators.filter(i => selectedIds.includes(i.id));
+                        if (grpSelected.length === 0) return null;
 
-                          // Group avg across all its selected indicators
-                          const grpAvg = (() => {
-                            const vals: number[] = grpSelected.flatMap(i =>
-                              periods.map(p => msrData.scores[p]?.[i.id]?.score).filter((v): v is number => v != null)
-                            );
-                            return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
-                          })();
+                        const grpAvg = (() => {
+                          const vals: number[] = grpSelected.flatMap(i =>
+                            periods.map(p => msrData.scores[p]?.[i.id]?.score).filter((v): v is number => v != null)
+                          );
+                          return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+                        })();
 
-                          return [
-                            // Group sub-header
-                            <tr key={`grp-${comp.key}-${grp.group}`} className="border-b border-border/30">
+                        const collapseKey = `${comp.key}::${grp.group}`;
+                        const isCollapsed = collapsed.has(collapseKey);
+
+                        return (
+                          <Fragment key={`grp-${comp.key}-${grp.group}`}>
+                            {/* Group sub-header — click to collapse */}
+                            <tr
+                              className="border-b border-border/30 cursor-pointer select-none hover:bg-slate-100 transition-colors"
+                              onClick={() => toggleGroup(collapseKey)}>
                               <td className="pl-6 pr-3 py-1 sticky left-0 bg-slate-50 z-10 border-r border-border/20">
-                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
-                                  {grp.group}
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                  {isCollapsed
+                                    ? <ChevronRight className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                                    : <ChevronDown className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+                                  }
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                                    {grp.group}
+                                  </span>
+                                  <span className="text-[9px] text-muted-foreground/40 ml-0.5">
+                                    ({grpSelected.length})
+                                  </span>
+                                </div>
                               </td>
                               <td className="px-2 py-1 text-center border-r border-border/20 bg-slate-50">
                                 <MsrScoreChip score={grpAvg} size="sm" />
@@ -2833,9 +2850,9 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                                   </td>
                                 );
                               })}
-                            </tr>,
-                            // Indicator rows within this group
-                            ...grpSelected.map(indicator => {
+                            </tr>
+                            {/* Indicator rows — hidden when group is collapsed */}
+                            {!isCollapsed && grpSelected.map(indicator => {
                               const indAvg = msrIndicatorAvg(msrData, indicator.id, periods);
                               return (
                                 <tr key={indicator.id} className="border-b border-border/20 hover:bg-muted/10 transition-colors bg-background">
@@ -2864,10 +2881,10 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                                   ))}
                                 </tr>
                               );
-                            }),
-                          ];
-                        })
-                      )}
+                            })}
+                          </Fragment>
+                        );
+                      })}
                     </Fragment>
                   );
                 })}
