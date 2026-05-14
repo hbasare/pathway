@@ -1401,39 +1401,6 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, p
                 </th>
               ))}
             </tr>
-            <tr className="bg-muted/40 border-b border-border/50">
-              <th className="sticky left-0 bg-muted/40 z-10 px-4 py-1.5 text-left text-[10px] font-semibold text-muted-foreground w-60 min-w-[240px]">
-                Stage
-              </th>
-              {periods.map(p => {
-                const locked = isPilotPeriod(p);
-                const assigned = locked ? "adopt" : (periodStageMap[p] ?? "");
-                const asc = assigned ? AAER_STAGE_COLORS[assigned] : null;
-                return (
-                  <th key={p} className={`px-2 py-1.5 text-center min-w-[110px] ${locked ? "bg-amber-50/40" : ""}`}>
-                    {locked ? (
-                      <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${asc!.bg} ${asc!.text} ${asc!.border}`}>
-                        🔒 Adopt
-                      </span>
-                    ) : (
-                      <select
-                        value={assigned}
-                        onChange={e => onPeriodStageChange(p, e.target.value || null)}
-                        onClick={e => e.stopPropagation()}
-                        className={`w-full text-[10px] rounded border px-1 py-0.5 font-semibold focus:outline-none focus:ring-1 focus:ring-violet-300 cursor-pointer ${
-                          asc ? `${asc.bg} ${asc.text} border-current` : "bg-background border-border/50 text-muted-foreground"
-                        }`}
-                      >
-                        <option value="">— select stage —</option>
-                        {fw.tagOptions.map(opt => (
-                          <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                      </select>
-                    )}
-                  </th>
-                );
-              })}
-            </tr>
           </thead>
           <tbody>
             {fw.tagOptions.map((stageOpt) => {
