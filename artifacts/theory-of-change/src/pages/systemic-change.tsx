@@ -1846,7 +1846,7 @@ function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
           </div>
           <div className="h-3 rounded-full bg-muted overflow-hidden">
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width: `${totalScore}%`, background: "linear-gradient(to right, #E86427, #C0272D, #8B1538, #E8417A)" }} />
+              style={{ width: `${totalScore}%`, background: "linear-gradient(to right, #5b21b6, #1e40af, #059669, #c2410c)" }} />
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5 leading-snug italic">{analysis.pathwayNarrative}</p>
         </div>
