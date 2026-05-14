@@ -2790,7 +2790,7 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                         })}
                       </tr>
 
-                      {/* Indicator sub-rows */}
+                      {/* Indicator sub-rows — grouped */}
                       {selectedIds.length === 0 ? (
                         <tr>
                           <td colSpan={2 + periods.length}
@@ -2799,41 +2799,73 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                           </td>
                         </tr>
                       ) : (
-                        selectedIds.map(indId => {
-                          const entry = indMap.get(indId);
-                          if (!entry) return null;
-                          const { indicator, groupLabel } = entry;
-                          const indAvg = msrIndicatorAvg(msrData, indId, periods);
-                          return (
-                            <tr key={indId} className="border-b border-border/20 hover:bg-muted/10 transition-colors bg-background">
-                              <td className="pl-8 pr-3 py-1.5 sticky left-0 bg-background z-10 border-r border-border/20">
-                                <div className="flex items-start gap-2">
-                                  <span className="text-muted-foreground/25 text-xs mt-0.5 shrink-0">↳</span>
-                                  <div className="min-w-0">
-                                    <span className="text-[11px] text-foreground/80 leading-snug block">{indicator.label}</span>
-                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                      <span className="text-[9px] text-muted-foreground/50">{groupLabel}</span>
+                        comp.indicatorGroups.flatMap(grp => {
+                          const grpSelected = grp.indicators.filter(i => selectedIds.includes(i.id));
+                          if (grpSelected.length === 0) return [];
+
+                          // Group avg across all its selected indicators
+                          const grpAvg = (() => {
+                            const vals: number[] = grpSelected.flatMap(i =>
+                              periods.map(p => msrData.scores[p]?.[i.id]?.score).filter((v): v is number => v != null)
+                            );
+                            return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+                          })();
+
+                          return [
+                            // Group sub-header
+                            <tr key={`grp-${comp.key}-${grp.group}`} className="border-b border-border/30">
+                              <td className="pl-6 pr-3 py-1 sticky left-0 bg-slate-50 z-10 border-r border-border/20">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/60">
+                                  {grp.group}
+                                </span>
+                              </td>
+                              <td className="px-2 py-1 text-center border-r border-border/20 bg-slate-50">
+                                <MsrScoreChip score={grpAvg} size="sm" />
+                              </td>
+                              {periods.map(p => {
+                                const pVals = grpSelected.map(i => msrData.scores[p]?.[i.id]?.score).filter((v): v is number => v != null);
+                                const pAvg = pVals.length ? Math.round(pVals.reduce((a, b) => a + b, 0) / pVals.length) : null;
+                                return (
+                                  <td key={p} className="px-1 py-1 text-center border-b border-border/20 bg-slate-50">
+                                    <div className="flex items-center justify-center min-h-[22px]">
+                                      <MsrScoreChip score={pAvg} size="sm" />
+                                    </div>
+                                  </td>
+                                );
+                              })}
+                            </tr>,
+                            // Indicator rows within this group
+                            ...grpSelected.map(indicator => {
+                              const indAvg = msrIndicatorAvg(msrData, indicator.id, periods);
+                              return (
+                                <tr key={indicator.id} className="border-b border-border/20 hover:bg-muted/10 transition-colors bg-background">
+                                  <td className="pl-10 pr-3 py-1.5 sticky left-0 bg-background z-10 border-r border-border/20">
+                                    <div className="flex items-start gap-1.5">
+                                      <span className="text-muted-foreground/25 text-xs mt-0.5 shrink-0">↳</span>
+                                      <div className="min-w-0">
+                                        <span className="text-[11px] text-foreground/80 leading-snug block">{indicator.label}</span>
+                                      </div>
                                       {indicator.type && (
-                                        <span className={`text-[8px] font-black px-1 rounded ${indicator.type === "F" ? "bg-blue-100 text-blue-500" : "bg-purple-100 text-purple-500"}`}>
+                                        <span className={`text-[8px] font-black px-1 py-0.5 rounded shrink-0 mt-0.5 ${indicator.type === "F" ? "bg-blue-100 text-blue-500" : "bg-purple-100 text-purple-500"}`}>
                                           {indicator.type}
                                         </span>
                                       )}
                                     </div>
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-2 py-1.5 text-center border-r border-border/20">
-                                <MsrScoreChip score={indAvg != null ? Math.round(indAvg) : null} size="sm" />
-                              </td>
-                              {periods.map(p => (
-                                <MsrScoreCell key={p}
-                                  score={msrData.scores[p]?.[indId]}
-                                  isSelected={scoringCell?.period === p && scoringCell?.indicatorId === indId}
-                                  onClick={() => onSelectCell(p, indId, comp.key)}
-                                />
-                              ))}
-                            </tr>
-                          );
+                                  </td>
+                                  <td className="px-2 py-1.5 text-center border-r border-border/20">
+                                    <MsrScoreChip score={indAvg != null ? Math.round(indAvg) : null} size="sm" />
+                                  </td>
+                                  {periods.map(p => (
+                                    <MsrScoreCell key={p}
+                                      score={msrData.scores[p]?.[indicator.id]}
+                                      isSelected={scoringCell?.period === p && scoringCell?.indicatorId === indicator.id}
+                                      onClick={() => onSelectCell(p, indicator.id, comp.key)}
+                                    />
+                                  ))}
+                                </tr>
+                              );
+                            }),
+                          ];
                         })
                       )}
                     </Fragment>
