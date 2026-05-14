@@ -434,7 +434,7 @@ function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void
 }
 
 // ─── AAER Settings panel ──────────────────────────────────────────────────────
-interface AaerSettings { startYear: number; endYear: number; granularity: Granularity; pilotDuration: PilotDuration; enabledStages: string[] }
+interface AaerSettings { startYear: number; endYear: number; granularity: Granularity; pilotDuration: PilotDuration; enabledStages: string[]; periodStageMap: Record<string, string> }
 
 const PILOT_DURATION_OPTIONS: { value: PilotDuration; label: string; desc: string }[] = [
   { value: "none",  label: "No pilot phase",  desc: "Tracking starts at Y1" },
@@ -1354,14 +1354,19 @@ const ANSWER_LABELS: Record<string, string> = {
 };
 
 // ─── AAER Matrix view ─────────────────────────────────────────────────────────
-function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }: {
+function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell, periodStageMap, onPeriodStageChange }: {
   selectedCell?: { actor: string; period: string } | null;
   entries: Entry[];
   periods: string[];
   fw: FrameworkDef;
   onCellClick: (actor: string, period: string, entry: Entry | null) => void;
   theory: any;
+  periodStageMap: Record<string, string>;
+  onPeriodStageChange: (period: string, stage: string | null) => void;
 }) {
+  /** Returns the stage locked to a period (pilot→adopt, mapped→that stage, else null=any) */
+  const stageForPeriod = (p: string): string | null =>
+    isPilotPeriod(p) ? "adopt" : (periodStageMap[p] ?? null);
   // Index entries by frameworkTag::period
   const index: Record<string, Entry> = {};
   entries.forEach(e => {
@@ -1387,14 +1392,38 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }:
               <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground sticky left-0 bg-muted/70 z-10 w-60 min-w-[240px]">
                 Question
               </th>
-              {periods.map(p => (
-                <th key={p} className={`px-3 py-3 text-center text-[11px] font-bold min-w-[110px] ${isPilotPeriod(p) ? "text-amber-700 bg-amber-50/60" : "text-muted-foreground"}`}>
-                  <div>{p}</div>
-                  {isPilotPeriod(p) && (
-                    <div className="text-[9px] font-bold text-amber-600 uppercase tracking-wider mt-0.5 opacity-80">Pilot</div>
-                  )}
-                </th>
-              ))}
+              {periods.map(p => {
+                const locked = isPilotPeriod(p);
+                const assigned = locked ? "adopt" : (periodStageMap[p] ?? "");
+                const asc = assigned ? AAER_STAGE_COLORS[assigned] : null;
+                return (
+                  <th key={p} className={`px-3 py-2 text-center text-[11px] font-bold min-w-[110px] align-top ${locked ? "bg-amber-50/60" : "text-muted-foreground"}`}>
+                    <div className={locked ? "text-amber-700" : ""}>{p}</div>
+                    {locked ? (
+                      <div className="mt-1">
+                        <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wider opacity-80 block">Pilot</span>
+                        <span className={`mt-0.5 inline-flex items-center text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${asc!.bg} ${asc!.text} ${asc!.border}`}>
+                          🔒 Adopt
+                        </span>
+                      </div>
+                    ) : (
+                      <select
+                        value={assigned}
+                        onChange={e => onPeriodStageChange(p, e.target.value || null)}
+                        onClick={e => e.stopPropagation()}
+                        className={`mt-1 w-full text-[10px] rounded border px-1 py-0.5 font-semibold focus:outline-none focus:ring-1 focus:ring-violet-300 cursor-pointer ${
+                          asc ? `${asc.bg} ${asc.text} border-current` : "bg-background border-border/50 text-muted-foreground"
+                        }`}
+                      >
+                        <option value="">— select stage —</option>
+                        {fw.tagOptions.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -1441,6 +1470,15 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }:
                       </div>
                     </td>
                     {periods.map((period, pi) => {
+                      const locked = stageForPeriod(period);
+                      const isBlocked = locked !== null && locked !== stageOpt.value;
+                      if (isBlocked) return (
+                        <td key={period} className="px-2 py-2 align-top bg-muted/5">
+                          <div className="min-h-[38px] flex items-center justify-center opacity-20">
+                            <span className="text-xs text-muted-foreground">—</span>
+                          </div>
+                        </td>
+                      );
                       const entry = periodEntries[pi];
                       const d = parsedData[pi] as any;
                       const kq: string = d?.keyQuestion ?? "";
@@ -1484,6 +1522,15 @@ function AaerMatrix({ entries, periods, fw, onCellClick, theory, selectedCell }:
 
                       {/* Answer per period */}
                       {periods.map((period, pi) => {
+                        const locked = stageForPeriod(period);
+                        const isBlocked = locked !== null && locked !== stageOpt.value;
+                        if (isBlocked) return (
+                          <td key={period} className={`px-2 py-1 align-top ${qi % 2 === 0 ? "bg-muted/5" : "bg-muted/10"}`}>
+                            <div className="min-h-[36px] flex items-center justify-center opacity-15">
+                              <span className="text-xs text-muted-foreground">—</span>
+                            </div>
+                          </td>
+                        );
                         const d = parsedData[pi] as any;
                         const qData = d?.[qDef.id] ?? null;
                         const entry = periodEntries[pi];
@@ -1898,7 +1945,7 @@ export default function SystemicChange() {
   const [showSelector, setShowSelector] = useState(false);
   const [localFrameworkKey, setLocalFrameworkKey] = useState<FrameworkKey | null>(null);
   const [cellModal, setCellModal] = useState<CellModalState | null>(null);
-  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none", enabledStages: ["adopt","adapt","expand","respond"] });
+  const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none", enabledStages: ["adopt","adapt","expand","respond"], periodStageMap: {} });
   const [settingsSynced, setSettingsSynced] = useState(false);
 
   const loadEntries = async () => {
@@ -1925,6 +1972,7 @@ export default function SystemicChange() {
         granularity:    (t.periodGranularity as Granularity) ?? "annual",
         pilotDuration:  (t.pilotDuration as PilotDuration)  ?? "none",
         enabledStages:  t.enabledStages ? String(t.enabledStages).split(",").filter(Boolean) : ["adopt","adapt","expand","respond"],
+        periodStageMap: (() => { try { return JSON.parse(String(t.periodStageMap ?? "{}")); } catch { return {}; } })(),
       });
       setSettingsSynced(true);
     }
@@ -1948,6 +1996,7 @@ export default function SystemicChange() {
         periodGranularity: s.granularity,
         pilotDuration: s.pilotDuration,
         enabledStages: s.enabledStages.join(","),
+        periodStageMap: JSON.stringify(s.periodStageMap),
       } as any,
     });
   };
@@ -2097,6 +2146,14 @@ export default function SystemicChange() {
                   theory={theory}
                   selectedCell={cellModal}
                   onCellClick={(actor, period, entry) => setCellModal({ actor, period, entry })}
+                  periodStageMap={localSettings.periodStageMap}
+                  onPeriodStageChange={(period, stage) => {
+                    const next = { ...localSettings.periodStageMap };
+                    if (stage) next[period] = stage; else delete next[period];
+                    const updated = { ...localSettings, periodStageMap: next };
+                    setLocalSettings(updated);
+                    updateTheory.mutate({ id, data: { periodStageMap: JSON.stringify(next) } as any });
+                  }}
                 />
               </div>
               {cellModal && effectiveFw && (

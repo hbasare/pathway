@@ -46,6 +46,7 @@ export const theoriesTable = pgTable("theories", {
   periodGranularity: text("period_granularity").default("annual"), // 'annual' | 'biannual' | 'quarterly'
   pilotDuration: text("pilot_duration").default("none"), // 'none' | '3mo' | '6mo' | '1yr'
   enabledStages: text("enabled_stages").default("adopt,adapt,expand,respond"), // comma-sep subset of the 4 AAER stages
+  periodStageMap: text("period_stage_map").default("{}"), // JSON: Record<periodLabel, stageValue>
   // Business model
   businessModelImagePath: text("business_model_image_path").default(""),
   createdAt: timestamp("created_at").notNull().defaultNow(),
