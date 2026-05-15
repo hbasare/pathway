@@ -132,12 +132,12 @@ export default function TheoryDetail() {
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
                 <Settings className="w-4 h-4 mr-2" />
-                Theory Settings
+                {t("theory.settings")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
                 <Trash2 className="w-4 h-4 mr-2" />
-                {t("common.delete")} Theory
+                {t("theory.deleteTheory")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -198,8 +198,8 @@ export default function TheoryDetail() {
       <DialogWrapper
         open={isEditOpen}
         onOpenChange={setIsEditOpen}
-        title="Theory Settings"
-        description="Update the title and description for this theory."
+        title={t("theory.settings")}
+        description={t("theory.settingsDesc")}
       >
         <TheoryForm
           initialData={theory}

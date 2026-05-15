@@ -14,6 +14,7 @@ import {
   Sparkles, Plus, Trash2, Pencil, Check, X, Loader2, Image as ImageIcon, Upload,
   RefreshCw, CheckCircle2,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Actor {
@@ -53,6 +54,7 @@ function ActorRow({
   onSave: (id: number, data: Omit<Actor, "id" | "position">) => void;
   onDelete: (id: number) => void;
 }) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(actor.actorName);
   const [current, setCurrent] = useState(actor.currentBehaviour);
@@ -74,13 +76,13 @@ function ActorRow({
       <tr className="bg-primary/5 border-b border-border">
         <td className="px-3 py-2 align-top text-center text-sm font-bold text-muted-foreground">{rowNum}</td>
         <td className="px-3 py-2 align-top">
-          <Input value={name} onChange={e => setName(e.target.value)} className="text-sm h-8" placeholder="Actor name" />
+          <Input value={name} onChange={e => setName(e.target.value)} className="text-sm h-8" placeholder={t("businessModel.actorName")} />
         </td>
         <td className="px-3 py-2 align-top">
-          <Textarea value={current} onChange={e => setCurrent(e.target.value)} className="text-sm min-h-[60px]" placeholder="Current behaviour" />
+          <Textarea value={current} onChange={e => setCurrent(e.target.value)} className="text-sm min-h-[60px]" placeholder={t("businessModel.currentBehaviour")} />
         </td>
         <td className="px-3 py-2 align-top">
-          <Textarea value={expected} onChange={e => setExpected(e.target.value)} className="text-sm min-h-[60px]" placeholder="Expected behaviour change" />
+          <Textarea value={expected} onChange={e => setExpected(e.target.value)} className="text-sm min-h-[60px]" placeholder={t("businessModel.expectedBehaviourChange")} />
         </td>
         <td className="px-3 py-2 align-top">
           <div className="flex gap-1">
@@ -128,6 +130,7 @@ function NewActorRow({
   onSave: (data: { actorName: string; currentBehaviour: string; expectedBehaviourChange: string; position: number }) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [current, setCurrent] = useState("");
   const [expected, setExpected] = useState("");
@@ -136,13 +139,13 @@ function NewActorRow({
     <tr className="bg-primary/5 border-b border-border">
       <td className="px-3 py-2 align-top text-center text-sm font-bold text-muted-foreground">{rowNum}</td>
       <td className="px-3 py-2 align-top">
-        <Input value={name} onChange={e => setName(e.target.value)} className="text-sm h-8" placeholder="Actor name" autoFocus />
+        <Input value={name} onChange={e => setName(e.target.value)} className="text-sm h-8" placeholder={t("businessModel.actorName")} autoFocus />
       </td>
       <td className="px-3 py-2 align-top">
-        <Textarea value={current} onChange={e => setCurrent(e.target.value)} className="text-sm min-h-[60px]" placeholder="Current behaviour" />
+        <Textarea value={current} onChange={e => setCurrent(e.target.value)} className="text-sm min-h-[60px]" placeholder={t("businessModel.currentBehaviour")} />
       </td>
       <td className="px-3 py-2 align-top">
-        <Textarea value={expected} onChange={e => setExpected(e.target.value)} className="text-sm min-h-[60px]" placeholder="Expected behaviour change" />
+        <Textarea value={expected} onChange={e => setExpected(e.target.value)} className="text-sm min-h-[60px]" placeholder={t("businessModel.expectedBehaviourChange")} />
       </td>
       <td className="px-3 py-2 align-top">
         <div className="flex gap-1">
@@ -160,6 +163,7 @@ function NewActorRow({
 
 // ─── Main component ──────────────────────────────────────────────────────────
 export function BusinessModel({ theory }: BusinessModelProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -176,21 +180,21 @@ export function BusinessModel({ theory }: BusinessModelProps) {
   const createMutation = useCreateBusinessModelActor({
     mutation: {
       onSuccess: () => { refetch(); setAddingRow(false); },
-      onError: () => toast({ title: "Failed to add actor", variant: "destructive" }),
+      onError: () => toast({ title: t("businessModel.failedToAddActor"), variant: "destructive" }),
     },
   });
 
   const updateMutation = useUpdateBusinessModelActor({
     mutation: {
       onSuccess: () => refetch(),
-      onError: () => toast({ title: "Failed to update actor", variant: "destructive" }),
+      onError: () => toast({ title: t("businessModel.failedToUpdateActor"), variant: "destructive" }),
     },
   });
 
   const deleteMutation = useDeleteBusinessModelActor({
     mutation: {
       onSuccess: () => refetch(),
-      onError: () => toast({ title: "Failed to delete actor", variant: "destructive" }),
+      onError: () => toast({ title: t("businessModel.failedToDeleteActor"), variant: "destructive" }),
     },
   });
 
@@ -206,9 +210,9 @@ export function BusinessModel({ theory }: BusinessModelProps) {
       if (!res.ok) throw new Error(await res.text());
       const { imageUrl: url } = await res.json() as { imageUrl: string };
       setCurrentImagePath(url);
-      toast({ title: "Diagram uploaded successfully" });
+      toast({ title: t("businessModel.diagramUploaded") });
     } catch (err) {
-      toast({ title: "Upload failed", description: String(err), variant: "destructive" });
+      toast({ title: t("businessModel.uploadFailed"), description: String(err), variant: "destructive" });
     } finally {
       setIsUploading(false);
     }
@@ -236,7 +240,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
       setPendingImageUrl(url);
       setRefinementPrompt("");
     } catch (err) {
-      toast({ title: "Image generation failed", description: String(err), variant: "destructive" });
+      toast({ title: t("businessModel.generationFailed"), description: String(err), variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
@@ -247,7 +251,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
     setCurrentImagePath(pendingImageUrl);
     setPendingImageUrl(null);
     setRefinementPrompt("");
-    toast({ title: "Diagram accepted and saved" });
+    toast({ title: t("businessModel.diagramAccepted") });
   };
 
   const handleDiscard = () => {
@@ -260,7 +264,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
   };
 
   const handleDeleteActor = (id: number) => {
-    if (window.confirm("Delete this actor?")) {
+    if (window.confirm(t("businessModel.deleteActorConfirm"))) {
       deleteMutation.mutate({ theoryId: theory.id, id });
     }
   };
@@ -276,28 +280,28 @@ export function BusinessModel({ theory }: BusinessModelProps) {
         {/* ── Header ── */}
         <div>
           <h2 className="text-2xl font-bold text-foreground">{theory.title}</h2>
-          <p className="text-sm text-muted-foreground mt-1">Business Model</p>
+          <p className="text-sm text-muted-foreground mt-1">{t("businessModel.title")}</p>
         </div>
 
         {/* ── AI Image Generation ── */}
         <section>
           <div className="mb-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-2">
-              Business Model Diagram
+              {t("businessModel.diagramTitle")}
             </h3>
           </div>
 
           <div className="space-y-4">
             {/* Option A — AI generate */}
             <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Generate with AI</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t("businessModel.generateWithAI")}</p>
               <p className="text-sm text-muted-foreground">
-                Describe your business model — the key players, their roles, and how value flows between them.
+                {t("businessModel.generateDesc")}
               </p>
               <Textarea
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
-                placeholder="e.g. Smallholder farmers sell produce to aggregators, who supply food processors, who sell packaged goods through retailers to end consumers. NGO provides training to farmers. Bank provides credit to aggregators."
+                placeholder={t("businessModel.generatePlaceholder")}
                 className="min-h-[80px] text-sm"
                 disabled={isGenerating}
               />
@@ -307,9 +311,9 @@ export function BusinessModel({ theory }: BusinessModelProps) {
                 className="gap-2"
               >
                 {isGenerating ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Generating…</>
+                  <><Loader2 className="w-4 h-4 animate-spin" /> {t("businessModel.generating")}</>
                 ) : (
-                  <><Sparkles className="w-4 h-4" /> Generate Diagram</>
+                  <><Sparkles className="w-4 h-4" /> {t("businessModel.generateDiagram")}</>
                 )}
               </Button>
             </div>
@@ -323,9 +327,9 @@ export function BusinessModel({ theory }: BusinessModelProps) {
 
             {/* Option B — Upload */}
             <div className="rounded-lg border border-border bg-muted/20 p-4 space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Upload Your Own Diagram</p>
+              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{t("businessModel.uploadOwn")}</p>
               <p className="text-sm text-muted-foreground">
-                Upload an existing diagram from your computer (PNG, JPG, SVG, PDF-as-image, etc.).
+                {t("businessModel.uploadDesc")}
               </p>
               <label className="inline-block">
                 <input
@@ -347,9 +351,9 @@ export function BusinessModel({ theory }: BusinessModelProps) {
                 >
                   <span>
                     {isUploading ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Uploading…</>
+                      <><Loader2 className="w-4 h-4 animate-spin" /> {t("businessModel.uploading")}</>
                     ) : (
-                      <><Upload className="w-4 h-4" /> Choose File</>
+                      <><Upload className="w-4 h-4" /> {t("businessModel.chooseFile")}</>
                     )}
                   </span>
                 </Button>
@@ -364,7 +368,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
               <div className="px-4 py-3 bg-primary/10 border-b border-primary/20 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-semibold text-primary">Review Generated Diagram</span>
+                  <span className="text-sm font-semibold text-primary">{t("businessModel.reviewGenerated")}</span>
                 </div>
                 <button
                   onClick={handleDiscard}
@@ -387,12 +391,12 @@ export function BusinessModel({ theory }: BusinessModelProps) {
               <div className="px-4 py-4 space-y-3 bg-background/60">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    Refinement instructions (optional)
+                    {t("businessModel.refinementLabel")}
                   </label>
                   <Textarea
                     value={refinementPrompt}
                     onChange={e => setRefinementPrompt(e.target.value)}
-                    placeholder="Add further instructions, e.g. make the arrows thicker, or add a government regulator node between banks and farmers."
+                    placeholder={t("businessModel.refinementPlaceholder")}
                     className="min-h-[60px] text-sm"
                     disabled={isGenerating}
                   />
@@ -403,7 +407,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
                     className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    Accept Diagram
+                    {t("businessModel.acceptDiagram")}
                   </Button>
                   <Button
                     variant="outline"
@@ -412,9 +416,9 @@ export function BusinessModel({ theory }: BusinessModelProps) {
                     className="gap-2"
                   >
                     {isGenerating ? (
-                      <><Loader2 className="w-4 h-4 animate-spin" /> Regenerating…</>
+                      <><Loader2 className="w-4 h-4 animate-spin" /> {t("businessModel.regenerating")}</>
                     ) : (
-                      <><RefreshCw className="w-4 h-4" /> Regenerate</>
+                      <><RefreshCw className="w-4 h-4" /> {t("businessModel.regenerate")}</>
                     )}
                   </Button>
                   <Button
@@ -423,7 +427,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
                     className="text-muted-foreground gap-2 ml-auto"
                   >
                     <X className="w-4 h-4" />
-                    Discard
+                    {t("businessModel.discard")}
                   </Button>
                 </div>
               </div>
@@ -443,15 +447,15 @@ export function BusinessModel({ theory }: BusinessModelProps) {
                   />
                   <div className="px-4 py-2 bg-muted/30 border-t border-border text-xs text-muted-foreground flex items-center gap-1.5">
                     <ImageIcon className="w-3 h-3" />
-                    Accepted business model diagram · Generate a new diagram above to replace it
+                    {t("businessModel.diagramCaption")}
                   </div>
                 </div>
               ) : (
                 <div className="rounded-xl border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center py-16 text-center">
                   <Sparkles className="w-8 h-8 text-muted-foreground/40 mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">No diagram yet</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("businessModel.noDiagram")}</p>
                   <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs">
-                    Describe your business model above and click "Generate Diagram" to create a visual with AI
+                    {t("businessModel.noDiagramHint")}
                   </p>
                 </div>
               )}
@@ -463,7 +467,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
         <section>
           <div className="mb-4 flex items-center justify-between">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-2 flex-1">
-              Actor Behaviour Change
+              {t("businessModel.actorBehaviourChange")}
             </h3>
           </div>
 
@@ -472,9 +476,9 @@ export function BusinessModel({ theory }: BusinessModelProps) {
               <thead>
                 <tr className="bg-muted/60 border-b border-border">
                   <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-12">#</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-48">Actor(s)</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs">Current Behaviour</th>
-                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs">Expected Behaviour Change</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-48">{t("businessModel.actors")}</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs">{t("businessModel.currentBehaviour")}</th>
+                  <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs">{t("businessModel.expectedBehaviourChange")}</th>
                   <th className="w-20 px-3 py-3" />
                 </tr>
               </thead>
@@ -498,7 +502,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
                 {actors.length === 0 && !addingRow && (
                   <tr>
                     <td colSpan={5} className="px-4 py-10 text-center text-sm text-muted-foreground italic">
-                      No actors added yet. Click "Add Actor" to get started.
+                      {t("businessModel.noActors")}
                     </td>
                   </tr>
                 )}
@@ -515,7 +519,7 @@ export function BusinessModel({ theory }: BusinessModelProps) {
                 onClick={() => setAddingRow(true)}
               >
                 <Plus className="w-4 h-4" />
-                Add Actor
+                {t("businessModel.addActor")}
               </Button>
             )}
           </div>

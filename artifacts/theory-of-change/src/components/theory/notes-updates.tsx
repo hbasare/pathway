@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface NotesUpdatesProps {
   theoryId: number;
@@ -27,6 +28,7 @@ function formatDate(dateStr: string) {
 }
 
 export function NotesUpdates({ theoryId }: NotesUpdatesProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const queryKey = getListTheoryNotesUpdatesQueryKey(theoryId);
@@ -36,21 +38,21 @@ export function NotesUpdates({ theoryId }: NotesUpdatesProps) {
   const createMutation = useCreateTheoryNoteUpdate({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey }),
-      onError: () => toast({ title: "Failed to add row", variant: "destructive" }),
+      onError: () => toast({ title: t("notes.failedToAdd"), variant: "destructive" }),
     },
   });
 
   const updateMutation = useUpdateTheoryNoteUpdate({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey }),
-      onError: () => toast({ title: "Failed to save", variant: "destructive" }),
+      onError: () => toast({ title: t("notes.failedToSave"), variant: "destructive" }),
     },
   });
 
   const deleteMutation = useDeleteTheoryNoteUpdate({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey }),
-      onError: () => toast({ title: "Failed to delete", variant: "destructive" }),
+      onError: () => toast({ title: t("notes.failedToDelete"), variant: "destructive" }),
     },
   });
 
@@ -80,12 +82,12 @@ export function NotesUpdates({ theoryId }: NotesUpdatesProps) {
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-xl font-bold text-foreground">Notes and Updates</h2>
-          <p className="text-sm text-muted-foreground mt-0.5">Record activities, changes and updates over time</p>
+          <h2 className="text-xl font-bold text-foreground">{t("notes.title")}</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">{t("notes.subtitle")}</p>
         </div>
         <Button onClick={handleAddRow} size="sm" className="gap-2" disabled={createMutation.isPending}>
           <Plus className="w-4 h-4" />
-          Add Row
+          {t("notes.addRow")}
         </Button>
       </div>
 
@@ -94,8 +96,8 @@ export function NotesUpdates({ theoryId }: NotesUpdatesProps) {
           <thead>
             <tr className="bg-muted/60 border-b border-border">
               <th className="w-14 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">#</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Activity / Change</th>
-              <th className="w-44 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Date</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("notes.activityChange")}</th>
+              <th className="w-44 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("notes.date")}</th>
               <th className="w-12 px-2 py-3" />
             </tr>
           </thead>
@@ -103,7 +105,7 @@ export function NotesUpdates({ theoryId }: NotesUpdatesProps) {
             {rowsWithEmpty.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                  No entries yet. Click "Add Row" to get started.
+                  {t("notes.noEntries")}
                 </td>
               </tr>
             )}
@@ -137,7 +139,7 @@ export function NotesUpdates({ theoryId }: NotesUpdatesProps) {
 
       {rowsWithEmpty.length > 0 && (
         <p className="text-xs text-muted-foreground mt-3 text-right">
-          {displayRows.length} {displayRows.length === 1 ? "entry" : "entries"}
+          {t("notes.entry", { count: displayRows.length })}
         </p>
       )}
     </div>
@@ -154,6 +156,7 @@ interface NoteRowProps {
 }
 
 function NoteRow({ rowNumber, activityChange, date, onSave, onDelete, isEven }: NoteRowProps) {
+  const { t } = useTranslation();
   const [localActivity, setLocalActivity] = useState(activityChange);
   const [localDate, setLocalDate] = useState(date);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -184,7 +187,7 @@ function NoteRow({ rowNumber, activityChange, date, onSave, onDelete, isEven }: 
       <td className="px-4 py-2 align-middle">
         <textarea
           className="w-full text-sm text-foreground bg-transparent border-none outline-none resize-none focus:ring-0 placeholder:text-muted-foreground/50 min-h-[36px] leading-relaxed"
-          placeholder="Describe the activity or change..."
+          placeholder={t("notes.activityPlaceholder")}
           value={localActivity}
           rows={1}
           onChange={e => {

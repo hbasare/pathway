@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2, Loader2, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 interface RiskAnalysisProps {
   theoryId: number;
@@ -24,6 +25,7 @@ function likelihoodColor(val: string) {
 }
 
 export function RiskAnalysis({ theoryId }: RiskAnalysisProps) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const queryKey = getListTheoryRiskAnalysesQueryKey(theoryId);
@@ -33,21 +35,21 @@ export function RiskAnalysis({ theoryId }: RiskAnalysisProps) {
   const createMutation = useCreateTheoryRiskAnalysis({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey }),
-      onError: () => toast({ title: "Failed to add row", variant: "destructive" }),
+      onError: () => toast({ title: t("risk.failedToAdd"), variant: "destructive" }),
     },
   });
 
   const updateMutation = useUpdateTheoryRiskAnalysis({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey }),
-      onError: () => toast({ title: "Failed to save", variant: "destructive" }),
+      onError: () => toast({ title: t("risk.failedToSave"), variant: "destructive" }),
     },
   });
 
   const deleteMutation = useDeleteTheoryRiskAnalysis({
     mutation: {
       onSuccess: () => queryClient.invalidateQueries({ queryKey }),
-      onError: () => toast({ title: "Failed to delete", variant: "destructive" }),
+      onError: () => toast({ title: t("risk.failedToDelete"), variant: "destructive" }),
     },
   });
 
@@ -78,13 +80,13 @@ export function RiskAnalysis({ theoryId }: RiskAnalysisProps) {
         <div>
           <div className="flex items-center gap-2 mb-0.5">
             <ShieldAlert className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-xl font-bold text-foreground">Risk Analysis</h2>
+            <h2 className="text-xl font-bold text-foreground">{t("risk.title")}</h2>
           </div>
-          <p className="text-sm text-muted-foreground">Identify risks, assess likelihood, and plan mitigations</p>
+          <p className="text-sm text-muted-foreground">{t("risk.subtitle")}</p>
         </div>
         <Button onClick={handleAddRow} size="sm" className="gap-2" disabled={createMutation.isPending}>
           <Plus className="w-4 h-4" />
-          Add Risk
+          {t("risk.addRisk")}
         </Button>
       </div>
 
@@ -93,10 +95,10 @@ export function RiskAnalysis({ theoryId }: RiskAnalysisProps) {
           <thead>
             <tr className="bg-muted/60 border-b border-border">
               <th className="w-12 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">#</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Risk</th>
-              <th className="w-36 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Likelihood (%)</th>
-              <th className="w-56 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mitigation Strategy</th>
-              <th className="w-48 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("risk.risk")}</th>
+              <th className="w-36 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("risk.likelihood")}</th>
+              <th className="w-56 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("risk.mitigationStrategy")}</th>
+              <th className="w-48 px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t("risk.notes")}</th>
               <th className="w-10 px-2 py-3" />
             </tr>
           </thead>
@@ -104,7 +106,7 @@ export function RiskAnalysis({ theoryId }: RiskAnalysisProps) {
             {rows.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-sm text-muted-foreground">
-                  No risks identified yet. Click "Add Risk" to get started.
+                  {t("risk.noRisks")}
                 </td>
               </tr>
             )}
@@ -139,7 +141,7 @@ export function RiskAnalysis({ theoryId }: RiskAnalysisProps) {
 
       {rows.length > 0 && (
         <p className="text-xs text-muted-foreground mt-3 text-right">
-          {filledRows.length} {filledRows.length === 1 ? "risk" : "risks"} identified
+          {t("risk.risk", { count: filledRows.length })}
         </p>
       )}
     </div>
@@ -158,6 +160,7 @@ interface RiskRowProps {
 }
 
 function RiskRow({ rowNumber, risk, likelihood, mitigationStrategy, notes, onSave, onDelete, isEven }: RiskRowProps) {
+  const { t } = useTranslation();
   const [local, setLocal] = useState({ risk, likelihood, mitigationStrategy, notes });
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -193,7 +196,7 @@ function RiskRow({ rowNumber, risk, likelihood, mitigationStrategy, notes, onSav
       <td className="px-4 py-2 align-top">
         <textarea
           className="w-full text-sm text-foreground bg-transparent border-none outline-none resize-none focus:ring-0 placeholder:text-muted-foreground/50 min-h-[36px] leading-relaxed"
-          placeholder="Describe the risk..."
+          placeholder={t("risk.riskPlaceholder")}
           value={local.risk}
           rows={1}
           onChange={e => {
@@ -237,7 +240,7 @@ function RiskRow({ rowNumber, risk, likelihood, mitigationStrategy, notes, onSav
       <td className="px-4 py-2 align-top">
         <textarea
           className="w-full text-sm text-foreground bg-transparent border-none outline-none resize-none focus:ring-0 placeholder:text-muted-foreground/50 min-h-[36px] leading-relaxed"
-          placeholder="How will this risk be mitigated?"
+          placeholder={t("risk.mitigationPlaceholder")}
           value={local.mitigationStrategy}
           rows={1}
           onChange={e => {
@@ -253,7 +256,7 @@ function RiskRow({ rowNumber, risk, likelihood, mitigationStrategy, notes, onSav
       <td className="px-4 py-2 align-top">
         <textarea
           className="w-full text-sm text-foreground bg-transparent border-none outline-none resize-none focus:ring-0 placeholder:text-muted-foreground/50 min-h-[36px] leading-relaxed"
-          placeholder="Additional notes..."
+          placeholder={t("risk.notesPlaceholder")}
           value={local.notes}
           rows={1}
           onChange={e => {

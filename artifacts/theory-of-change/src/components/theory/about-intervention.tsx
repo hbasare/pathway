@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Pencil, X, Save, Lightbulb, Plus, Trash2, AlertCircle, ArrowRight, Check, FileText, Upload, ExternalLink } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // ─── Field configuration ─────────────────────────────────────────────────────
 // To add, remove, or reorder fields simply edit this array.
@@ -91,6 +92,7 @@ function FieldSection({
   form: ReturnType<typeof useForm<FormValues>>;
   hideHeader?: boolean;
 }) {
+  const { t } = useTranslation();
   const fields = fieldsBySection(sectionName);
   if (fields.length === 0) return null;
   return (
@@ -98,7 +100,7 @@ function FieldSection({
       {!hideHeader && (
         <div className="mb-4">
           <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-2">
-            {sectionName}
+            {t(`about.sections.${sectionName}`, { defaultValue: sectionName })}
           </h3>
         </div>
       )}
@@ -106,11 +108,13 @@ function FieldSection({
         {fields.map(field => {
           const value = (theory[field.key as keyof typeof theory] as string) ?? "";
           const isEmpty = !value?.trim();
+          const fieldLabel = t(`about.fields.${field.key}.label`, { defaultValue: field.label });
+          const fieldPlaceholder = t(`about.fields.${field.key}.placeholder`, { defaultValue: field.placeholder ?? "" });
           if (isEditing) {
             return (
               <div key={field.key}>
                 <label className="block text-sm font-medium text-foreground mb-1">
-                  {field.label}
+                  {fieldLabel}
                   {field.hint && (
                     <span className="ml-1.5 text-xs font-normal text-muted-foreground">({field.hint})</span>
                   )}
@@ -118,13 +122,13 @@ function FieldSection({
                 {field.type === "textarea" ? (
                   <Textarea
                     {...form.register(field.key as keyof FormValues)}
-                    placeholder={field.placeholder}
+                    placeholder={fieldPlaceholder}
                     className="min-h-[90px] text-sm"
                   />
                 ) : (
                   <Input
                     {...form.register(field.key as keyof FormValues)}
-                    placeholder={field.placeholder}
+                    placeholder={fieldPlaceholder}
                     className="text-sm"
                   />
                 )}
@@ -134,12 +138,12 @@ function FieldSection({
           return (
             <div key={field.key} className="grid grid-cols-[200px_1fr] gap-4 items-start py-2 border-b border-border/40 last:border-0">
               <div>
-                <p className="text-sm font-medium text-foreground">{field.label}</p>
+                <p className="text-sm font-medium text-foreground">{fieldLabel}</p>
                 {field.hint && <p className="text-xs text-muted-foreground mt-0.5">{field.hint}</p>}
               </div>
               <div>
                 {isEmpty ? (
-                  <span className="text-sm text-muted-foreground/50 italic">Not set</span>
+                  <span className="text-sm text-muted-foreground/50 italic">{t("about.notSet")}</span>
                 ) : (
                   <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">{value}</p>
                 )}
@@ -154,6 +158,7 @@ function FieldSection({
 
 // ─── DocumentsSection ────────────────────────────────────────────────────────
 function DocumentsSection({ theory }: { theory: TheoryDetail }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getListTheoryDocumentsQueryKey(theory.id) });
@@ -190,9 +195,9 @@ function DocumentsSection({ theory }: { theory: TheoryDetail }) {
         theoryId: theory.id,
         data: { name: file.name, objectPath, contentType: file.type || "application/octet-stream", size: file.size },
       });
-      toast({ title: `"${file.name}" uploaded` });
+      toast({ title: `"${file.name}" ${t("about.uploading")}` });
     } catch (err) {
-      toast({ title: err instanceof Error ? err.message : "Upload failed", variant: "destructive" });
+      toast({ title: err instanceof Error ? err.message : t("about.uploadFailed"), variant: "destructive" });
     } finally {
       setUploadingFiles(prev => prev.filter(n => n !== file.name));
       if (inputRef.current) inputRef.current.value = "";
@@ -208,9 +213,9 @@ function DocumentsSection({ theory }: { theory: TheoryDetail }) {
     if (!window.confirm(`Remove "${docName}"?`)) return;
     try {
       await deleteDoc.mutateAsync({ theoryId: theory.id, docId });
-      toast({ title: "Document removed" });
+      toast({ title: t("about.documentRemoved") });
     } catch {
-      toast({ title: "Failed to remove document", variant: "destructive" });
+      toast({ title: t("about.failedToRemoveDoc"), variant: "destructive" });
     }
   };
 
@@ -234,7 +239,7 @@ function DocumentsSection({ theory }: { theory: TheoryDetail }) {
     <div>
       <div className="flex items-center justify-between mb-3">
         <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          Documents
+          {t("about.documents")}
         </p>
         <Button
           size="sm"
@@ -244,7 +249,7 @@ function DocumentsSection({ theory }: { theory: TheoryDetail }) {
           disabled={isUploading}
         >
           <Upload className="w-3.5 h-3.5" />
-          Upload
+          {t("about.upload")}
         </Button>
       </div>
 
@@ -252,13 +257,13 @@ function DocumentsSection({ theory }: { theory: TheoryDetail }) {
       {uploadingFiles.map(name => (
         <div key={name} className="rounded-lg border border-border bg-muted/20 px-4 py-3 flex items-center gap-3 mb-2">
           <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin shrink-0" />
-          <span className="text-sm text-muted-foreground truncate flex-1">Uploading {name}…</span>
+          <span className="text-sm text-muted-foreground truncate flex-1">{t("about.uploading")} {name}…</span>
         </div>
       ))}
 
       {/* Document list */}
       {isLoading ? (
-        <div className="py-4 text-sm text-muted-foreground/50 text-center">Loading…</div>
+        <div className="py-4 text-sm text-muted-foreground/50 text-center">{t("common.loading")}</div>
       ) : documents.length === 0 && !isUploading ? (
         <div
           className="rounded-xl border-2 border-dashed border-border bg-muted/10 hover:bg-muted/20 transition-colors cursor-pointer p-6 flex flex-col items-center gap-2 text-center"
@@ -267,8 +272,8 @@ function DocumentsSection({ theory }: { theory: TheoryDetail }) {
           onDrop={e => { e.preventDefault(); handleFilesSelected(e.dataTransfer.files); }}
         >
           <Upload className="w-6 h-6 text-muted-foreground/40" />
-          <p className="text-sm font-medium text-foreground">Drop files here or click Upload</p>
-          <p className="text-xs text-muted-foreground">PDF, Word, Excel, images and more · multiple files supported</p>
+          <p className="text-sm font-medium text-foreground">{t("about.dropFilesHere")}</p>
+          <p className="text-xs text-muted-foreground">{t("about.dropFilesFormats")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -287,7 +292,7 @@ function DocumentsSection({ theory }: { theory: TheoryDetail }) {
                   className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline px-2 py-1 rounded hover:bg-primary/5"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
-                  Open
+                  {t("about.open")}
                 </a>
                 <Button
                   size="icon"
@@ -308,7 +313,7 @@ function DocumentsSection({ theory }: { theory: TheoryDetail }) {
             onDrop={e => { e.preventDefault(); handleFilesSelected(e.dataTransfer.files); }}
           >
             <Upload className="w-3.5 h-3.5" />
-            <span className="text-xs">Add more files…</span>
+            <span className="text-xs">{t("about.addMoreFiles")}</span>
           </div>
         </div>
       )}
@@ -326,6 +331,7 @@ function DocumentsSection({ theory }: { theory: TheoryDetail }) {
 
 // ─── OpportunitiesSection ─────────────────────────────────────────────────────
 function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const invalidate = () => queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(theory.id) });
@@ -340,21 +346,21 @@ function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
   const createMutation = useCreateComponent({
     mutation: {
       onSuccess: () => { invalidate(); setShowAdd(false); setDraftTitle(""); setDraftDesc(""); },
-      onError: () => toast({ title: "Failed to add", variant: "destructive" }),
+      onError: () => toast({ title: t("about.failedToAdd"), variant: "destructive" }),
     },
   });
 
   const updateMutation = useUpdateComponent({
     mutation: {
       onSuccess: invalidate,
-      onError: () => toast({ title: "Failed to update", variant: "destructive" }),
+      onError: () => toast({ title: t("about.failedToUpdate"), variant: "destructive" }),
     },
   });
 
   const deleteMutation = useDeleteComponent({
     mutation: {
       onSuccess: invalidate,
-      onError: () => toast({ title: "Failed to delete", variant: "destructive" }),
+      onError: () => toast({ title: t("about.failedToDelete"), variant: "destructive" }),
     },
   });
 
@@ -390,7 +396,7 @@ function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
   };
 
   const handleDelete = (opp: TheoryDetail["components"][number]) => {
-    if (!window.confirm(`Delete "${opp.title}"? This cannot be undone.`)) return;
+    if (!window.confirm(t("about.deleteOppConfirm", { title: opp.title }))) return;
     deleteMutation.mutate({ theoryId: theory.id, id: opp.id });
   };
 
@@ -406,13 +412,13 @@ function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground leading-relaxed">
-        List the opportunities and constraints relevant to this intervention. Toggle <span className="font-semibold text-emerald-700">Will be addressed</span> for each one that the intervention will respond to — only those will appear in the Theory of Change canvas.
+        {t("about.opportunitiesDesc")}
       </p>
 
       {opportunities.length === 0 && !showAdd && (
         <div className="rounded-lg border-2 border-dashed border-border bg-muted/20 flex flex-col items-center justify-center py-8 text-center gap-2">
           <AlertCircle className="w-5 h-5 text-muted-foreground/40" />
-          <p className="text-sm text-muted-foreground">No opportunities or constraints added yet</p>
+          <p className="text-sm text-muted-foreground">{t("about.noOpportunities")}</p>
         </div>
       )}
 
@@ -445,10 +451,10 @@ function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
                   <label htmlFor={`wba-${opp.id}`} className="text-xs font-medium cursor-pointer select-none">
                     {opp.willBeAddressed ? (
                       <span className="text-emerald-700 flex items-center gap-1">
-                        <Check className="w-3 h-3" /> Will be addressed — included in Theory of Change
+                        <Check className="w-3 h-3" /> {t("about.willBeAddressedYes")}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">Will be addressed by this intervention?</span>
+                      <span className="text-muted-foreground">{t("about.willBeAddressedNo")}</span>
                     )}
                   </label>
                 </div>
@@ -457,7 +463,7 @@ function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
                 {opp.willBeAddressed && linked.length > 0 && (
                   <div className="mt-3">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
-                      Connected in Theory of Change
+                      {t("about.connectedInToC")}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {linked.map(comp => (
@@ -492,24 +498,24 @@ function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
         <div className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 space-y-3">
           <Input
             autoFocus
-            placeholder="Title — e.g. Limited access to finance"
+            placeholder={t("about.oppTitlePlaceholder")}
             value={draftTitle}
             onChange={e => setDraftTitle(e.target.value)}
             className="text-sm"
             onKeyDown={e => e.key === "Enter" && handleAdd()}
           />
           <Textarea
-            placeholder="Description (optional) — elaborate on this opportunity or constraint"
+            placeholder={t("about.oppDescPlaceholder")}
             value={draftDesc}
             onChange={e => setDraftDesc(e.target.value)}
             className="text-sm min-h-[70px]"
           />
           <div className="flex gap-2">
             <Button size="sm" onClick={handleAdd} disabled={!draftTitle.trim() || createMutation.isPending}>
-              <Plus className="w-3.5 h-3.5 mr-1" /> Add
+              <Plus className="w-3.5 h-3.5 mr-1" /> {t("common.add")}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => { setShowAdd(false); setDraftTitle(""); setDraftDesc(""); }}>
-              Cancel
+              {t("common.cancel")}
             </Button>
           </div>
         </div>
@@ -521,7 +527,7 @@ function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
           onClick={() => setShowAdd(true)}
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add Opportunity / Constraint
+          {t("about.addOpportunity")}
         </Button>
       )}
     </div>
@@ -530,6 +536,7 @@ function OpportunitiesSection({ theory }: { theory: TheoryDetail }) {
 
 // ─── Component ───────────────────────────────────────────────────────────────
 export function AboutIntervention({ theory }: AboutInterventionProps) {
+  const { t } = useTranslation();
   const [isEditing, setIsEditing] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -551,10 +558,10 @@ export function AboutIntervention({ theory }: AboutInterventionProps) {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getGetTheoryQueryKey(theory.id) });
-        toast({ title: "Intervention details saved" });
+        toast({ title: t("about.detailsSaved") });
         setIsEditing(false);
       },
-      onError: () => toast({ title: "Failed to save details", variant: "destructive" }),
+      onError: () => toast({ title: t("about.failedToSave"), variant: "destructive" }),
     },
   });
 
@@ -580,18 +587,18 @@ export function AboutIntervention({ theory }: AboutInterventionProps) {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground">{theory.title}</h2>
-            <p className="text-sm text-muted-foreground mt-1">About this intervention</p>
+            <p className="text-sm text-muted-foreground mt-1">{t("about.subtitle")}</p>
           </div>
           {!isEditing ? (
             <Button onClick={handleEdit} variant="outline" size="sm" className="gap-2 shrink-0">
               <Pencil className="w-3.5 h-3.5" />
-              Edit Details
+              {t("about.editDetails")}
             </Button>
           ) : (
             <div className="flex gap-2 shrink-0">
               <Button onClick={handleCancel} variant="ghost" size="sm" className="gap-2">
                 <X className="w-3.5 h-3.5" />
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 onClick={form.handleSubmit(onSubmit)}
@@ -600,7 +607,7 @@ export function AboutIntervention({ theory }: AboutInterventionProps) {
                 disabled={updateMutation.isPending}
               >
                 <Save className="w-3.5 h-3.5" />
-                {updateMutation.isPending ? "Saving…" : "Save Changes"}
+                {updateMutation.isPending ? t("common.loading") : t("about.saveChanges")}
               </Button>
             </div>
           )}
@@ -621,7 +628,7 @@ export function AboutIntervention({ theory }: AboutInterventionProps) {
         <section>
           <div className="mb-4">
             <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground border-b border-border pb-2">
-              Strategic Context
+              {t("about.sections.Strategic Context")}
             </h3>
           </div>
           <div className="space-y-6">

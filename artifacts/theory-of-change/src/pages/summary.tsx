@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const TYPE_COLORS: Record<string, string> = {
   opportunity: "bg-emerald-50 text-emerald-800 border-emerald-200",
@@ -23,15 +24,6 @@ const TYPE_HEADER: Record<string, string> = {
   output:   "bg-teal-500",
   outcome:  "bg-orange-500",
   impact:   "bg-rose-500",
-};
-
-const TYPE_DESCRIPTIONS: Record<string, string> = {
-  opportunity: "Context & enabling factors",
-  input:    "Resources & investments",
-  activity: "Actions & processes",
-  output:   "Direct products",
-  outcome:  "Short/medium-term changes",
-  impact:   "Long-term systemic change",
 };
 
 const COLUMN_ORDER: Record<string, number> = {
@@ -62,7 +54,6 @@ function getStatusInfo(targetDate?: string | null, targetFigure?: string | null,
   return "not-set";
 }
 
-// Derive the most "urgent" status across all indicators for a component
 function getComponentStatus(indicators: { targetDate?: string | null; targetFigure?: string | null; actualFigure?: string | null }[]) {
   if (indicators.length === 0) return "not-set";
   const order = ["overdue", "in-progress", "planned", "achieved", "not-set"];
@@ -71,6 +62,7 @@ function getComponentStatus(indicators: { targetDate?: string | null; targetFigu
 }
 
 export default function Summary() {
+  const { t } = useTranslation();
   const [, params] = useRoute("/theory/:id/summary");
   const id = params?.id ? parseInt(params.id, 10) : 0;
   const [, setLocation] = useLocation();
@@ -90,8 +82,8 @@ export default function Summary() {
   if (error || !theory) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center h-full">
-        <h2 className="text-2xl font-bold mb-2">Theory Not Found</h2>
-        <Button onClick={() => setLocation("/")}><ArrowLeft className="w-4 h-4 mr-2" />Back</Button>
+        <h2 className="text-2xl font-bold mb-2">{t("summary.theoryNotFound")}</h2>
+        <Button onClick={() => setLocation("/")}><ArrowLeft className="w-4 h-4 mr-2" />{t("common.back")}</Button>
       </div>
     );
   }
@@ -104,7 +96,6 @@ export default function Summary() {
 
   const today = new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
 
-  // Status counts — count per indicator across all components
   const allIndicators = components.flatMap(c => c.componentIndicators ?? []);
   const indicatorStatuses = allIndicators.length > 0
     ? allIndicators.map(ind => getStatusInfo(ind.targetDate, ind.targetFigure, ind.actualFigure))
@@ -118,18 +109,15 @@ export default function Summary() {
   };
   const statusTotal = allIndicators.length || components.length;
 
-  // Components by type
-  const byType = TYPES.reduce((acc, t) => {
-    acc[t] = components.filter(c => c.type === t).sort((a, b) => a.id - b.id);
+  const byType = TYPES.reduce((acc, tp) => {
+    acc[tp] = components.filter(c => c.type === tp).sort((a, b) => a.id - b.id);
     return acc;
   }, {} as Record<string, typeof components>);
 
-  // All assumptions (non-empty)
   const allAssumptions = components
     .sort((a, b) => (COLUMN_ORDER[a.type] ?? 99) - (COLUMN_ORDER[b.type] ?? 99) || a.id - b.id)
     .filter(c => c.assumptions && c.assumptions.trim());
 
-  // Timeline: indicators with target dates (flattened, with parent component info attached)
   type IndicatorWithComp = (typeof allIndicators)[number] & { comp: (typeof components)[number] };
   const withTargets: IndicatorWithComp[] = components
     .flatMap(comp =>
@@ -139,6 +127,22 @@ export default function Summary() {
     )
     .sort((a, b) => new Date(a.targetDate!).getTime() - new Date(b.targetDate!).getTime());
 
+  const statusConfig = {
+    achieved:    { labelKey: "summary.status.achieved",   color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
+    planned:     { labelKey: "summary.status.planned",    color: "text-amber-700 bg-amber-50 border-amber-200",       icon: Clock },
+    overdue:     { labelKey: "summary.status.overdue",    color: "text-red-700 bg-red-50 border-red-200",             icon: AlertCircle },
+    "in-progress":{ labelKey: "summary.status.inProgress",color: "text-blue-700 bg-blue-50 border-blue-200",         icon: Target },
+    "not-set":   { labelKey: "summary.status.notSet",     color: "text-gray-500 bg-gray-50 border-gray-200",         icon: MinusCircle },
+  };
+
+  const legendItems = [
+    { key: "achieved",    labelKey: "summary.status.achieved",   color: "bg-emerald-500" },
+    { key: "planned",     labelKey: "summary.status.planned",    color: "bg-amber-400" },
+    { key: "in-progress", labelKey: "summary.status.inProgress", color: "bg-blue-400" },
+    { key: "overdue",     labelKey: "summary.status.overdue",    color: "bg-red-400" },
+    { key: "not-set",     labelKey: "summary.status.notSet",     color: "bg-muted-foreground/30" },
+  ];
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Toolbar */}
@@ -146,16 +150,16 @@ export default function Summary() {
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => setLocation(`/theory/${id}`)} className="gap-2">
             <ArrowLeft className="w-4 h-4" />
-            Back to Canvas
+            {t("summary.backToCanvas")}
           </Button>
           <div>
             <h1 className="text-lg font-bold text-foreground">{theory.title}</h1>
-            <p className="text-xs text-muted-foreground">Intervention Summary</p>
+            <p className="text-xs text-muted-foreground">{t("summary.interventionSummary")}</p>
           </div>
         </div>
         <Button onClick={() => window.print()} className="gap-2">
           <Printer className="w-4 h-4" />
-          Print / Export PDF
+          {t("summary.printExport")}
         </Button>
       </header>
 
@@ -165,40 +169,40 @@ export default function Summary() {
           {/* ── Document header ── */}
           <div className="flex items-start justify-between pb-6 border-b border-border">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">Intervention Summary</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">{t("summary.interventionSummary")}</p>
               <h2 className="text-3xl font-bold text-foreground mb-3 print:text-2xl">{theory.title}</h2>
               {theory.description && (
                 <p className="text-base text-muted-foreground max-w-2xl leading-relaxed">{theory.description}</p>
               )}
             </div>
             <div className="text-right text-xs text-muted-foreground shrink-0 ml-6">
-              <p>Generated: {today}</p>
-              <p>{components.length} component{components.length !== 1 ? "s" : ""}</p>
-              <p>{connections.length} connection{connections.length !== 1 ? "s" : ""}</p>
+              <p>{t("summary.generated")}: {today}</p>
+              <p>{t("summary.components", { count: components.length })}</p>
+              <p>{t("summary.connections", { count: connections.length })}</p>
             </div>
           </div>
 
           {/* ── At a Glance ── */}
           <section>
             <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" /> At a Glance
+              <TrendingUp className="w-4 h-4" /> {t("summary.atAGlance")}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="rounded-xl border bg-card px-5 py-4">
                 <p className="text-3xl font-bold text-foreground">{components.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">Total Components</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("summary.totalComponents")}</p>
               </div>
               <div className="rounded-xl border bg-card px-5 py-4">
                 <p className="text-3xl font-bold text-foreground">{connections.length}</p>
-                <p className="text-xs text-muted-foreground mt-1">Logical Links</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("summary.logicalLinks")}</p>
               </div>
               <div className="rounded-xl border bg-card px-5 py-4">
                 <p className="text-3xl font-bold text-emerald-600">{statusCounts.achieved}</p>
-                <p className="text-xs text-muted-foreground mt-1">Results Achieved</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("summary.resultsAchieved")}</p>
               </div>
               <div className="rounded-xl border bg-card px-5 py-4">
                 <p className="text-3xl font-bold text-red-600">{statusCounts.overdue}</p>
-                <p className="text-xs text-muted-foreground mt-1">Overdue</p>
+                <p className="text-xs text-muted-foreground mt-1">{t("summary.status.overdue")}</p>
               </div>
             </div>
 
@@ -206,48 +210,30 @@ export default function Summary() {
             {components.length > 0 && (
               <div className="mt-4 rounded-xl border bg-card px-5 py-4">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-semibold text-foreground">Progress Overview</p>
+                  <p className="text-xs font-semibold text-foreground">{t("summary.progressOverview")}</p>
                   <p className="text-xs text-muted-foreground">
-                    {statusCounts.achieved}/{statusTotal} achieved ({allIndicators.length > 0 ? "by indicator" : "by component"})
+                    {statusCounts.achieved}/{statusTotal} {t("summary.achievedFraction")} ({allIndicators.length > 0 ? t("summary.byIndicator") : t("summary.byComponent")})
                   </p>
                 </div>
                 <div className="h-3 rounded-full bg-muted overflow-hidden flex">
                   {statusCounts.achieved > 0 && (
-                    <div
-                      className="bg-emerald-500 h-full transition-all"
-                      style={{ width: `${(statusCounts.achieved / statusTotal) * 100}%` }}
-                    />
+                    <div className="bg-emerald-500 h-full transition-all" style={{ width: `${(statusCounts.achieved / statusTotal) * 100}%` }} />
                   )}
                   {statusCounts.planned > 0 && (
-                    <div
-                      className="bg-amber-400 h-full transition-all"
-                      style={{ width: `${(statusCounts.planned / statusTotal) * 100}%` }}
-                    />
+                    <div className="bg-amber-400 h-full transition-all" style={{ width: `${(statusCounts.planned / statusTotal) * 100}%` }} />
                   )}
                   {statusCounts["in-progress"] > 0 && (
-                    <div
-                      className="bg-blue-400 h-full transition-all"
-                      style={{ width: `${(statusCounts["in-progress"] / statusTotal) * 100}%` }}
-                    />
+                    <div className="bg-blue-400 h-full transition-all" style={{ width: `${(statusCounts["in-progress"] / statusTotal) * 100}%` }} />
                   )}
                   {statusCounts.overdue > 0 && (
-                    <div
-                      className="bg-red-400 h-full transition-all"
-                      style={{ width: `${(statusCounts.overdue / statusTotal) * 100}%` }}
-                    />
+                    <div className="bg-red-400 h-full transition-all" style={{ width: `${(statusCounts.overdue / statusTotal) * 100}%` }} />
                   )}
                 </div>
                 <div className="flex flex-wrap gap-3 mt-2 text-[11px]">
-                  {[
-                    { key: "achieved", label: "Achieved", color: "bg-emerald-500" },
-                    { key: "planned", label: "Planned", color: "bg-amber-400" },
-                    { key: "in-progress", label: "In Progress", color: "bg-blue-400" },
-                    { key: "overdue", label: "Overdue", color: "bg-red-400" },
-                    { key: "not-set", label: "Not Set", color: "bg-muted-foreground/30" },
-                  ].map(({ key, label, color }) => (
+                  {legendItems.map(({ key, labelKey, color }) => (
                     <span key={key} className="flex items-center gap-1 text-muted-foreground">
                       <span className={`inline-block w-2.5 h-2.5 rounded-sm ${color}`} />
-                      {statusCounts[key as keyof typeof statusCounts]} {label}
+                      {statusCounts[key as keyof typeof statusCounts]} {t(labelKey)}
                     </span>
                   ))}
                 </div>
@@ -258,7 +244,7 @@ export default function Summary() {
           {/* ── Intervention Logic Flow ── */}
           <section>
             <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Network className="w-4 h-4" /> Intervention Logic
+              <Network className="w-4 h-4" /> {t("summary.interventionLogic")}
             </h3>
             <div className="flex items-stretch gap-0 overflow-x-auto pb-2">
               {TYPES.map((type, i) => {
@@ -267,12 +253,12 @@ export default function Summary() {
                   <div key={type} className="flex items-stretch gap-0 flex-1 min-w-0">
                     <div className="flex-1 rounded-xl border border-border overflow-hidden min-w-[140px]">
                       <div className={`${TYPE_HEADER[type]} px-3 py-2`}>
-                        <p className="text-white text-[11px] font-bold uppercase tracking-wider">{type}</p>
-                        <p className="text-white/70 text-[10px]">{TYPE_DESCRIPTIONS[type]}</p>
+                        <p className="text-white text-[11px] font-bold uppercase tracking-wider">{t(`summary.types.${type}`, { defaultValue: type })}</p>
+                        <p className="text-white/70 text-[10px]">{t(`summary.typeDescriptions.${type}`)}</p>
                       </div>
                       <div className="p-2 space-y-1.5 bg-card min-h-[80px]">
                         {items.length === 0 ? (
-                          <p className="text-xs text-muted-foreground/50 italic px-1 py-2">None added</p>
+                          <p className="text-xs text-muted-foreground/50 italic px-1 py-2">{t("summary.noneAdded")}</p>
                         ) : items.map(c => (
                           <div key={c.id} className={`rounded-md border px-2 py-1.5 text-xs ${TYPE_COLORS[type]}`}>
                             <span className="font-bold text-[10px] opacity-60 mr-1">#{boxNum(c.id)}</span>
@@ -295,7 +281,7 @@ export default function Summary() {
           {/* ── Component Details ── */}
           <section>
             <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-              <Users className="w-4 h-4" /> Component Details
+              <Users className="w-4 h-4" /> {t("summary.componentDetails")}
             </h3>
             <div className="space-y-3">
               {TYPES.map(type => {
@@ -303,14 +289,8 @@ export default function Summary() {
                 if (items.length === 0) return null;
                 return items.map(comp => {
                   const status = getComponentStatus(comp.componentIndicators ?? []);
-                  const statusConfig = {
-                    achieved: { label: "Achieved", color: "text-emerald-700 bg-emerald-50 border-emerald-200", icon: CheckCircle2 },
-                    planned: { label: "Planned", color: "text-amber-700 bg-amber-50 border-amber-200", icon: Clock },
-                    overdue: { label: "Overdue", color: "text-red-700 bg-red-50 border-red-200", icon: AlertCircle },
-                    "in-progress": { label: "In Progress", color: "text-blue-700 bg-blue-50 border-blue-200", icon: Target },
-                    "not-set": { label: "Not Set", color: "text-gray-500 bg-gray-50 border-gray-200", icon: MinusCircle },
-                  }[status];
-                  const StatusIcon = statusConfig.icon;
+                  const cfg = statusConfig[status as keyof typeof statusConfig];
+                  const StatusIcon = cfg.icon;
 
                   return (
                     <div key={comp.id} className={`rounded-xl border ${TYPE_COLORS[comp.type]} overflow-hidden`}>
@@ -321,7 +301,7 @@ export default function Summary() {
                           </span>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">{comp.type}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">{t(`summary.types.${comp.type}`, { defaultValue: comp.type })}</span>
                               <h4 className="font-semibold text-sm leading-snug">{comp.title}</h4>
                             </div>
                             {comp.description && (
@@ -329,27 +309,27 @@ export default function Summary() {
                             )}
                           </div>
                         </div>
-                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${statusConfig.color}`}>
+                        <span className={`shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full border ${cfg.color}`}>
                           <StatusIcon className="w-3 h-3" />
-                          {statusConfig.label}
+                          {t(cfg.labelKey)}
                         </span>
                       </div>
 
                       {(comp.componentIndicators ?? []).length > 0 && (
                         <div className="px-4 pb-3 space-y-1.5">
-                          <p className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Indicators</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">{t("summary.indicators")}</p>
                           {(comp.componentIndicators ?? []).map((ind, i) => (
                             <div key={ind.id} className="bg-white/40 rounded-lg px-2.5 py-1.5 text-xs flex items-start gap-2 flex-wrap">
                               <span className="text-[10px] font-bold opacity-50 shrink-0">{i + 1}.</span>
                               <span className="font-medium opacity-90 flex-1 min-w-0">{ind.name}</span>
                               {(ind.targetDate || ind.targetFigure) && (
                                 <span className="text-amber-700 opacity-80 shrink-0">
-                                  Target: {[formatDate(ind.targetDate), ind.targetFigure].filter(Boolean).join(" · ")}
+                                  {t("summary.target")}: {[formatDate(ind.targetDate), ind.targetFigure].filter(Boolean).join(" · ")}
                                 </span>
                               )}
                               {(ind.actualDate || ind.actualFigure) && (
                                 <span className="text-emerald-700 font-medium shrink-0">
-                                  Actual: {[formatDate(ind.actualDate), ind.actualFigure].filter(Boolean).join(" · ")}
+                                  {t("summary.actual")}: {[formatDate(ind.actualDate), ind.actualFigure].filter(Boolean).join(" · ")}
                                 </span>
                               )}
                             </div>
@@ -367,15 +347,15 @@ export default function Summary() {
           {allAssumptions.length > 0 && (
             <section>
               <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-                <Lightbulb className="w-4 h-4" /> Key Assumptions
+                <Lightbulb className="w-4 h-4" /> {t("summary.keyAssumptions")}
               </h3>
               <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-muted/50 border-b border-border">
                       <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground w-10">#</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground w-28">Component</th>
-                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">Assumption</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground w-28">{t("summary.component")}</th>
+                      <th className="text-left px-4 py-2.5 text-xs font-semibold text-muted-foreground">{t("summary.assumption")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -388,7 +368,7 @@ export default function Summary() {
                         </td>
                         <td className="px-4 py-2.5">
                           <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
-                            {comp.type}
+                            {t(`summary.types.${comp.type}`, { defaultValue: comp.type })}
                           </span>
                           <p className="text-xs text-muted-foreground mt-0.5 font-medium">{comp.title}</p>
                         </td>
@@ -407,7 +387,7 @@ export default function Summary() {
           {withTargets.length > 0 && (
             <section>
               <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4" /> Target Timeline
+                <Clock className="w-4 h-4" /> {t("summary.targetTimeline")}
               </h3>
               <div className="relative">
                 <div className="absolute left-[88px] top-0 bottom-0 w-px bg-border" />
@@ -432,7 +412,7 @@ export default function Summary() {
                         </div>
                         <div className="flex-1 pb-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${TYPE_COLORS[comp.type]}`}>{comp.type}</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${TYPE_COLORS[comp.type]}`}>{t(`summary.types.${comp.type}`, { defaultValue: comp.type })}</span>
                             <span className="text-sm font-semibold text-foreground">
                               <span className="text-muted-foreground font-normal mr-1 text-xs">#{boxNum(comp.id)}</span>
                               {comp.title}
@@ -440,8 +420,8 @@ export default function Summary() {
                           </div>
                           <p className="text-xs text-muted-foreground mt-0.5 leading-snug">
                             {ind.name}
-                            {ind.targetFigure ? ` · Target: ${ind.targetFigure}` : ""}
-                            {ind.actualFigure ? ` · Actual: ${ind.actualFigure}` : ""}
+                            {ind.targetFigure ? ` · ${t("summary.target")}: ${ind.targetFigure}` : ""}
+                            {ind.actualFigure ? ` · ${t("summary.actual")}: ${ind.actualFigure}` : ""}
                           </p>
                         </div>
                       </div>
@@ -454,7 +434,7 @@ export default function Summary() {
 
           {/* Footer */}
           <div className="pt-4 border-t border-border/50 text-xs text-muted-foreground">
-            <p>Generated from the Theory of Change platform · {theory.title}</p>
+            <p>{t("summary.footer")} · {theory.title}</p>
           </div>
         </div>
       </div>
