@@ -181,6 +181,109 @@
       "behavioural": "Conductual",
       "enablingEnvironment": "Entorno Habilitador",
       "relational": "Relacional"
+    },
+    "switchFramework": "Cambiar Marco",
+    "addEntry": "Añadir Entrada",
+    "noEntriesHintTable": "Haga clic en 'Añadir Entrada' para comenzar a registrar cambios sistémicos.",
+    "rowNum": "#",
+    "failedToLoad": "Error al cargar entradas",
+    "failedToCreate": "Error al crear entrada",
+    "failedToUpdate": "Error al actualizar entrada",
+    "failedToDelete": "Error al eliminar",
+    "deleteConfirm": "¿Eliminar esta entrada?",
+    "update": "Actualizar",
+    "selectFramework": "Seleccionar Marco",
+    "frameworks": {
+      "chooseTitle": "Elige un Marco de Cambio Sistémico",
+      "chooseSub": "Seleccione el enfoque estándar que mejor se adapte al contexto de su programa. Puede cambiar en cualquier momento — las entradas existentes se conservan.",
+      "bestFor": "Ideal para:",
+      "byOrg": "Por",
+      "aaer": {
+        "label": "Adoptar-Adaptar-Expandir-Responder",
+        "description": "Rastrea cómo los actores del mercado responden a una intervención adoptando nuevas prácticas, adaptándolas, ampliando el alcance o respondiendo a cambios sistémicos.",
+        "useCase": "Ideal para programas de desarrollo de sistemas de mercado (MSD) que rastrean la entrada de competidores y el cambio de comportamiento del sector privado.",
+        "tags": { "adopt": "Adoptar", "adapt": "Adaptar", "expand": "Expandir", "respond": "Responder" },
+        "status": { "confirmed": "Confirmado", "likely": "Probable", "plausible": "Plausible" },
+        "levels": { "actor": "Actor individual", "sector": "A nivel sectorial", "market": "A nivel de mercado" }
+      },
+      "msr": {
+        "label": "Resiliencia del Sistema de Mercado",
+        "description": "Evalúa la capacidad de los sistemas de mercado para absorber impactos, adaptarse y transformarse — yendo más allá de los resultados para comprender la durabilidad del cambio.",
+        "useCase": "Ideal para programas en contextos frágiles o afectados por crisis donde importa la durabilidad del sistema a largo plazo.",
+        "cols": {
+          "frameworkTag": "Dimensión de Resiliencia", "dimension": "Mercado / Subsistema",
+          "description": "Resiliencia Esperada", "changeObserved": "Evidencia Observada",
+          "level": "Nivel del Sistema", "status": "Estado"
+        },
+        "tags": { "robustness": "Robustez", "redundancy": "Redundancia", "rapidity": "Rapidez", "adaptability": "Adaptabilidad", "transformability": "Transformabilidad" },
+        "status": { "emerging": "Emergente", "established": "Establecido", "sustained": "Sostenido" },
+        "levels": { "micro": "Micro", "meso": "Meso", "macro": "Macro" }
+      },
+      "oh": {
+        "label": "Cosecha de Resultados",
+        "description": "Trabaja a partir de los resultados observados — recopilando evidencias de lo que realmente cambió y cómo la intervención contribuyó.",
+        "useCase": "Ideal para programas complejos y emergentes donde la atribución lineal es difícil y la evidencia basada en partes interesadas es importante.",
+        "cols": {
+          "dimension": "Quién Cambió", "frameworkTag": "Tipo de Resultado",
+          "description": "Declaración de Resultado", "changeObserved": "Evidencia y Fuente",
+          "level": "Alcance", "status": "Verificación"
+        },
+        "tags": { "practices": "Prácticas", "policies": "Políticas", "relationships": "Relaciones", "norms": "Normas", "resources": "Recursos" },
+        "status": { "unverified": "No verificado", "partial": "Parcialmente verificado", "verified": "Verificado" },
+        "levels": { "local": "Local", "regional": "Regional", "national": "Nacional" }
+      },
+      "msc": {
+        "label": "Cambio Más Significativo",
+        "description": "Una técnica participativa que recopila historias de cambio significativo de las partes interesadas, que paneles revisan para seleccionar el 'más significativo'.",
+        "useCase": "Ideal para capturar cambios inesperados o cualitativos, elevar las voces de los beneficiarios y comunicar el impacto.",
+        "cols": {
+          "frameworkTag": "Dominio", "dimension": "Título de la Historia",
+          "description": "La Historia", "changeObserved": "¿Por qué es el Más Significativo?",
+          "level": "Alcance", "status": "Estado de Revisión"
+        },
+        "tags": { "livelihoods": "Medios de vida", "access": "Acceso", "empowerment": "Empoderamiento", "environment": "Medio ambiente", "wellbeing": "Bienestar", "other": "Otro" },
+        "status": { "draft": "Borrador", "panel-reviewed": "Revisado por el panel", "verified": "Seleccionado / Verificado" },
+        "levels": { "community": "Comunidad", "district": "Distrito", "national": "Nacional" }
+      }
+    },
+    "timeline": {
+      "title": "Cronograma de la Intervención",
+      "trackingPeriods": "períodos de seguimiento",
+      "pilotIndicator": "Piloto",
+      "notConfigured": "No configurado — haga clic para configurar",
+      "enabledPhases": "Fases AAER Habilitadas",
+      "included": "Incluido",
+      "excluded": "Excluido",
+      "atLeastOneHint": "Alterne las etapas contra las que se puede evaluar a los actores. Al menos una debe permanecer activa.",
+      "pilotPhase": "Fase Piloto",
+      "pilotHint": "Use los presets de selección rápida, o haga clic en cualquier período en la vista previa de la línea de tiempo para alternarlo manualmente como período piloto.",
+      "startYear": "Año de Inicio de la Intervención",
+      "endYear": "Año de Fin de la Intervención",
+      "granularity": "Granularidad del Período",
+      "selectYear": "Seleccionar año",
+      "annual": "Anual (A1, A2…)",
+      "biannual": "Semestral (S1 A1, S2 A1…)",
+      "quarterly": "Trimestral (T1 A1, T2 A1…)",
+      "applyTimeline": "Aplicar Cronograma",
+      "fullTimeline": "Cronograma completo",
+      "periods": "períodos",
+      "pilotPeriods": "piloto",
+      "clickToToggle": "clic para alternar piloto"
+    },
+    "pilotDuration": {
+      "none": { "label": "Sin fase piloto", "desc": "El seguimiento comienza en A1" },
+      "3mo": { "label": "3 meses", "desc": "Piloto corto antes de A1" },
+      "6mo": { "label": "6 meses", "desc": "Piloto semestral antes de A1" },
+      "1yr": { "label": "1 año", "desc": "Piloto anual antes de A1" }
+    },
+    "entry": {
+      "additionalNotes": "Notas Adicionales",
+      "scaleReach": "Escala / Alcance",
+      "confidence": "Confianza",
+      "nameYourPartners": "Nombre a sus socios",
+      "nameYourPartnersHint": "mencione los nombres específicos de las organizaciones o actores en sus comentarios a continuación",
+      "nameYourPartnersHintRespond": "incluidos los posibles nuevos participantes del mercado — aparecerán como sugerencias en el cuadrante de IA",
+      "evidenceSource": "Evidencia / Fuente"
     }
   },
   "language": {

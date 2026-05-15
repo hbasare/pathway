@@ -181,6 +181,109 @@
       "behavioural": "Behavioural",
       "enablingEnvironment": "Enabling Environment",
       "relational": "Relational"
+    },
+    "switchFramework": "Switch Framework",
+    "addEntry": "Add Entry",
+    "noEntriesHintTable": "Click 'Add Entry' to start recording systemic changes.",
+    "rowNum": "#",
+    "failedToLoad": "Failed to load entries",
+    "failedToCreate": "Failed to create entry",
+    "failedToUpdate": "Failed to update entry",
+    "failedToDelete": "Failed to delete",
+    "deleteConfirm": "Delete this entry?",
+    "update": "Update",
+    "selectFramework": "Select Framework",
+    "frameworks": {
+      "chooseTitle": "Choose a Systemic Change Framework",
+      "chooseSub": "Select the industry-standard approach that best fits your programme context. You can switch at any time — existing entries are preserved.",
+      "bestFor": "Best for:",
+      "byOrg": "By",
+      "aaer": {
+        "label": "Adopt-Adapt-Expand-Respond",
+        "description": "Tracks how market actors respond to an intervention by adopting new practices, adapting them, expanding reach, or responding to system-level shifts.",
+        "useCase": "Best for market systems development (MSD) programmes tracking crowding-in and private sector behaviour change.",
+        "tags": { "adopt": "Adopt", "adapt": "Adapt", "expand": "Expand", "respond": "Respond" },
+        "status": { "confirmed": "Confirmed", "likely": "Likely", "plausible": "Plausible" },
+        "levels": { "actor": "Individual actor", "sector": "Sector-wide", "market": "Market-wide" }
+      },
+      "msr": {
+        "label": "Market Systems Resilience",
+        "description": "Assesses the capacity of market systems to absorb shocks, adapt, and transform — going beyond outputs to understand durability of change.",
+        "useCase": "Best for programmes in fragile or crisis-affected contexts where long-term system durability matters.",
+        "cols": {
+          "frameworkTag": "Resilience Dimension", "dimension": "Market / Subsystem",
+          "description": "Expected Resilience", "changeObserved": "Evidence Observed",
+          "level": "System Level", "status": "Status"
+        },
+        "tags": { "robustness": "Robustness", "redundancy": "Redundancy", "rapidity": "Rapidity", "adaptability": "Adaptability", "transformability": "Transformability" },
+        "status": { "emerging": "Emerging", "established": "Established", "sustained": "Sustained" },
+        "levels": { "micro": "Micro", "meso": "Meso", "macro": "Macro" }
+      },
+      "oh": {
+        "label": "Outcome Harvesting",
+        "description": "Works backwards from observed outcomes — collecting evidence of what actually changed and how the intervention contributed.",
+        "useCase": "Best for complex, emergent programmes where linear attribution is difficult and stakeholder-driven evidence matters.",
+        "cols": {
+          "dimension": "Who Changed", "frameworkTag": "Outcome Type",
+          "description": "Outcome Statement", "changeObserved": "Evidence & Source",
+          "level": "Scope", "status": "Verification"
+        },
+        "tags": { "practices": "Practices", "policies": "Policies", "relationships": "Relationships", "norms": "Norms", "resources": "Resources" },
+        "status": { "unverified": "Unverified", "partial": "Partly verified", "verified": "Verified" },
+        "levels": { "local": "Local", "regional": "Regional", "national": "National" }
+      },
+      "msc": {
+        "label": "Most Significant Change",
+        "description": "A participatory technique that collects stories of significant change from stakeholders, which panels then review to select the 'most significant'.",
+        "useCase": "Best for capturing unexpected or qualitative changes, elevating beneficiary voices, and communicating impact.",
+        "cols": {
+          "frameworkTag": "Domain", "dimension": "Story Title",
+          "description": "The Story", "changeObserved": "Why Most Significant?",
+          "level": "Scope", "status": "Review Status"
+        },
+        "tags": { "livelihoods": "Livelihoods", "access": "Access", "empowerment": "Empowerment", "environment": "Environment", "wellbeing": "Wellbeing", "other": "Other" },
+        "status": { "draft": "Draft", "panel-reviewed": "Panel reviewed", "verified": "Selected / Verified" },
+        "levels": { "community": "Community", "district": "District", "national": "National" }
+      }
+    },
+    "timeline": {
+      "title": "Intervention Timeline",
+      "trackingPeriods": "tracking periods",
+      "pilotIndicator": "Pilot",
+      "notConfigured": "Not configured — click to set up",
+      "enabledPhases": "Enabled AAER Phases",
+      "included": "Included",
+      "excluded": "Excluded",
+      "atLeastOneHint": "Toggle which stages actors can be assessed against. At least one must remain active.",
+      "pilotPhase": "Pilot Phase",
+      "pilotHint": "Use the quick-select presets, or click any period in the timeline preview below to manually toggle it as a pilot period.",
+      "startYear": "Intervention Start Year",
+      "endYear": "Intervention End Year",
+      "granularity": "Period Granularity",
+      "selectYear": "Select year",
+      "annual": "Annual (Y1, Y2…)",
+      "biannual": "Bi-annual (H1 Y1, H2 Y1…)",
+      "quarterly": "Quarterly (Q1 Y1, Q2 Y1…)",
+      "applyTimeline": "Apply Timeline",
+      "fullTimeline": "Full timeline",
+      "periods": "periods",
+      "pilotPeriods": "pilot",
+      "clickToToggle": "click to toggle pilot"
+    },
+    "pilotDuration": {
+      "none": { "label": "No pilot phase", "desc": "Tracking starts at Y1" },
+      "3mo": { "label": "3 months", "desc": "Short pilot before Y1" },
+      "6mo": { "label": "6 months", "desc": "Half-year pilot before Y1" },
+      "1yr": { "label": "1 year", "desc": "Full-year pilot before Y1" }
+    },
+    "entry": {
+      "additionalNotes": "Additional Notes",
+      "scaleReach": "Scale / Reach",
+      "confidence": "Confidence",
+      "nameYourPartners": "Name your partners",
+      "nameYourPartnersHint": "mention the specific organisation or actor names in your comments below",
+      "nameYourPartnersHintRespond": "including potential new market entrants — they'll appear as new-entrant suggestions in the AI quadrant",
+      "evidenceSource": "Evidence / Source"
     }
   },
   "language": {

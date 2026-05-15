@@ -181,6 +181,109 @@
       "behavioural": "Gedragsmatig",
       "enablingEnvironment": "Bevorderende Omgeving",
       "relational": "Relationeel"
+    },
+    "switchFramework": "Raamwerk Wijzigen",
+    "addEntry": "Vermelding Toevoegen",
+    "noEntriesHintTable": "Klik op 'Vermelding Toevoegen' om te beginnen met het registreren van systemische veranderingen.",
+    "rowNum": "#",
+    "failedToLoad": "Laden van vermeldingen mislukt",
+    "failedToCreate": "Aanmaken van vermelding mislukt",
+    "failedToUpdate": "Bijwerken van vermelding mislukt",
+    "failedToDelete": "Verwijderen mislukt",
+    "deleteConfirm": "Deze vermelding verwijderen?",
+    "update": "Bijwerken",
+    "selectFramework": "Raamwerk Selecteren",
+    "frameworks": {
+      "chooseTitle": "Kies een Raamwerk voor Systemische Verandering",
+      "chooseSub": "Selecteer de industriestandaard aanpak die het beste past bij uw programmacontext. U kunt op elk moment overschakelen — bestaande vermeldingen blijven bewaard.",
+      "bestFor": "Ideaal voor:",
+      "byOrg": "Door",
+      "aaer": {
+        "label": "Adopteren-Aanpassen-Uitbreiden-Reageren",
+        "description": "Volgt hoe marktactoren reageren op een interventie door nieuwe praktijken te adopteren, aan te passen, het bereik uit te breiden of te reageren op systemische verschuivingen.",
+        "useCase": "Ideaal voor programma's voor marktsysteemontwikkeling (MSD) die de instroom van concurrenten en gedragsverandering in de private sector volgen.",
+        "tags": { "adopt": "Adopteren", "adapt": "Aanpassen", "expand": "Uitbreiden", "respond": "Reageren" },
+        "status": { "confirmed": "Bevestigd", "likely": "Waarschijnlijk", "plausible": "Plausibel" },
+        "levels": { "actor": "Individuele actor", "sector": "Op sectorniveau", "market": "Op marktniveau" }
+      },
+      "msr": {
+        "label": "Marktveerkracht",
+        "description": "Beoordeelt de capaciteit van marktsystemen om schokken op te vangen, zich aan te passen en te transformeren — verder dan outputs om de duurzaamheid van verandering te begrijpen.",
+        "useCase": "Ideaal voor programma's in fragiele of door crises getroffen contexten waar langetermijn systeembestendigheid belangrijk is.",
+        "cols": {
+          "frameworkTag": "Veerkrachtdimensie", "dimension": "Markt / Subsysteem",
+          "description": "Verwachte Veerkracht", "changeObserved": "Waargenomen Bewijs",
+          "level": "Systeemniveau", "status": "Status"
+        },
+        "tags": { "robustness": "Robuustheid", "redundancy": "Redundantie", "rapidity": "Snelheid", "adaptability": "Aanpassingsvermogen", "transformability": "Transformatieverogen" },
+        "status": { "emerging": "Opkomend", "established": "Gevestigd", "sustained": "Volgehouden" },
+        "levels": { "micro": "Micro", "meso": "Meso", "macro": "Macro" }
+      },
+      "oh": {
+        "label": "Resultatenoogst",
+        "description": "Werkt terug vanuit waargenomen resultaten — verzamelt bewijs van wat er werkelijk is veranderd en hoe de interventie heeft bijgedragen.",
+        "useCase": "Ideaal voor complexe, opkomende programma's waar lineaire attributie moeilijk is en op stakeholders gebaseerd bewijs belangrijk is.",
+        "cols": {
+          "dimension": "Wie Veranderde", "frameworkTag": "Type Resultaat",
+          "description": "Resultaatverklaring", "changeObserved": "Bewijs en Bron",
+          "level": "Bereik", "status": "Verificatie"
+        },
+        "tags": { "practices": "Praktijken", "policies": "Beleid", "relationships": "Relaties", "norms": "Normen", "resources": "Middelen" },
+        "status": { "unverified": "Niet geverifieerd", "partial": "Gedeeltelijk geverifieerd", "verified": "Geverifieerd" },
+        "levels": { "local": "Lokaal", "regional": "Regionaal", "national": "Nationaal" }
+      },
+      "msc": {
+        "label": "Meest Significante Verandering",
+        "description": "Een participatieve techniek die verhalen over significante verandering verzamelt van stakeholders, die panels vervolgens beoordelen om de 'meest significante' te selecteren.",
+        "useCase": "Ideaal voor het vastleggen van onverwachte of kwalitatieve veranderingen, het verheffen van de stemmen van begunstigden en het communiceren van impact.",
+        "cols": {
+          "frameworkTag": "Domein", "dimension": "Verhaalstitel",
+          "description": "Het Verhaal", "changeObserved": "Waarom Meest Significant?",
+          "level": "Bereik", "status": "Beoordelingsstatus"
+        },
+        "tags": { "livelihoods": "Bestaansmiddelen", "access": "Toegang", "empowerment": "Empowerment", "environment": "Milieu", "wellbeing": "Welzijn", "other": "Overig" },
+        "status": { "draft": "Concept", "panel-reviewed": "Beoordeeld door panel", "verified": "Geselecteerd / Geverifieerd" },
+        "levels": { "community": "Gemeenschap", "district": "District", "national": "Nationaal" }
+      }
+    },
+    "timeline": {
+      "title": "Interventietijdlijn",
+      "trackingPeriods": "volgperioden",
+      "pilotIndicator": "Pilot",
+      "notConfigured": "Niet geconfigureerd — klik om in te stellen",
+      "enabledPhases": "Ingeschakelde AAER-fasen",
+      "included": "Opgenomen",
+      "excluded": "Uitgesloten",
+      "atLeastOneHint": "Schakel de fasen in waartegen actoren kunnen worden beoordeeld. Ten minste één moet actief blijven.",
+      "pilotPhase": "Pilotfase",
+      "pilotHint": "Gebruik de snelkeuzepresets, of klik op een periode in de tijdlijnvoorbeeldweergave hieronder om deze handmatig als pilotperiode in te schakelen.",
+      "startYear": "Startjaar Interventie",
+      "endYear": "Eindjaar Interventie",
+      "granularity": "Periodekorrelheid",
+      "selectYear": "Selecteer jaar",
+      "annual": "Jaarlijks (J1, J2…)",
+      "biannual": "Halfjaarlijks (H1 J1, H2 J1…)",
+      "quarterly": "Kwartaal (K1 J1, K2 J1…)",
+      "applyTimeline": "Tijdlijn Toepassen",
+      "fullTimeline": "Volledige tijdlijn",
+      "periods": "perioden",
+      "pilotPeriods": "pilot",
+      "clickToToggle": "klik om pilot te wisselen"
+    },
+    "pilotDuration": {
+      "none": { "label": "Geen pilotfase", "desc": "Volgen begint bij J1" },
+      "3mo": { "label": "3 maanden", "desc": "Korte pilot vóór J1" },
+      "6mo": { "label": "6 maanden", "desc": "Halfjaarlijkse pilot vóór J1" },
+      "1yr": { "label": "1 jaar", "desc": "Jaarlijkse pilot vóór J1" }
+    },
+    "entry": {
+      "additionalNotes": "Aanvullende Notities",
+      "scaleReach": "Schaal / Bereik",
+      "confidence": "Zekerheid",
+      "nameYourPartners": "Noem uw partners",
+      "nameYourPartnersHint": "vermeld de specifieke namen van organisaties of actoren in uw opmerkingen hieronder",
+      "nameYourPartnersHintRespond": "inclusief potentiële nieuwe markttoetreders — deze verschijnen als suggesties in het IA-kwadrant",
+      "evidenceSource": "Bewijs / Bron"
     }
   },
   "language": {

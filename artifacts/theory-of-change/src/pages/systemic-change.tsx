@@ -278,18 +278,22 @@ function TagBadge({ value, fw }: { value: string; fw: FrameworkDef }) {
     wellbeing: "bg-rose-100 text-rose-800 border-rose-300",
     other: "bg-muted text-muted-foreground border-border",
   };
+  const { t } = useTranslation();
+  const label = opt ? t(`systemicChange.frameworks.${fw.key}.tags.${opt.value}`, { defaultValue: opt.label }) : value;
   return (
     <span className={`inline-block text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${colors[value] ?? "bg-muted text-muted-foreground border-border"}`}>
-      {opt?.label ?? value}
+      {label}
     </span>
   );
 }
 
 function StatusBadge({ value, fw }: { value: string; fw: FrameworkDef }) {
+  const { t } = useTranslation();
   const opt = fw.statusOptions.find(o => o.value === value);
+  const label = opt ? t(`systemicChange.frameworks.${fw.key}.status.${opt.value}`, { defaultValue: opt.label }) : value;
   return (
     <span className={`inline-block text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border ${opt?.color ?? "bg-muted text-muted-foreground border-border"}`}>
-      {opt?.label ?? value}
+      {label}
     </span>
   );
 }
@@ -299,7 +303,9 @@ function EntryRow({ entry, rowNum, fw, onEdit, onDelete }: {
   entry: Entry; rowNum: number; fw: FrameworkDef;
   onEdit: () => void; onDelete: () => void;
 }) {
-  const levelLabel = fw.levelOptions.find(l => l.value === entry.level)?.label ?? entry.level;
+  const { t } = useTranslation();
+  const rawLevel = fw.levelOptions.find(l => l.value === entry.level);
+  const levelLabel = rawLevel ? t(`systemicChange.frameworks.${fw.key}.levels.${rawLevel.value}`, { defaultValue: rawLevel.label }) : entry.level;
   const cellVal = (key: keyof Entry) => {
     const val = entry[key] as string;
     return val ? <span className="leading-snug">{val}</span> : <span className="italic text-muted-foreground/40">—</span>;
@@ -336,6 +342,7 @@ function EditRow({ initial, rowNum, fw, onSave, onCancel }: {
   onSave: (d: Omit<Entry, "id" | "theoryId" | "position">) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [vals, setVals] = useState<Record<string, string>>({
     dimension:      initial.dimension      ?? "",
     description:    initial.description    ?? "",
@@ -357,7 +364,7 @@ function EditRow({ initial, rowNum, fw, onSave, onCancel }: {
               <SelectContent>
                 {fw.tagOptions.map(o => (
                   <SelectItem key={o.value} value={o.value}>
-                    <span className="font-medium">{o.label}</span>
+                    <span className="font-medium">{t(`systemicChange.frameworks.${fw.key}.tags.${o.value}`, { defaultValue: o.label })}</span>
                     {o.desc && <span className="ml-1 text-xs text-muted-foreground">— {o.desc}</span>}
                   </SelectItem>
                 ))}
@@ -367,23 +374,23 @@ function EditRow({ initial, rowNum, fw, onSave, onCancel }: {
             <Select value={vals.status} onValueChange={v => set("status", v)}>
               <SelectTrigger className="text-sm h-8"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{t(`systemicChange.frameworks.${fw.key}.status.${o.value}`, { defaultValue: o.label })}</SelectItem>)}
               </SelectContent>
             </Select>
           ) : col.isLevel ? (
             <Select value={vals.level} onValueChange={v => set("level", v)}>
               <SelectTrigger className="text-sm h-8"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{t(`systemicChange.frameworks.${fw.key}.levels.${o.value}`, { defaultValue: o.label })}</SelectItem>)}
               </SelectContent>
             </Select>
           ) : col.textarea ? (
             <Textarea value={vals[col.key as string]} onChange={e => set(col.key as string, e.target.value)}
-              className="text-sm min-h-[64px]" placeholder={col.header + "…"} />
+              className="text-sm min-h-[64px]" placeholder={t(`systemicChange.frameworks.${fw.key}.cols.${col.key}`, { defaultValue: col.header }) + "…"} />
           ) : (
             <input value={vals[col.key as string]} onChange={e => set(col.key as string, e.target.value)}
               className="w-full text-sm h-8 px-3 rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-              placeholder={col.header + "…"} />
+              placeholder={t(`systemicChange.frameworks.${fw.key}.cols.${col.key}`, { defaultValue: col.header }) + "…"} />
           )}
         </td>
       ))}
@@ -404,15 +411,16 @@ function EditRow({ initial, rowNum, fw, onSave, onCancel }: {
 
 // ─── Framework selector ───────────────────────────────────────────────────────
 function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void }) {
+  const { t } = useTranslation();
   return (
     <div className="max-w-4xl mx-auto px-6 py-10">
       <div className="text-center mb-10">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
           <GitBranch className="w-6 h-6 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold mb-2">Choose a Systemic Change Framework</h2>
+        <h2 className="text-2xl font-bold mb-2">{t("systemicChange.frameworks.chooseTitle")}</h2>
         <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-          Select the industry-standard approach that best fits your programme context. You can switch at any time — existing entries are preserved.
+          {t("systemicChange.frameworks.chooseSub")}
         </p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -422,15 +430,15 @@ function FrameworkSelector({ onSelect }: { onSelect: (key: FrameworkKey) => void
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <span className={`inline-block text-xs font-bold uppercase tracking-widest text-white px-2.5 py-1 rounded-full mb-2 ${fw.accent}`}>{fw.abbr}</span>
-                <h3 className="text-sm font-bold leading-snug">{fw.label}</h3>
-                <p className="text-[11px] text-muted-foreground mt-0.5">By {fw.org}</p>
+                <h3 className="text-sm font-bold leading-snug">{t(`systemicChange.frameworks.${fw.key}.label`)}</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{t("systemicChange.frameworks.byOrg")} {fw.org}</p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground/50 shrink-0 mt-1 group-hover:text-foreground transition-colors" />
             </div>
-            <p className="text-xs text-foreground/80 leading-relaxed mb-3">{fw.description}</p>
+            <p className="text-xs text-foreground/80 leading-relaxed mb-3">{t(`systemicChange.frameworks.${fw.key}.description`)}</p>
             <div className="rounded-lg bg-white/60 border border-white/80 px-3 py-2">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                <span className="font-semibold text-foreground">Best for: </span>{fw.useCase}
+                <span className="font-semibold text-foreground">{t("systemicChange.frameworks.bestFor")} </span>{t(`systemicChange.frameworks.${fw.key}.useCase`)}
               </p>
             </div>
           </button>
@@ -455,6 +463,7 @@ function AaerSettingsPanel({ settings, onSave }: {
   settings: AaerSettings;
   onSave: (s: AaerSettings) => void;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(!settings.startYear);
   const [local, setLocal] = useState(settings);
   const curYear = new Date().getFullYear();
@@ -481,16 +490,16 @@ function AaerSettingsPanel({ settings, onSave }: {
         className="w-full flex items-center gap-3 px-5 py-3 text-left hover:bg-violet-100 transition-colors">
         <Settings className="w-4 h-4 text-violet-600 shrink-0" />
         <div className="flex-1 min-w-0">
-          <span className="text-sm font-semibold text-violet-900">Intervention Timeline</span>
+          <span className="text-sm font-semibold text-violet-900">{t("systemicChange.timeline.title")}</span>
           {settings.startYear && settings.endYear ? (
             <span className="ml-3 text-xs text-violet-600">
-              {settings.startYear}–{settings.endYear} · {settings.granularity} · {generatePeriods(settings.startYear, settings.endYear, settings.granularity).length} tracking periods
+              {settings.startYear}–{settings.endYear} · {settings.granularity} · {generatePeriods(settings.startYear, settings.endYear, settings.granularity).length} {t("systemicChange.timeline.trackingPeriods")}
               {settings.pilotDuration !== "none" && (
-                <span className="ml-1 text-amber-600 font-semibold">· Pilot: {pilotLabel}</span>
+                <span className="ml-1 text-amber-600 font-semibold">· {t("systemicChange.timeline.pilotIndicator")}: {pilotLabel}</span>
               )}
             </span>
           ) : (
-            <span className="ml-3 text-xs text-violet-500 italic">Not configured — click to set up</span>
+            <span className="ml-3 text-xs text-violet-500 italic">{t("systemicChange.timeline.notConfigured")}</span>
           )}
         </div>
         {open ? <ChevronUp className="w-4 h-4 text-violet-500" /> : <ChevronDown className="w-4 h-4 text-violet-500" />}
@@ -500,7 +509,7 @@ function AaerSettingsPanel({ settings, onSave }: {
         <div className="border-t border-violet-200 px-5 py-4 bg-white/70 space-y-4">
           {/* Enabled AAER Phases */}
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-2 block">Enabled AAER Phases</Label>
+            <Label className="text-xs font-semibold text-muted-foreground mb-2 block">{t("systemicChange.timeline.enabledPhases")}</Label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {(["adopt","adapt","expand","respond"] as const).map(stage => {
                 const s = AAER_STAGE_COLORS[stage];
@@ -517,25 +526,25 @@ function AaerSettingsPanel({ settings, onSave }: {
                 };
                 return (
                   <button key={stage} onClick={toggle}
-                    title={isLast ? "At least one phase must be enabled" : undefined}
+                    title={isLast ? t("systemicChange.timeline.atLeastOneHint") : undefined}
                     className={`rounded-lg border-2 px-3 py-2 text-center transition-all relative ${
                       isOn
                         ? `${s.bg} ${s.border} ${s.text} shadow-sm`
                         : "border-border bg-background text-muted-foreground/50 opacity-60"
                     } ${isLast ? "cursor-not-allowed" : "hover:opacity-90"}`}>
                     <div className="text-xs font-bold capitalize">{stage}</div>
-                    <div className="text-[10px] mt-0.5 opacity-70 leading-tight">{isOn ? "Included" : "Excluded"}</div>
+                    <div className="text-[10px] mt-0.5 opacity-70 leading-tight">{isOn ? t("systemicChange.timeline.included") : t("systemicChange.timeline.excluded")}</div>
                   </button>
                 );
               })}
             </div>
-            <p className="text-[11px] text-muted-foreground/70 mt-1.5">Toggle which stages actors can be assessed against. At least one must remain active.</p>
+            <p className="text-[11px] text-muted-foreground/70 mt-1.5">{t("systemicChange.timeline.atLeastOneHint")}</p>
           </div>
 
           {/* Pilot periods */}
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Pilot Phase</Label>
-            <p className="text-[11px] text-muted-foreground/70 mb-2">Use the quick-select presets, or click any period in the timeline preview below to manually toggle it as a pilot period.</p>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{t("systemicChange.timeline.pilotPhase")}</Label>
+            <p className="text-[11px] text-muted-foreground/70 mb-2">{t("systemicChange.timeline.pilotHint")}</p>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {PILOT_DURATION_OPTIONS.map(opt => (
                 <button key={opt.value} onClick={() => setLocal(p => ({
@@ -548,8 +557,8 @@ function AaerSettingsPanel({ settings, onSave }: {
                       ? "bg-amber-100 border-amber-400 text-amber-900"
                       : "border-border bg-background hover:bg-muted text-muted-foreground"
                   }`}>
-                  <div className="text-xs font-bold">{opt.label}</div>
-                  <div className="text-[10px] mt-0.5 opacity-70 leading-tight">{opt.desc}</div>
+                  <div className="text-xs font-bold">{t(`systemicChange.pilotDuration.${opt.value}.label`, { defaultValue: opt.label })}</div>
+                  <div className="text-[10px] mt-0.5 opacity-70 leading-tight">{t(`systemicChange.pilotDuration.${opt.value}.desc`, { defaultValue: opt.desc })}</div>
                 </button>
               ))}
             </div>
@@ -558,31 +567,31 @@ function AaerSettingsPanel({ settings, onSave }: {
           {/* Start / End / Granularity */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Intervention Start Year</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{t("systemicChange.timeline.startYear")}</Label>
               <Select value={String(local.startYear || "")} onValueChange={v => setLocal(p => ({ ...p, startYear: Number(v) }))}>
-                <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Select year" /></SelectTrigger>
+                <SelectTrigger className="text-sm h-9"><SelectValue placeholder={t("systemicChange.timeline.selectYear")} /></SelectTrigger>
                 <SelectContent>
                   {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Intervention End Year</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{t("systemicChange.timeline.endYear")}</Label>
               <Select value={String(local.endYear || "")} onValueChange={v => setLocal(p => ({ ...p, endYear: Number(v) }))}>
-                <SelectTrigger className="text-sm h-9"><SelectValue placeholder="Select year" /></SelectTrigger>
+                <SelectTrigger className="text-sm h-9"><SelectValue placeholder={t("systemicChange.timeline.selectYear")} /></SelectTrigger>
                 <SelectContent>
                   {years.map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Period Granularity</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{t("systemicChange.timeline.granularity")}</Label>
               <Select value={local.granularity} onValueChange={v => setLocal(p => ({ ...p, granularity: v as Granularity }))}>
                 <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="annual">Annual (Y1, Y2…)</SelectItem>
-                  <SelectItem value="biannual">Bi-annual (H1 Y1, H2 Y1…)</SelectItem>
-                  <SelectItem value="quarterly">Quarterly (Q1 Y1, Q2 Y1…)</SelectItem>
+                  <SelectItem value="annual">{t("systemicChange.timeline.annual")}</SelectItem>
+                  <SelectItem value="biannual">{t("systemicChange.timeline.biannual")}</SelectItem>
+                  <SelectItem value="quarterly">{t("systemicChange.timeline.quarterly")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -592,8 +601,8 @@ function AaerSettingsPanel({ settings, onSave }: {
           {allPeriods.length > 0 && (
             <div>
               <p className="text-[11px] font-semibold text-muted-foreground mb-2">
-                Full timeline ({allPeriods.length} periods
-                {local.pilotPeriods.length > 0 && `, ${local.pilotPeriods.length} pilot`}) — click to toggle pilot:
+                {t("systemicChange.timeline.fullTimeline")} ({allPeriods.length} {t("systemicChange.timeline.periods")}
+                {local.pilotPeriods.length > 0 && `, ${local.pilotPeriods.length} ${t("systemicChange.timeline.pilotPeriods")}`}) — {t("systemicChange.timeline.clickToToggle")}:
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {allPeriods.map(p => {
@@ -613,7 +622,7 @@ function AaerSettingsPanel({ settings, onSave }: {
                           : "bg-violet-100 text-violet-700 border-violet-200 hover:bg-violet-200"
                       }`}>
                       {p}
-                      {isP && <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">· Pilot</span>}
+                      {isP && <span className="text-[9px] font-bold uppercase tracking-wider opacity-70">· {t("systemicChange.timeline.pilotIndicator")}</span>}
                     </button>
                   );
                 })}
@@ -623,7 +632,7 @@ function AaerSettingsPanel({ settings, onSave }: {
 
           <Button size="sm" className="bg-violet-600 hover:bg-violet-700 text-white" onClick={handleSave}
             disabled={!local.startYear || !local.endYear || local.endYear < local.startYear}>
-            <Check className="w-3.5 h-3.5 mr-1.5" />Apply Timeline
+            <Check className="w-3.5 h-3.5 mr-1.5" />{t("systemicChange.timeline.applyTimeline")}
           </Button>
         </div>
       )}
@@ -1129,6 +1138,7 @@ function AaerCellPanel({ state, onClose, onSave, onDelete, fw, customQuestions, 
   customQuestions?: CustomQuestion[];
   pilotPeriods?: string[];
 }) {
+  const { t: tCommon } = useTranslation();
   const raw = state.entry?.stageData ?? "{}";
   const isPilot = pilotPeriods.includes(state.period);
   const [vals, setVals] = useState({
@@ -1289,23 +1299,23 @@ function AaerCellPanel({ state, onClose, onSave, onDelete, fw, customQuestions, 
 
         {/* Common fields */}
         <div className="border-t border-border pt-4 space-y-3">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Additional Notes</p>
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{tCommon("systemicChange.entry.additionalNotes")}</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Scale / Reach</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{tCommon("systemicChange.entry.scaleReach")}</Label>
               <Select value={vals.level} onValueChange={v => set("level", v)}>
                 <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  {fw.levelOptions.map(o => <SelectItem key={o.value} value={o.value}>{tCommon(`systemicChange.frameworks.${fw.key}.levels.${o.value}`, { defaultValue: o.label })}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Confidence</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{tCommon("systemicChange.entry.confidence")}</Label>
               <Select value={vals.status} onValueChange={v => set("status", v)}>
                 <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                  {fw.statusOptions.map(o => <SelectItem key={o.value} value={o.value}>{tCommon(`systemicChange.frameworks.${fw.key}.status.${o.value}`, { defaultValue: o.label })}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -1314,10 +1324,9 @@ function AaerCellPanel({ state, onClose, onSave, onDelete, fw, customQuestions, 
           <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200">
             <span className="text-amber-500 text-sm shrink-0 mt-0.5">💡</span>
             <p className="text-[11px] text-amber-800 leading-snug">
-              <span className="font-semibold">Name your partners</span> — mention the specific organisation or actor names in your comments below
-              {vals.frameworkTag === "respond"
-                ? " (including potential new market entrants — they'll appear as new-entrant suggestions in the AI quadrant)."
-                : " so the AI can place them in the correct quadrant cell."}
+              <span className="font-semibold">{tCommon("systemicChange.entry.nameYourPartners")}</span> — {vals.frameworkTag === "respond"
+                ? tCommon("systemicChange.entry.nameYourPartnersHintRespond")
+                : tCommon("systemicChange.entry.nameYourPartnersHint")}
             </p>
           </div>
           <div>
@@ -1329,7 +1338,7 @@ function AaerCellPanel({ state, onClose, onSave, onDelete, fw, customQuestions, 
               placeholder="Describe what this actor did during this period…" />
           </div>
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Evidence / Source</Label>
+            <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{tCommon("systemicChange.entry.evidenceSource")}</Label>
             <Textarea value={vals.changeObserved} onChange={e => set("changeObserved", e.target.value)}
               className="text-sm min-h-[48px]" placeholder="Data, observations, or sources confirming this change…" />
           </div>
@@ -1340,12 +1349,12 @@ function AaerCellPanel({ state, onClose, onSave, onDelete, fw, customQuestions, 
       <div className="flex items-center gap-2 px-4 py-3 border-t border-border shrink-0">
         {state.entry && (
           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive mr-auto" onClick={onDelete}>
-            <Trash2 className="w-3.5 h-3.5 mr-1.5" />Delete
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />{tCommon("common.delete")}
           </Button>
         )}
-        <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+        <Button variant="outline" size="sm" onClick={onClose}>{tCommon("common.cancel")}</Button>
         <Button size="sm" onClick={handleSave} className="bg-violet-600 hover:bg-violet-700 text-white">
-          <Check className="w-3.5 h-3.5 mr-1.5" />{state.entry ? "Update" : "Save"}
+          <Check className="w-3.5 h-3.5 mr-1.5" />{state.entry ? tCommon("systemicChange.update") : tCommon("common.save")}
         </Button>
       </div>
     </div>
@@ -2964,13 +2973,13 @@ function MsrSettingsPanel({ settings, onSave }: { settings: MsrSettings; onSave:
               </Select>
             </div>
             <div>
-              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">Period Granularity</Label>
+              <Label className="text-xs font-semibold text-muted-foreground mb-1.5 block">{t("systemicChange.timeline.granularity")}</Label>
               <Select value={local.granularity} onValueChange={v => setLocal(p => ({ ...p, granularity: v as Granularity }))}>
                 <SelectTrigger className="text-sm h-9"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="annual">Annual (Y1, Y2…)</SelectItem>
-                  <SelectItem value="biannual">Bi-annual (H1 Y1, H2 Y1…)</SelectItem>
-                  <SelectItem value="quarterly">Quarterly (Q1 Y1, Q2 Y1…)</SelectItem>
+                  <SelectItem value="annual">{t("systemicChange.timeline.annual")}</SelectItem>
+                  <SelectItem value="biannual">{t("systemicChange.timeline.biannual")}</SelectItem>
+                  <SelectItem value="quarterly">{t("systemicChange.timeline.quarterly")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -3748,6 +3757,7 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export default function SystemicChange() {
+  const { t } = useTranslation();
   const [, params] = useRoute("/theory/:id/systemic-change");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -3778,7 +3788,7 @@ export default function SystemicChange() {
       if (!res.ok) throw new Error(await res.text());
       setEntries(await res.json());
     } catch (err) {
-      toast({ title: "Failed to load entries", description: String(err), variant: "destructive" });
+      toast({ title: t("systemicChange.failedToLoad"), description: String(err), variant: "destructive" });
     } finally { setLoading(false); setLoaded(true); }
   };
 
@@ -3847,7 +3857,7 @@ export default function SystemicChange() {
       setAddingRow(false);
       setCellModal(null);
     } catch (err) {
-      toast({ title: "Failed to create entry", description: String(err), variant: "destructive" });
+      toast({ title: t("systemicChange.failedToCreate"), description: String(err), variant: "destructive" });
     }
   };
 
@@ -3863,18 +3873,18 @@ export default function SystemicChange() {
       setEditingId(null);
       setCellModal(null);
     } catch (err) {
-      toast({ title: "Failed to update entry", description: String(err), variant: "destructive" });
+      toast({ title: t("systemicChange.failedToUpdate"), description: String(err), variant: "destructive" });
     }
   };
 
   const handleDelete = async (entryId: number) => {
-    if (!window.confirm("Delete this entry?")) return;
+    if (!window.confirm(t("systemicChange.deleteConfirm"))) return;
     try {
       await fetch(`${API_BASE}/theories/${id}/systemic-changes/${entryId}`, { method: "DELETE", credentials: "include" });
       setEntries(prev => prev.filter(e => e.id !== entryId));
       setCellModal(null);
     } catch (err) {
-      toast({ title: "Failed to delete", description: String(err), variant: "destructive" });
+      toast({ title: t("systemicChange.failedToDelete"), description: String(err), variant: "destructive" });
     }
   };
 
@@ -3901,7 +3911,7 @@ export default function SystemicChange() {
           </Button>
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-bold leading-tight truncate">{theory.title}</h1>
-            <p className="text-xs text-muted-foreground">Systemic Change — Select Framework</p>
+            <p className="text-xs text-muted-foreground">{t("theory.systemicChange")} — {t("systemicChange.selectFramework")}</p>
           </div>
         </header>
         <FrameworkSelector onSelect={handleSelectFramework} />
@@ -3936,17 +3946,17 @@ export default function SystemicChange() {
         <div className="flex-1 min-w-0">
           <h1 className="text-lg font-bold leading-tight truncate">{theory.title}</h1>
           <div className="flex items-center gap-2 mt-0.5">
-            <p className="text-xs text-muted-foreground">Systemic Change</p>
+            <p className="text-xs text-muted-foreground">{t("theory.systemicChange")}</p>
             <span className={`text-[10px] font-bold uppercase tracking-widest text-white px-2 py-0.5 rounded-full ${fw!.accent}`}>{fw!.abbr}</span>
           </div>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowSelector(true)}>
-            <RefreshCw className="w-3.5 h-3.5" /><span className="hidden sm:inline">Switch Framework</span>
+            <RefreshCw className="w-3.5 h-3.5" /><span className="hidden sm:inline">{t("systemicChange.switchFramework")}</span>
           </Button>
           {!isAaer && !isMsr && (
             <Button size="sm" className="gap-2" onClick={() => { setAddingRow(true); setEditingId(null); }}>
-              <Plus className="w-4 h-4" />Add Entry
+              <Plus className="w-4 h-4" />{t("systemicChange.addEntry")}
             </Button>
           )}
         </div>
@@ -3961,10 +3971,10 @@ export default function SystemicChange() {
           </div>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="text-sm font-bold">{fw!.label}</span>
+              <span className="text-sm font-bold">{t(`systemicChange.frameworks.${fw!.key}.label`)}</span>
               <span className="text-[10px] text-muted-foreground">· {fw!.org}</span>
             </div>
-            <p className="text-xs text-foreground/80 leading-relaxed">{fw!.description}</p>
+            <p className="text-xs text-foreground/80 leading-relaxed">{t(`systemicChange.frameworks.${fw!.key}.description`)}</p>
           </div>
         </div>
 
@@ -4028,11 +4038,11 @@ export default function SystemicChange() {
                 <table className="w-full text-sm border-collapse min-w-[900px]">
                   <thead>
                     <tr className="bg-muted/60 border-b border-border">
-                      <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-10">#</th>
+                      <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-10">{t("systemicChange.rowNum")}</th>
                       {fw!.cols.map(col => (
                         <th key={col.key} className={`text-left px-3 py-3 font-semibold text-muted-foreground text-xs ${col.width ?? ""}`}>
                           <div className="flex items-center gap-1">
-                            {col.header}
+                            {t(`systemicChange.frameworks.${fw!.key}.cols.${col.key}`, { defaultValue: col.header })}
                             {col.tooltip && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -4066,8 +4076,8 @@ export default function SystemicChange() {
                       <tr>
                         <td colSpan={fw!.cols.length + 2} className="px-4 py-14 text-center">
                           <GitBranch className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
-                          <p className="text-sm font-medium text-muted-foreground">No entries yet</p>
-                          <p className="text-xs text-muted-foreground/60 mt-1">Click "Add Entry" to start recording systemic changes.</p>
+                          <p className="text-sm font-medium text-muted-foreground">{t("systemicChange.noEntriesYet")}</p>
+                          <p className="text-xs text-muted-foreground/60 mt-1">{t("systemicChange.noEntriesHintTable")}</p>
                         </td>
                       </tr>
                     )}
@@ -4077,7 +4087,7 @@ export default function SystemicChange() {
             </div>
             {!addingRow && entries.length > 0 && (
               <Button variant="outline" size="sm" className="gap-2" onClick={() => { setAddingRow(true); setEditingId(null); }}>
-                <Plus className="w-4 h-4" />Add Entry
+                <Plus className="w-4 h-4" />{t("systemicChange.addEntry")}
               </Button>
             )}
           </>
