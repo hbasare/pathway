@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useTranslation } from "react-i18next";
 
 interface OrgUser {
   id: number;
@@ -17,16 +18,17 @@ interface OrgUser {
 }
 
 function RoleBadge({ role }: { role: string }) {
+  const { t } = useTranslation();
   if (role === "manager") {
     return (
       <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
-        <Shield className="w-3 h-3" /> Evaluation Manager
+        <Shield className="w-3 h-3" /> {t("userManagement.manager")}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full px-2 py-0.5">
-      <User className="w-3 h-3" /> Member
+      <User className="w-3 h-3" /> {t("userManagement.member")}
     </span>
   );
 }
@@ -35,6 +37,7 @@ export default function UserManagementPage() {
   const { user: currentUser } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const { t } = useTranslation();
 
   const [users, setUsers] = useState<OrgUser[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -151,14 +154,14 @@ export default function UserManagementPage() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4 mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-foreground">User Management</h2>
+            <h2 className="text-2xl font-bold text-foreground">{t("userManagement.title")}</h2>
             <p className="text-sm text-muted-foreground mt-1">
               {currentUser?.orgName} · Manage who has access to this organization
             </p>
           </div>
           {!showAddForm && (
             <Button onClick={() => setShowAddForm(true)} className="gap-2 shrink-0">
-              <Plus className="w-4 h-4" /> Add User
+              <Plus className="w-4 h-4" /> {t("userManagement.addUser")}
             </Button>
           )}
         </div>
@@ -167,7 +170,7 @@ export default function UserManagementPage() {
         {showAddForm && (
           <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 mb-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-foreground">Add New User</h3>
+              <h3 className="font-semibold text-foreground">{t("userManagement.addUser")}</h3>
               <button onClick={() => setShowAddForm(false)} className="text-muted-foreground hover:text-foreground">
                 <X className="w-4 h-4" />
               </button>
@@ -175,21 +178,21 @@ export default function UserManagementPage() {
             <form onSubmit={handleAdd} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Full name</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("auth.fullName")}</label>
                   <Input value={newDisplayName} onChange={e => setNewDisplayName(e.target.value)} placeholder="Jane Smith" disabled={addLoading} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Username *</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("auth.username")} *</label>
                   <Input value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="jsmith" autoFocus disabled={addLoading} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Password * (min 8 chars)</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("auth.password")} * (min 8 chars)</label>
                   <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" disabled={addLoading} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Role</label>
+                  <label className="text-xs font-medium text-muted-foreground">{t("userManagement.role")}</label>
                   <div className="relative">
                     <select
                       value={newRole}
@@ -197,8 +200,8 @@ export default function UserManagementPage() {
                       className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm appearance-none pr-8"
                       disabled={addLoading}
                     >
-                      <option value="member">Member</option>
-                      <option value="manager">Evaluation Manager</option>
+                      <option value="member">{t("userManagement.member")}</option>
+                      <option value="manager">{t("userManagement.manager")}</option>
                     </select>
                     <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-muted-foreground pointer-events-none" />
                   </div>
@@ -207,22 +210,22 @@ export default function UserManagementPage() {
               <div className="flex gap-2">
                 <Button type="submit" size="sm" className="gap-2" disabled={addLoading || !newUsername.trim() || !newPassword}>
                   {addLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  Add User
+                  {t("userManagement.addUser")}
                 </Button>
                 <Button type="button" size="sm" variant="ghost" onClick={() => setShowAddForm(false)} disabled={addLoading}>
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </div>
             </form>
           </div>
         )}
 
-        {/* Password reset modal */}
+        {/* Password reset form */}
         {resetUserId !== null && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 mb-6 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
-                <KeyRound className="w-4 h-4 text-amber-600" /> Reset Password
+                <KeyRound className="w-4 h-4 text-amber-600" /> {t("userManagement.resetPassword")}
               </h3>
               <button onClick={() => { setResetUserId(null); setResetPassword(""); }} className="text-muted-foreground hover:text-foreground">
                 <X className="w-4 h-4" />
@@ -233,14 +236,14 @@ export default function UserManagementPage() {
                 type="password"
                 value={resetPassword}
                 onChange={e => setResetPassword(e.target.value)}
-                placeholder="New password (min 8 chars)"
+                placeholder={t("userManagement.newPassword") + " (min 8 chars)"}
                 autoFocus
                 disabled={resetLoading}
                 className="flex-1"
               />
               <Button type="submit" size="sm" disabled={resetLoading || resetPassword.length < 8} className="gap-1.5">
                 {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                Save
+                {t("userManagement.setPassword")}
               </Button>
             </form>
           </div>
@@ -252,7 +255,7 @@ export default function UserManagementPage() {
             <thead>
               <tr className="bg-muted/60 border-b border-border">
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">User</th>
-                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">Role</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">{t("userManagement.role")}</th>
                 <th className="w-40 px-4 py-3" />
               </tr>
             </thead>
@@ -283,7 +286,7 @@ export default function UserManagementPage() {
                           size="icon"
                           variant="ghost"
                           className="h-7 w-7 text-muted-foreground hover:text-amber-600"
-                          title="Reset password"
+                          title={t("userManagement.resetPassword")}
                           onClick={() => { setResetUserId(u.id); setResetPassword(""); }}
                         >
                           <KeyRound className="w-3.5 h-3.5" />
@@ -292,7 +295,7 @@ export default function UserManagementPage() {
                           size="icon"
                           variant="ghost"
                           className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          title="Remove user"
+                          title={t("userManagement.deleteUser")}
                           onClick={() => handleDelete(u.id, u.username)}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -308,7 +311,7 @@ export default function UserManagementPage() {
               {users.length === 0 && loaded && (
                 <tr>
                   <td colSpan={3} className="px-4 py-10 text-center text-sm text-muted-foreground italic">
-                    No users yet. Click "Add User" to get started.
+                    No users yet. Click "{t("userManagement.addUser")}" to get started.
                   </td>
                 </tr>
               )}

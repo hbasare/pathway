@@ -19,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "react-i18next";
 
 type ActiveTab = "about" | "business-model" | "canvas" | "notes" | "risk";
 
@@ -28,6 +29,7 @@ export default function TheoryDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { t } = useTranslation();
 
   const { data: theory, isLoading, error } = useGetTheory(id, {
     query: { enabled: !!id }
@@ -40,15 +42,15 @@ export default function TheoryDetail() {
     mutation: {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListTheoriesQueryKey() });
-        toast({ title: "Theory deleted successfully" });
+        toast({ title: t("theory.deleted") });
         setLocation("/");
       },
-      onError: () => toast({ title: "Failed to delete theory", variant: "destructive" })
+      onError: () => toast({ title: t("theory.deleteFailed"), variant: "destructive" })
     }
   });
 
   const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete "${theory?.title}"? All components and connections will be lost.`)) {
+    if (window.confirm(t("theory.deleteConfirm", { title: theory?.title }))) {
       deleteMutation.mutate({ id });
     }
   };
@@ -64,9 +66,9 @@ export default function TheoryDetail() {
   if (error || !theory) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center h-full">
-        <h2 className="text-2xl font-bold text-foreground mb-2">Theory Not Found</h2>
-        <p className="text-muted-foreground mb-6">The theory you are looking for does not exist or has been deleted.</p>
-        <Button onClick={() => setLocation("/")}><ArrowLeft className="w-4 h-4 mr-2"/> Back to Dashboard</Button>
+        <h2 className="text-2xl font-bold text-foreground mb-2">{t("theory.notFound")}</h2>
+        <p className="text-muted-foreground mb-6">{t("theory.notFoundDesc")}</p>
+        <Button onClick={() => setLocation("/")}><ArrowLeft className="w-4 h-4 mr-2"/>{t("theory.backToDashboard")}</Button>
       </div>
     );
   }
@@ -92,7 +94,7 @@ export default function TheoryDetail() {
             className="gap-2"
           >
             <LayoutList className="w-4 h-4" />
-            Summary
+            {t("theory.summary")}
           </Button>
           <Button
             variant="outline"
@@ -101,7 +103,7 @@ export default function TheoryDetail() {
             className="gap-2"
           >
             <ClipboardList className="w-4 h-4" />
-            Measurement Plan
+            {t("theory.measurementPlan")}
           </Button>
           <Button
             variant="outline"
@@ -110,7 +112,7 @@ export default function TheoryDetail() {
             className="gap-2"
           >
             <Calculator className="w-4 h-4" />
-            Support Calculations
+            {t("theory.supportCalculations")}
           </Button>
           <Button
             variant="outline"
@@ -119,7 +121,7 @@ export default function TheoryDetail() {
             className="gap-2"
           >
             <GitBranch className="w-4 h-4" />
-            Systemic Change
+            {t("theory.systemicChange")}
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -135,7 +137,7 @@ export default function TheoryDetail() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
                 <Trash2 className="w-4 h-4 mr-2" />
-                Delete Theory
+                {t("common.delete")} Theory
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -148,31 +150,31 @@ export default function TheoryDetail() {
           active={activeTab === "about"}
           onClick={() => setActiveTab("about")}
           icon={<Info className="w-4 h-4" />}
-          label="About Intervention"
+          label={t("theory.tabs.about")}
         />
         <TabButton
           active={activeTab === "business-model"}
           onClick={() => setActiveTab("business-model")}
           icon={<Briefcase className="w-4 h-4" />}
-          label="Business Model"
+          label={t("theory.tabs.businessModel")}
         />
         <TabButton
           active={activeTab === "canvas"}
           onClick={() => setActiveTab("canvas")}
           icon={<Network className="w-4 h-4" />}
-          label="Theory of Change"
+          label={t("theory.tabs.canvas")}
         />
         <TabButton
           active={activeTab === "notes"}
           onClick={() => setActiveTab("notes")}
           icon={<StickyNote className="w-4 h-4" />}
-          label="Notes and Updates"
+          label={t("theory.tabs.notes")}
         />
         <TabButton
           active={activeTab === "risk"}
           onClick={() => setActiveTab("risk")}
           icon={<ShieldAlert className="w-4 h-4" />}
-          label="Risk Analysis"
+          label={t("theory.tabs.risk")}
         />
       </div>
 

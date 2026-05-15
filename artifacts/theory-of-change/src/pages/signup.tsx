@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Building2, UserCircle2, KeyRound, ArrowLeft } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function SignupPage() {
   const { refetch } = useAuth();
+  const { t } = useTranslation();
   const [orgName, setOrgName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -18,8 +21,8 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orgName.trim() || !username.trim() || !password) return;
-    if (password !== confirm) { setError("Passwords do not match"); return; }
-    if (password.length < 8) { setError("Password must be at least 8 characters"); return; }
+    if (password !== confirm) { setError(t("auth.passwordMismatch")); return; }
+    if (password.length < 8) { setError(t("auth.passwordTooShort")); return; }
     setError("");
     setLoading(true);
     try {
@@ -36,11 +39,11 @@ export default function SignupPage() {
       });
       if (!res.ok) {
         const err = await res.json() as { error: string };
-        throw new Error(err.error ?? "Registration failed");
+        throw new Error(err.error ?? t("signup.failed"));
       }
       await refetch();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      setError(err instanceof Error ? err.message : t("signup.failed"));
     } finally {
       setLoading(false);
     }
@@ -49,21 +52,24 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {/* Language switcher */}
+        <div className="flex justify-end mb-2">
+          <LanguageSwitcher />
+        </div>
+
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
             <span className="text-2xl">🌿</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Pathways</h1>
-          <p className="text-sm text-muted-foreground mt-1">Theory of Change Platform</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("app.name")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("app.tagline")}</p>
         </div>
 
         <div className="rounded-2xl border border-border bg-card shadow-sm p-6">
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-foreground">Create your organization</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              You'll be the Evaluation Manager and can add your team afterwards.
-            </p>
+            <h2 className="text-lg font-semibold text-foreground">{t("signup.title")}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{t("signup.subtitle")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
@@ -71,11 +77,11 @@ export default function SignupPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 <Building2 className="w-3.5 h-3.5" />
-                Organization
+                {t("auth.orgSection")}
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="orgName">
-                  Organization name
+                  {t("auth.orgName")}
                 </label>
                 <Input
                   id="orgName"
@@ -94,11 +100,11 @@ export default function SignupPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 <UserCircle2 className="w-3.5 h-3.5" />
-                Your Account
+                {t("signup.yourAccount")}
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="displayName">
-                  Full name
+                  {t("auth.fullName")}
                 </label>
                 <Input
                   id="displayName"
@@ -110,7 +116,7 @@ export default function SignupPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="username">
-                  Username
+                  {t("auth.username")}
                 </label>
                 <Input
                   id="username"
@@ -126,32 +132,32 @@ export default function SignupPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                 <KeyRound className="w-3.5 h-3.5" />
-                Password
+                {t("auth.passwordSection")}
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="password">
-                  Password
+                  {t("auth.password")}
                 </label>
                 <Input
                   id="password"
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
+                  placeholder={t("auth.passwordPlaceholder")}
                   autoComplete="new-password"
                   disabled={loading}
                 />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="confirm">
-                  Confirm password
+                  {t("auth.confirmPassword")}
                 </label>
                 <Input
                   id="confirm"
                   type="password"
                   value={confirm}
                   onChange={e => setConfirm(e.target.value)}
-                  placeholder="Repeat password"
+                  placeholder={t("auth.confirmPasswordPlaceholder")}
                   autoComplete="new-password"
                   disabled={loading}
                 />
@@ -168,9 +174,9 @@ export default function SignupPage() {
               disabled={loading || !orgName.trim() || !username.trim() || !password || !confirm}
             >
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Creating account…</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t("signup.creating")}</>
               ) : (
-                "Create Organization & Sign In"
+                t("signup.submit")
               )}
             </Button>
           </form>
@@ -179,7 +185,7 @@ export default function SignupPage() {
         <div className="text-center mt-4">
           <Link href="/login" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" />
-            Back to sign in
+            {t("signup.backToSignIn")}
           </Link>
         </div>
       </div>

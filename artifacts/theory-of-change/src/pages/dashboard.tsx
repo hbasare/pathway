@@ -22,12 +22,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslation } from "react-i18next";
 
 export default function Dashboard() {
   const { data: theories, isLoading: theoriesLoading } = useListTheories();
   const { data: portfolios, isLoading: portfoliosLoading } = useListPortfolios();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   const [isCreateTheoryOpen, setIsCreateTheoryOpen] = useState(false);
   const [isCreatePortfolioOpen, setIsCreatePortfolioOpen] = useState(false);
@@ -38,14 +40,14 @@ export default function Dashboard() {
       onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: getListPortfoliosQueryKey() });
         queryClient.invalidateQueries({ queryKey: getListTheoriesQueryKey() });
-        toast({ title: "Portfolio deleted. Its theories are now ungrouped." });
+        toast({ title: t("dashboard.portfolioDeleted") });
       },
-      onError: () => toast({ title: "Failed to delete portfolio", variant: "destructive" }),
+      onError: () => toast({ title: t("dashboard.portfolioDeleteFailed"), variant: "destructive" }),
     },
   });
 
   const handleDeletePortfolio = (portfolio: Portfolio) => {
-    if (window.confirm(`Delete portfolio "${portfolio.name}"? Its theories will become ungrouped.`)) {
+    if (window.confirm(t("dashboard.portfolioDeleteConfirm", { name: portfolio.name }))) {
       deletePortfolioMutation.mutate({ id: portfolio.id });
     }
   };
@@ -65,17 +67,17 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div>
-          <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Manage and overview your theories of change.</p>
+          <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">{t("dashboard.title")}</h1>
+          <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsCreatePortfolioOpen(true)} className="font-semibold">
             <FolderPlus className="w-4 h-4 mr-2" />
-            New Portfolio
+            {t("dashboard.newPortfolio")}
           </Button>
           <Button onClick={() => setIsCreateTheoryOpen(true)} className="shadow-md font-semibold">
             <Plus className="w-4 h-4 mr-2" />
-            Create Theory
+            {t("dashboard.createTheory")}
           </Button>
         </div>
       </div>
@@ -97,12 +99,12 @@ export default function Dashboard() {
         /* Empty state */
         <div className="text-center py-24 bg-card rounded-2xl border border-dashed border-border">
           <Layers className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-          <h3 className="text-xl font-bold text-foreground mb-2">No theories yet</h3>
+          <h3 className="text-xl font-bold text-foreground mb-2">{t("dashboard.emptyTitle")}</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-            A theory of change helps you map out how your activities lead to your desired impact. Get started by creating your first theory.
+            {t("dashboard.emptyText")}
           </p>
           <Button onClick={() => setIsCreateTheoryOpen(true)} size="lg" className="shadow-md">
-            Create your first Theory
+            {t("dashboard.createFirst")}
           </Button>
         </div>
       ) : (
@@ -117,7 +119,7 @@ export default function Dashboard() {
                   <div className="flex items-center gap-2">
                     <h2 className="text-lg font-bold text-foreground truncate">{portfolio.name}</h2>
                     <Badge variant="secondary" className="rounded-full shrink-0">
-                      {groupTheories.length} {groupTheories.length === 1 ? "theory" : "theories"}
+                      {t("dashboard.theoryCount", { count: groupTheories.length })}
                     </Badge>
                   </div>
                   {portfolio.description && (
@@ -126,7 +128,7 @@ export default function Dashboard() {
                 </div>
                 <Link href={`/portfolio/${portfolio.id}/logframe`}>
                   <Button variant="outline" size="sm" className="gap-1.5 shrink-0 text-xs h-8">
-                    <TableProperties className="w-3.5 h-3.5" /> Logframe
+                    <TableProperties className="w-3.5 h-3.5" /> {t("dashboard.logframe")}
                   </Button>
                 </Link>
                 <DropdownMenu>
@@ -137,13 +139,13 @@ export default function Dashboard() {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => setEditingPortfolio(portfolio)}>
-                      <Pencil className="w-4 h-4 mr-2" /> Edit Portfolio
+                      <Pencil className="w-4 h-4 mr-2" /> {t("dashboard.editPortfolio")}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="text-destructive focus:text-destructive"
                       onClick={() => handleDeletePortfolio(portfolio)}
                     >
-                      <Trash2 className="w-4 h-4 mr-2" /> Delete Portfolio
+                      <Trash2 className="w-4 h-4 mr-2" /> {t("dashboard.deletePortfolio")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -151,14 +153,14 @@ export default function Dashboard() {
 
               {groupTheories.length === 0 ? (
                 <div className="rounded-xl border-2 border-dashed border-border/60 bg-muted/20 py-8 text-center">
-                  <p className="text-sm text-muted-foreground">No theories in this portfolio yet.</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.noTheoriesInPortfolio")}</p>
                   <Button
                     variant="link"
                     size="sm"
                     className="mt-1 text-primary"
                     onClick={() => setIsCreateTheoryOpen(true)}
                   >
-                    Add a theory
+                    {t("dashboard.addTheory")}
                   </Button>
                 </div>
               ) : (
@@ -177,7 +179,7 @@ export default function Dashboard() {
               <div className="flex items-center gap-3 mb-4">
                 <Layers className="w-5 h-5 text-muted-foreground shrink-0" />
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-bold text-foreground">Ungrouped</h2>
+                  <h2 className="text-lg font-bold text-foreground">{t("dashboard.ungrouped")}</h2>
                   <Badge variant="outline" className="rounded-full">
                     {ungrouped.length}
                   </Badge>
@@ -194,9 +196,9 @@ export default function Dashboard() {
           {/* If only portfolios exist but no theories at all */}
           {totalTheories === 0 && (portfolios ?? []).length > 0 && (
             <div className="text-center py-12 bg-card rounded-2xl border border-dashed border-border">
-              <p className="text-muted-foreground mb-4">No theories yet. Create one and assign it to a portfolio.</p>
+              <p className="text-muted-foreground mb-4">{t("dashboard.noTheoriesYet")}</p>
               <Button onClick={() => setIsCreateTheoryOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" /> Create Theory
+                <Plus className="w-4 h-4 mr-2" /> {t("dashboard.createTheory")}
               </Button>
             </div>
           )}
@@ -207,8 +209,8 @@ export default function Dashboard() {
       <DialogWrapper
         open={isCreateTheoryOpen}
         onOpenChange={setIsCreateTheoryOpen}
-        title="Create New Theory"
-        description="Start mapping your path to impact."
+        title={t("dashboard.createTheoryTitle")}
+        description={t("dashboard.createTheoryDesc")}
       >
         <TheoryForm onSuccess={() => setIsCreateTheoryOpen(false)} />
       </DialogWrapper>
@@ -216,8 +218,8 @@ export default function Dashboard() {
       <DialogWrapper
         open={isCreatePortfolioOpen}
         onOpenChange={setIsCreatePortfolioOpen}
-        title="New Portfolio"
-        description="Group related theories of change under a portfolio."
+        title={t("dashboard.newPortfolioTitle")}
+        description={t("dashboard.newPortfolioDesc")}
       >
         <PortfolioForm onSuccess={() => setIsCreatePortfolioOpen(false)} />
       </DialogWrapper>
@@ -225,7 +227,7 @@ export default function Dashboard() {
       <DialogWrapper
         open={!!editingPortfolio}
         onOpenChange={open => { if (!open) setEditingPortfolio(null); }}
-        title="Edit Portfolio"
+        title={t("dashboard.editPortfolioTitle")}
       >
         <PortfolioForm
           initialData={editingPortfolio ?? undefined}
@@ -237,6 +239,7 @@ export default function Dashboard() {
 }
 
 function TheoryCard({ theory }: { theory: { id: number; title: string; description: string } }) {
+  const { t } = useTranslation();
   return (
     <Link href={`/theory/${theory.id}`}>
       <div className="group bg-card rounded-2xl p-6 border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 transition-all duration-300 cursor-pointer h-full flex flex-col">
@@ -250,7 +253,7 @@ function TheoryCard({ theory }: { theory: { id: number; title: string; descripti
           {theory.description}
         </p>
         <div className="flex items-center text-sm font-medium text-primary mt-auto">
-          View Diagram <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+          {t("dashboard.viewDiagram")} <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
     </Link>

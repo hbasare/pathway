@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Fragment } from "react";
+import { useTranslation } from "react-i18next";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useUpdateTheory, getGetTheoryQueryKey, useAnalyzeSystemicChange } from "@workspace/api-client-react";
 import type { SystemicChangeAnalysis, StageAnalysis } from "@workspace/api-client-react";
@@ -1815,6 +1816,7 @@ const DCED_QUAD: Record<string, { bg: string; text: string; subText: string; lab
 };
 
 function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
+  const { t } = useTranslation();
   const stageDataMap: Record<string, StageAnalysis> = {
     adopt: analysis.adopt, adapt: analysis.adapt,
     expand: analysis.expand, respond: analysis.respond,
@@ -1839,7 +1841,7 @@ function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
         </div>
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-bold text-foreground">Pathway to Sustainable Change</span>
+            <span className="text-xs font-bold text-foreground">{t("systemicChange.pathwayToSustainableChange")}</span>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
               totalScore >= 76 ? STATUS_LABELS.strong.color :
               totalScore >= 51 ? STATUS_LABELS.moderate.color :
@@ -1847,7 +1849,7 @@ function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
               totalScore > 0  ? STATUS_LABELS.nascent.color :
               STATUS_LABELS["no-data"].color
             }`}>
-              {totalScore >= 76 ? "Strong" : totalScore >= 51 ? "Moderate" : totalScore >= 26 ? "Emerging" : totalScore > 0 ? "Nascent" : "No data"}
+              {totalScore >= 76 ? t("systemicChange.status.strong") : totalScore >= 51 ? t("systemicChange.status.moderate") : totalScore >= 26 ? t("systemicChange.status.emerging") : totalScore > 0 ? t("systemicChange.status.nascent") : t("systemicChange.status.noData")}
             </span>
           </div>
           <div className="h-3 rounded-full bg-muted overflow-hidden">
@@ -1882,14 +1884,14 @@ function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
                 return (
                   <div key={stage} className="relative p-4 flex flex-col gap-1.5 min-h-[130px]"
                     style={{ backgroundColor: qc.bg }}>
-                    <div className="font-black text-base tracking-wide" style={{ color: qc.text }}>{qc.label}</div>
+                    <div className="font-black text-base tracking-wide" style={{ color: qc.text }}>{t("systemicChange.aaer."+stage)}</div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl font-black" style={{ color: qc.text }}>{sd.score}</span>
                       <span className="text-[9px] font-bold" style={{ color: qc.subText }}>/100</span>
                     </div>
                     <span className="inline-flex text-[9px] font-bold px-1.5 py-0.5 rounded-full w-fit border"
                       style={{ backgroundColor: "rgba(255,255,255,0.55)", color: qc.text, borderColor: qc.subText + "55" }}>
-                      {statusCfg.label}
+                      {t("systemicChange.status." + (sd.status === "no-data" ? "noData" : sd.status))}
                     </span>
                     <p className="text-[10px] leading-snug mt-0.5 line-clamp-2" style={{ color: qc.subText }}>{sd.headline}</p>
                     {/* Partner chips */}
@@ -1922,6 +1924,7 @@ function PathwayDiagram({ analysis }: { analysis: SystemicChangeAnalysis }) {
 }
 
 function StageAnalysisCard({ stageKey, data }: { stageKey: string; data: StageAnalysis }) {
+  const { t } = useTranslation();
   const cfg = STAGE_AI_CONFIG[stageKey];
   const statusCfg = STATUS_LABELS[data.status] ?? STATUS_LABELS["no-data"];
   const [expanded, setExpanded] = useState(false);
@@ -1938,9 +1941,9 @@ function StageAnalysisCard({ stageKey, data }: { stageKey: string; data: StageAn
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className={`text-sm font-bold ${cfg.text}`}>{cfg.label}</span>
+            <span className={`text-sm font-bold ${cfg.text}`}>{t("systemicChange.aaer."+stageKey)}</span>
             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${statusCfg.color}`}>
-              {statusCfg.label}
+              {t("systemicChange.status." + (data.status === "no-data" ? "noData" : data.status))}
             </span>
           </div>
           <p className="text-[11px] text-foreground/75 leading-snug line-clamp-2">{data.headline}</p>
@@ -1954,7 +1957,7 @@ function StageAnalysisCard({ stageKey, data }: { stageKey: string; data: StageAn
         <div className="px-4 py-3 bg-white/60 border-t border-border/40 space-y-3">
           {data.findings.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Key Findings</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">{t("systemicChange.keyFindings")}</p>
               <ul className="space-y-1">
                 {data.findings.map((f, i) => (
                   <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
@@ -1967,7 +1970,7 @@ function StageAnalysisCard({ stageKey, data }: { stageKey: string; data: StageAn
           )}
           {data.recommendations.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Recommendations</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">{t("systemicChange.recommendations")}</p>
               <ul className="space-y-1">
                 {data.recommendations.map((r, i) => (
                   <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
@@ -1986,6 +1989,7 @@ function StageAnalysisCard({ stageKey, data }: { stageKey: string; data: StageAn
 
 function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; hasEntries: boolean }) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [analysis, setAnalysis] = useState<SystemicChangeAnalysis | null>(null);
   const mutation = useAnalyzeSystemicChange();
 
@@ -2008,8 +2012,8 @@ function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; 
           <Sparkles className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
-          <h3 className="text-sm font-bold text-foreground">AI Progress Analysis</h3>
-          <p className="text-xs text-muted-foreground">AI-powered assessment of your progress towards sustainable systemic change</p>
+          <h3 className="text-sm font-bold text-foreground">{t("systemicChange.aiProgressAnalysis")}</h3>
+          <p className="text-xs text-muted-foreground">{t("systemicChange.aiProgressAnalysisDesc")}</p>
         </div>
         <Button
           size="sm"
@@ -2018,8 +2022,8 @@ function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; 
           className="bg-violet-600 hover:bg-violet-700 text-white shrink-0 gap-1.5"
         >
           {mutation.isPending
-            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Analysing…</>
-            : <><Sparkles className="w-3.5 h-3.5" />{analysis ? "Regenerate" : "Generate Analysis"}</>
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />{t("systemicChange.analysing")}</>
+            : <><Sparkles className="w-3.5 h-3.5" />{analysis ? t("systemicChange.regenerate") : t("systemicChange.generateAnalysis")}</>
           }
         </Button>
       </div>
@@ -2029,8 +2033,8 @@ function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; 
         {!hasEntries && !analysis && (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <AlertCircle className="w-8 h-8 text-muted-foreground/30" />
-            <p className="text-sm font-medium text-muted-foreground">No entries yet</p>
-            <p className="text-xs text-muted-foreground/70">Add AAER entries to the matrix above, then generate an AI analysis.</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("systemicChange.noEntriesYet")}</p>
+            <p className="text-xs text-muted-foreground/70">{t("systemicChange.noEntriesDesc")}</p>
           </div>
         )}
 
@@ -2040,9 +2044,9 @@ function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; 
               <Sparkles className="w-7 h-7 text-violet-500" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">Ready to analyse</p>
+              <p className="text-sm font-semibold text-foreground">{t("systemicChange.readyToAnalyse")}</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                Click "Generate Analysis" to have AI study your AAER data and produce a visual pathway diagram with per-stage findings and recommendations.
+                {t("systemicChange.readyToAnalyseDescAaer")}
               </p>
             </div>
           </div>
@@ -2051,8 +2055,8 @@ function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; 
         {mutation.isPending && (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-            <p className="text-sm font-semibold text-foreground">Analysing your progress…</p>
-            <p className="text-xs text-muted-foreground">Studying AAER evidence across all stages and periods</p>
+            <p className="text-sm font-semibold text-foreground">{t("systemicChange.analysingAaer")}</p>
+            <p className="text-xs text-muted-foreground">{t("systemicChange.analysingAaerDesc")}</p>
           </div>
         )}
 
@@ -2063,13 +2067,13 @@ function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; 
 
             {/* Overall assessment */}
             <div className="rounded-xl border border-border bg-white/60 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Overall Assessment</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">{t("systemicChange.overallAssessment")}</p>
               <p className="text-sm text-foreground leading-relaxed">{analysis.overallAssessment}</p>
             </div>
 
             {/* Per-stage cards */}
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Stage-by-Stage Analysis</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">{t("systemicChange.stageAnalysis")}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {stages.map(stage => (
                   <StageAnalysisCard key={stage} stageKey={stage} data={(analysis as unknown as Record<string, StageAnalysis>)[stage]} />
@@ -2080,7 +2084,7 @@ function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; 
             {/* Priority actions */}
             {analysis.nextPriorityActions.length > 0 && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">Next Priority Actions</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">{t("systemicChange.nextPriorityActions")}</p>
                 <ul className="space-y-1.5">
                   {analysis.nextPriorityActions.map((a, i) => (
                     <li key={i} className="flex gap-2 text-sm text-amber-900 leading-relaxed">
@@ -3253,6 +3257,7 @@ function MsrDomainRing({ score, domainKey, size = 52 }: { score: number; domainK
 }
 
 function MsrQuadrantDiagram({ analysis }: { analysis: MsrAnalysisResult }) {
+  const { t } = useTranslation();
   const domainMap: Record<string, MsrDomainAnalysis> = {
     structural: analysis.structural,
     relational: analysis.relational,
@@ -3276,7 +3281,7 @@ function MsrQuadrantDiagram({ analysis }: { analysis: MsrAnalysisResult }) {
         </div>
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-bold text-foreground">Market System Resilience</span>
+            <span className="text-xs font-bold text-foreground">{t("systemicChange.marketSystemResilience")}</span>
             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
               analysis.overallScore >= 76 ? MSR_STATUS_LABELS.proactive.color :
               analysis.overallScore >= 51 ? MSR_STATUS_LABELS.transitioning.color :
@@ -3284,7 +3289,7 @@ function MsrQuadrantDiagram({ analysis }: { analysis: MsrAnalysisResult }) {
               analysis.overallScore > 0   ? MSR_STATUS_LABELS.reactive.color :
               MSR_STATUS_LABELS["no-data"].color
             }`}>
-              {analysis.overallScore >= 76 ? "Proactive" : analysis.overallScore >= 51 ? "Transitioning" : analysis.overallScore >= 26 ? "Emerging" : analysis.overallScore > 0 ? "Reactive" : "No data"}
+              {analysis.overallScore >= 76 ? t("systemicChange.status.proactive") : analysis.overallScore >= 51 ? t("systemicChange.status.transitioning") : analysis.overallScore >= 26 ? t("systemicChange.status.emerging") : analysis.overallScore > 0 ? t("systemicChange.status.reactive") : t("systemicChange.status.noData")}
             </span>
           </div>
           <div className="h-3 rounded-full bg-muted overflow-hidden">
@@ -3315,14 +3320,14 @@ function MsrQuadrantDiagram({ analysis }: { analysis: MsrAnalysisResult }) {
                 return (
                   <div key={key} className="relative p-4 flex flex-col gap-1.5 min-h-[130px]"
                     style={{ backgroundColor: cfg.quadBg }}>
-                    <div className="font-black text-base tracking-wide" style={{ color: cfg.quadText }}>{cfg.label}</div>
+                    <div className="font-black text-base tracking-wide" style={{ color: cfg.quadText }}>{t("systemicChange.msrDomains."+key)}</div>
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl font-black" style={{ color: cfg.quadText }}>{d.score}</span>
                       <span className="text-[9px] font-bold" style={{ color: cfg.quadSub }}>/100</span>
                     </div>
                     <span className="inline-flex text-[9px] font-bold px-1.5 py-0.5 rounded-full w-fit border"
                       style={{ backgroundColor: "rgba(255,255,255,0.55)", color: cfg.quadText, borderColor: cfg.quadSub + "55" }}>
-                      {statusCfg.label}
+                      {t("systemicChange.status." + (d.status === "no-data" ? "noData" : d.status))}
                     </span>
                     <p className="text-[10px] leading-snug mt-0.5 line-clamp-2" style={{ color: cfg.quadSub }}>{d.headline}</p>
                     {d.strongComponents && d.strongComponents.length > 0 && (
@@ -3352,6 +3357,7 @@ function MsrQuadrantDiagram({ analysis }: { analysis: MsrAnalysisResult }) {
 }
 
 function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomainAnalysis }) {
+  const { t } = useTranslation();
   const cfg = MSR_DOMAIN_AI_CONFIG[domainKey];
   const statusCfg = MSR_STATUS_LABELS[data.status] ?? MSR_STATUS_LABELS["no-data"];
   const [expanded, setExpanded] = useState(false);
@@ -3368,9 +3374,9 @@ function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomain
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className={`text-sm font-bold ${cfg.text}`}>{cfg.label}</span>
+            <span className={`text-sm font-bold ${cfg.text}`}>{t("systemicChange.msrDomains."+domainKey)}</span>
             <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${statusCfg.color}`}>
-              {statusCfg.label}
+              {t("systemicChange.status." + (data.status === "no-data" ? "noData" : data.status))}
             </span>
           </div>
           <p className="text-[11px] text-foreground/75 leading-snug line-clamp-2">{data.headline}</p>
@@ -3385,7 +3391,7 @@ function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomain
         <div className="px-4 py-3 bg-white/60 border-t border-border/40 space-y-3">
           {data.findings.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Key Findings</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">{t("systemicChange.keyFindings")}</p>
               <ul className="space-y-1">
                 {data.findings.map((f, i) => (
                   <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
@@ -3398,7 +3404,7 @@ function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomain
           )}
           {data.recommendations.length > 0 && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Recommendations</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">{t("systemicChange.recommendations")}</p>
               <ul className="space-y-1">
                 {data.recommendations.map((r, i) => (
                   <li key={i} className="flex gap-2 text-xs text-foreground/80 leading-relaxed">
@@ -3411,7 +3417,7 @@ function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomain
           )}
           {(data.weakComponents && data.weakComponents.length > 0) && (
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">Components to Prioritise</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1.5">{t("systemicChange.componentsToPrioritise")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {data.weakComponents.map((c, i) => (
                   <span key={i} className="text-[10px] px-2 py-0.5 rounded-full border border-rose-200 bg-rose-50 text-rose-700">
@@ -3433,6 +3439,7 @@ function MsrAIAnalysis({
   msrData: MsrData; periods: string[]; apiBase: string; theoryId: number;
 }) {
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [analysis, setAnalysis] = useState<MsrAnalysisResult | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -3480,7 +3487,7 @@ function MsrAIAnalysis({
       const data = await res.json() as MsrAnalysisResult;
       setAnalysis(data);
     } catch (err) {
-      toast({ title: "Analysis failed", description: String(err), variant: "destructive" });
+      toast({ title: t("systemicChange.analysisFailed"), description: String(err), variant: "destructive" });
     } finally {
       setPending(false);
     }
@@ -3496,8 +3503,8 @@ function MsrAIAnalysis({
           <Sparkles className="w-4 h-4 text-white" />
         </div>
         <div className="flex-1">
-          <h3 className="text-sm font-bold text-foreground">AI Resilience Analysis</h3>
-          <p className="text-xs text-muted-foreground">AI-powered assessment of market system resilience across all four MSR domains</p>
+          <h3 className="text-sm font-bold text-foreground">{t("systemicChange.aiResilienceAnalysis")}</h3>
+          <p className="text-xs text-muted-foreground">{t("systemicChange.aiResilienceAnalysisDesc")}</p>
         </div>
         <Button
           size="sm"
@@ -3506,8 +3513,8 @@ function MsrAIAnalysis({
           className="bg-violet-600 hover:bg-violet-700 text-white shrink-0 gap-1.5"
         >
           {pending
-            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Analysing…</>
-            : <><Sparkles className="w-3.5 h-3.5" />{analysis ? "Regenerate" : "Generate Analysis"}</>
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />{t("systemicChange.analysing")}</>
+            : <><Sparkles className="w-3.5 h-3.5" />{analysis ? t("systemicChange.regenerate") : t("systemicChange.generateAnalysis")}</>
           }
         </Button>
       </div>
@@ -3517,8 +3524,8 @@ function MsrAIAnalysis({
         {!hasScores && !analysis && (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <AlertCircle className="w-8 h-8 text-muted-foreground/30" />
-            <p className="text-sm font-medium text-muted-foreground">No scores yet</p>
-            <p className="text-xs text-muted-foreground/70">Score some indicators in the matrix above, then generate an AI analysis.</p>
+            <p className="text-sm font-medium text-muted-foreground">{t("systemicChange.noScoresYet")}</p>
+            <p className="text-xs text-muted-foreground/70">{t("systemicChange.noScoresDesc")}</p>
           </div>
         )}
 
@@ -3528,9 +3535,9 @@ function MsrAIAnalysis({
               <Sparkles className="w-7 h-7 text-violet-500" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-foreground">Ready to analyse</p>
+              <p className="text-sm font-semibold text-foreground">{t("systemicChange.readyToAnalyse")}</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                Click "Generate Analysis" to have AI interpret your MSR scores and produce a domain-by-domain resilience assessment with findings and recommendations.
+                {t("systemicChange.readyToAnalyseDescMsr")}
               </p>
             </div>
           </div>
@@ -3539,8 +3546,8 @@ function MsrAIAnalysis({
         {pending && (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <Loader2 className="w-8 h-8 animate-spin text-violet-500" />
-            <p className="text-sm font-semibold text-foreground">Analysing market system resilience…</p>
-            <p className="text-xs text-muted-foreground">Interpreting MSR scores across all domains and components</p>
+            <p className="text-sm font-semibold text-foreground">{t("systemicChange.analysingMsr")}</p>
+            <p className="text-xs text-muted-foreground">{t("systemicChange.analysingMsrDesc")}</p>
           </div>
         )}
 
@@ -3551,13 +3558,13 @@ function MsrAIAnalysis({
 
             {/* Overall assessment */}
             <div className="rounded-xl border border-border bg-white/60 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Overall Assessment</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">{t("systemicChange.overallAssessment")}</p>
               <p className="text-sm text-foreground leading-relaxed">{analysis.overallAssessment}</p>
             </div>
 
             {/* Per-domain cards */}
             <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">Domain-by-Domain Analysis</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">{t("systemicChange.domainAnalysis")}</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {domainKeys.map(k => (
                   <MsrDomainCard key={k} domainKey={k} data={analysis[k]} />
@@ -3568,7 +3575,7 @@ function MsrAIAnalysis({
             {/* Priority actions */}
             {analysis.priorityActions && analysis.priorityActions.length > 0 && (
               <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">Priority Actions</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">{t("systemicChange.priorityActions")}</p>
                 <ul className="space-y-1.5">
                   {analysis.priorityActions.map((a, i) => (
                     <li key={i} className="flex gap-2 text-sm text-amber-900 leading-relaxed">

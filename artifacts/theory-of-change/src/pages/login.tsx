@@ -4,9 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, LogIn } from "lucide-react";
 import { Link } from "wouter";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { t } = useTranslation();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,7 +23,7 @@ export default function LoginPage() {
     try {
       await login(username.trim(), password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : t("login.failed"));
     } finally {
       setLoading(false);
     }
@@ -29,29 +32,34 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
+        {/* Language switcher */}
+        <div className="flex justify-end mb-2">
+          <LanguageSwitcher />
+        </div>
+
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
             <span className="text-2xl">🌿</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Pathways</h1>
-          <p className="text-sm text-muted-foreground mt-1">Theory of Change Platform</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("app.name")}</h1>
+          <p className="text-sm text-muted-foreground mt-1">{t("app.tagline")}</p>
         </div>
 
         {/* Card */}
         <div className="rounded-2xl border border-border bg-card shadow-sm p-6">
-          <h2 className="text-lg font-semibold text-foreground mb-5">Sign in to your account</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-5">{t("login.title")}</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground" htmlFor="username">
-                Username
+                {t("auth.username")}
               </label>
               <Input
                 id="username"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
-                placeholder="Enter your username"
+                placeholder={t("login.usernamePlaceholder")}
                 autoComplete="username"
                 autoFocus
                 disabled={loading}
@@ -60,14 +68,14 @@ export default function LoginPage() {
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium text-foreground" htmlFor="password">
-                Password
+                {t("auth.password")}
               </label>
               <Input
                 id="password"
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="Enter your password"
+                placeholder={t("login.passwordPlaceholder")}
                 autoComplete="current-password"
                 disabled={loading}
               />
@@ -81,9 +89,9 @@ export default function LoginPage() {
 
             <Button type="submit" className="w-full gap-2" disabled={loading || !username.trim() || !password}>
               {loading ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Signing in…</>
+                <><Loader2 className="w-4 h-4 animate-spin" /> {t("login.signingIn")}</>
               ) : (
-                <><LogIn className="w-4 h-4" /> Sign In</>
+                <><LogIn className="w-4 h-4" /> {t("login.signIn")}</>
               )}
             </Button>
           </form>
@@ -91,12 +99,12 @@ export default function LoginPage() {
 
         <div className="mt-4 flex flex-col items-center gap-2">
           <p className="text-xs text-center text-muted-foreground">
-            Contact your Evaluation Manager if you need access.
+            {t("login.noAccess")}
           </p>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <span>New organization?</span>
+            <span>{t("login.newOrg")}</span>
             <Link href="/signup" className="font-semibold text-primary hover:underline">
-              Create an account
+              {t("login.createAccount")}
             </Link>
           </div>
         </div>

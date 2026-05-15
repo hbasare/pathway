@@ -18,12 +18,15 @@ import { Button } from "@/components/ui/button";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
 import { TheoryForm } from "@/components/forms/theory-form";
 import { useAuth } from "@/contexts/auth-context";
+import { useTranslation } from "react-i18next";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function AppSidebar() {
   const [location] = useLocation();
   const { data: theories, isLoading } = useListTheories();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   return (
     <Sidebar>
@@ -35,8 +38,8 @@ export function AppSidebar() {
             className="w-8 h-8 rounded-lg shadow-sm"
           />
           <div>
-            <h2 className="font-display font-bold text-lg leading-tight tracking-tight">Pathways</h2>
-            <p className="text-xs text-muted-foreground font-medium">Theory of Change</p>
+            <h2 className="font-display font-bold text-lg leading-tight tracking-tight">{t("app.name")}</h2>
+            <p className="text-xs text-muted-foreground font-medium">{t("app.taglineShort")}</p>
           </div>
         </div>
       </SidebarHeader>
@@ -44,7 +47,7 @@ export function AppSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel className="text-xs font-semibold tracking-wider uppercase text-muted-foreground mt-4 mb-2">
-            Navigation
+            {t("sidebar.navigation")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -52,7 +55,7 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild isActive={location === "/"}>
                   <Link href="/">
                     <Home className="w-4 h-4 mr-2" />
-                    <span>Dashboard</span>
+                    <span>{t("sidebar.dashboard")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -60,7 +63,7 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild isActive={location === "/program-logframe"}>
                   <Link href="/program-logframe">
                     <LayoutGrid className="w-4 h-4 mr-2" />
-                    <span>Program Logframe</span>
+                    <span>{t("sidebar.programLogframe")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -69,7 +72,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={location === "/users"}>
                     <Link href="/users">
                       <Users className="w-4 h-4 mr-2" />
-                      <span>User Management</span>
+                      <span>{t("sidebar.userManagement")}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -81,13 +84,13 @@ export function AppSidebar() {
         <SidebarGroup>
           <div className="flex items-center justify-between mt-4 mb-2 px-2">
             <SidebarGroupLabel className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-              Your Theories
+              {t("sidebar.yourTheories")}
             </SidebarGroupLabel>
             <DialogWrapper
               open={isCreateOpen}
               onOpenChange={setIsCreateOpen}
-              title="Create New Theory"
-              description="Define the core objective of your new theory of change."
+              title={t("sidebar.createTheory")}
+              description={t("sidebar.defineObjective")}
               trigger={
                 <Button variant="ghost" size="icon" className="h-6 w-6">
                   <Plus className="w-4 h-4" />
@@ -100,9 +103,9 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {isLoading ? (
-                <div className="px-4 py-2 text-sm text-muted-foreground">Loading...</div>
+                <div className="px-4 py-2 text-sm text-muted-foreground">{t("sidebar.loadingTheories")}</div>
               ) : theories?.length === 0 ? (
-                <div className="px-4 py-2 text-xs text-muted-foreground italic">No theories created yet.</div>
+                <div className="px-4 py-2 text-xs text-muted-foreground italic">{t("sidebar.noTheories")}</div>
               ) : (
                 theories?.map((theory) => (
                   <SidebarMenuItem key={theory.id}>
@@ -125,7 +128,11 @@ export function AppSidebar() {
       </SidebarContent>
 
       {/* Logged-in user footer */}
-      <SidebarFooter className="border-t p-3">
+      <SidebarFooter className="border-t p-3 space-y-2">
+        {/* Language picker */}
+        <div className="flex items-center justify-between px-1">
+          <LanguageSwitcher />
+        </div>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <span className="text-sm font-bold text-primary">
@@ -145,7 +152,7 @@ export function AppSidebar() {
             size="icon"
             variant="ghost"
             className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-            title="Sign out"
+            title={t("common.signOut")}
             onClick={() => logout()}
           >
             <LogOut className="w-4 h-4" />
