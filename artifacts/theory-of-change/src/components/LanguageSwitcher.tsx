@@ -15,6 +15,9 @@ const LANGUAGES = [
   { code: "it", flag: "🇮🇹" },
   { code: "fr", flag: "🇫🇷" },
   { code: "nl", flag: "🇳🇱" },
+  { code: "sw", flag: "🇹🇿" },
+  { code: "ha", flag: "🇳🇬" },
+  { code: "af", flag: "🇿🇦" },
 ];
 
 export function LanguageSwitcher() {

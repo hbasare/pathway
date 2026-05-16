@@ -7,8 +7,11 @@ import es from "./locales/es.json";
 import it from "./locales/it.json";
 import fr from "./locales/fr.json";
 import nl from "./locales/nl.json";
+import sw from "./locales/sw.json";
+import ha from "./locales/ha.json";
+import af from "./locales/af.json";
 
-const SUPPORTED = ["en", "pt", "es", "it", "fr", "nl"];
+const SUPPORTED = ["en", "pt", "es", "it", "fr", "nl", "sw", "ha", "af"];
 
 const saved = localStorage.getItem("pathways_lang");
 const browser = navigator.language.split("-")[0];
@@ -27,6 +30,9 @@ i18n.use(initReactI18next).init({
     it: { translation: it },
     fr: { translation: fr },
     nl: { translation: nl },
+    sw: { translation: sw },
+    ha: { translation: ha },
+    af: { translation: af },
   },
   lng: defaultLng,
   fallbackLng: "en",
