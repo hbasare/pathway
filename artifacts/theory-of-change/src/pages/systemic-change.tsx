@@ -2923,6 +2923,7 @@ interface MsrSettings { startYear: number; endYear: number; granularity: Granula
 const MSR_SETTINGS_EMPTY: MsrSettings = { startYear: 0, endYear: 0, granularity: "annual" };
 
 function MsrSettingsPanel({ settings, onSave }: { settings: MsrSettings; onSave: (s: MsrSettings) => void }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(!settings.startYear);
   const [local, setLocal] = useState(settings);
   const curYear = new Date().getFullYear();
