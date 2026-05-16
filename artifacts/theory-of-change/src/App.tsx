@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
+import { ColorSettingsProvider } from "@/contexts/color-settings";
 
 // Pages
 import Dashboard from "@/pages/dashboard";
@@ -107,7 +108,9 @@ function App() {
       <TooltipProvider>
         <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
           <AuthProvider>
-            <AppShell />
+            <ColorSettingsProvider>
+              <AppShell />
+            </ColorSettingsProvider>
           </AuthProvider>
         </WouterRouter>
         <Toaster />

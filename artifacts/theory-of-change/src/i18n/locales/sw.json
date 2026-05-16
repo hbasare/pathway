@@ -484,5 +484,16 @@
     "riskPlaceholder": "Elezea hatari...",
     "mitigationPlaceholder": "Hatari hii itapunguzwaje?",
     "notesPlaceholder": "Maelezo ya ziada..."
+  },
+  "colorSettings": {
+    "title": "Rangi za Vipengele",
+    "subtitle": "Badilisha rangi ya kila aina ya kipengele",
+    "reset": "Rudisha Chaguomsingi",
+    "opportunity": "Fursa",
+    "input": "Pembejeo",
+    "activity": "Shughuli",
+    "output": "Matokeo ya Moja kwa Moja",
+    "outcome": "Matokeo",
+    "impact": "Athari"
   }
 }

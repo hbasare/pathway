@@ -20,6 +20,7 @@ import { TheoryForm } from "@/components/forms/theory-form";
 import { useAuth } from "@/contexts/auth-context";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { ColorSettingsTrigger } from "@/components/ColorSettings";
 
 export function AppSidebar() {
   const [location] = useLocation();
@@ -132,6 +133,7 @@ export function AppSidebar() {
         {/* Language picker */}
         <div className="flex items-center justify-between px-1">
           <LanguageSwitcher />
+          <ColorSettingsTrigger />
         </div>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">

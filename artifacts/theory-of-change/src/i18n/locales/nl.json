@@ -481,5 +481,16 @@
     "riskPlaceholder": "Beschrijf het risico...",
     "mitigationPlaceholder": "Hoe wordt dit risico gemitigeerd?",
     "notesPlaceholder": "Aanvullende notities..."
+  },
+  "colorSettings": {
+    "title": "Componentkleuren",
+    "subtitle": "Pas de kleur aan voor elk componenttype",
+    "reset": "Standaarden Herstellen",
+    "opportunity": "Kans",
+    "input": "Invoer",
+    "activity": "Activiteit",
+    "output": "Uitvoer",
+    "outcome": "Resultaat",
+    "impact": "Impact"
   }
 }

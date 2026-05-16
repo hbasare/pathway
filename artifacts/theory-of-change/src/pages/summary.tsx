@@ -7,24 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-
-const TYPE_COLORS: Record<string, string> = {
-  opportunity: "bg-emerald-50 text-emerald-800 border-emerald-200",
-  input:    "bg-blue-50 text-blue-800 border-blue-200",
-  activity: "bg-purple-50 text-purple-800 border-purple-200",
-  output:   "bg-teal-50 text-teal-800 border-teal-200",
-  outcome:  "bg-orange-50 text-orange-800 border-orange-200",
-  impact:   "bg-rose-50 text-rose-800 border-rose-200",
-};
-
-const TYPE_HEADER: Record<string, string> = {
-  opportunity: "bg-emerald-500",
-  input:    "bg-blue-500",
-  activity: "bg-purple-500",
-  output:   "bg-teal-500",
-  outcome:  "bg-orange-500",
-  impact:   "bg-rose-500",
-};
+import { useColorSettings, typeCardStyle, typeHeaderStyle } from "@/contexts/color-settings";
 
 const COLUMN_ORDER: Record<string, number> = {
   opportunity: 0, input: 1, activity: 2, output: 3, outcome: 4, impact: 5,
@@ -63,6 +46,7 @@ function getComponentStatus(indicators: { targetDate?: string | null; targetFigu
 
 export default function Summary() {
   const { t } = useTranslation();
+  const { colors } = useColorSettings();
   const [, params] = useRoute("/theory/:id/summary");
   const id = params?.id ? parseInt(params.id, 10) : 0;
   const [, setLocation] = useLocation();
@@ -252,7 +236,7 @@ export default function Summary() {
                 return (
                   <div key={type} className="flex items-stretch gap-0 flex-1 min-w-0">
                     <div className="flex-1 rounded-xl border border-border overflow-hidden min-w-[140px]">
-                      <div className={`${TYPE_HEADER[type]} px-3 py-2`}>
+                      <div className="px-3 py-2" style={typeHeaderStyle(colors[type])}>
                         <p className="text-white text-[11px] font-bold uppercase tracking-wider">{t(`summary.types.${type}`, { defaultValue: type })}</p>
                         <p className="text-white/70 text-[10px]">{t(`summary.typeDescriptions.${type}`)}</p>
                       </div>
@@ -260,7 +244,7 @@ export default function Summary() {
                         {items.length === 0 ? (
                           <p className="text-xs text-muted-foreground/50 italic px-1 py-2">{t("summary.noneAdded")}</p>
                         ) : items.map(c => (
-                          <div key={c.id} className={`rounded-md border px-2 py-1.5 text-xs ${TYPE_COLORS[type]}`}>
+                          <div key={c.id} className="rounded-md border px-2 py-1.5 text-xs" style={typeCardStyle(colors[type])}>
                             <span className="font-bold text-[10px] opacity-60 mr-1">#{boxNum(c.id)}</span>
                             <span className="font-medium leading-tight">{c.title}</span>
                           </div>
@@ -293,7 +277,7 @@ export default function Summary() {
                   const StatusIcon = cfg.icon;
 
                   return (
-                    <div key={comp.id} className={`rounded-xl border ${TYPE_COLORS[comp.type]} overflow-hidden`}>
+                    <div key={comp.id} className="rounded-xl border overflow-hidden" style={typeCardStyle(colors[comp.type])}>
                       <div className="flex items-start justify-between px-4 py-3 gap-4">
                         <div className="flex items-start gap-3 min-w-0">
                           <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/60 text-[11px] font-bold shrink-0 mt-0.5">
@@ -367,7 +351,7 @@ export default function Summary() {
                           </span>
                         </td>
                         <td className="px-4 py-2.5">
-                          <span className={`inline-block text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${TYPE_COLORS[comp.type] ?? ""}`}>
+                          <span className="inline-block text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border" style={typeCardStyle(colors[comp.type])}>
                             {t(`summary.types.${comp.type}`, { defaultValue: comp.type })}
                           </span>
                           <p className="text-xs text-muted-foreground mt-0.5 font-medium">{comp.title}</p>
@@ -412,7 +396,7 @@ export default function Summary() {
                         </div>
                         <div className="flex-1 pb-1">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${TYPE_COLORS[comp.type]}`}>{t(`summary.types.${comp.type}`, { defaultValue: comp.type })}</span>
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border" style={typeCardStyle(colors[comp.type])}>{t(`summary.types.${comp.type}`, { defaultValue: comp.type })}</span>
                             <span className="text-sm font-semibold text-foreground">
                               <span className="text-muted-foreground font-normal mr-1 text-xs">#{boxNum(comp.id)}</span>
                               {comp.title}

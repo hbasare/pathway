@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Component, ComponentType, useDeleteComponent, useUpdateComponentIndicator, getGetTheoryQueryKey } from "@workspace/api-client-react";
+import { useColorSettings } from "@/contexts/color-settings";
 import { useQueryClient } from "@tanstack/react-query";
 import { MoreVertical, Edit2, Trash2, ArrowRight, Unlink, Activity, Zap, FileText, Target, Globe, Lightbulb, BarChart3, Users } from "lucide-react";
 import {
@@ -48,13 +49,13 @@ interface ComponentCardProps {
   onDisconnect?: (connectionId: number) => void;
 }
 
-const TYPE_CONFIG: Record<ComponentType, { border: string; accent: string; icon: React.ElementType }> = {
-  opportunity: { border: "border-emerald-200", accent: "bg-emerald-400", icon: Lightbulb },
-  input:    { border: "border-blue-200",   accent: "bg-blue-400",   icon: FileText },
-  activity: { border: "border-purple-200", accent: "bg-purple-400", icon: Activity },
-  output:   { border: "border-teal-200",   accent: "bg-teal-400",   icon: Zap },
-  outcome:  { border: "border-orange-200", accent: "bg-orange-400", icon: Target },
-  impact:   { border: "border-rose-200",   accent: "bg-rose-400",   icon: Globe },
+const TYPE_CONFIG: Record<ComponentType, { icon: React.ElementType }> = {
+  opportunity: { icon: Lightbulb },
+  input:       { icon: FileText },
+  activity:    { icon: Activity },
+  output:      { icon: Zap },
+  outcome:     { icon: Target },
+  impact:      { icon: Globe },
 };
 
 function formatDate(dateStr: string | null | undefined) {
@@ -177,8 +178,10 @@ export function ComponentCard({
     });
   };
 
+  const { colors } = useColorSettings();
   const config = TYPE_CONFIG[component.type];
   const Icon = config.icon;
+  const typeHex = colors[component.type];
   const indicators = component.componentIndicators ?? [];
 
   const handleCardClick = () => {
@@ -195,17 +198,18 @@ export function ComponentCard({
           transition-all duration-200 cursor-pointer
           ${isConnectingMode ? "hover:ring-2 hover:ring-primary hover:border-primary" : "hover:shadow-md"}
           ${isConnectingFrom ? "ring-2 ring-primary border-primary shadow-md scale-[1.02]" : ""}
-          ${config.border}
         `}
+        style={(!isConnectingMode && !isConnectingFrom) ? { borderColor: typeHex + "55" } : undefined}
       >
         {/* Accent top bar — pathway overrides type color */}
-        <div className={`h-1.5 w-full ${
-          (component as any).pathway === "direct"
-            ? "bg-emerald-400"
+        <div
+          className="h-1.5 w-full"
+          style={(component as any).pathway === "direct"
+            ? { backgroundColor: "#10b981" }
             : (component as any).pathway === "indirect"
-            ? "bg-blue-400"
-            : `${config.accent} opacity-70`
-        }`} />
+            ? { backgroundColor: "#3b82f6" }
+            : { backgroundColor: typeHex, opacity: 0.75 }}
+        />
 
         <div className="p-4">
           {/* Header row: box number + type label + pathway badge + menu */}

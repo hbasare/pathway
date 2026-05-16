@@ -481,5 +481,16 @@
     "riskPlaceholder": "Describa el riesgo...",
     "mitigationPlaceholder": "¿Cómo se mitigará este riesgo?",
     "notesPlaceholder": "Notas adicionales..."
+  },
+  "colorSettings": {
+    "title": "Colores de Componentes",
+    "subtitle": "Personalice el color de cada tipo de componente",
+    "reset": "Restablecer Predeterminados",
+    "opportunity": "Oportunidad",
+    "input": "Insumo",
+    "activity": "Actividad",
+    "output": "Producto",
+    "outcome": "Resultado",
+    "impact": "Impacto"
   }
 }

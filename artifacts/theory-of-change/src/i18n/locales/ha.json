@@ -484,5 +484,16 @@
     "riskPlaceholder": "Bayyana haɗarin...",
     "mitigationPlaceholder": "Ta yaya za a rage wannan haɗari?",
     "notesPlaceholder": "Ƙarin bayanai..."
+  },
+  "colorSettings": {
+    "title": "Launukan Sassa",
+    "subtitle": "Gyara launin kowanne nau'in sashe",
+    "reset": "Mayar da Tsoho",
+    "opportunity": "Dama",
+    "input": "Shigarwa",
+    "activity": "Aiki",
+    "output": "Ƙwarewa",
+    "outcome": "Sakamako",
+    "impact": "Tasiri"
   }
 }
