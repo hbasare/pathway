@@ -1,5 +1,8 @@
 import { Router, type IRouter } from "express";
 import { requireAuth } from "../middleware/auth";
+import { db } from "@workspace/db";
+import { theoryAssignmentsTable } from "@workspace/db";
+import { eq, and } from "drizzle-orm";
 import healthRouter from "./health";
 import authRouter from "./auth";
 import usersRouter from "./users";
@@ -19,16 +22,40 @@ router.use(authRouter);
 // Protected routes — require login
 router.use(requireAuth);
 
-// Write operations require editor role (manager or member)
-// User routes have their own requireManager check so are excluded
-router.use((req, res, next) => {
+// Write operations access control:
+// - senior_manager, auditor, donor: blocked from all writes
+// - manager: all writes allowed
+// - member: writes allowed only on theories they are assigned to
+router.use(async (req, res, next) => {
   if (!["POST", "PATCH", "DELETE", "PUT"].includes(req.method)) return next();
   if (req.path.startsWith("/users")) return next();
-  const editorRoles = ["manager", "member"];
-  if (!editorRoles.includes(req.session.role ?? "")) {
+
+  const role = req.session.role ?? "";
+  if (!["manager", "member"].includes(role)) {
     res.status(403).json({ error: "You have read-only access and cannot edit content" });
     return;
   }
+
+  if (role === "member") {
+    const match = req.path.match(/^\/theories\/(\d+)/);
+    if (match) {
+      const theoryId = parseInt(match[1], 10);
+      if (!isNaN(theoryId)) {
+        const [assignment] = await db
+          .select({ id: theoryAssignmentsTable.id })
+          .from(theoryAssignmentsTable)
+          .where(and(
+            eq(theoryAssignmentsTable.theoryId, theoryId),
+            eq(theoryAssignmentsTable.userId, req.session.userId!)
+          ));
+        if (!assignment) {
+          res.status(403).json({ error: "You are not assigned to this theory" });
+          return;
+        }
+      }
+    }
+  }
+
   next();
 });
 

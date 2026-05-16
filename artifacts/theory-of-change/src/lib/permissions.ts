@@ -7,27 +7,34 @@ export interface Permissions {
   canViewDetail: boolean;
   canManageUsers: boolean;
   isReadOnly: boolean;
+  /** Returns true if the current user can edit the given theory (by ID). */
+  canEditTheory: (theoryId: number) => boolean;
 }
 
-export function getPermissions(role: string): Permissions {
+export function getPermissions(role: string, assignedTheoryIds: number[] = []): Permissions {
+  const canEditTheory = (theoryId: number) => {
+    if (role === "manager") return true;
+    if (role === "member") return assignedTheoryIds.includes(theoryId);
+    return false;
+  };
   switch (role) {
     case "manager":
-      return { canEdit: true, canViewDetail: true, canManageUsers: true, isReadOnly: false };
+      return { canEdit: true, canViewDetail: true, canManageUsers: true, isReadOnly: false, canEditTheory };
     case "member":
-      return { canEdit: true, canViewDetail: true, canManageUsers: false, isReadOnly: false };
+      return { canEdit: true, canViewDetail: true, canManageUsers: false, isReadOnly: false, canEditTheory };
     case "senior_manager":
     case "auditor":
-      return { canEdit: false, canViewDetail: true, canManageUsers: false, isReadOnly: true };
+      return { canEdit: false, canViewDetail: true, canManageUsers: false, isReadOnly: true, canEditTheory };
     case "donor":
-      return { canEdit: false, canViewDetail: false, canManageUsers: false, isReadOnly: true };
+      return { canEdit: false, canViewDetail: false, canManageUsers: false, isReadOnly: true, canEditTheory };
     default:
-      return { canEdit: false, canViewDetail: false, canManageUsers: false, isReadOnly: true };
+      return { canEdit: false, canViewDetail: false, canManageUsers: false, isReadOnly: true, canEditTheory };
   }
 }
 
 export function usePermissions(): Permissions {
   const { user } = useAuth();
-  return getPermissions(user?.role ?? "");
+  return getPermissions(user?.role ?? "", user?.assignedTheoryIds ?? []);
 }
 
 export const ROLE_OPTIONS = [
@@ -42,7 +49,7 @@ export const ROLE_OPTIONS = [
     value: "member" as UserRole,
     label: "Team Member",
     shortLabel: "Team Member",
-    description: "Full edit access to all content. Cannot manage users",
+    description: "Full edit access to assigned theories; view-only for others. Cannot manage users",
     colorClass: "text-blue-700 bg-blue-100",
   },
   {

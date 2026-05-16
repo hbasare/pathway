@@ -42,6 +42,8 @@ export default function TheoryDetail() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("about");
 
+  const canEditThisTheory = permissions.canEditTheory(id);
+
   // Redirect donors to the summary-only view
   useEffect(() => {
     if (user && !permissions.canViewDetail && id) {
@@ -98,7 +100,7 @@ export default function TheoryDetail() {
         </div>
 
         <div className="flex items-center gap-3">
-          {permissions.isReadOnly && (
+          {(!canEditThisTheory && permissions.canViewDetail) && (
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted rounded-full px-3 py-1 border border-border">
               <Eye className="w-3 h-3" />
               View only
@@ -140,7 +142,7 @@ export default function TheoryDetail() {
             <GitBranch className="w-4 h-4" />
             {t("theory.systemicChange")}
           </Button>
-          {permissions.canEdit && (
+          {canEditThisTheory && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="icon" className="h-9 w-9">

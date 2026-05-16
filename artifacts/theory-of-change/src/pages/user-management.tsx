@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Plus, Trash2, KeyRound, Shield, User, Loader2, X, Check, ChevronDown,
-  Eye, Search, Heart,
+  Eye, Search, Heart, Layers, ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -25,6 +25,11 @@ interface OrgUser {
   displayName: string;
   role: string;
   createdAt: string;
+}
+
+interface Theory {
+  id: number;
+  title: string;
 }
 
 function RoleBadge({ role }: { role: string }) {
@@ -57,6 +62,19 @@ export default function UserManagementPage() {
   const [resetUserId, setResetUserId] = useState<number | null>(null);
   const [resetPassword, setResetPassword] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+
+  // Theory assignment state
+  const [theories, setTheories] = useState<Theory[]>([]);
+  const [expandedUserId, setExpandedUserId] = useState<number | null>(null);
+  const [userAssignments, setUserAssignments] = useState<Record<number, number[]>>({});
+  const [assignmentLoading, setAssignmentLoading] = useState(false);
+  const [togglingTheory, setTogglingTheory] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch("/api/theories", { credentials: "include" })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Theory[]) => setTheories(data));
+  }, []);
 
   if (currentUser && currentUser.role !== "manager") {
     navigate("/");
@@ -112,6 +130,11 @@ export default function UserManagementPage() {
     if (res.ok) {
       const updated = await res.json() as OrgUser;
       setUsers(prev => prev.map(u => u.id === id ? { ...u, role: updated.role } : u));
+      // Clear cached assignments if switching away from member
+      if (role !== "member") {
+        setUserAssignments(prev => { const next = { ...prev }; delete next[id]; return next; });
+        if (expandedUserId === id) setExpandedUserId(null);
+      }
       toast({ title: t("userManagement.roleUpdated") });
     }
   };
@@ -150,6 +173,47 @@ export default function UserManagementPage() {
       toast({ title: err instanceof Error ? err.message : "Failed", variant: "destructive" });
     } finally {
       setResetLoading(false);
+    }
+  };
+
+  const handleExpandMember = async (userId: number) => {
+    if (expandedUserId === userId) {
+      setExpandedUserId(null);
+      return;
+    }
+    setExpandedUserId(userId);
+    if (userAssignments[userId] === undefined) {
+      setAssignmentLoading(true);
+      const res = await fetch(`/api/users/${userId}/assignments`, { credentials: "include" });
+      if (res.ok) {
+        const ids = await res.json() as number[];
+        setUserAssignments(prev => ({ ...prev, [userId]: ids }));
+      }
+      setAssignmentLoading(false);
+    }
+  };
+
+  const handleToggleAssignment = async (userId: number, theoryId: number) => {
+    const current = userAssignments[userId] ?? [];
+    const isAssigned = current.includes(theoryId);
+    setTogglingTheory(theoryId);
+    try {
+      if (isAssigned) {
+        await fetch(`/api/theories/${theoryId}/assignments/${userId}`, {
+          method: "DELETE", credentials: "include",
+        });
+        setUserAssignments(prev => ({ ...prev, [userId]: (prev[userId] ?? []).filter(id => id !== theoryId) }));
+      } else {
+        await fetch(`/api/theories/${theoryId}/assignments`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        });
+        setUserAssignments(prev => ({ ...prev, [userId]: [...(prev[userId] ?? []), theoryId] }));
+      }
+    } finally {
+      setTogglingTheory(null);
     }
   };
 
@@ -196,8 +260,6 @@ export default function UserManagementPage() {
                 <label className="text-xs font-medium text-muted-foreground">{t("auth.password")} * (min 8 chars)</label>
                 <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" disabled={addLoading} />
               </div>
-
-              {/* Role picker */}
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">{t("userManagement.role")}</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
@@ -228,7 +290,6 @@ export default function UserManagementPage() {
                   })}
                 </div>
               </div>
-
               <div className="flex gap-2">
                 <Button type="submit" size="sm" className="gap-2" disabled={addLoading || !newUsername.trim() || !newPassword}>
                   {addLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
@@ -278,58 +339,129 @@ export default function UserManagementPage() {
               <tr className="bg-muted/60 border-b border-border">
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">{t("userManagement.user")}</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">{t("userManagement.role")}</th>
-                <th className="w-48 px-4 py-3" />
+                <th className="w-56 px-4 py-3" />
               </tr>
             </thead>
             <tbody>
               {users.map(u => (
-                <tr key={u.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="font-medium text-foreground">{u.displayName || u.username}</div>
-                    <div className="text-xs text-muted-foreground">@{u.username}</div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <RoleBadge role={u.role} />
-                  </td>
-                  <td className="px-4 py-3">
-                    {u.id !== currentUser?.id ? (
-                      <div className="flex items-center gap-1 justify-end">
-                        <div className="relative">
-                          <select
-                            value={u.role}
-                            onChange={e => handleChangeRole(u.id, e.target.value)}
-                            className="h-7 rounded-md border border-input bg-background px-2 pr-7 text-xs appearance-none cursor-pointer hover:border-primary/60 transition-colors"
+                <>
+                  <tr key={u.id} className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-foreground">{u.displayName || u.username}</div>
+                      <div className="text-xs text-muted-foreground">@{u.username}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <RoleBadge role={u.role} />
+                    </td>
+                    <td className="px-4 py-3">
+                      {u.id !== currentUser?.id ? (
+                        <div className="flex items-center gap-1 justify-end">
+                          {u.role === "member" && (
+                            <Button
+                              size="sm"
+                              variant={expandedUserId === u.id ? "secondary" : "ghost"}
+                              className="h-7 text-xs gap-1 text-muted-foreground"
+                              onClick={() => handleExpandMember(u.id)}
+                              title="Manage theory assignments"
+                            >
+                              <Layers className="w-3 h-3" />
+                              Theories
+                              <ChevronRight className={`w-3 h-3 transition-transform ${expandedUserId === u.id ? "rotate-90" : ""}`} />
+                            </Button>
+                          )}
+                          <div className="relative">
+                            <select
+                              value={u.role}
+                              onChange={e => handleChangeRole(u.id, e.target.value)}
+                              className="h-7 rounded-md border border-input bg-background px-2 pr-7 text-xs appearance-none cursor-pointer hover:border-primary/60 transition-colors"
+                            >
+                              {ROLE_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                              ))}
+                            </select>
+                            <ChevronDown className="absolute right-1.5 top-1.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-muted-foreground hover:text-amber-600"
+                            title={t("userManagement.resetPassword")}
+                            onClick={() => { setResetUserId(u.id); setResetPassword(""); }}
                           >
-                            {ROLE_OPTIONS.map(opt => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                          </select>
-                          <ChevronDown className="absolute right-1.5 top-1.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                            <KeyRound className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            title={t("userManagement.deleteUser")}
+                            onClick={() => handleDelete(u.id, u.username)}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
                         </div>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-muted-foreground hover:text-amber-600"
-                          title={t("userManagement.resetPassword")}
-                          onClick={() => { setResetUserId(u.id); setResetPassword(""); }}
-                        >
-                          <KeyRound className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                          title={t("userManagement.deleteUser")}
-                          onClick={() => handleDelete(u.id, u.username)}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <span className="text-xs text-muted-foreground pr-2 text-right block">{t("userManagement.you")}</span>
-                    )}
-                  </td>
-                </tr>
+                      ) : (
+                        <span className="text-xs text-muted-foreground pr-2 text-right block">{t("userManagement.you")}</span>
+                      )}
+                    </td>
+                  </tr>
+
+                  {/* Theory assignment panel (members only) */}
+                  {u.role === "member" && expandedUserId === u.id && (
+                    <tr key={`${u.id}-assignments`} className="bg-muted/30 border-b border-border/50">
+                      <td colSpan={3} className="px-4 py-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Layers className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="text-xs font-semibold text-foreground">
+                              Theory Assignments for {u.displayName || u.username}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              — {userAssignments[u.id]?.length ?? 0} of {theories.length} assigned
+                            </span>
+                          </div>
+                          {assignmentLoading && userAssignments[u.id] === undefined ? (
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground py-2">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+                            </div>
+                          ) : theories.length === 0 ? (
+                            <p className="text-xs text-muted-foreground italic py-2">
+                              No theories exist yet. Create theories from the dashboard first.
+                            </p>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                              {theories.map(theory => {
+                                const isAssigned = (userAssignments[u.id] ?? []).includes(theory.id);
+                                const isToggling = togglingTheory === theory.id;
+                                return (
+                                  <button
+                                    key={theory.id}
+                                    onClick={() => handleToggleAssignment(u.id, theory.id)}
+                                    disabled={isToggling}
+                                    className={`flex items-center gap-2.5 rounded-lg border px-3 py-2 text-left text-xs transition-all ${
+                                      isAssigned
+                                        ? "border-blue-200 bg-blue-50 text-blue-800 hover:bg-blue-100"
+                                        : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:bg-muted/40"
+                                    }`}
+                                  >
+                                    {isToggling ? (
+                                      <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                                    ) : isAssigned ? (
+                                      <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                                    ) : (
+                                      <div className="w-3.5 h-3.5 rounded-sm border-2 border-border shrink-0" />
+                                    )}
+                                    <span className="truncate font-medium">{theory.title}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
               ))}
               {users.length === 0 && loaded && (
                 <tr>

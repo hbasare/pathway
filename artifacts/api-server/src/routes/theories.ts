@@ -8,6 +8,8 @@ import {
   theoryNotesUpdatesTable,
   theoryRiskAnalysesTable,
   indicatorScYearsTable,
+  theoryAssignmentsTable,
+  usersTable,
   insertTheorySchema,
   insertComponentSchema,
   insertConnectionSchema,
@@ -17,6 +19,7 @@ import {
   insertIndicatorScYearSchema,
 } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
+import { requireManager } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -348,6 +351,56 @@ router.patch("/theories/:theoryId/indicators/:indicatorId/sc-years/:id", async (
 router.delete("/theories/:theoryId/indicators/:indicatorId/sc-years/:id", async (req, res) => {
   const id = Number(req.params.id);
   await db.delete(indicatorScYearsTable).where(eq(indicatorScYearsTable.id, id));
+  res.status(204).send();
+});
+
+// ─── Theory Assignments ───────────────────────────────────────────────────────
+
+router.get("/theories/:id/assignments", async (req, res) => {
+  const theoryId = Number(req.params.id);
+  const assignments = await db
+    .select({
+      userId: theoryAssignmentsTable.userId,
+      username: usersTable.username,
+      displayName: usersTable.displayName,
+    })
+    .from(theoryAssignmentsTable)
+    .innerJoin(usersTable, eq(theoryAssignmentsTable.userId, usersTable.id))
+    .where(eq(theoryAssignmentsTable.theoryId, theoryId));
+  res.json(assignments);
+});
+
+router.post("/theories/:id/assignments", requireManager, async (req, res) => {
+  const theoryId = Number(req.params.id);
+  const { userId } = req.body as { userId?: number };
+  if (!userId) {
+    res.status(400).json({ error: "userId is required" });
+    return;
+  }
+  const [user] = await db
+    .select({ id: usersTable.id })
+    .from(usersTable)
+    .where(and(eq(usersTable.id, userId), eq(usersTable.orgId, req.session.orgId!)));
+  if (!user) {
+    res.status(404).json({ error: "User not found in your organisation" });
+    return;
+  }
+  await db
+    .insert(theoryAssignmentsTable)
+    .values({ theoryId, userId, orgId: req.session.orgId! })
+    .onConflictDoNothing();
+  res.status(201).json({ theoryId, userId });
+});
+
+router.delete("/theories/:id/assignments/:userId", requireManager, async (req, res) => {
+  const theoryId = Number(req.params.id);
+  const userId = Number(req.params.userId);
+  await db
+    .delete(theoryAssignmentsTable)
+    .where(and(
+      eq(theoryAssignmentsTable.theoryId, theoryId),
+      eq(theoryAssignmentsTable.userId, userId)
+    ));
   res.status(204).send();
 });
 

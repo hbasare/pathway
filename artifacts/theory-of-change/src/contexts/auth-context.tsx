@@ -7,6 +7,7 @@ export interface AuthUser {
   role: "manager" | "member" | "senior_manager" | "auditor" | "donor";
   orgId: number;
   orgName: string;
+  assignedTheoryIds: number[];
 }
 
 interface AuthContextValue {

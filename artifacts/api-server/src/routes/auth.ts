@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { db } from "@workspace/db";
-import { usersTable, organizationsTable } from "@workspace/db";
+import { usersTable, organizationsTable, theoryAssignmentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 
 const router = Router();
@@ -60,10 +60,18 @@ router.post("/auth/logout", (req, res) => {
 });
 
 // ── Me ────────────────────────────────────────────────────────────────────────
-router.get("/auth/me", (req, res) => {
+router.get("/auth/me", async (req, res) => {
   if (!req.session?.userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
+  }
+  let assignedTheoryIds: number[] = [];
+  if (req.session.role === "member") {
+    const rows = await db
+      .select({ theoryId: theoryAssignmentsTable.theoryId })
+      .from(theoryAssignmentsTable)
+      .where(eq(theoryAssignmentsTable.userId, req.session.userId));
+    assignedTheoryIds = rows.map(r => r.theoryId);
   }
   res.json({
     id: req.session.userId,
@@ -72,6 +80,7 @@ router.get("/auth/me", (req, res) => {
     role: req.session.role,
     orgId: req.session.orgId,
     orgName: req.session.orgName,
+    assignedTheoryIds,
   });
 });
 

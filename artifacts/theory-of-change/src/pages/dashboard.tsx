@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
 import { usePermissions } from "@/lib/permissions";
+import { useAuth } from "@/contexts/auth-context";
 
 export default function Dashboard() {
   const { data: theories, isLoading: theoriesLoading } = useListTheories();
@@ -33,6 +34,7 @@ export default function Dashboard() {
   const { t } = useTranslation();
 
   const permissions = usePermissions();
+  const { user } = useAuth();
   const [isCreateTheoryOpen, setIsCreateTheoryOpen] = useState(false);
   const [isCreatePortfolioOpen, setIsCreatePortfolioOpen] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
@@ -174,7 +176,7 @@ export default function Dashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {groupTheories.map(theory => (
-                    <TheoryCard key={theory.id} theory={theory} />
+                    <TheoryCard key={theory.id} theory={theory} isAssigned={user?.role === "member" ? (user.assignedTheoryIds ?? []).includes(theory.id) : undefined} />
                   ))}
                 </div>
               )}
@@ -195,7 +197,7 @@ export default function Dashboard() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {ungrouped.map(theory => (
-                  <TheoryCard key={theory.id} theory={theory} />
+                  <TheoryCard key={theory.id} theory={theory} isAssigned={user?.role === "member" ? (user.assignedTheoryIds ?? []).includes(theory.id) : undefined} />
                 ))}
               </div>
             </div>
@@ -248,13 +250,24 @@ export default function Dashboard() {
   );
 }
 
-function TheoryCard({ theory }: { theory: { id: number; title: string; description: string } }) {
+function TheoryCard({ theory, isAssigned }: { theory: { id: number; title: string; description: string }; isAssigned?: boolean }) {
   const { t } = useTranslation();
   return (
     <Link href={`/theory/${theory.id}`}>
       <div className="group bg-card rounded-2xl p-6 border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 transition-all duration-300 cursor-pointer h-full flex flex-col">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-          <Layers className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+        <div className="flex items-start justify-between mb-4">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+            <Layers className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+          </div>
+          {isAssigned !== undefined && (
+            <span className={`text-xs font-medium rounded-full px-2 py-0.5 shrink-0 ${
+              isAssigned
+                ? "text-blue-700 bg-blue-100"
+                : "text-muted-foreground bg-muted"
+            }`}>
+              {isAssigned ? "Assigned" : "View only"}
+            </span>
+          )}
         </div>
         <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
           {theory.title}

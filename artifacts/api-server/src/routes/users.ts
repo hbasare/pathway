@@ -1,7 +1,7 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
+import { usersTable, theoryAssignmentsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth, requireManager } from "../middleware/auth";
 
@@ -122,6 +122,19 @@ router.patch("/users/:id/password", requireManager, async (req, res) => {
     return;
   }
   res.json({ ok: true });
+});
+
+// ── Get theories assigned to a user (manager only) ───────────────────────────
+router.get("/users/:id/assignments", requireManager, async (req, res) => {
+  const userId = Number(req.params.id);
+  const rows = await db
+    .select({ theoryId: theoryAssignmentsTable.theoryId })
+    .from(theoryAssignmentsTable)
+    .where(and(
+      eq(theoryAssignmentsTable.userId, userId),
+      eq(theoryAssignmentsTable.orgId, req.session.orgId!)
+    ));
+  res.json(rows.map(r => r.theoryId));
 });
 
 // ── Delete a user (manager only) ─────────────────────────────────────────────

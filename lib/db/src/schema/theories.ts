@@ -1,7 +1,7 @@
-import { pgTable, text, serial, integer, real, timestamp, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, real, timestamp, boolean, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { organizationsTable } from "./auth";
+import { organizationsTable, usersTable } from "./auth";
 
 export const portfoliosTable = pgTable("portfolios", {
   id: serial("id").primaryKey(),
@@ -252,3 +252,16 @@ export const insertSystemicChangeSchema = createInsertSchema(systemicChangesTabl
 export type InsertSystemicChange = z.infer<typeof insertSystemicChangeSchema>;
 export type SystemicChange = typeof systemicChangesTable.$inferSelect;
 export type BusinessModelActor = typeof businessModelActorsTable.$inferSelect;
+
+// ─── Theory Assignments ────────────────────────────────────────────────────────
+// Maps team members (role: "member") to the specific theories they manage.
+// Members can edit only their assigned theories; all others are view-only.
+export const theoryAssignmentsTable = pgTable("theory_assignments", {
+  id: serial("id").primaryKey(),
+  theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  userId: integer("user_id").notNull().references(() => usersTable.id, { onDelete: "cascade" }),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => [unique().on(t.theoryId, t.userId)]);
+
+export type TheoryAssignment = typeof theoryAssignmentsTable.$inferSelect;
