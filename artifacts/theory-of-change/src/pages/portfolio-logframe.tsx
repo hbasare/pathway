@@ -1,4 +1,7 @@
-import { useParams, Link } from "wouter";
+import { useParams, Link, useLocation } from "wouter";
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { getPermissions } from "@/lib/permissions";
 import { useGetPortfolioLogframe } from "@workspace/api-client-react";
 import { ArrowLeft, Printer, FolderOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +19,11 @@ const LEVELS = [
 export default function PortfolioLogframe() {
   const { id } = useParams<{ id: string }>();
   const portfolioId = Number(id);
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    if (user && !getPermissions(user.role).canViewDetail) setLocation("/");
+  }, [user?.role]);
   const { data, isLoading, error } = useGetPortfolioLogframe(portfolioId);
 
   if (isLoading) {

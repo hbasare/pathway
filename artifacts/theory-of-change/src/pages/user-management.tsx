@@ -4,31 +4,37 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Plus, Trash2, KeyRound, Shield, User, Loader2, X, Check, ChevronDown,
+  Eye, Search, Heart,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
+import { ROLE_OPTIONS, type UserRole } from "@/lib/permissions";
+
+const ROLE_ICONS: Record<string, React.ElementType> = {
+  manager: Shield,
+  member: User,
+  senior_manager: Eye,
+  auditor: Search,
+  donor: Heart,
+};
 
 interface OrgUser {
   id: number;
   username: string;
   displayName: string;
-  role: "manager" | "member";
+  role: string;
   createdAt: string;
 }
 
 function RoleBadge({ role }: { role: string }) {
-  const { t } = useTranslation();
-  if (role === "manager") {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5">
-        <Shield className="w-3 h-3" /> {t("userManagement.manager")}
-      </span>
-    );
-  }
+  const opt = ROLE_OPTIONS.find(o => o.value === role);
+  if (!opt) return <span className="text-xs text-muted-foreground">{role}</span>;
+  const Icon = ROLE_ICONS[role] ?? User;
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-semibold text-blue-700 bg-blue-100 rounded-full px-2 py-0.5">
-      <User className="w-3 h-3" /> {t("userManagement.member")}
+    <span className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2 py-0.5 ${opt.colorClass}`}>
+      <Icon className="w-3 h-3" />
+      {opt.shortLabel}
     </span>
   );
 }
@@ -45,14 +51,13 @@ export default function UserManagementPage() {
   const [newUsername, setNewUsername] = useState("");
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState<"manager" | "member">("member");
+  const [newRole, setNewRole] = useState<UserRole>("member");
   const [addLoading, setAddLoading] = useState(false);
 
   const [resetUserId, setResetUserId] = useState<number | null>(null);
   const [resetPassword, setResetPassword] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
 
-  // Redirect non-managers
   if (currentUser && currentUser.role !== "manager") {
     navigate("/");
     return null;
@@ -97,7 +102,7 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleChangeRole = async (id: number, role: "manager" | "member") => {
+  const handleChangeRole = async (id: number, role: string) => {
     const res = await fetch(`/api/users/${id}`, {
       method: "PATCH",
       credentials: "include",
@@ -107,7 +112,7 @@ export default function UserManagementPage() {
     if (res.ok) {
       const updated = await res.json() as OrgUser;
       setUsers(prev => prev.map(u => u.id === id ? { ...u, role: updated.role } : u));
-      toast({ title: "Role updated" });
+      toast({ title: t("userManagement.roleUpdated") });
     }
   };
 
@@ -150,13 +155,14 @@ export default function UserManagementPage() {
 
   return (
     <div className="flex flex-col h-full overflow-auto bg-background">
-      <div className="max-w-3xl mx-auto w-full px-6 py-8">
+      <div className="max-w-4xl mx-auto w-full px-6 py-8 space-y-8">
+
         {/* Header */}
-        <div className="flex items-start justify-between gap-4 mb-8">
+        <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-foreground">{t("userManagement.title")}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {currentUser?.orgName} · Manage who has access to this organization
+              {currentUser?.orgName} · {t("userManagement.subtitle")}
             </p>
           </div>
           {!showAddForm && (
@@ -168,14 +174,14 @@ export default function UserManagementPage() {
 
         {/* Add user form */}
         {showAddForm && (
-          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 mb-6 space-y-4">
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-foreground">{t("userManagement.addUser")}</h3>
               <button onClick={() => setShowAddForm(false)} className="text-muted-foreground hover:text-foreground">
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleAdd} className="space-y-3">
+            <form onSubmit={handleAdd} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground">{t("auth.fullName")}</label>
@@ -186,27 +192,43 @@ export default function UserManagementPage() {
                   <Input value={newUsername} onChange={e => setNewUsername(e.target.value)} placeholder="jsmith" autoFocus disabled={addLoading} />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">{t("auth.password")} * (min 8 chars)</label>
-                  <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" disabled={addLoading} />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">{t("userManagement.role")}</label>
-                  <div className="relative">
-                    <select
-                      value={newRole}
-                      onChange={e => setNewRole(e.target.value as "manager" | "member")}
-                      className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm appearance-none pr-8"
-                      disabled={addLoading}
-                    >
-                      <option value="member">{t("userManagement.member")}</option>
-                      <option value="manager">{t("userManagement.manager")}</option>
-                    </select>
-                    <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">{t("auth.password")} * (min 8 chars)</label>
+                <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" disabled={addLoading} />
+              </div>
+
+              {/* Role picker */}
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">{t("userManagement.role")}</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {ROLE_OPTIONS.map(opt => {
+                    const Icon = ROLE_ICONS[opt.value] ?? User;
+                    const selected = newRole === opt.value;
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setNewRole(opt.value as UserRole)}
+                        disabled={addLoading}
+                        className={`text-left rounded-lg border p-3 transition-all ${
+                          selected
+                            ? "border-primary bg-primary/10 ring-1 ring-primary"
+                            : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2 py-0.5 ${opt.colorClass}`}>
+                            <Icon className="w-3 h-3" />
+                            {opt.shortLabel}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-snug">{opt.description}</p>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
               <div className="flex gap-2">
                 <Button type="submit" size="sm" className="gap-2" disabled={addLoading || !newUsername.trim() || !newPassword}>
                   {addLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
@@ -222,7 +244,7 @@ export default function UserManagementPage() {
 
         {/* Password reset form */}
         {resetUserId !== null && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 mb-6 space-y-3">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-foreground flex items-center gap-2">
                 <KeyRound className="w-4 h-4 text-amber-600" /> {t("userManagement.resetPassword")}
@@ -254,9 +276,9 @@ export default function UserManagementPage() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-muted/60 border-b border-border">
-                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">User</th>
+                <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">{t("userManagement.user")}</th>
                 <th className="text-left px-4 py-3 font-semibold text-muted-foreground text-xs">{t("userManagement.role")}</th>
-                <th className="w-40 px-4 py-3" />
+                <th className="w-48 px-4 py-3" />
               </tr>
             </thead>
             <tbody>
@@ -270,18 +292,20 @@ export default function UserManagementPage() {
                     <RoleBadge role={u.role} />
                   </td>
                   <td className="px-4 py-3">
-                    {u.id !== currentUser?.id && (
+                    {u.id !== currentUser?.id ? (
                       <div className="flex items-center gap-1 justify-end">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-7 text-xs gap-1 text-muted-foreground"
-                          onClick={() => handleChangeRole(u.id, u.role === "manager" ? "member" : "manager")}
-                          title={u.role === "manager" ? "Demote to Member" : "Promote to Evaluation Manager"}
-                        >
-                          <Shield className="w-3 h-3" />
-                          {u.role === "manager" ? "Demote" : "Promote"}
-                        </Button>
+                        <div className="relative">
+                          <select
+                            value={u.role}
+                            onChange={e => handleChangeRole(u.id, e.target.value)}
+                            className="h-7 rounded-md border border-input bg-background px-2 pr-7 text-xs appearance-none cursor-pointer hover:border-primary/60 transition-colors"
+                          >
+                            {ROLE_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                          <ChevronDown className="absolute right-1.5 top-1.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                        </div>
                         <Button
                           size="icon"
                           variant="ghost"
@@ -301,9 +325,8 @@ export default function UserManagementPage() {
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
-                    )}
-                    {u.id === currentUser?.id && (
-                      <span className="text-xs text-muted-foreground pr-2 text-right block">You</span>
+                    ) : (
+                      <span className="text-xs text-muted-foreground pr-2 text-right block">{t("userManagement.you")}</span>
                     )}
                   </td>
                 </tr>
@@ -311,13 +334,33 @@ export default function UserManagementPage() {
               {users.length === 0 && loaded && (
                 <tr>
                   <td colSpan={3} className="px-4 py-10 text-center text-sm text-muted-foreground italic">
-                    No users yet. Click "{t("userManagement.addUser")}" to get started.
+                    {t("userManagement.noUsers")}
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Role reference */}
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="text-sm font-semibold text-foreground mb-3">{t("userManagement.roleReference")}</h3>
+          <div className="space-y-2.5">
+            {ROLE_OPTIONS.map(opt => {
+              const Icon = ROLE_ICONS[opt.value] ?? User;
+              return (
+                <div key={opt.value} className="flex items-start gap-3">
+                  <span className={`inline-flex items-center gap-1 text-xs font-semibold rounded-full px-2 py-0.5 mt-0.5 shrink-0 ${opt.colorClass}`}>
+                    <Icon className="w-3 h-3" />
+                    {opt.shortLabel}
+                  </span>
+                  <p className="text-xs text-muted-foreground leading-relaxed">{opt.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
       </div>
     </div>
   );

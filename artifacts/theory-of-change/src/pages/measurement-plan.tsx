@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory } from "@workspace/api-client-react";
+import { useAuth } from "@/contexts/auth-context";
+import { getPermissions } from "@/lib/permissions";
 import {
   ArrowLeft, Printer, CalendarClock, CheckCircle2, Clock,
   AlertCircle, MinusCircle, MessageSquare, BarChart3,
@@ -88,6 +90,10 @@ export default function MeasurementPlan() {
   const [, params] = useRoute("/theory/:id/measurement-plan");
   const id = params?.id ? parseInt(params.id, 10) : 0;
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  useEffect(() => {
+    if (user && !getPermissions(user.role).canViewDetail) setLocation("/");
+  }, [user?.role]);
 
   const { data: theory, isLoading, error } = useGetTheory(id, {
     query: { enabled: !!id }

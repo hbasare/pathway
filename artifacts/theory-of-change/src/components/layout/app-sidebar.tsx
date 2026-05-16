@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { FolderGit2, Plus, Home, Layers, LayoutGrid, Users, LogOut, Shield } from "lucide-react";
+import { FolderGit2, Plus, Home, Layers, LayoutGrid, Users, LogOut, Shield, User, Eye, Search, Heart } from "lucide-react";
 import { useListTheories } from "@workspace/api-client-react";
 import { useState } from "react";
 import {
@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
 import { TheoryForm } from "@/components/forms/theory-form";
 import { useAuth } from "@/contexts/auth-context";
+import { getPermissions } from "@/lib/permissions";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ColorSettingsTrigger } from "@/components/ColorSettings";
@@ -28,6 +29,7 @@ export function AppSidebar() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { user, logout } = useAuth();
   const { t } = useTranslation();
+  const permissions = getPermissions(user?.role ?? "");
 
   return (
     <Sidebar>
@@ -60,14 +62,16 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={location === "/program-logframe"}>
-                  <Link href="/program-logframe">
-                    <LayoutGrid className="w-4 h-4 mr-2" />
-                    <span>{t("sidebar.programLogframe")}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {permissions.canViewDetail && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild isActive={location === "/program-logframe"}>
+                    <Link href="/program-logframe">
+                      <LayoutGrid className="w-4 h-4 mr-2" />
+                      <span>{t("sidebar.programLogframe")}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
               {user?.role === "manager" && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild isActive={location === "/users"}>
@@ -87,19 +91,21 @@ export function AppSidebar() {
             <SidebarGroupLabel className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
               {t("sidebar.yourTheories")}
             </SidebarGroupLabel>
-            <DialogWrapper
-              open={isCreateOpen}
-              onOpenChange={setIsCreateOpen}
-              title={t("sidebar.createTheory")}
-              description={t("sidebar.defineObjective")}
-              trigger={
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              }
-            >
-              <TheoryForm onSuccess={() => setIsCreateOpen(false)} />
-            </DialogWrapper>
+            {permissions.canEdit && (
+              <DialogWrapper
+                open={isCreateOpen}
+                onOpenChange={setIsCreateOpen}
+                title={t("sidebar.createTheory")}
+                description={t("sidebar.defineObjective")}
+                trigger={
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                }
+              >
+                <TheoryForm onSuccess={() => setIsCreateOpen(false)} />
+              </DialogWrapper>
+            )}
           </div>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -147,6 +153,10 @@ export function AppSidebar() {
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               {user?.role === "manager" && <Shield className="w-3 h-3 text-amber-500" />}
+              {user?.role === "member" && <User className="w-3 h-3 text-blue-500" />}
+              {user?.role === "senior_manager" && <Eye className="w-3 h-3 text-indigo-500" />}
+              {user?.role === "auditor" && <Search className="w-3 h-3 text-purple-500" />}
+              {user?.role === "donor" && <Heart className="w-3 h-3 text-emerald-500" />}
               <span className="truncate">{user?.orgName}</span>
             </div>
           </div>

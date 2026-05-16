@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useDeleteTheory, getListTheoriesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, Calculator, LayoutList, Network, Info, Briefcase, StickyNote, ShieldAlert, GitBranch } from "lucide-react";
+import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, Calculator, LayoutList, Network, Info, Briefcase, StickyNote, ShieldAlert, GitBranch, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TheoryCanvas } from "@/components/theory/theory-canvas";
 import { AboutIntervention } from "@/components/theory/about-intervention";
@@ -20,6 +20,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "@/contexts/auth-context";
+import { getPermissions } from "@/lib/permissions";
 
 type ActiveTab = "about" | "business-model" | "canvas" | "notes" | "risk";
 
@@ -27,6 +29,8 @@ export default function TheoryDetail() {
   const [, params] = useRoute("/theory/:id");
   const id = params?.id ? parseInt(params.id, 10) : 0;
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  const permissions = getPermissions(user?.role ?? "");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
@@ -37,6 +41,13 @@ export default function TheoryDetail() {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<ActiveTab>("about");
+
+  // Redirect donors to the summary-only view
+  useEffect(() => {
+    if (user && !permissions.canViewDetail && id) {
+      setLocation(`/theory/${id}/summary`);
+    }
+  }, [user?.role, id]);
 
   const deleteMutation = useDeleteTheory({
     mutation: {
@@ -87,6 +98,12 @@ export default function TheoryDetail() {
         </div>
 
         <div className="flex items-center gap-3">
+          {permissions.isReadOnly && (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-muted rounded-full px-3 py-1 border border-border">
+              <Eye className="w-3 h-3" />
+              View only
+            </span>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -123,24 +140,26 @@ export default function TheoryDetail() {
             <GitBranch className="w-4 h-4" />
             {t("theory.systemicChange")}
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="h-9 w-9">
-                <Settings className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
-                <Settings className="w-4 h-4 mr-2" />
-                {t("theory.settings")}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
-                <Trash2 className="w-4 h-4 mr-2" />
-                {t("theory.deleteTheory")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {permissions.canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-9 w-9">
+                  <Settings className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => setIsEditOpen(true)}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  {t("theory.settings")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {t("theory.deleteTheory")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </header>
 

@@ -122,16 +122,25 @@
   },
   "userManagement": {
     "title": "User Management",
+    "subtitle": "Manage team members and their access levels",
     "addUser": "Add User",
     "username": "Username",
     "displayName": "Display Name",
     "role": "Role",
+    "user": "User",
     "manager": "Evaluation Manager",
-    "member": "Member",
+    "member": "Team Member",
+    "senior_manager": "Senior Manager",
+    "auditor": "Auditor",
+    "donor": "Donor",
     "resetPassword": "Reset Password",
     "deleteUser": "Delete User",
     "newPassword": "New Password",
-    "setPassword": "Set Password"
+    "setPassword": "Set Password",
+    "roleUpdated": "Role updated",
+    "you": "You",
+    "noUsers": "No users yet",
+    "roleReference": "Role Reference"
   },
   "systemicChange": {
     "generateAnalysis": "Generate Analysis",

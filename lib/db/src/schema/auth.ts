@@ -18,7 +18,7 @@ export const usersTable = pgTable("users", {
   username: text("username").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   displayName: text("display_name").notNull().default(""),
-  role: text("role").notNull().default("member"), // "manager" | "member"
+  role: text("role").notNull().default("member"), // "manager" | "member" | "senior_manager" | "auditor" | "donor"
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

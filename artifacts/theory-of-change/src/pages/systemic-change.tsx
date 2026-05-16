@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 import { useTranslation } from "react-i18next";
 import { useRoute, useLocation } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
+import { getPermissions } from "@/lib/permissions";
 import { useGetTheory, useUpdateTheory, getGetTheoryQueryKey, useAnalyzeSystemicChange } from "@workspace/api-client-react";
 import type { SystemicChangeAnalysis, StageAnalysis } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -3760,6 +3762,10 @@ export default function SystemicChange() {
   const { t } = useTranslation();
   const [, params] = useRoute("/theory/:id/systemic-change");
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  useEffect(() => {
+    if (user && !getPermissions(user.role).canViewDetail) setLocation("/");
+  }, [user?.role]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 

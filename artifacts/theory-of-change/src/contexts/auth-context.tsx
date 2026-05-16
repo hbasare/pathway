@@ -4,7 +4,7 @@ export interface AuthUser {
   id: number;
   username: string;
   displayName: string;
-  role: "manager" | "member";
+  role: "manager" | "member" | "senior_manager" | "auditor" | "donor";
   orgId: number;
   orgName: string;
 }

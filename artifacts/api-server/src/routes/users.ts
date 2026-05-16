@@ -40,7 +40,7 @@ router.post("/users", requireManager, async (req, res) => {
     res.status(400).json({ error: "Password must be at least 8 characters" });
     return;
   }
-  const validRoles = ["manager", "member"];
+  const validRoles = ["manager", "member", "senior_manager", "auditor", "donor"];
   const userRole = validRoles.includes(role ?? "") ? role! : "member";
 
   const passwordHash = await bcrypt.hash(password, 12);
@@ -74,7 +74,7 @@ router.patch("/users/:id", requireManager, async (req, res) => {
   const { role, displayName } = req.body as { role?: string; displayName?: string };
 
   const updates: Record<string, unknown> = {};
-  if (role && ["manager", "member"].includes(role)) updates.role = role;
+  if (role && ["manager", "member", "senior_manager", "auditor", "donor"].includes(role)) updates.role = role;
   if (displayName?.trim()) updates.displayName = displayName.trim();
 
   if (Object.keys(updates).length === 0) {

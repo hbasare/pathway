@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "react-i18next";
+import { usePermissions } from "@/lib/permissions";
 
 export default function Dashboard() {
   const { data: theories, isLoading: theoriesLoading } = useListTheories();
@@ -31,6 +32,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { t } = useTranslation();
 
+  const permissions = usePermissions();
   const [isCreateTheoryOpen, setIsCreateTheoryOpen] = useState(false);
   const [isCreatePortfolioOpen, setIsCreatePortfolioOpen] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
@@ -70,7 +72,7 @@ export default function Dashboard() {
           <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">{t("dashboard.title")}</h1>
           <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
         </div>
-        <div className="flex gap-2">
+        {permissions.canEdit && <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsCreatePortfolioOpen(true)} className="font-semibold">
             <FolderPlus className="w-4 h-4 mr-2" />
             {t("dashboard.newPortfolio")}
@@ -79,7 +81,7 @@ export default function Dashboard() {
             <Plus className="w-4 h-4 mr-2" />
             {t("dashboard.createTheory")}
           </Button>
-        </div>
+        </div>}
       </div>
 
       {isLoading ? (
@@ -103,9 +105,11 @@ export default function Dashboard() {
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             {t("dashboard.emptyText")}
           </p>
-          <Button onClick={() => setIsCreateTheoryOpen(true)} size="lg" className="shadow-md">
-            {t("dashboard.createFirst")}
-          </Button>
+          {permissions.canEdit && (
+            <Button onClick={() => setIsCreateTheoryOpen(true)} size="lg" className="shadow-md">
+              {t("dashboard.createFirst")}
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-10">
@@ -131,37 +135,41 @@ export default function Dashboard() {
                     <TableProperties className="w-3.5 h-3.5" /> {t("dashboard.logframe")}
                   </Button>
                 </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setEditingPortfolio(portfolio)}>
-                      <Pencil className="w-4 h-4 mr-2" /> {t("dashboard.editPortfolio")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={() => handleDeletePortfolio(portfolio)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" /> {t("dashboard.deletePortfolio")}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {permissions.canEdit && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingPortfolio(portfolio)}>
+                        <Pencil className="w-4 h-4 mr-2" /> {t("dashboard.editPortfolio")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => handleDeletePortfolio(portfolio)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> {t("dashboard.deletePortfolio")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </div>
 
               {groupTheories.length === 0 ? (
                 <div className="rounded-xl border-2 border-dashed border-border/60 bg-muted/20 py-8 text-center">
                   <p className="text-sm text-muted-foreground">{t("dashboard.noTheoriesInPortfolio")}</p>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    className="mt-1 text-primary"
-                    onClick={() => setIsCreateTheoryOpen(true)}
-                  >
-                    {t("dashboard.addTheory")}
-                  </Button>
+                  {permissions.canEdit && (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="mt-1 text-primary"
+                      onClick={() => setIsCreateTheoryOpen(true)}
+                    >
+                      {t("dashboard.addTheory")}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -197,9 +205,11 @@ export default function Dashboard() {
           {totalTheories === 0 && (portfolios ?? []).length > 0 && (
             <div className="text-center py-12 bg-card rounded-2xl border border-dashed border-border">
               <p className="text-muted-foreground mb-4">{t("dashboard.noTheoriesYet")}</p>
-              <Button onClick={() => setIsCreateTheoryOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" /> {t("dashboard.createTheory")}
-              </Button>
+              {permissions.canEdit && (
+                <Button onClick={() => setIsCreateTheoryOpen(true)}>
+                  <Plus className="w-4 h-4 mr-2" /> {t("dashboard.createTheory")}
+                </Button>
+              )}
             </div>
           )}
         </div>

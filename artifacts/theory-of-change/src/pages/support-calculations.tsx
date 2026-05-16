@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, useCallback, Fragment } from "react";
 import { useRoute, useLocation } from "wouter";
+import { useAuth } from "@/contexts/auth-context";
+import { getPermissions } from "@/lib/permissions";
 import {
   useGetTheory,
   useUpdateComponentIndicator,
@@ -320,6 +322,10 @@ export default function SupportCalculations() {
   const [, params] = useRoute("/theory/:id/support-calculations");
   const id = params?.id ? parseInt(params.id, 10) : 0;
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
+  useEffect(() => {
+    if (user && !getPermissions(user.role).canViewDetail) setLocation("/");
+  }, [user?.role]);
   const queryClient = useQueryClient();
 
   const { data: theory, isLoading, error } = useGetTheory(id, {

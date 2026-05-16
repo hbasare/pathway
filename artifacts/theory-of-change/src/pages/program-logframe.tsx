@@ -1,4 +1,7 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { getPermissions } from "@/lib/permissions";
 import { useGetProgramLogframe } from "@workspace/api-client-react";
 import { ArrowLeft, Printer, LayoutGrid, TableProperties } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +17,11 @@ const LEVELS = [
 ] as const;
 
 export default function ProgramLogframe() {
+  const { user } = useAuth();
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    if (user && !getPermissions(user.role).canViewDetail) setLocation("/");
+  }, [user?.role]);
   const { data, isLoading, error } = useGetProgramLogframe();
 
   if (isLoading) {
