@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Building2, UserCircle2, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { PasswordStrength } from "@/components/PasswordStrength";
+import { getPasswordError, isPasswordValid } from "@/lib/password";
 
 export default function SetupPage() {
   const { refetch } = useAuth();
@@ -20,8 +22,9 @@ export default function SetupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orgName.trim() || !username.trim() || !password) return;
-    if (password !== confirm) { setError(t("auth.passwordMismatch")); return; }
-    if (password.length < 8) { setError(t("auth.passwordTooShort")); return; }
+    if (password !== confirm) { setError("Passwords do not match"); return; }
+    const pwError = getPasswordError(password);
+    if (pwError) { setError(pwError); return; }
     setError("");
     setLoading(true);
     try {
@@ -43,15 +46,15 @@ export default function SetupPage() {
     }
   };
 
+  const canSubmit = !loading && orgName.trim() && username.trim() && isPasswordValid(password) && password === confirm;
+
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Language switcher */}
         <div className="flex justify-end mb-2">
           <LanguageSwitcher />
         </div>
 
-        {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
             <span className="text-2xl">🌿</span>
@@ -133,6 +136,7 @@ export default function SetupPage() {
                   autoComplete="new-password"
                   disabled={loading}
                 />
+                <PasswordStrength password={password} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="confirm">{t("auth.confirmPassword")}</label>
@@ -145,6 +149,9 @@ export default function SetupPage() {
                   autoComplete="new-password"
                   disabled={loading}
                 />
+                {confirm && password !== confirm && (
+                  <p className="text-xs text-destructive mt-1">Passwords do not match</p>
+                )}
               </div>
             </div>
 
@@ -152,11 +159,7 @@ export default function SetupPage() {
               <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</p>
             )}
 
-            <Button
-              type="submit"
-              className="w-full gap-2"
-              disabled={loading || !orgName.trim() || !username.trim() || !password || !confirm}
-            >
+            <Button type="submit" className="w-full gap-2" disabled={!canSubmit}>
               {loading ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> {t("setup.setting")}</>
               ) : (

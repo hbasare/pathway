@@ -10,6 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { useTranslation } from "react-i18next";
 import { ROLE_OPTIONS, type UserRole } from "@/lib/permissions";
+import { PasswordStrength } from "@/components/PasswordStrength";
+import { isPasswordValid } from "@/lib/password";
 
 const ROLE_ICONS: Record<string, React.ElementType> = {
   manager: Shield,
@@ -257,8 +259,9 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">{t("auth.password")} * (min 8 chars)</label>
-                <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" disabled={addLoading} />
+                <label className="text-xs font-medium text-muted-foreground">{t("auth.password")} *</label>
+                <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" disabled={addLoading} autoComplete="new-password" />
+                <PasswordStrength password={newPassword} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">{t("userManagement.role")}</label>
@@ -291,7 +294,7 @@ export default function UserManagementPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button type="submit" size="sm" className="gap-2" disabled={addLoading || !newUsername.trim() || !newPassword}>
+                <Button type="submit" size="sm" className="gap-2" disabled={addLoading || !newUsername.trim() || !isPasswordValid(newPassword)}>
                   {addLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                   {t("userManagement.addUser")}
                 </Button>
@@ -314,20 +317,24 @@ export default function UserManagementPage() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <form onSubmit={handleResetPassword} className="flex gap-2">
-              <Input
-                type="password"
-                value={resetPassword}
-                onChange={e => setResetPassword(e.target.value)}
-                placeholder={t("userManagement.newPassword") + " (min 8 chars)"}
-                autoFocus
-                disabled={resetLoading}
-                className="flex-1"
-              />
-              <Button type="submit" size="sm" disabled={resetLoading || resetPassword.length < 8} className="gap-1.5">
-                {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                {t("userManagement.setPassword")}
-              </Button>
+            <form onSubmit={handleResetPassword} className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  value={resetPassword}
+                  onChange={e => setResetPassword(e.target.value)}
+                  placeholder={t("userManagement.newPassword")}
+                  autoFocus
+                  disabled={resetLoading}
+                  autoComplete="new-password"
+                  className="flex-1"
+                />
+                <Button type="submit" size="sm" disabled={resetLoading || !isPasswordValid(resetPassword)} className="gap-1.5 shrink-0">
+                  {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                  {t("userManagement.setPassword")}
+                </Button>
+              </div>
+              <PasswordStrength password={resetPassword} />
             </form>
           </div>
         )}

@@ -3,11 +3,13 @@ import bcrypt from "bcryptjs";
 import { db } from "@workspace/db";
 import { usersTable, organizationsTable, theoryAssignmentsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
+import { loginLimiter, registerLimiter, passwordResetLimiter } from "../middleware/rate-limit";
+import { validatePasswordStrength } from "../lib/password";
 
 const router = Router();
 
 // ── Login ─────────────────────────────────────────────────────────────────────
-router.post("/auth/login", async (req, res) => {
+router.post("/auth/login", loginLimiter, async (req, res) => {
   const { username, password } = req.body as { username?: string; password?: string };
   if (!username || !password) {
     res.status(400).json({ error: "Username and password are required" });
@@ -19,13 +21,13 @@ router.post("/auth/login", async (req, res) => {
     .from(usersTable)
     .where(eq(usersTable.username, username.trim().toLowerCase()));
 
-  if (!user) {
-    res.status(401).json({ error: "Invalid username or password" });
-    return;
-  }
+  // Constant-time comparison even on invalid user to prevent user enumeration
+  const dummyHash = "$2b$12$invalidhashfortimingattackprotection000000000000000000000";
+  const valid = user
+    ? await bcrypt.compare(password, user.passwordHash)
+    : await bcrypt.compare(password, dummyHash).then(() => false);
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
+  if (!user || !valid) {
     res.status(401).json({ error: "Invalid username or password" });
     return;
   }
@@ -34,6 +36,11 @@ router.post("/auth/login", async (req, res) => {
     .select()
     .from(organizationsTable)
     .where(eq(organizationsTable.id, user.orgId));
+
+  // Regenerate session ID on login to prevent session fixation attacks.
+  await new Promise<void>((resolve, reject) =>
+    req.session.regenerate(err => (err ? reject(err) : resolve()))
+  );
 
   req.session.userId = user.id;
   req.session.orgId = user.orgId;
@@ -55,6 +62,8 @@ router.post("/auth/login", async (req, res) => {
 // ── Logout ────────────────────────────────────────────────────────────────────
 router.post("/auth/logout", (req, res) => {
   req.session.destroy(() => {
+    // Clear the session cookie from the browser even if session destruction fails
+    res.clearCookie("pathways.sid");
     res.json({ ok: true });
   });
 });
@@ -85,7 +94,7 @@ router.get("/auth/me", async (req, res) => {
 });
 
 // ── Register new organization (open to anyone) ────────────────────────────────
-router.post("/register", async (req, res) => {
+router.post("/register", registerLimiter, async (req, res) => {
   const { orgName, username, password, displayName } = req.body as {
     orgName?: string;
     username?: string;
@@ -97,8 +106,9 @@ router.post("/register", async (req, res) => {
     res.status(400).json({ error: "Organization name, username and password are required" });
     return;
   }
-  if (password.length < 8) {
-    res.status(400).json({ error: "Password must be at least 8 characters" });
+  const pwError = validatePasswordStrength(password);
+  if (pwError) {
+    res.status(400).json({ error: pwError });
     return;
   }
 
@@ -129,6 +139,11 @@ router.post("/register", async (req, res) => {
     })
     .returning();
 
+  // Regenerate session ID to prevent session fixation
+  await new Promise<void>((resolve, reject) =>
+    req.session.regenerate(err => (err ? reject(err) : resolve()))
+  );
+
   req.session.userId = user.id;
   req.session.orgId = org.id;
   req.session.role = "manager";
@@ -153,7 +168,7 @@ router.get("/setup/status", async (_req, res) => {
 });
 
 // ── First-run setup ───────────────────────────────────────────────────────────
-router.post("/setup", async (req, res) => {
+router.post("/setup", registerLimiter, async (req, res) => {
   // Only allowed if no org exists yet
   const [existing] = await db.select().from(organizationsTable).limit(1);
   if (existing) {
@@ -172,8 +187,9 @@ router.post("/setup", async (req, res) => {
     res.status(400).json({ error: "Organization name, username and password are required" });
     return;
   }
-  if (password.length < 8) {
-    res.status(400).json({ error: "Password must be at least 8 characters" });
+  const pwError = validatePasswordStrength(password);
+  if (pwError) {
+    res.status(400).json({ error: pwError });
     return;
   }
 
@@ -202,7 +218,11 @@ router.post("/setup", async (req, res) => {
     })
     .returning();
 
-  // Auto login
+  // Regenerate session ID to prevent session fixation
+  await new Promise<void>((resolve, reject) =>
+    req.session.regenerate(err => (err ? reject(err) : resolve()))
+  );
+
   req.session.userId = user.id;
   req.session.orgId = org.id;
   req.session.role = "manager";

@@ -4,6 +4,8 @@ import { db } from "@workspace/db";
 import { usersTable, theoryAssignmentsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { requireAuth, requireManager } from "../middleware/auth";
+import { passwordResetLimiter } from "../middleware/rate-limit";
+import { validatePasswordStrength } from "../lib/password";
 
 const router = Router();
 
@@ -36,8 +38,9 @@ router.post("/users", requireManager, async (req, res) => {
     res.status(400).json({ error: "Username and password are required" });
     return;
   }
-  if (password.length < 8) {
-    res.status(400).json({ error: "Password must be at least 8 characters" });
+  const pwError = validatePasswordStrength(password);
+  if (pwError) {
+    res.status(400).json({ error: pwError });
     return;
   }
   const validRoles = ["manager", "member", "senior_manager", "auditor", "donor"];
@@ -101,12 +104,17 @@ router.patch("/users/:id", requireManager, async (req, res) => {
 });
 
 // ── Reset a user's password (manager only) ───────────────────────────────────
-router.patch("/users/:id/password", requireManager, async (req, res) => {
+router.patch("/users/:id/password", requireManager, passwordResetLimiter, async (req, res) => {
   const id = Number(req.params.id);
   const { password } = req.body as { password?: string };
 
-  if (!password || password.length < 8) {
-    res.status(400).json({ error: "Password must be at least 8 characters" });
+  if (!password) {
+    res.status(400).json({ error: "Password is required" });
+    return;
+  }
+  const pwError = validatePasswordStrength(password);
+  if (pwError) {
+    res.status(400).json({ error: pwError });
     return;
   }
 
