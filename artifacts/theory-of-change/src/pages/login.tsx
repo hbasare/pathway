@@ -6,6 +6,7 @@ import { Loader2, LogIn } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { PathwaysLogo } from "@/components/PathwaysLogo";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -39,8 +40,8 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 mb-4">
-            <span className="text-2xl">🌿</span>
+          <div className="inline-flex items-center justify-center mb-4">
+            <PathwaysLogo size={52} />
           </div>
           <h1 className="text-2xl font-bold text-foreground">{t("app.name")}</h1>
           <p className="text-sm text-muted-foreground mt-1">{t("app.tagline")}</p>

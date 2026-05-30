@@ -22,6 +22,7 @@ import { getPermissions } from "@/lib/permissions";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ColorSettingsTrigger } from "@/components/ColorSettings";
+import { PathwaysLogo } from "@/components/PathwaysLogo";
 
 export function AppSidebar() {
   const [location] = useLocation();
@@ -35,11 +36,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4 border-b">
         <div className="flex items-center gap-3">
-          <img
-            src={`${import.meta.env.BASE_URL}images/logo.png`}
-            alt="Logo"
-            className="w-8 h-8 rounded-lg shadow-sm"
-          />
+          <PathwaysLogo className="w-8 h-8 rounded-lg shadow-sm" />
           <div>
             <h2 className="font-display font-bold text-lg leading-tight tracking-tight">{t("app.name")}</h2>
             <p className="text-xs text-muted-foreground font-medium">{t("app.taglineShort")}</p>
