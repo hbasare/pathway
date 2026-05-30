@@ -3272,10 +3272,8 @@ function MsrContinuum({ analysis }: { analysis: MsrAnalysisResult }) {
   const { t } = useTranslation();
 
   const domains: { key: string; data: MsrDomainAnalysis }[] = [
-    { key: "structural",          data: analysis.structural },
-    { key: "behavioural",         data: analysis.behavioural },
-    { key: "enablingEnvironment", data: analysis.enablingEnvironment },
-    { key: "relational",          data: analysis.relational },
+    { key: "structural",  data: analysis.structural },
+    { key: "behavioural", data: analysis.behavioural },
   ];
 
   const stageFor = (score: number) =>
@@ -3524,7 +3522,7 @@ function MsrAIAnalysis({
     }
   };
 
-  const domainKeys = ["structural", "behavioural", "enablingEnvironment", "relational"] as const;
+  const domainKeys = ["structural", "behavioural"] as const;
 
   return (
     <div className="rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 via-background to-blue-50 overflow-hidden">
