@@ -98,12 +98,12 @@ If a stage has no data entries at all, set status to "no-data", score to 0, head
 });
 
 router.post("/theories/:theoryId/msr-ai-analysis", async (req, res) => {
-  const { scoreSummary, interventionTitle } = req.body as {
-    scoreSummary: ScoreSummaryEntry[];
+  const { actorSummaries, interventionTitle } = req.body as {
+    actorSummaries: { actorId: string; actorName: string; scoreSummary: ScoreSummaryEntry[] }[];
     interventionTitle?: string;
   };
 
-  const systemPrompt = `You are an expert in market systems development, specialising in the Market System Resilience (MSR) framework. MSR assesses how proactively market systems respond to shocks and stresses across four domains, each scored 1–4:
+  const msrSystemPrompt = `You are an expert in market systems development, specialising in the Market System Resilience (MSR) framework. MSR assesses how proactively market systems respond to shocks and stresses across two domains, each scored 1–4:
 - 1: Much more reactive (system relies on external support)
 - 2: Sometimes reactive (some proactive behaviour emerging)
 - 3: Somewhat proactive (system increasingly self-organising)
@@ -112,10 +112,8 @@ router.post("/theories/:theoryId/msr-ai-analysis", async (req, res) => {
 Domains:
 - Structural Domain: physical and relational architecture (connectivity, diversity, integration, flexibility)
 - Behavioural Domain: actor motivations and capacities
-- Enabling Environment Domain: rules, norms, policies, infrastructure
-- Relational Domain: trust, power dynamics, collective action
 
-Your task: analyse the MSR score data and return a structured JSON assessment.
+Your task: analyse the MSR score data for a single actor and return a structured JSON assessment.
 
 For each domain, produce a 0–100 score (map 1→0, 2→33, 3→67, 4→100, interpolate for fractions) and a status:
 - "reactive" (0–25), "emerging" (26–50), "transitioning" (51–75), "proactive" (76–100), "no-data" (no scores)
@@ -124,7 +122,7 @@ Return ONLY valid JSON with this exact structure (no markdown, no extra text):
 {
   "overallScore": <integer 0-100>,
   "overallAssessment": "<2-3 sentence narrative>",
-  "trajectoryNarrative": "<1-2 sentence description of the market system's current trajectory>",
+  "trajectoryNarrative": "<1-2 sentence description of the actor's current trajectory>",
   "structural": {
     "score": <integer 0-100>,
     "status": "<reactive|emerging|transitioning|proactive|no-data>",
@@ -135,36 +133,39 @@ Return ONLY valid JSON with this exact structure (no markdown, no extra text):
     "weakComponents": ["<component name>"]
   },
   "behavioural": { <same structure> },
-  "enablingEnvironment": { <same structure> },
-  "relational": { <same structure> },
   "priorityActions": ["<action 1>", "<action 2>", "<action 3>"]
 }
 
 If a domain has no scores (all null), set status to "no-data", score to 0, headline to "No indicators scored for this domain yet", findings/recommendations/strongComponents/weakComponents to [].`;
 
   const title = interventionTitle ?? "this intervention";
-  const userMessage = `MSR assessment data for "${title}":\n\n${JSON.stringify(scoreSummary, null, 2)}\n\nEach component shows overallAvg (1–4 scale, null = not scored) and scores by period.\n\nPlease analyse and return the structured JSON assessment.`;
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-5.4",
-      max_completion_tokens: 8192,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMessage },
-      ],
-    });
-
-    const raw = response.choices[0]?.message?.content ?? "{}";
-    let analysis: Record<string, unknown>;
-    try {
-      analysis = JSON.parse(raw);
-    } catch {
+  const parseAnalysis = (raw: string): Record<string, unknown> => {
+    try { return JSON.parse(raw); }
+    catch {
       const match = raw.match(/\{[\s\S]*\}/);
       if (!match) throw new Error("No JSON found in response");
-      analysis = JSON.parse(match[0]);
+      return JSON.parse(match[0]);
     }
-    res.json(analysis);
+  };
+
+  try {
+    const results = await Promise.all(
+      actorSummaries.map(async ({ actorId, actorName, scoreSummary }) => {
+        const userMessage = `MSR assessment data for "${title}" — Actor: ${actorName}:\n\n${JSON.stringify(scoreSummary, null, 2)}\n\nEach component shows overallAvg (1–4 scale, null = not scored) and scores by period.\n\nAnalyse this actor and return the structured JSON assessment.`;
+        const response = await openai.chat.completions.create({
+          model: "gpt-5.4",
+          max_completion_tokens: 4096,
+          messages: [
+            { role: "system", content: msrSystemPrompt },
+            { role: "user", content: userMessage },
+          ],
+        });
+        const raw = response.choices[0]?.message?.content ?? "{}";
+        return [actorId, parseAnalysis(raw)] as const;
+      })
+    );
+    res.json(Object.fromEntries(results));
   } catch (err) {
     console.error("MSR AI analysis error:", err);
     res.status(500).json({ error: "Failed to generate MSR analysis" });

@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Plus, Trash2, Pencil, Check, X, Loader2, GitBranch,
   ChevronRight, RefreshCw, Info, Settings, ChevronDown, ChevronUp,
-  Sparkles, AlertCircle, TrendingUp, ListChecks,
+  Sparkles, AlertCircle, TrendingUp, ListChecks, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -2492,24 +2492,29 @@ const MSR_DOMAINS: MsrDomain[] = [
 
 // Per-indicator score for one period
 interface MsrScore { score: number | null; notes: string }
-// Top-level data for the whole MSR assessment
+// Actor from the Business Model section
+interface BusinessModelActor { id: number; name: string; role?: string }
+// Convenience alias: period → indicatorId → score
+type PeriodScores = Record<string, Record<string, MsrScore>>;
+// Top-level data for the whole MSR assessment (v3: per-actor scores)
 interface MsrData {
-  v: 2;
-  sel: Record<string, string[]>;                        // componentKey → selected indicatorId[]
-  scores: Record<string, Record<string, MsrScore>>;     // period → indicatorId → score
+  v: 3;
+  sel: Record<string, string[]>;             // componentKey → selected indicatorId[] (shared across actors)
+  selectedActorIds: string[];                // actor IDs currently being assessed
+  actorScores: Record<string, PeriodScores>; // actorId → period → indicatorId → score
 }
-const MSR_DATA_EMPTY: MsrData = { v: 2, sel: {}, scores: {} };
+const MSR_DATA_EMPTY: MsrData = { v: 3, sel: {}, selectedActorIds: [], actorScores: {} };
 
-function msrIndicatorAvg(data: MsrData, indicatorId: string, periods: string[]): number | null {
-  const vals = periods.map(p => data.scores[p]?.[indicatorId]?.score).filter((v): v is number => v != null);
+function msrIndicatorAvg(scores: PeriodScores, indicatorId: string, periods: string[]): number | null {
+  const vals = periods.map(p => scores[p]?.[indicatorId]?.score).filter((v): v is number => v != null);
   return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
 }
 
-function msrComponentAvg(data: MsrData, componentKey: string, periods: string[]): number | null {
-  const ids = data.sel[componentKey] ?? [];
+function msrComponentAvg(sel: Record<string, string[]>, scores: PeriodScores, componentKey: string, periods: string[]): number | null {
+  const ids = sel[componentKey] ?? [];
   if (!ids.length) return null;
   const vals: number[] = ids.flatMap(id =>
-    periods.map(p => data.scores[p]?.[id]?.score).filter((v): v is number => v != null)
+    periods.map(p => scores[p]?.[id]?.score).filter((v): v is number => v != null)
   );
   return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
 }
@@ -2718,9 +2723,59 @@ function MsrIndicatorScorePanel({ period, indicator, groupLabel, domain, compone
   );
 }
 
-function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, onEditIndicators }: {
+function MsrActorSelector({
+  actors, selectedIds, onChange,
+}: { actors: BusinessModelActor[]; selectedIds: string[]; onChange: (ids: string[]) => void }) {
+  if (actors.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-border p-4 text-center">
+        <Users className="w-6 h-6 text-muted-foreground/30 mx-auto mb-2" />
+        <p className="text-sm font-medium text-muted-foreground">No actors found</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">Add actors in the Business Model section to assess them here.</p>
+      </div>
+    );
+  }
+  const toggle = (id: string) =>
+    onChange(selectedIds.includes(id) ? selectedIds.filter(x => x !== id) : [...selectedIds, id]);
+  return (
+    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+      <div className="flex items-center gap-2 mb-3">
+        <Users className="w-4 h-4 text-indigo-600 shrink-0" />
+        <span className="text-sm font-semibold text-indigo-900">Actors Being Assessed</span>
+        {selectedIds.length > 0 && (
+          <span className="ml-auto text-xs font-medium text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
+            {selectedIds.length} selected
+          </span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {actors.map(actor => {
+          const id = String(actor.id);
+          const sel = selectedIds.includes(id);
+          return (
+            <button key={id} onClick={() => toggle(id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-sm font-medium transition-all ${
+                sel
+                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                  : "bg-white text-foreground border-border hover:border-indigo-300 hover:bg-indigo-50/80"
+              }`}>
+              {sel && <Check className="w-3 h-3 shrink-0" />}
+              {actor.name}
+            </button>
+          );
+        })}
+      </div>
+      {selectedIds.length === 0 && (
+        <p className="text-xs text-muted-foreground/60 mt-2">Select at least one actor to begin scoring indicators.</p>
+      )}
+    </div>
+  );
+}
+
+function MsrMatrix({ periods, sel, scores, scoringCell, selectingFor, onSelectCell, onEditIndicators }: {
   periods: string[];
-  msrData: MsrData;
+  sel: Record<string, string[]>;
+  scores: PeriodScores;
   scoringCell: { period: string; indicatorId: string } | null;
   selectingFor: string | null;
   onSelectCell: (period: string, indicatorId: string, componentKey: string) => void;
@@ -2767,8 +2822,8 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                 </tr>
 
                 {domain.components.map(comp => {
-                  const selectedIds = msrData.sel[comp.key] ?? [];
-                  const compAvg = msrComponentAvg(msrData, comp.key, periods);
+                  const selectedIds = sel[comp.key] ?? [];
+                  const compAvg = msrComponentAvg(sel, scores, comp.key, periods);
                   const isSelectingThis = selectingFor === comp.key;
 
                   // Build a lookup: indicatorId → { indicator, groupLabel }
@@ -2803,7 +2858,7 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                           <MsrScoreChip score={compAvg != null ? Math.round(compAvg) : null} size="sm" />
                         </td>
                         {periods.map(p => {
-                          const pVals = selectedIds.map(id => msrData.scores[p]?.[id]?.score).filter((v): v is number => v != null);
+                          const pVals = selectedIds.map(id => scores[p]?.[id]?.score).filter((v): v is number => v != null);
                           const pAvg = pVals.length ? Math.round(pVals.reduce((a, b) => a + b, 0) / pVals.length) : null;
                           return (
                             <td key={p} className="px-1 py-1.5 text-center border-b border-border/20">
@@ -2829,7 +2884,7 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
 
                         const grpAvg = (() => {
                           const vals: number[] = grpSelected.flatMap(i =>
-                            periods.map(p => msrData.scores[p]?.[i.id]?.score).filter((v): v is number => v != null)
+                            periods.map(p => scores[p]?.[i.id]?.score).filter((v): v is number => v != null)
                           );
                           return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : null;
                         })();
@@ -2861,7 +2916,7 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                                 <MsrScoreChip score={grpAvg} size="sm" />
                               </td>
                               {periods.map(p => {
-                                const pVals = grpSelected.map(i => msrData.scores[p]?.[i.id]?.score).filter((v): v is number => v != null);
+                                const pVals = grpSelected.map(i => scores[p]?.[i.id]?.score).filter((v): v is number => v != null);
                                 const pAvg = pVals.length ? Math.round(pVals.reduce((a, b) => a + b, 0) / pVals.length) : null;
                                 return (
                                   <td key={p} className="px-1 py-1 text-center border-b border-border/20 bg-slate-50">
@@ -2874,7 +2929,7 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                             </tr>
                             {/* Indicator rows — hidden when group is collapsed */}
                             {!isCollapsed && grpSelected.map(indicator => {
-                              const indAvg = msrIndicatorAvg(msrData, indicator.id, periods);
+                              const indAvg = msrIndicatorAvg(scores, indicator.id, periods);
                               return (
                                 <tr key={indicator.id} className="border-b border-border/20 hover:bg-muted/10 transition-colors bg-background">
                                   <td className="pl-10 pr-3 py-1.5 sticky left-0 bg-background z-10 border-r border-border/20">
@@ -2895,7 +2950,7 @@ function MsrMatrix({ periods, msrData, scoringCell, selectingFor, onSelectCell, 
                                   </td>
                                   {periods.map(p => (
                                     <MsrScoreCell key={p}
-                                      score={msrData.scores[p]?.[indicator.id]}
+                                      score={scores[p]?.[indicator.id]}
                                       isSelected={scoringCell?.period === p && scoringCell?.indicatorId === indicator.id}
                                       onClick={() => onSelectCell(p, indicator.id, comp.key)}
                                     />
@@ -3020,19 +3075,30 @@ function useMsrData(theoryId: number, apiBase: string) {
   const [msrSettings, setMsrSettings] = useState<MsrSettings>(MSR_SETTINGS_EMPTY);
   const [msrEntryId, setMsrEntryId] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [actors, setActors] = useState<BusinessModelActor[]>([]);
 
   const load = async () => {
     try {
-      const res = await fetch(`${apiBase}/theories/${theoryId}/systemic-changes`, { credentials: "include" });
-      if (!res.ok) return;
-      const rows: any[] = await res.json();
+      const [scRes, actRes] = await Promise.all([
+        fetch(`${apiBase}/theories/${theoryId}/systemic-changes`, { credentials: "include" }),
+        fetch(`${apiBase}/theories/${theoryId}/business-model/actors`, { credentials: "include" }),
+      ]);
+      if (actRes.ok) setActors((await actRes.json()) as BusinessModelActor[]);
+      if (!scRes.ok) return;
+      const rows: any[] = await scRes.json();
       const msrRow = rows.find(r => r.frameworkTag === "__msr__");
       if (msrRow) {
         setMsrEntryId(msrRow.id);
         try {
           const parsed = JSON.parse(msrRow.stageData ?? "{}");
-          // Migrate old format (v !== 2) to new — start fresh
-          setMsrData(parsed.v === 2 ? parsed as MsrData : MSR_DATA_EMPTY);
+          if (parsed.v === 3) {
+            setMsrData(parsed as MsrData);
+          } else if (parsed.v === 2) {
+            // Migrate v2 → v3: keep indicator selection, discard old flat scores (different shape)
+            setMsrData({ v: 3, sel: parsed.sel ?? {}, selectedActorIds: [], actorScores: {} });
+          } else {
+            setMsrData(MSR_DATA_EMPTY);
+          }
         } catch {}
         try {
           const s = JSON.parse(msrRow.description ?? "{}");
@@ -3070,12 +3136,12 @@ function useMsrData(theoryId: number, apiBase: string) {
   const saveData = (data: MsrData) => { setMsrData(data); persist(data, msrSettings); };
   const saveSettings = (s: MsrSettings) => { setMsrSettings(s); persist(msrData, s); };
 
-  return { msrData, msrSettings, loaded, load, saveData, saveSettings };
+  return { msrData, msrSettings, loaded, load, saveData, saveSettings, actors };
 }
 
 const RADAR_COLORS = ["#6366f1","#f43f5e","#f59e0b","#10b981","#8b5cf6","#06b6d4","#ec4899","#84cc16"];
 
-function MsrRadarCharts({ msrData, periods }: { msrData: MsrData; periods: string[] }) {
+function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]>; scores: PeriodScores; periods: string[] }) {
   const [open, setOpen] = useState(true);
 
   const shortLabel = (label: string) => label.length > 14 ? label.slice(0, 13) + "…" : label;
@@ -3083,8 +3149,8 @@ function MsrRadarCharts({ msrData, periods }: { msrData: MsrData; periods: strin
   // Only include periods that actually have at least one score anywhere
   const activePeriods = periods.filter(p =>
     MSR_DOMAINS.some(d => d.components.some(comp => {
-      const ids = msrData.sel[comp.key] ?? [];
-      return ids.some(id => msrData.scores[p]?.[id]?.score != null);
+      const ids = sel[comp.key] ?? [];
+      return ids.some(id => scores[p]?.[id]?.score != null);
     }))
   );
 
@@ -3116,16 +3182,16 @@ function MsrRadarCharts({ msrData, periods }: { msrData: MsrData; periods: strin
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {MSR_DOMAINS.map(domain => {
                 const domainHasScores = domain.components.some(comp => {
-                  const ids = msrData.sel[comp.key] ?? [];
-                  return ids.some(id => activePeriods.some(p => msrData.scores[p]?.[id]?.score != null));
+                  const ids = sel[comp.key] ?? [];
+                  return ids.some(id => activePeriods.some(p => scores[p]?.[id]?.score != null));
                 });
 
                 const data = domain.components.map(comp => {
                   const entry: Record<string, string | number> = { subject: shortLabel(comp.label) };
                   activePeriods.forEach(p => {
-                    const ids = msrData.sel[comp.key] ?? [];
+                    const ids = sel[comp.key] ?? [];
                     const vals = ids
-                      .map(id => msrData.scores[p]?.[id]?.score)
+                      .map(id => scores[p]?.[id]?.score)
                       .filter((v): v is number => v != null);
                     entry[p] = vals.length
                       ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
@@ -3463,45 +3529,59 @@ function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomain
 }
 
 function MsrAIAnalysis({
-  msrData, periods, apiBase, theoryId,
+  msrData, periods, apiBase, theoryId, actors,
 }: {
-  msrData: MsrData; periods: string[]; apiBase: string; theoryId: number;
+  msrData: MsrData; periods: string[]; apiBase: string; theoryId: number; actors: BusinessModelActor[];
 }) {
   const { toast } = useToast();
   const { t } = useTranslation();
-  const [analysis, setAnalysis] = useState<MsrAnalysisResult | null>(null);
+  const [analysisMap, setAnalysisMap] = useState<Record<string, MsrAnalysisResult>>({});
   const [pending, setPending] = useState(false);
 
-  const buildScoreSummary = () =>
-    MSR_DOMAINS.map(domain => ({
-      domain: domain.label,
-      components: domain.components.map(comp => {
-        const ids = msrData.sel[comp.key] ?? [];
-        const allVals = periods.flatMap(p =>
-          ids.map(id => msrData.scores[p]?.[id]?.score).filter((v): v is number => v != null)
-        );
-        const overallAvg = allVals.length
-          ? Math.round((allVals.reduce((a, b) => a + b, 0) / allVals.length) * 10) / 10
-          : null;
-        const byPeriod: Record<string, number | null> = {};
-        periods.forEach(p => {
-          const vals = ids
-            .map(id => msrData.scores[p]?.[id]?.score)
-            .filter((v): v is number => v != null);
-          byPeriod[p] = vals.length
-            ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
-            : null;
-        });
-        return { component: comp.label, overallAvg, byPeriod };
-      }),
-    }));
+  const domainKeys = ["structural", "behavioural"] as const;
 
-  const hasScores = MSR_DOMAINS.some(domain =>
-    domain.components.some(comp => {
-      const ids = msrData.sel[comp.key] ?? [];
-      return periods.some(p => ids.some(id => msrData.scores[p]?.[id]?.score != null));
-    })
-  );
+  const buildActorSummaries = () =>
+    msrData.selectedActorIds.map(actorId => {
+      const actor = actors.find(a => String(a.id) === actorId);
+      const actorScores = msrData.actorScores[actorId] ?? {};
+      return {
+        actorId,
+        actorName: actor?.name ?? actorId,
+        scoreSummary: MSR_DOMAINS
+          .filter(d => ["structural", "behavioural"].includes(d.key))
+          .map(domain => ({
+            domain: domain.label,
+            components: domain.components.map(comp => {
+              const ids = msrData.sel[comp.key] ?? [];
+              const allVals = periods.flatMap(p =>
+                ids.map(id => actorScores[p]?.[id]?.score).filter((v): v is number => v != null)
+              );
+              const overallAvg = allVals.length
+                ? Math.round((allVals.reduce((a, b) => a + b, 0) / allVals.length) * 10) / 10
+                : null;
+              const byPeriod: Record<string, number | null> = {};
+              periods.forEach(p => {
+                const vals = ids.map(id => actorScores[p]?.[id]?.score).filter((v): v is number => v != null);
+                byPeriod[p] = vals.length
+                  ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+                  : null;
+              });
+              return { component: comp.label, overallAvg, byPeriod };
+            }),
+          })),
+      };
+    });
+
+  const noActors = msrData.selectedActorIds.length === 0;
+  const hasScores = !noActors && msrData.selectedActorIds.some(actorId => {
+    const as = msrData.actorScores[actorId] ?? {};
+    return MSR_DOMAINS.some(domain =>
+      domain.components.some(comp => {
+        const ids = msrData.sel[comp.key] ?? [];
+        return periods.some(p => ids.some(id => as[p]?.[id]?.score != null));
+      })
+    );
+  });
 
   const generate = async () => {
     setPending(true);
@@ -3510,11 +3590,11 @@ function MsrAIAnalysis({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ scoreSummary: buildScoreSummary() }),
+        body: JSON.stringify({ actorSummaries: buildActorSummaries() }),
       });
       if (!res.ok) throw new Error(await res.text());
-      const data = await res.json() as MsrAnalysisResult;
-      setAnalysis(data);
+      const data = await res.json() as Record<string, MsrAnalysisResult>;
+      setAnalysisMap(data);
     } catch (err) {
       toast({ title: t("systemicChange.analysisFailed"), description: String(err), variant: "destructive" });
     } finally {
@@ -3522,7 +3602,7 @@ function MsrAIAnalysis({
     }
   };
 
-  const domainKeys = ["structural", "behavioural"] as const;
+  const hasResults = Object.keys(analysisMap).length > 0;
 
   return (
     <div className="rounded-2xl border-2 border-violet-200 bg-gradient-to-br from-violet-50 via-background to-blue-50 overflow-hidden">
@@ -3543,14 +3623,22 @@ function MsrAIAnalysis({
         >
           {pending
             ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />{t("systemicChange.analysing")}</>
-            : <><Sparkles className="w-3.5 h-3.5" />{analysis ? t("systemicChange.regenerate") : t("systemicChange.generateAnalysis")}</>
+            : <><Sparkles className="w-3.5 h-3.5" />{hasResults ? t("systemicChange.regenerate") : t("systemicChange.generateAnalysis")}</>
           }
         </Button>
       </div>
 
       {/* Body */}
       <div className="px-5 py-4 space-y-5">
-        {!hasScores && !analysis && (
+        {noActors && (
+          <div className="flex flex-col items-center gap-2 py-8 text-center">
+            <Users className="w-8 h-8 text-muted-foreground/30" />
+            <p className="text-sm font-medium text-muted-foreground">No actors selected</p>
+            <p className="text-xs text-muted-foreground/70">Select actors above to generate a per-actor resilience analysis.</p>
+          </div>
+        )}
+
+        {!noActors && !hasScores && !hasResults && (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <AlertCircle className="w-8 h-8 text-muted-foreground/30" />
             <p className="text-sm font-medium text-muted-foreground">{t("systemicChange.noScoresYet")}</p>
@@ -3558,7 +3646,7 @@ function MsrAIAnalysis({
           </div>
         )}
 
-        {hasScores && !analysis && !pending && (
+        {hasScores && !hasResults && !pending && (
           <div className="flex flex-col items-center gap-3 py-8 text-center">
             <div className="w-14 h-14 rounded-full bg-violet-100 flex items-center justify-center">
               <Sparkles className="w-7 h-7 text-violet-500" />
@@ -3580,42 +3668,59 @@ function MsrAIAnalysis({
           </div>
         )}
 
-        {analysis && !pending && (
-          <>
-            {/* Resilience continuum */}
-            <MsrContinuum analysis={analysis} />
+        {hasResults && !pending && (
+          <div className="space-y-6">
+            {msrData.selectedActorIds.map(actorId => {
+              const actor = actors.find(a => String(a.id) === actorId);
+              const analysis = analysisMap[actorId];
+              if (!analysis) return null;
+              return (
+                <div key={actorId} className="space-y-4">
+                  {/* Actor header */}
+                  <div className="flex items-center gap-2 pb-1 border-b border-violet-200">
+                    <Users className="w-4 h-4 text-indigo-600 shrink-0" />
+                    <span className="text-sm font-bold text-foreground">{actor?.name ?? actorId}</span>
+                    <span className={`ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                      MSR_STATUS_LABELS[analysis.structural?.status ?? "no-data"]?.color ?? ""
+                    }`}>
+                      Overall {analysis.overallScore}%
+                    </span>
+                  </div>
 
-            {/* Overall assessment */}
-            <div className="rounded-xl border border-border bg-white/60 p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">{t("systemicChange.overallAssessment")}</p>
-              <p className="text-sm text-foreground leading-relaxed">{analysis.overallAssessment}</p>
-            </div>
+                  {/* Continuum */}
+                  <MsrContinuum analysis={analysis} />
 
-            {/* Per-domain cards */}
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">{t("systemicChange.domainAnalysis")}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {domainKeys.map(k => (
-                  <MsrDomainCard key={k} domainKey={k} data={analysis[k]} />
-                ))}
-              </div>
-            </div>
+                  {/* Assessment */}
+                  <div className="rounded-xl border border-border bg-white/60 p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">{t("systemicChange.overallAssessment")}</p>
+                    <p className="text-sm text-foreground leading-relaxed">{analysis.overallAssessment}</p>
+                  </div>
 
-            {/* Priority actions */}
-            {analysis.priorityActions && analysis.priorityActions.length > 0 && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">{t("systemicChange.priorityActions")}</p>
-                <ul className="space-y-1.5">
-                  {analysis.priorityActions.map((a, i) => (
-                    <li key={i} className="flex gap-2 text-sm text-amber-900 leading-relaxed">
-                      <span className="shrink-0 font-black text-amber-600">{i + 1}.</span>
-                      <span>{a}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </>
+                  {/* Domain cards */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {domainKeys.map(k => (
+                      <MsrDomainCard key={k} domainKey={k} data={analysis[k]} />
+                    ))}
+                  </div>
+
+                  {/* Priority actions */}
+                  {analysis.priorityActions && analysis.priorityActions.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">{t("systemicChange.priorityActions")}</p>
+                      <ul className="space-y-1.5">
+                        {analysis.priorityActions.map((a, i) => (
+                          <li key={i} className="flex gap-2 text-sm text-amber-900 leading-relaxed">
+                            <span className="shrink-0 font-black text-amber-600">{i + 1}.</span>
+                            <span>{a}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
@@ -3623,22 +3728,43 @@ function MsrAIAnalysis({
 }
 
 function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
-  const { msrData, msrSettings, loaded, load, saveData, saveSettings } = useMsrData(theoryId, apiBase);
+  const { msrData, msrSettings, loaded, load, saveData, saveSettings, actors } = useMsrData(theoryId, apiBase);
 
-  // Which indicator cell is open for scoring
   const [scoringCell, setScoringCell] = useState<{ period: string; indicatorId: string; componentKey: string } | null>(null);
-  // Which component's indicator list is open for selection
   const [selectingFor, setSelectingFor] = useState<string | null>(null);
+  const [activeActorId, setActiveActorId] = useState<string | null>(null);
 
   useEffect(() => { load(); }, [theoryId]);
+
+  // Keep activeActorId in sync with selectedActorIds
+  useEffect(() => {
+    const ids = msrData.selectedActorIds;
+    if (ids.length === 0) { setActiveActorId(null); return; }
+    setActiveActorId(prev => ids.includes(prev ?? "") ? prev : ids[0]);
+  }, [msrData.selectedActorIds]);
 
   const periods = msrSettings.startYear && msrSettings.endYear
     ? generatePeriods(msrSettings.startYear, msrSettings.endYear, msrSettings.granularity)
     : [];
 
+  // Scores for the active actor only (used by the matrix)
+  const activeScores: PeriodScores = activeActorId ? (msrData.actorScores[activeActorId] ?? {}) : {};
+
+  // Aggregate scores across all selected actors (used by radar charts)
+  const aggregatedScores: PeriodScores = {};
+  msrData.selectedActorIds.forEach(actorId => {
+    Object.entries(msrData.actorScores[actorId] ?? {}).forEach(([p, indMap]) => {
+      if (!aggregatedScores[p]) aggregatedScores[p] = {};
+      Object.entries(indMap).forEach(([id, s]) => {
+        const ex = aggregatedScores[p][id];
+        if (!ex || ex.score == null) { aggregatedScores[p][id] = s; }
+        else if (s.score != null) { aggregatedScores[p][id] = { score: (ex.score + s.score) / 2, notes: "" }; }
+      });
+    });
+  });
+
   const hasSidePanel = !!(scoringCell || selectingFor);
 
-  // Resolve metadata for the scoring panel
   const scoringMeta = (() => {
     if (!scoringCell) return null;
     const domain = MSR_DOMAINS.find(d => d.components.some(c => c.key === scoringCell.componentKey));
@@ -3655,7 +3781,6 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
     return { domain, component, indicator, groupLabel };
   })();
 
-  // Resolve metadata for the indicator-select panel
   const selectingMeta = (() => {
     if (!selectingFor) return null;
     const domain = MSR_DOMAINS.find(d => d.components.some(c => c.key === selectingFor));
@@ -3665,12 +3790,17 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
     return { domain, component };
   })();
 
+  const handleSaveActorIds = (ids: string[]) => {
+    saveData({ ...msrData, selectedActorIds: ids });
+  };
+
   const handleEditIndicators = (componentKey: string) => {
     setScoringCell(null);
     setSelectingFor(prev => prev === componentKey ? null : componentKey);
   };
 
   const handleSelectCell = (period: string, indicatorId: string, componentKey: string) => {
+    if (!activeActorId) return;
     setSelectingFor(null);
     setScoringCell(prev =>
       prev?.period === period && prev?.indicatorId === indicatorId ? null : { period, indicatorId, componentKey }
@@ -3682,11 +3812,15 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
   };
 
   const handleSaveScore = (period: string, indicatorId: string, score: MsrScore) => {
+    if (!activeActorId) return;
     saveData({
       ...msrData,
-      scores: {
-        ...msrData.scores,
-        [period]: { ...(msrData.scores[period] ?? {}), [indicatorId]: score },
+      actorScores: {
+        ...msrData.actorScores,
+        [activeActorId]: {
+          ...(msrData.actorScores[activeActorId] ?? {}),
+          [period]: { ...(msrData.actorScores[activeActorId]?.[period] ?? {}), [indicatorId]: score },
+        },
       },
     });
     setScoringCell(null);
@@ -3699,6 +3833,13 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
   return (
     <div className="space-y-4">
       <MsrSettingsPanel settings={msrSettings} onSave={saveSettings} />
+
+      {/* Actor selector */}
+      <MsrActorSelector
+        actors={actors}
+        selectedIds={msrData.selectedActorIds}
+        onChange={handleSaveActorIds}
+      />
 
       {/* Scale legend */}
       <div className="flex flex-wrap gap-2 items-center">
@@ -3720,56 +3861,90 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
         <span className="-ml-1.5">Structure</span>
       </div>
 
-      {/* Matrix + side panel */}
-      <div className={hasSidePanel ? "flex gap-4 items-start" : ""}>
-        <div className={hasSidePanel ? "flex-1 min-w-0 overflow-x-auto" : ""}>
-          <MsrMatrix
-            periods={periods}
-            msrData={msrData}
-            scoringCell={scoringCell}
-            selectingFor={selectingFor}
-            onSelectCell={handleSelectCell}
-            onEditIndicators={handleEditIndicators}
-          />
+      {/* Actor tabs (when multiple actors selected) */}
+      {msrData.selectedActorIds.length > 1 && (
+        <div className="flex items-center gap-1 flex-wrap">
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mr-1">Scoring for:</span>
+          {msrData.selectedActorIds.map(id => {
+            const actor = actors.find(a => String(a.id) === id);
+            const isActive = id === activeActorId;
+            return (
+              <button key={id} onClick={() => { setActiveActorId(id); setScoringCell(null); setSelectingFor(null); }}
+                className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold transition-all ${
+                  isActive ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-foreground border-border hover:border-indigo-300"
+                }`}>
+                {actor?.name ?? id}
+              </button>
+            );
+          })}
         </div>
+      )}
+      {msrData.selectedActorIds.length === 1 && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Users className="w-3.5 h-3.5" />
+          <span>Scoring indicators for <strong className="text-foreground">{actors.find(a => String(a.id) === activeActorId)?.name ?? activeActorId}</strong></span>
+        </div>
+      )}
 
-        {scoringCell && scoringMeta && (
-          <div className="w-[380px] shrink-0 sticky top-4">
-            <MsrIndicatorScorePanel
-              period={scoringCell.period}
-              indicator={scoringMeta.indicator}
-              groupLabel={scoringMeta.groupLabel}
-              domain={scoringMeta.domain}
-              component={scoringMeta.component}
-              score={msrData.scores[scoringCell.period]?.[scoringCell.indicatorId] ?? { score: null, notes: "" }}
-              onSave={s => handleSaveScore(scoringCell.period, scoringCell.indicatorId, s)}
-              onClose={() => setScoringCell(null)}
+      {/* Matrix + side panel */}
+      {msrData.selectedActorIds.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border py-12 text-center">
+          <Users className="w-8 h-8 text-muted-foreground/20 mx-auto mb-3" />
+          <p className="text-sm font-medium text-muted-foreground">Select actors above to start scoring</p>
+        </div>
+      ) : (
+        <div className={hasSidePanel ? "flex gap-4 items-start" : ""}>
+          <div className={hasSidePanel ? "flex-1 min-w-0 overflow-x-auto" : ""}>
+            <MsrMatrix
+              periods={periods}
+              sel={msrData.sel}
+              scores={activeScores}
+              scoringCell={scoringCell}
+              selectingFor={selectingFor}
+              onSelectCell={handleSelectCell}
+              onEditIndicators={handleEditIndicators}
             />
           </div>
-        )}
 
-        {selectingFor && selectingMeta && (
-          <div className="w-[420px] shrink-0 sticky top-4 max-h-[80vh] flex flex-col">
-            <MsrIndicatorSelectPanel
-              component={selectingMeta.component}
-              domain={selectingMeta.domain}
-              selectedIds={msrData.sel[selectingFor] ?? []}
-              onSave={ids => handleSaveIndicators(selectingFor, ids)}
-              onClose={() => setSelectingFor(null)}
-            />
-          </div>
-        )}
-      </div>
+          {scoringCell && scoringMeta && (
+            <div className="w-[380px] shrink-0 sticky top-4">
+              <MsrIndicatorScorePanel
+                period={scoringCell.period}
+                indicator={scoringMeta.indicator}
+                groupLabel={scoringMeta.groupLabel}
+                domain={scoringMeta.domain}
+                component={scoringMeta.component}
+                score={activeScores[scoringCell.period]?.[scoringCell.indicatorId] ?? { score: null, notes: "" }}
+                onSave={s => handleSaveScore(scoringCell.period, scoringCell.indicatorId, s)}
+                onClose={() => setScoringCell(null)}
+              />
+            </div>
+          )}
 
-      {/* Radar charts — one per domain */}
-      <MsrRadarCharts msrData={msrData} periods={periods} />
+          {selectingFor && selectingMeta && (
+            <div className="w-[420px] shrink-0 sticky top-4 max-h-[80vh] flex flex-col">
+              <MsrIndicatorSelectPanel
+                component={selectingMeta.component}
+                domain={selectingMeta.domain}
+                selectedIds={msrData.sel[selectingFor] ?? []}
+                onSave={ids => handleSaveIndicators(selectingFor, ids)}
+                onClose={() => setSelectingFor(null)}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* AI resilience analysis */}
+      {/* Radar charts — aggregated across all selected actors */}
+      <MsrRadarCharts sel={msrData.sel} scores={aggregatedScores} periods={periods} />
+
+      {/* AI resilience analysis — per actor */}
       <MsrAIAnalysis
         msrData={msrData}
         periods={periods}
         apiBase={apiBase}
         theoryId={theoryId}
+        actors={actors}
       />
     </div>
   );
