@@ -3268,24 +3268,27 @@ function MsrDomainRing({ score, domainKey, size = 52 }: { score: number; domainK
   );
 }
 
-function MsrQuadrantDiagram({ analysis }: { analysis: MsrAnalysisResult }) {
+function MsrContinuum({ analysis }: { analysis: MsrAnalysisResult }) {
   const { t } = useTranslation();
-  const domainMap: Record<string, MsrDomainAnalysis> = {
-    structural: analysis.structural,
-    relational: analysis.relational,
-    behavioural: analysis.behavioural,
-    enablingEnvironment: analysis.enablingEnvironment,
-  };
-  // Layout: top-left=Structural, top-right=Relational, bottom-left=Behavioural, bottom-right=Enabling
-  const quads = [
-    { key: "structural",         row: 0, col: 0 },
-    { key: "relational",         row: 0, col: 1 },
-    { key: "behavioural",        row: 1, col: 0 },
-    { key: "enablingEnvironment",row: 1, col: 1 },
+
+  const domains: { key: string; data: MsrDomainAnalysis }[] = [
+    { key: "structural",          data: analysis.structural },
+    { key: "behavioural",         data: analysis.behavioural },
+    { key: "enablingEnvironment", data: analysis.enablingEnvironment },
+    { key: "relational",          data: analysis.relational },
   ];
+
+  const stageFor = (score: number) =>
+    score >= 76 ? "proactive" : score >= 51 ? "transitioning" : score >= 26 ? "emerging" : score > 0 ? "reactive" : "no-data";
+
+  const stageLabel = (score: number) => {
+    const s = stageFor(score);
+    return t("systemicChange.status." + (s === "no-data" ? "noData" : s));
+  };
+
   return (
     <div className="space-y-4">
-      {/* Overall score bar */}
+      {/* Overall score */}
       <div className="flex items-center gap-4 bg-muted/30 rounded-xl border border-border p-4">
         <div className="shrink-0 text-center w-20">
           <div className="text-3xl font-black text-foreground">{analysis.overallScore}</div>
@@ -3301,7 +3304,7 @@ function MsrQuadrantDiagram({ analysis }: { analysis: MsrAnalysisResult }) {
               analysis.overallScore > 0   ? MSR_STATUS_LABELS.reactive.color :
               MSR_STATUS_LABELS["no-data"].color
             }`}>
-              {analysis.overallScore >= 76 ? t("systemicChange.status.proactive") : analysis.overallScore >= 51 ? t("systemicChange.status.transitioning") : analysis.overallScore >= 26 ? t("systemicChange.status.emerging") : analysis.overallScore > 0 ? t("systemicChange.status.reactive") : t("systemicChange.status.noData")}
+              {stageLabel(analysis.overallScore)}
             </span>
           </div>
           <div className="h-3 rounded-full bg-muted overflow-hidden">
@@ -3312,56 +3315,72 @@ function MsrQuadrantDiagram({ analysis }: { analysis: MsrAnalysisResult }) {
         </div>
       </div>
 
-      {/* 2×2 domain quadrant */}
-      <div className="rounded-xl overflow-hidden border border-border/60 shadow-sm">
-        <div className="flex">
-          <div className="flex flex-col items-center justify-between py-3 px-1.5 bg-zinc-900 shrink-0 w-9">
-            <span className="text-amber-400 font-black text-lg leading-none">↑</span>
-            <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-amber-100/80"
-              style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
-              Proactivity
-            </span>
-            <span className="opacity-0 text-lg">↑</span>
-          </div>
-          <div className="flex-1 flex flex-col bg-zinc-900">
-            <div className="grid grid-cols-2 flex-1">
-              {quads.map(({ key }) => {
-                const d = domainMap[key];
-                const cfg = MSR_DOMAIN_AI_CONFIG[key];
-                const statusCfg = MSR_STATUS_LABELS[d.status] ?? MSR_STATUS_LABELS["no-data"];
-                return (
-                  <div key={key} className="relative p-4 flex flex-col gap-1.5 min-h-[130px]"
-                    style={{ backgroundColor: cfg.quadBg }}>
-                    <div className="font-black text-base tracking-wide" style={{ color: cfg.quadText }}>{t("systemicChange.msrDomains."+key)}</div>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-black" style={{ color: cfg.quadText }}>{d.score}</span>
-                      <span className="text-[9px] font-bold" style={{ color: cfg.quadSub }}>/100</span>
-                    </div>
-                    <span className="inline-flex text-[9px] font-bold px-1.5 py-0.5 rounded-full w-fit border"
-                      style={{ backgroundColor: "rgba(255,255,255,0.55)", color: cfg.quadText, borderColor: cfg.quadSub + "55" }}>
-                      {t("systemicChange.status." + (d.status === "no-data" ? "noData" : d.status))}
+      {/* Resilience continuum */}
+      <div className="rounded-xl border border-border bg-card overflow-hidden">
+        {/* Stage zone header */}
+        <div className="grid grid-cols-4 border-b border-border/60">
+          {[
+            { key: "reactive",      bg: "bg-red-50",    text: "text-red-600"    },
+            { key: "emerging",      bg: "bg-orange-50", text: "text-orange-600" },
+            { key: "transitioning", bg: "bg-amber-50",  text: "text-amber-600"  },
+            { key: "proactive",     bg: "bg-green-50",  text: "text-green-600"  },
+          ].map(s => (
+            <div key={s.key}
+              className={`py-1.5 text-center text-[9px] font-bold uppercase tracking-widest border-r last:border-r-0 border-border/30 ${s.bg} ${s.text}`}>
+              {t("systemicChange.status." + s.key)}
+            </div>
+          ))}
+        </div>
+
+        {/* Domain rows */}
+        <div className="px-5 py-4 space-y-5">
+          {domains.map(({ key, data }) => {
+            const cfg = MSR_DOMAIN_AI_CONFIG[key];
+            const pct = Math.max(0, Math.min(100, data.score));
+            const statusCfg = MSR_STATUS_LABELS[stageFor(data.score)] ?? MSR_STATUS_LABELS["no-data"];
+            return (
+              <div key={key} className="space-y-1.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`text-xs font-bold ${cfg.text}`}>{t("systemicChange.msrDomains." + key)}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-sm font-black text-foreground">{data.score}</span>
+                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${statusCfg.color}`}>
+                      {stageLabel(data.score)}
                     </span>
-                    <p className="text-[10px] leading-snug mt-0.5 line-clamp-2" style={{ color: cfg.quadSub }}>{d.headline}</p>
-                    {d.strongComponents && d.strongComponents.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {d.strongComponents.slice(0, 3).map((c, i) => (
-                          <span key={i} className="text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
-                            style={{ backgroundColor: "rgba(255,255,255,0.65)", color: cfg.quadText, border: `1px solid ${cfg.quadSub}44` }}>
-                            ↑ {c}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </div>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-zinc-900">
-              <div className="flex-1 h-px bg-amber-400/30" />
-              <span className="text-[8px] font-bold uppercase tracking-[0.18em] text-amber-100/80">Breadth</span>
-              <span className="text-amber-400 font-black text-lg leading-none">→</span>
-            </div>
-          </div>
+                </div>
+
+                {/* Gradient track */}
+                <div className="relative h-5 rounded-full"
+                  style={{ background: "linear-gradient(to right, #fca5a5 0%, #fdba74 33%, #fde68a 66%, #86efac 100%)" }}>
+                  {/* Stage dividers */}
+                  {[25, 50, 75].map(x => (
+                    <div key={x} className="absolute top-0 bottom-0 w-px bg-white/60" style={{ left: `${x}%` }} />
+                  ))}
+                  {/* Score marker */}
+                  {pct > 0 && (
+                    <div
+                      className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 rounded-full bg-white shadow-md flex items-center justify-center"
+                      style={{ left: `${pct}%`, border: `2.5px solid ${cfg.stroke}` }}
+                    >
+                      <span className="text-[8px] font-black leading-none" style={{ color: cfg.stroke }}>{data.score}</span>
+                    </div>
+                  )}
+                </div>
+
+                {data.headline && (
+                  <p className="text-[10px] text-muted-foreground leading-snug">{data.headline}</p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Axis labels */}
+        <div className="flex justify-between px-5 py-2 border-t border-border/40 bg-muted/20">
+          <span className="text-[10px] font-semibold text-red-500">← Reactive</span>
+          <span className="text-[10px] font-semibold text-muted-foreground">Resilience Continuum</span>
+          <span className="text-[10px] font-semibold text-green-600">Proactive →</span>
         </div>
       </div>
     </div>
@@ -3565,8 +3584,8 @@ function MsrAIAnalysis({
 
         {analysis && !pending && (
           <>
-            {/* Quadrant diagram */}
-            <MsrQuadrantDiagram analysis={analysis} />
+            {/* Resilience continuum */}
+            <MsrContinuum analysis={analysis} />
 
             {/* Overall assessment */}
             <div className="rounded-xl border border-border bg-white/60 p-4">
