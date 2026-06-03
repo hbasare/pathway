@@ -3529,9 +3529,10 @@ function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomain
 }
 
 function MsrAIAnalysis({
-  msrData, periods, apiBase, theoryId, actors,
+  msrData, periods, apiBase, theoryId, actors, activeActorId,
 }: {
-  msrData: MsrData; periods: string[]; apiBase: string; theoryId: number; actors: BusinessModelActor[];
+  msrData: MsrData; periods: string[]; apiBase: string; theoryId: number;
+  actors: BusinessModelActor[]; activeActorId: string | null;
 }) {
   const { toast } = useToast();
   const { t } = useTranslation();
@@ -3668,60 +3669,69 @@ function MsrAIAnalysis({
           </div>
         )}
 
-        {hasResults && !pending && (
-          <div className="space-y-6">
-            {msrData.selectedActorIds.map(actorId => {
-              const actor = actors.find(a => String(a.id) === actorId);
-              const analysis = analysisMap[actorId];
-              if (!analysis) return null;
-              return (
-                <div key={actorId} className="space-y-4">
-                  {/* Actor header */}
-                  <div className="flex items-center gap-2 pb-1 border-b border-violet-200">
-                    <Users className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span className="text-sm font-bold text-foreground">{actor?.actorName ?? actorId}</span>
-                    <span className={`ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                      MSR_STATUS_LABELS[analysis.structural?.status ?? "no-data"]?.color ?? ""
-                    }`}>
-                      Overall {analysis.overallScore}%
-                    </span>
-                  </div>
+        {hasResults && !pending && (() => {
+          const shownId = activeActorId ?? msrData.selectedActorIds[0];
+          const actor = actors.find(a => String(a.id) === shownId);
+          const analysis = shownId ? analysisMap[shownId] : undefined;
 
-                  {/* Continuum */}
-                  <MsrContinuum analysis={analysis} />
+          if (!analysis) {
+            return (
+              <div className="flex flex-col items-center gap-2 py-8 text-center">
+                <Sparkles className="w-8 h-8 text-muted-foreground/20" />
+                <p className="text-sm font-medium text-muted-foreground">
+                  No analysis yet for <strong>{actor?.actorName ?? shownId}</strong>
+                </p>
+                <p className="text-xs text-muted-foreground/70">Click Generate Analysis to run it for all selected actors.</p>
+              </div>
+            );
+          }
 
-                  {/* Assessment */}
-                  <div className="rounded-xl border border-border bg-white/60 p-4">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">{t("systemicChange.overallAssessment")}</p>
-                    <p className="text-sm text-foreground leading-relaxed">{analysis.overallAssessment}</p>
-                  </div>
+          return (
+            <div className="space-y-4">
+              {/* Actor label */}
+              <div className="flex items-center gap-2 pb-1 border-b border-violet-200">
+                <Users className="w-4 h-4 text-indigo-600 shrink-0" />
+                <span className="text-sm font-bold text-foreground">{actor?.actorName ?? shownId}</span>
+                <span className={`ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
+                  MSR_STATUS_LABELS[analysis.structural?.status ?? "no-data"]?.color ?? ""
+                }`}>
+                  Overall {analysis.overallScore}%
+                </span>
+              </div>
 
-                  {/* Domain cards */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {domainKeys.map(k => (
-                      <MsrDomainCard key={k} domainKey={k} data={analysis[k]} />
+              {/* Continuum */}
+              <MsrContinuum analysis={analysis} />
+
+              {/* Assessment */}
+              <div className="rounded-xl border border-border bg-white/60 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">{t("systemicChange.overallAssessment")}</p>
+                <p className="text-sm text-foreground leading-relaxed">{analysis.overallAssessment}</p>
+              </div>
+
+              {/* Domain cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {domainKeys.map(k => (
+                  <MsrDomainCard key={k} domainKey={k} data={analysis[k]} />
+                ))}
+              </div>
+
+              {/* Priority actions */}
+              {analysis.priorityActions && analysis.priorityActions.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">{t("systemicChange.priorityActions")}</p>
+                  <ul className="space-y-1.5">
+                    {analysis.priorityActions.map((a, i) => (
+                      <li key={i} className="flex gap-2 text-sm text-amber-900 leading-relaxed">
+                        <span className="shrink-0 font-black text-amber-600">{i + 1}.</span>
+                        <span>{a}</span>
+                      </li>
                     ))}
-                  </div>
-
-                  {/* Priority actions */}
-                  {analysis.priorityActions && analysis.priorityActions.length > 0 && (
-                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">{t("systemicChange.priorityActions")}</p>
-                      <ul className="space-y-1.5">
-                        {analysis.priorityActions.map((a, i) => (
-                          <li key={i} className="flex gap-2 text-sm text-amber-900 leading-relaxed">
-                            <span className="shrink-0 font-black text-amber-600">{i + 1}.</span>
-                            <span>{a}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  </ul>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
@@ -3938,13 +3948,14 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
       {/* Radar charts — aggregated across all selected actors */}
       <MsrRadarCharts sel={msrData.sel} scores={aggregatedScores} periods={periods} />
 
-      {/* AI resilience analysis — per actor */}
+      {/* AI resilience analysis — shows active actor's result */}
       <MsrAIAnalysis
         msrData={msrData}
         periods={periods}
         apiBase={apiBase}
         theoryId={theoryId}
         actors={actors}
+        activeActorId={activeActorId}
       />
     </div>
   );
