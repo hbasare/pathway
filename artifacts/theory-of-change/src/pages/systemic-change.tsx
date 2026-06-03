@@ -2492,8 +2492,8 @@ const MSR_DOMAINS: MsrDomain[] = [
 
 // Per-indicator score for one period
 interface MsrScore { score: number | null; notes: string }
-// Actor from the Business Model section
-interface BusinessModelActor { id: number; name: string; role?: string }
+// Actor from the Business Model section (Drizzle maps actor_name → actorName)
+interface BusinessModelActor { id: number; actorName: string; role?: string }
 // Convenience alias: period → indicatorId → score
 type PeriodScores = Record<string, Record<string, MsrScore>>;
 // Top-level data for the whole MSR assessment (v3: per-actor scores)
@@ -2760,7 +2760,7 @@ function MsrActorSelector({
                   : "bg-white text-foreground border-border hover:border-indigo-300 hover:bg-indigo-50/80"
               }`}>
               {sel && <Check className="w-3 h-3 shrink-0" />}
-              {actor.name}
+              {actor.actorName}
             </button>
           );
         })}
@@ -3546,7 +3546,7 @@ function MsrAIAnalysis({
       const actorScores = msrData.actorScores[actorId] ?? {};
       return {
         actorId,
-        actorName: actor?.name ?? actorId,
+        actorName: actor?.actorName ?? actorId,
         scoreSummary: MSR_DOMAINS
           .filter(d => ["structural", "behavioural"].includes(d.key))
           .map(domain => ({
@@ -3679,7 +3679,7 @@ function MsrAIAnalysis({
                   {/* Actor header */}
                   <div className="flex items-center gap-2 pb-1 border-b border-violet-200">
                     <Users className="w-4 h-4 text-indigo-600 shrink-0" />
-                    <span className="text-sm font-bold text-foreground">{actor?.name ?? actorId}</span>
+                    <span className="text-sm font-bold text-foreground">{actor?.actorName ?? actorId}</span>
                     <span className={`ml-auto text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
                       MSR_STATUS_LABELS[analysis.structural?.status ?? "no-data"]?.color ?? ""
                     }`}>
@@ -3873,7 +3873,7 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
                 className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold transition-all ${
                   isActive ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-foreground border-border hover:border-indigo-300"
                 }`}>
-                {actor?.name ?? id}
+                {actor?.actorName ?? id}
               </button>
             );
           })}
@@ -3882,7 +3882,7 @@ function MsrView({ theoryId, apiBase }: { theoryId: number; apiBase: string }) {
       {msrData.selectedActorIds.length === 1 && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Users className="w-3.5 h-3.5" />
-          <span>Scoring indicators for <strong className="text-foreground">{actors.find(a => String(a.id) === activeActorId)?.name ?? activeActorId}</strong></span>
+          <span>Scoring indicators for <strong className="text-foreground">{actors.find(a => String(a.id) === activeActorId)?.actorName ?? activeActorId}</strong></span>
         </div>
       )}
 
