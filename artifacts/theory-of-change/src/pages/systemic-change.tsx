@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   ArrowLeft, Plus, Trash2, Pencil, Check, X, Loader2, GitBranch,
   ChevronRight, RefreshCw, Info, Settings, ChevronDown, ChevronUp,
-  Sparkles, AlertCircle, TrendingUp, ListChecks, Users,
+  Sparkles, AlertCircle, TrendingUp, ListChecks, Users, BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -3548,6 +3548,167 @@ function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomain
   );
 }
 
+function MsrFrameworkDiagram() {
+  const [open, setOpen] = useState(false);
+
+  const cols = {
+    reactive: {
+      structural: [
+        { term: "Connectivity", desc: "tends to be overly structured or overly atomized." },
+        { term: "Diversity", desc: "is limited and specialization is minimal." },
+        { term: "Power", desc: "is overly concentrated." },
+        { term: "Rule of law", desc: "is informal, group based, with patronage driven access to judiciary." },
+      ],
+      behavioral: [
+        { term: "Cooperation", desc: "is based on loyalty to group and oriented toward resource capture." },
+        { term: "Competition", desc: "is externally oriented with aim of damaging competitors." },
+        { term: "Decision making", desc: "is based on tradition, beliefs or myths rather than evidence." },
+        { term: "Business strategies", desc: "are extractive, i.e., based on short-term margin capture." },
+      ],
+    },
+    proactive: {
+      structural: [
+        { term: "Connectivity", desc: "tends to fluctuate within a range that is not overly or under connected or isolated." },
+        { term: "Diversity", desc: "and specialization are increasing over time." },
+        { term: "Power", desc: "tends to fluctuate within a range that allows for multiple power nodes to emerge, i.e., the decentralization of power." },
+        { term: "Rule of law", desc: "across groups is institutionalized with a relatively fair judiciary process." },
+      ],
+      behavioral: [
+        { term: "Cooperation", desc: "is driven by value creation and addition." },
+        { term: "Competition", desc: "is based on internally driven improvements in performance." },
+        { term: "Decision making", desc: "is evidence based." },
+        { term: "Business strategies", desc: "are focused on delivering value for customers, suppliers and staff." },
+      ],
+    },
+  };
+
+  return (
+    <div className="rounded-xl border border-slate-200 overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 transition-colors text-left border-b border-slate-100"
+      >
+        <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+        <span className="text-xs font-semibold text-slate-600 flex-1">MSR Framework Reference</span>
+        <span className="text-[10px] text-slate-400 mr-1">Reactive ↔ Proactive spectrum</span>
+        {open ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+      </button>
+
+      {open && (
+        <div className="bg-white p-4 space-y-3">
+          {/* Gradient bar */}
+          <div className="relative flex items-center h-7 rounded-md overflow-hidden select-none">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-400 to-blue-600" />
+            <span className="relative text-white text-[11px] font-bold px-3 drop-shadow-sm">← Reactive</span>
+            <div className="flex-1" />
+            <span className="relative text-white text-[11px] font-bold px-3 drop-shadow-sm">Proactive →</span>
+          </div>
+
+          {/* 3-column body */}
+          <div className="grid grid-cols-[1fr_200px_1fr] gap-4 items-center">
+
+            {/* Left: Reactive */}
+            <div className="space-y-3 text-[11px] text-slate-700">
+              {(["structural", "behavioral"] as const).map(dom => (
+                <div key={dom}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                    {dom === "structural" ? "Structural" : "Behavioral"}
+                  </p>
+                  <ul className="space-y-1 leading-snug">
+                    {cols.reactive[dom].map(({ term, desc }) => (
+                      <li key={term}><strong className="text-slate-900">{term}</strong> {desc}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            {/* Centre diamond */}
+            <div className="flex flex-col items-stretch gap-1">
+              {/* Top panels */}
+              <div className="grid grid-cols-2 gap-1">
+                <div className="text-[9px] leading-snug text-center bg-red-50 border border-red-200 rounded p-1.5 text-red-900">
+                  Evolves to reinforce group loyalty and authority to cope with current risks and maintain existing performance
+                </div>
+                <div className="text-[9px] leading-snug text-center bg-blue-50 border border-blue-200 rounded p-1.5 text-blue-900">
+                  Evolves to innovate its way around future risk by developing new norms and incentives
+                </div>
+              </div>
+
+              {/* Diamond SVG */}
+              <svg viewBox="0 0 200 110" className="w-full h-auto">
+                <defs>
+                  <linearGradient id="msrTopGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#fca5a5" />
+                    <stop offset="50%" stopColor="#c084fc" />
+                    <stop offset="100%" stopColor="#93c5fd" />
+                  </linearGradient>
+                  <linearGradient id="msrLeftGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#cbd5e1" />
+                    <stop offset="100%" stopColor="#e2e8f0" />
+                  </linearGradient>
+                  <linearGradient id="msrRightGrad" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#e2e8f0" />
+                    <stop offset="100%" stopColor="#cbd5e1" />
+                  </linearGradient>
+                </defs>
+                {/* Left triangle */}
+                <polygon points="100,5 4,55 100,105" fill="url(#msrLeftGrad)" />
+                {/* Right triangle */}
+                <polygon points="100,5 196,55 100,105" fill="url(#msrRightGrad)" />
+                {/* Top (gradient) */}
+                <polygon points="100,5 4,55 196,55" fill="url(#msrTopGrad)" />
+                {/* Bottom (dark) */}
+                <polygon points="4,55 196,55 100,105" fill="#334155" />
+                {/* Centre circle */}
+                <circle cx="100" cy="55" r="28" fill="white" stroke="#e2e8f0" strokeWidth="1.5" />
+                <text x="100" y="51" textAnchor="middle" fill="#0f172a" fontSize="8.5" fontWeight="700">Agent</text>
+                <text x="100" y="62" textAnchor="middle" fill="#0f172a" fontSize="8.5" fontWeight="700">Behavior</text>
+                {/* Emergent Behaviors labels */}
+                <text
+                  x="38" y="55"
+                  textAnchor="middle" dominantBaseline="middle"
+                  fill="#64748b" fontSize="7" fontWeight="600"
+                  transform="rotate(-62 38 55)"
+                >Emergent Behaviors</text>
+                <text
+                  x="162" y="55"
+                  textAnchor="middle" dominantBaseline="middle"
+                  fill="#64748b" fontSize="7" fontWeight="600"
+                  transform="rotate(62 162 55)"
+                >Emergent Behaviors</text>
+              </svg>
+
+              {/* Bottom note */}
+              <div className="text-[9px] leading-snug text-center bg-slate-700 text-white rounded px-2 py-1.5">
+                How the system evolves is highly influenced by the bias in the system to be reactive or proactive to managing risks
+                <div className="mt-0.5 text-slate-300">⟵ ⟶</div>
+              </div>
+            </div>
+
+            {/* Right: Proactive */}
+            <div className="space-y-3 text-[11px] text-slate-700">
+              {(["structural", "behavioral"] as const).map(dom => (
+                <div key={dom}>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                    {dom === "structural" ? "Structural" : "Behavioral"}
+                  </p>
+                  <ul className="space-y-1 leading-snug">
+                    {cols.proactive[dom].map(({ term, desc }) => (
+                      <li key={term}><strong className="text-slate-900">{term}</strong> {desc}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MsrAIAnalysis({
   msrData, periods, apiBase, theoryId, actors, activeActorId,
 }: {
@@ -3651,6 +3812,8 @@ function MsrAIAnalysis({
 
       {/* Body */}
       <div className="px-5 py-4 space-y-5">
+        <MsrFrameworkDiagram />
+
         {noActors && (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
             <Users className="w-8 h-8 text-muted-foreground/30" />
