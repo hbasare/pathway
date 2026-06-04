@@ -2139,6 +2139,12 @@ const MSR_DOMAINS: MsrDomain[] = [
         desc: "Linkages and relationships between market actors and support systems",
         indicatorGroups: [
           {
+            group: "Number of connections",
+            indicators: [
+              { id: "conn_nc_1", label: "Number of suppliers/distributors/customers", type: "F" },
+            ],
+          },
+          {
             group: "Types of Cooperation",
             indicators: [
               { id: "conn_tc_1", label: "Number of joint initiatives/partnerships", type: "F" },
