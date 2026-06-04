@@ -3548,36 +3548,78 @@ function MsrDomainCard({ domainKey, data }: { domainKey: string; data: MsrDomain
   );
 }
 
-function MsrFrameworkDiagram() {
+function MsrFrameworkDiagram({
+  actor,
+  scores,
+  sel,
+  periods,
+}: {
+  actor?: BusinessModelActor | null;
+  scores?: PeriodScores;
+  sel?: Record<string, string[]>;
+  periods?: string[];
+}) {
   const [open, setOpen] = useState(false);
+
+  // Compute average score for a component key across all periods
+  const compAvg = (compKey: string): number | null => {
+    if (!scores || !sel || !periods) return null;
+    const ids = sel[compKey] ?? [];
+    const vals = periods.flatMap(p =>
+      ids.map(id => scores[p]?.[id]?.score).filter((v): v is number => v != null)
+    );
+    return vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
+  };
+
+  const allCompKeys = ["connectivity","diversity","power_dynamics","rule_of_law","cooperation","competition","evidence_decision","business_strategy"];
+  const allVals = allCompKeys.map(compAvg).filter((v): v is number => v != null);
+  const overallAvg = allVals.length ? allVals.reduce((a, b) => a + b, 0) / allVals.length : null;
+  const positionPct = overallAvg != null ? Math.min(100, Math.max(0, Math.round((overallAvg / 4) * 100))) : null;
+
+  const dotCls = (s: number | null) =>
+    s == null ? "bg-slate-200" : s < 1 ? "bg-red-400" : s < 2 ? "bg-orange-400" : s < 3 ? "bg-yellow-400" : "bg-blue-500";
+  const scoreLabel = (s: number) =>
+    s < 1 ? "Reactive" : s < 2 ? "Reactive-leaning" : s < 3 ? "Proactive-leaning" : "Proactive";
+  const scoreLabelColor = (s: number) =>
+    s < 1 ? "text-red-600" : s < 2 ? "text-orange-500" : s < 3 ? "text-yellow-600" : "text-blue-600";
+
+  // SVG circle label: actor name split across ≤2 lines
+  const svgLines: [string, string | null] = (() => {
+    const name = actor?.actorName;
+    if (!name) return ["Agent", "Behavior"];
+    const words = name.split(" ");
+    if (name.length <= 11 || words.length === 1) return [name.slice(0, 12), null];
+    const mid = Math.ceil(words.length / 2);
+    return [words.slice(0, mid).join(" ").slice(0, 13), words.slice(mid).join(" ").slice(0, 13)];
+  })();
 
   const cols = {
     reactive: {
       structural: [
-        { term: "Connectivity", desc: "tends to be overly structured or overly atomized." },
-        { term: "Diversity", desc: "is limited and specialization is minimal." },
-        { term: "Power", desc: "is overly concentrated." },
-        { term: "Rule of law", desc: "is informal, group based, with patronage driven access to judiciary." },
+        { term: "Connectivity", compKey: "connectivity", desc: "tends to be overly structured or overly atomized." },
+        { term: "Diversity", compKey: "diversity", desc: "is limited and specialization is minimal." },
+        { term: "Power", compKey: "power_dynamics", desc: "is overly concentrated." },
+        { term: "Rule of law", compKey: "rule_of_law", desc: "is informal, group based, with patronage driven access to judiciary." },
       ],
       behavioral: [
-        { term: "Cooperation", desc: "is based on loyalty to group and oriented toward resource capture." },
-        { term: "Competition", desc: "is externally oriented with aim of damaging competitors." },
-        { term: "Decision making", desc: "is based on tradition, beliefs or myths rather than evidence." },
-        { term: "Business strategies", desc: "are extractive, i.e., based on short-term margin capture." },
+        { term: "Cooperation", compKey: "cooperation", desc: "is based on loyalty to group and oriented toward resource capture." },
+        { term: "Competition", compKey: "competition", desc: "is externally oriented with aim of damaging competitors." },
+        { term: "Decision making", compKey: "evidence_decision", desc: "is based on tradition, beliefs or myths rather than evidence." },
+        { term: "Business strategies", compKey: "business_strategy", desc: "are extractive, i.e., based on short-term margin capture." },
       ],
     },
     proactive: {
       structural: [
-        { term: "Connectivity", desc: "tends to fluctuate within a range that is not overly or under connected or isolated." },
-        { term: "Diversity", desc: "and specialization are increasing over time." },
-        { term: "Power", desc: "tends to fluctuate within a range that allows for multiple power nodes to emerge, i.e., the decentralization of power." },
-        { term: "Rule of law", desc: "across groups is institutionalized with a relatively fair judiciary process." },
+        { term: "Connectivity", compKey: "connectivity", desc: "tends to fluctuate within a range that is not overly or under connected or isolated." },
+        { term: "Diversity", compKey: "diversity", desc: "and specialization are increasing over time." },
+        { term: "Power", compKey: "power_dynamics", desc: "tends to fluctuate within a range that allows for multiple power nodes to emerge, i.e., the decentralization of power." },
+        { term: "Rule of law", compKey: "rule_of_law", desc: "across groups is institutionalized with a relatively fair judiciary process." },
       ],
       behavioral: [
-        { term: "Cooperation", desc: "is driven by value creation and addition." },
-        { term: "Competition", desc: "is based on internally driven improvements in performance." },
-        { term: "Decision making", desc: "is evidence based." },
-        { term: "Business strategies", desc: "are focused on delivering value for customers, suppliers and staff." },
+        { term: "Cooperation", compKey: "cooperation", desc: "is driven by value creation and addition." },
+        { term: "Competition", compKey: "competition", desc: "is based on internally driven improvements in performance." },
+        { term: "Decision making", compKey: "evidence_decision", desc: "is evidence based." },
+        { term: "Business strategies", compKey: "business_strategy", desc: "are focused on delivering value for customers, suppliers and staff." },
       ],
     },
   };
@@ -3596,12 +3638,32 @@ function MsrFrameworkDiagram() {
 
       {open && (
         <div className="bg-white p-4 space-y-3">
-          {/* Gradient bar */}
-          <div className="relative flex items-center h-7 rounded-md overflow-hidden select-none">
-            <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-400 to-blue-600" />
-            <span className="relative text-white text-[11px] font-bold px-3 drop-shadow-sm">← Reactive</span>
-            <div className="flex-1" />
-            <span className="relative text-white text-[11px] font-bold px-3 drop-shadow-sm">Proactive →</span>
+          {/* Gradient bar + position marker */}
+          <div className="space-y-1">
+            <div className="relative flex items-center h-7 rounded-md overflow-hidden select-none">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-400 to-blue-600" />
+              <span className="relative text-white text-[11px] font-bold px-3 drop-shadow-sm">← Reactive</span>
+              <div className="flex-1" />
+              <span className="relative text-white text-[11px] font-bold px-3 drop-shadow-sm">Proactive →</span>
+              {positionPct != null && (
+                <div
+                  className="absolute bottom-0 -translate-x-1/2 flex flex-col items-center pointer-events-none"
+                  style={{ left: `${positionPct}%` }}
+                >
+                  <div className="w-0.5 h-7 bg-white/80" />
+                </div>
+              )}
+            </div>
+            {positionPct != null && overallAvg != null && (
+              <div className="relative h-4">
+                <div className="absolute -translate-x-1/2 flex items-center gap-1" style={{ left: `${Math.min(Math.max(positionPct, 8), 88)}%` }}>
+                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotCls(overallAvg)}`} />
+                  <span className={`text-[10px] font-bold whitespace-nowrap ${scoreLabelColor(overallAvg)}`}>
+                    {actor?.actorName ? `${actor.actorName}: ` : ""}{scoreLabel(overallAvg)} ({overallAvg.toFixed(1)}/4)
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 3-column body */}
@@ -3615,9 +3677,16 @@ function MsrFrameworkDiagram() {
                     {dom === "structural" ? "Structural" : "Behavioral"}
                   </p>
                   <ul className="space-y-1 leading-snug">
-                    {cols.reactive[dom].map(({ term, desc }) => (
-                      <li key={term}><strong className="text-slate-900">{term}</strong> {desc}</li>
-                    ))}
+                    {cols.reactive[dom].map(({ term, compKey, desc }) => {
+                      const s = compAvg(compKey);
+                      return (
+                        <li key={term} className="flex items-start gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full mt-[3px] shrink-0 ${dotCls(s)}`}
+                            title={s != null ? `${s.toFixed(1)}/4` : "Not scored"} />
+                          <span><strong className="text-slate-900">{term}</strong> {desc}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}
@@ -3652,31 +3721,31 @@ function MsrFrameworkDiagram() {
                     <stop offset="100%" stopColor="#cbd5e1" />
                   </linearGradient>
                 </defs>
-                {/* Left triangle */}
                 <polygon points="100,5 4,55 100,105" fill="url(#msrLeftGrad)" />
-                {/* Right triangle */}
                 <polygon points="100,5 196,55 100,105" fill="url(#msrRightGrad)" />
-                {/* Top (gradient) */}
                 <polygon points="100,5 4,55 196,55" fill="url(#msrTopGrad)" />
-                {/* Bottom (dark) */}
                 <polygon points="4,55 196,55 100,105" fill="#334155" />
-                {/* Centre circle */}
                 <circle cx="100" cy="55" r="28" fill="white" stroke="#e2e8f0" strokeWidth="1.5" />
-                <text x="100" y="51" textAnchor="middle" fill="#0f172a" fontSize="8.5" fontWeight="700">Agent</text>
-                <text x="100" y="62" textAnchor="middle" fill="#0f172a" fontSize="8.5" fontWeight="700">Behavior</text>
-                {/* Emergent Behaviors labels */}
-                <text
-                  x="38" y="55"
-                  textAnchor="middle" dominantBaseline="middle"
-                  fill="#64748b" fontSize="7" fontWeight="600"
-                  transform="rotate(-62 38 55)"
-                >Emergent Behaviors</text>
-                <text
-                  x="162" y="55"
-                  textAnchor="middle" dominantBaseline="middle"
-                  fill="#64748b" fontSize="7" fontWeight="600"
-                  transform="rotate(62 162 55)"
-                >Emergent Behaviors</text>
+                {svgLines[1] ? (
+                  <>
+                    <text x="100" y="48" textAnchor="middle" fill="#0f172a" fontSize="7.5" fontWeight="700">{svgLines[0]}</text>
+                    <text x="100" y="58" textAnchor="middle" fill="#0f172a" fontSize="7.5" fontWeight="700">{svgLines[1]}</text>
+                    {overallAvg != null && (
+                      <text x="100" y="68" textAnchor="middle" fill="#64748b" fontSize="6">{overallAvg.toFixed(1)}/4</text>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <text x="100" y="52" textAnchor="middle" fill="#0f172a" fontSize="8" fontWeight="700">{svgLines[0]}</text>
+                    {overallAvg != null ? (
+                      <text x="100" y="63" textAnchor="middle" fill="#64748b" fontSize="6.5">{overallAvg.toFixed(1)}/4</text>
+                    ) : (
+                      <text x="100" y="63" textAnchor="middle" fill="#94a3b8" fontSize="6.5">actor</text>
+                    )}
+                  </>
+                )}
+                <text x="38" y="55" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="7" fontWeight="600" transform="rotate(-62 38 55)">Emergent Behaviors</text>
+                <text x="162" y="55" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="7" fontWeight="600" transform="rotate(62 162 55)">Emergent Behaviors</text>
               </svg>
 
               {/* Bottom note */}
@@ -3694,9 +3763,16 @@ function MsrFrameworkDiagram() {
                     {dom === "structural" ? "Structural" : "Behavioral"}
                   </p>
                   <ul className="space-y-1 leading-snug">
-                    {cols.proactive[dom].map(({ term, desc }) => (
-                      <li key={term}><strong className="text-slate-900">{term}</strong> {desc}</li>
-                    ))}
+                    {cols.proactive[dom].map(({ term, compKey, desc }) => {
+                      const s = compAvg(compKey);
+                      return (
+                        <li key={term} className="flex items-start gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full mt-[3px] shrink-0 ${dotCls(s)}`}
+                            title={s != null ? `${s.toFixed(1)}/4` : "Not scored"} />
+                          <span><strong className="text-slate-900">{term}</strong> {desc}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}
@@ -3812,7 +3888,19 @@ function MsrAIAnalysis({
 
       {/* Body */}
       <div className="px-5 py-4 space-y-5">
-        <MsrFrameworkDiagram />
+        {(() => {
+          const shownId = activeActorId ?? msrData.selectedActorIds[0] ?? null;
+          const shownActor = actors.find(a => String(a.id) === shownId) ?? null;
+          const actorPeriodScores = shownId ? (msrData.actorScores[shownId] ?? {}) : {};
+          return (
+            <MsrFrameworkDiagram
+              actor={shownActor}
+              scores={actorPeriodScores}
+              sel={msrData.sel}
+              periods={periods}
+            />
+          );
+        })()}
 
         {noActors && (
           <div className="flex flex-col items-center gap-2 py-8 text-center">
