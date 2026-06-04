@@ -3148,12 +3148,11 @@ function useMsrData(theoryId: number, apiBase: string) {
 const RADAR_COLORS = ["#6366f1","#f43f5e","#f59e0b","#10b981","#8b5cf6","#06b6d4","#ec4899","#84cc16"];
 const STROKE_PATTERNS = ["0", "6 3", "2 3", "8 3 2 3", "12 4"];
 
-// Recharts RadarChart cannot skip axes — null values always render as 0 and spike
-// the polygon to the centre. We bypass this by drawing every polygon in plain SVG,
-// connecting ONLY the axes that have an actual score for that period.
+// Custom SVG radar chart — drawn entirely in SVG so we control exactly which axes
+// each period's polygon connects. Recharts forces null→0 (center spikes); this does not.
 function SvgRadar({
   comps, periodKeys, periodColors, sel, scores,
-  gridStroke = "#e2e8f0", axisLabelFill = "#64748b",
+  gridStroke = "#d1d5db", axisLabelFill = "#374151",
 }: {
   comps: Array<{ key: string; label: string }>;
   periodKeys: string[];
@@ -3163,72 +3162,117 @@ function SvgRadar({
   gridStroke?: string;
   axisLabelFill?: string;
 }) {
-  const SIZE = 300;
-  const cx = SIZE / 2;
-  const cy = SIZE / 2;
-  const R = SIZE / 2 - 54;
+  const W = 340, H = 300;
+  const cx = W / 2, cy = H / 2 + 4;
+  const R = Math.min(W, H) / 2 - 58;
   const MAX = 4;
   const N = comps.length;
   if (N < 2) return null;
 
   const ang = (i: number) => (i / N) * 2 * Math.PI - Math.PI / 2;
-  const pt = (i: number, v: number) => ({
+  const toXY = (i: number, v: number) => ({
     x: cx + (v / MAX) * R * Math.cos(ang(i)),
     y: cy + (v / MAX) * R * Math.sin(ang(i)),
   });
 
-  const polygons = periodKeys.map((p, pi) => {
-    const scored: Array<{ x: number; y: number; val: number }> = [];
+  // Grid levels: every 0.5 from 0.5 to 4
+  const gridLevels = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4];
+
+  // Build polygon for each period — only connecting scored axes
+  const raw = periodKeys.map((p, pi) => {
+    const pts: Array<{ x: number; y: number; val: number; axisIdx: number }> = [];
+    let totalScore = 0, count = 0;
     comps.forEach((comp, i) => {
       const ids = sel[comp.key] ?? [];
       const vals = ids.map(id => scores[p]?.[id]?.score).filter((v): v is number => v != null);
       if (vals.length) {
         const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-        scored.push({ ...pt(i, avg), val: avg });
+        pts.push({ ...toXY(i, avg), val: avg, axisIdx: i });
+        totalScore += avg; count++;
       }
     });
-    if (scored.length < 2) return null;
-    const d = scored.map((s, j) => `${j === 0 ? "M" : "L"}${s.x.toFixed(1)},${s.y.toFixed(1)}`).join(" ") + " Z";
-    return { d, pts: scored, color: periodColors[pi], pattern: STROKE_PATTERNS[pi % STROKE_PATTERNS.length], isLatest: pi === periodKeys.length - 1 };
-  });
+    if (pts.length < 2) return null;
+    const d = pts.map((s, j) => `${j === 0 ? "M" : "L"}${s.x.toFixed(1)},${s.y.toFixed(1)}`).join(" ") + " Z";
+    return { d, pts, color: periodColors[pi], period: p, avgScore: count ? totalScore / count : 0 };
+  }).filter(Boolean) as Array<{ d: string; pts: Array<{ x: number; y: number; val: number; axisIdx: number }>; color: string; period: string; avgScore: number }>;
 
-  const shortLbl = (s: string) => s.length > 13 ? s.slice(0, 12) + "…" : s;
+  // Draw largest polygons first so smaller ones appear on top
+  const polygons = [...raw].sort((a, b) => b.avgScore - a.avgScore);
+
+  // Label positions — far enough from the outer ring
+  const LABEL_PAD = 22;
+
+  // Wrap long labels at ~16 chars per line
+  const wrapLabel = (s: string): string[] => {
+    const words = s.split(" ");
+    const lines: string[] = [];
+    let cur = "";
+    for (const w of words) {
+      if (cur.length + w.length + 1 > 16 && cur) { lines.push(cur); cur = w; }
+      else { cur = cur ? cur + " " + w : w; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  };
 
   return (
-    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ width: "100%", height: "auto", display: "block" }} role="img">
-      {[1, 2, 3, 4].map(lvl => (
-        <circle key={lvl} cx={cx} cy={cy} r={(lvl / MAX) * R} fill="none" stroke={gridStroke} strokeWidth={lvl === MAX ? 1.5 : 0.75} />
-      ))}
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} role="img">
+      {/* Concentric grid rings */}
+      {gridLevels.map(lvl => {
+        const pts = comps.map((_, i) => toXY(i, lvl));
+        const d = pts.map((p, j) => `${j === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ") + " Z";
+        const isOuter = lvl === MAX;
+        return (
+          <path key={lvl} d={d} fill="none"
+            stroke={gridStroke}
+            strokeWidth={isOuter ? 1.5 : 0.6}
+            strokeOpacity={isOuter ? 1 : 0.7} />
+        );
+      })}
+
+      {/* Axis spoke lines */}
       {comps.map((_, i) => {
-        const end = pt(i, MAX);
-        return <line key={i} x1={cx} y1={cy} x2={end.x} y2={end.y} stroke={gridStroke} strokeWidth={1} />;
+        const end = toXY(i, MAX);
+        return <line key={i} x1={cx} y1={cy} x2={end.x} y2={end.y} stroke={gridStroke} strokeWidth={0.75} />;
       })}
+
+      {/* Grid level value labels (shown at axis 0 position) */}
       {[1, 2, 3, 4].map(lvl => {
-        const { x, y } = pt(0, lvl);
-        return <text key={lvl} x={x + 3} y={y - 2} fontSize={7} fill="#94a3b8" fontFamily="sans-serif">{lvl}</text>;
+        const { x, y } = toXY(0, lvl);
+        return (
+          <text key={lvl} x={x + 3} y={y} fontSize={7} fill="#9ca3af"
+            fontFamily="system-ui, sans-serif" dominantBaseline="middle">
+            {lvl}
+          </text>
+        );
       })}
-      {polygons.map((poly, pi) => poly?.isLatest && (
-        <path key={`f${pi}`} d={poly.d} fill={poly.color} fillOpacity={0.13} stroke="none" />
+
+      {/* Filled + stroked polygons (largest first) */}
+      {polygons.map((poly) => (
+        <path key={`fill-${poly.period}`} d={poly.d}
+          fill={poly.color} fillOpacity={0.28}
+          stroke={poly.color} strokeWidth={2}
+          strokeLinejoin="round" />
       ))}
-      {polygons.map((poly, pi) => poly && (
-        <path key={`l${pi}`} d={poly.d} fill="none" stroke={poly.color} strokeWidth={2.5}
-          strokeDasharray={poly.pattern === "0" ? undefined : poly.pattern}
-          strokeLinejoin="round" strokeLinecap="round" />
-      ))}
-      {polygons.map((poly, pi) => poly && poly.pts.map((p2, j) => (
-        <circle key={`d${pi}${j}`} cx={p2.x} cy={p2.y} r={4} fill={poly.color} stroke="white" strokeWidth={1.5} />
-      )))}
+
+      {/* Axis labels */}
       {comps.map((comp, i) => {
         const a = ang(i);
-        const lr = R + 20;
+        const lr = R + LABEL_PAD;
         const lx = cx + lr * Math.cos(a);
         const ly = cy + lr * Math.sin(a);
         const cosA = Math.cos(a);
         const anchor = cosA > 0.15 ? "start" : cosA < -0.15 ? "end" : "middle";
+        const lines = wrapLabel(comp.label);
+        const lineH = 11;
+        const startDY = -((lines.length - 1) / 2) * lineH;
         return (
-          <text key={i} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle"
-            fontSize={9} fontWeight="600" fill={axisLabelFill} fontFamily="sans-serif">
-            {shortLbl(comp.label)}
+          <text key={i} textAnchor={anchor} dominantBaseline="middle"
+            fontSize={9} fontWeight="600" fill={axisLabelFill}
+            fontFamily="system-ui, sans-serif">
+            {lines.map((line, li) => (
+              <tspan key={li} x={lx} dy={li === 0 ? startDY : lineH}>{line}</tspan>
+            ))}
           </text>
         );
       })}
