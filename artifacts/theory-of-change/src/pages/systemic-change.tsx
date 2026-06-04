@@ -3178,83 +3178,97 @@ function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]
       </button>
 
       {open && (
-        <div className="p-4">
+        <div className="p-4 space-y-3">
           {!hasScores ? (
             <div className="text-center py-10">
               <TrendingUp className="w-8 h-8 text-muted-foreground/20 mx-auto mb-3" />
               <p className="text-sm text-muted-foreground">Score some indicators in the matrix to generate radar charts.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {MSR_DOMAINS.map(domain => {
-                const domainHasScores = domain.components.some(comp => {
-                  const ids = sel[comp.key] ?? [];
-                  return ids.some(id => activePeriods.some(p => scores[p]?.[id]?.score != null));
-                });
-
-                const data = domain.components.map(comp => {
+            <>
+              {/* Combined radar — all components from both domains */}
+              {(() => {
+                const allComponents = MSR_DOMAINS.flatMap(d => d.components);
+                const combinedData = allComponents.map(comp => {
                   const entry: Record<string, string | number> = { subject: shortLabel(comp.label) };
                   activePeriods.forEach(p => {
                     const ids = sel[comp.key] ?? [];
-                    const vals = ids
-                      .map(id => scores[p]?.[id]?.score)
-                      .filter((v): v is number => v != null);
-                    entry[p] = vals.length
-                      ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
-                      : 0;
+                    const vals = ids.map(id => scores[p]?.[id]?.score).filter((v): v is number => v != null);
+                    entry[p] = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : 0;
                   });
                   return entry;
                 });
-
                 return (
-                  <div key={domain.key} className={`rounded-xl border p-3 space-y-1 ${domain.bg}`}>
-                    <p className={`text-[10px] font-bold uppercase tracking-widest ${domain.text}`}>
-                      {domain.label}
-                    </p>
-                    {!domainHasScores ? (
-                      <div className="flex items-center justify-center h-[140px]">
-                        <p className="text-[11px] text-muted-foreground/50 italic">No scores yet</p>
-                      </div>
-                    ) : (
-                      <ResponsiveContainer width="100%" height={170}>
-                        <RadarChart data={data} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
-                          <PolarGrid stroke="#cbd5e1" />
-                          <PolarAngleAxis
-                            dataKey="subject"
-                            tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }}
+                  <div className="rounded-xl border border-border bg-slate-50 p-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-1">Combined — All Domains</p>
+                    <ResponsiveContainer width="100%" height={240}>
+                      <RadarChart data={combinedData} margin={{ top: 12, right: 28, bottom: 12, left: 28 }}>
+                        <PolarGrid stroke="#cbd5e1" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }} />
+                        <PolarRadiusAxis angle={90} domain={[0, 4]} tickCount={5} tick={{ fontSize: 8, fill: "#94a3b8" }} />
+                        {activePeriods.map((p, i) => (
+                          <Radar key={p} name={p} dataKey={p}
+                            stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
+                            fill={RADAR_COLORS[i % RADAR_COLORS.length]}
+                            fillOpacity={0.12} strokeWidth={2} dot={{ r: 3 } as any}
                           />
-                          <PolarRadiusAxis
-                            angle={90}
-                            domain={[0, 4]}
-                            tickCount={5}
-                            tick={{ fontSize: 8, fill: "#94a3b8" }}
-                          />
-                          {activePeriods.map((p, i) => (
-                            <Radar
-                              key={p}
-                              name={p}
-                              dataKey={p}
-                              stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
-                              fill={RADAR_COLORS[i % RADAR_COLORS.length]}
-                              fillOpacity={0.12}
-                              strokeWidth={2}
-                              dot={{ r: 3 } as any}
-                            />
-                          ))}
-                          <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                          <RechartsTooltip
-                            formatter={(value: number) => [
-                              `${Number(value).toFixed(1)} / 4`,
-                            ]}
-                            contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }}
-                          />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    )}
+                        ))}
+                        <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+                        <RechartsTooltip formatter={(v: number) => [`${Number(v).toFixed(1)} / 4`]}
+                          contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }} />
+                      </RadarChart>
+                    </ResponsiveContainer>
                   </div>
                 );
-              })}
-            </div>
+              })()}
+
+              {/* Per-domain charts */}
+              <div className="grid grid-cols-2 gap-3">
+                {MSR_DOMAINS.map(domain => {
+                  const domainHasScores = domain.components.some(comp => {
+                    const ids = sel[comp.key] ?? [];
+                    return ids.some(id => activePeriods.some(p => scores[p]?.[id]?.score != null));
+                  });
+                  const data = domain.components.map(comp => {
+                    const entry: Record<string, string | number> = { subject: shortLabel(comp.label) };
+                    activePeriods.forEach(p => {
+                      const ids = sel[comp.key] ?? [];
+                      const vals = ids.map(id => scores[p]?.[id]?.score).filter((v): v is number => v != null);
+                      entry[p] = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : 0;
+                    });
+                    return entry;
+                  });
+                  return (
+                    <div key={domain.key} className={`rounded-xl border p-3 space-y-1 ${domain.bg}`}>
+                      <p className={`text-[10px] font-bold uppercase tracking-widest ${domain.text}`}>{domain.label}</p>
+                      {!domainHasScores ? (
+                        <div className="flex items-center justify-center h-[140px]">
+                          <p className="text-[11px] text-muted-foreground/50 italic">No scores yet</p>
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={170}>
+                          <RadarChart data={data} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                            <PolarGrid stroke="#cbd5e1" />
+                            <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }} />
+                            <PolarRadiusAxis angle={90} domain={[0, 4]} tickCount={5} tick={{ fontSize: 8, fill: "#94a3b8" }} />
+                            {activePeriods.map((p, i) => (
+                              <Radar key={p} name={p} dataKey={p}
+                                stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
+                                fill={RADAR_COLORS[i % RADAR_COLORS.length]}
+                                fillOpacity={0.12} strokeWidth={2} dot={{ r: 3 } as any}
+                              />
+                            ))}
+                            <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+                            <RechartsTooltip formatter={(v: number) => [`${Number(v).toFixed(1)} / 4`]}
+                              contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }} />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
         </div>
       )}
