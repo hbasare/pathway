@@ -3146,139 +3146,6 @@ function useMsrData(theoryId: number, apiBase: string) {
 }
 
 const RADAR_COLORS = ["#6366f1","#f43f5e","#f59e0b","#10b981","#8b5cf6","#06b6d4","#ec4899","#84cc16"];
-const STROKE_PATTERNS = ["0", "6 3", "2 3", "8 3 2 3", "12 4"];
-
-// Custom SVG radar chart — drawn entirely in SVG so we control exactly which axes
-// each period's polygon connects. Recharts forces null→0 (center spikes); this does not.
-function SvgRadar({
-  comps, periodKeys, periodColors, sel, scores,
-  gridStroke = "#d1d5db", axisLabelFill = "#374151",
-}: {
-  comps: Array<{ key: string; label: string }>;
-  periodKeys: string[];
-  periodColors: string[];
-  sel: Record<string, string[]>;
-  scores: PeriodScores;
-  gridStroke?: string;
-  axisLabelFill?: string;
-}) {
-  const W = 340, H = 300;
-  const cx = W / 2, cy = H / 2 + 4;
-  const R = Math.min(W, H) / 2 - 58;
-  const MAX = 4;
-  const N = comps.length;
-  if (N < 2) return null;
-
-  const ang = (i: number) => (i / N) * 2 * Math.PI - Math.PI / 2;
-  const toXY = (i: number, v: number) => ({
-    x: cx + (v / MAX) * R * Math.cos(ang(i)),
-    y: cy + (v / MAX) * R * Math.sin(ang(i)),
-  });
-
-  // Grid levels: every 0.5 from 0.5 to 4
-  const gridLevels = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4];
-
-  // Build polygon for each period — only connecting scored axes
-  const raw = periodKeys.map((p, pi) => {
-    const pts: Array<{ x: number; y: number; val: number; axisIdx: number }> = [];
-    let totalScore = 0, count = 0;
-    comps.forEach((comp, i) => {
-      const ids = sel[comp.key] ?? [];
-      const vals = ids.map(id => scores[p]?.[id]?.score).filter((v): v is number => v != null);
-      if (vals.length) {
-        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
-        pts.push({ ...toXY(i, avg), val: avg, axisIdx: i });
-        totalScore += avg; count++;
-      }
-    });
-    if (pts.length < 2) return null;
-    const d = pts.map((s, j) => `${j === 0 ? "M" : "L"}${s.x.toFixed(1)},${s.y.toFixed(1)}`).join(" ") + " Z";
-    return { d, pts, color: periodColors[pi], period: p, avgScore: count ? totalScore / count : 0 };
-  }).filter(Boolean) as Array<{ d: string; pts: Array<{ x: number; y: number; val: number; axisIdx: number }>; color: string; period: string; avgScore: number }>;
-
-  // Draw largest polygons first so smaller ones appear on top
-  const polygons = [...raw].sort((a, b) => b.avgScore - a.avgScore);
-
-  // Label positions — far enough from the outer ring
-  const LABEL_PAD = 22;
-
-  // Wrap long labels at ~16 chars per line
-  const wrapLabel = (s: string): string[] => {
-    const words = s.split(" ");
-    const lines: string[] = [];
-    let cur = "";
-    for (const w of words) {
-      if (cur.length + w.length + 1 > 16 && cur) { lines.push(cur); cur = w; }
-      else { cur = cur ? cur + " " + w : w; }
-    }
-    if (cur) lines.push(cur);
-    return lines;
-  };
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", display: "block" }} role="img">
-      {/* Concentric grid rings */}
-      {gridLevels.map(lvl => {
-        const pts = comps.map((_, i) => toXY(i, lvl));
-        const d = pts.map((p, j) => `${j === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ") + " Z";
-        const isOuter = lvl === MAX;
-        return (
-          <path key={lvl} d={d} fill="none"
-            stroke={gridStroke}
-            strokeWidth={isOuter ? 1.5 : 0.6}
-            strokeOpacity={isOuter ? 1 : 0.7} />
-        );
-      })}
-
-      {/* Axis spoke lines */}
-      {comps.map((_, i) => {
-        const end = toXY(i, MAX);
-        return <line key={i} x1={cx} y1={cy} x2={end.x} y2={end.y} stroke={gridStroke} strokeWidth={0.75} />;
-      })}
-
-      {/* Grid level value labels (shown at axis 0 position) */}
-      {[1, 2, 3, 4].map(lvl => {
-        const { x, y } = toXY(0, lvl);
-        return (
-          <text key={lvl} x={x + 3} y={y} fontSize={7} fill="#9ca3af"
-            fontFamily="system-ui, sans-serif" dominantBaseline="middle">
-            {lvl}
-          </text>
-        );
-      })}
-
-      {/* Filled + stroked polygons (largest first) */}
-      {polygons.map((poly) => (
-        <path key={`fill-${poly.period}`} d={poly.d}
-          fill={poly.color} fillOpacity={0.28}
-          stroke={poly.color} strokeWidth={2}
-          strokeLinejoin="round" />
-      ))}
-
-      {/* Axis labels */}
-      {comps.map((comp, i) => {
-        const a = ang(i);
-        const lr = R + LABEL_PAD;
-        const lx = cx + lr * Math.cos(a);
-        const ly = cy + lr * Math.sin(a);
-        const cosA = Math.cos(a);
-        const anchor = cosA > 0.15 ? "start" : cosA < -0.15 ? "end" : "middle";
-        const lines = wrapLabel(comp.label);
-        const lineH = 11;
-        const startDY = -((lines.length - 1) / 2) * lineH;
-        return (
-          <text key={i} textAnchor={anchor} dominantBaseline="middle"
-            fontSize={9} fontWeight="600" fill={axisLabelFill}
-            fontFamily="system-ui, sans-serif">
-            {lines.map((line, li) => (
-              <tspan key={li} x={lx} dy={li === 0 ? startDY : lineH}>{line}</tspan>
-            ))}
-          </text>
-        );
-      })}
-    </svg>
-  );
-}
 
 function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]>; scores: PeriodScores; periods: string[] }) {
   const [open, setOpen] = useState(true);
@@ -3319,83 +3186,134 @@ function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]
             </div>
           ) : (
             <div className="space-y-4">
-              {(() => {
-                // Helper: periods that have at least one actual score for the given components
-                const activePeriodsWith = (comps: typeof MSR_DOMAINS[0]["components"]) =>
-                  activePeriods.filter(p =>
-                    comps.some(comp => {
-                      const ids = sel[comp.key] ?? [];
-                      return ids.some(id => scores[p]?.[id]?.score != null);
-                    })
-                  );
+              {/* Individual domain charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {MSR_DOMAINS.map(domain => {
+                  const domainHasScores = domain.components.some(comp => {
+                    const ids = sel[comp.key] ?? [];
+                    return ids.some(id => activePeriods.some(p => scores[p]?.[id]?.score != null));
+                  });
 
-                const renderRadar = (
-                  comps: typeof MSR_DOMAINS[0]["components"],
-                  gridStroke: string,
-                  axisLabelFill: string,
-                ) => {
-                  const pds = activePeriodsWith(comps);
-                  if (pds.length === 0) {
-                    return (
-                      <div className="flex items-center justify-center h-[160px]">
-                        <p className="text-[11px] text-muted-foreground/50 italic">No scores yet</p>
-                      </div>
-                    );
-                  }
-                  const colors = pds.map((_, i) => RADAR_COLORS[i % RADAR_COLORS.length]);
+                  const data = domain.components.map(comp => {
+                    const entry: Record<string, string | number> = { subject: shortLabel(comp.label) };
+                    activePeriods.forEach(p => {
+                      const ids = sel[comp.key] ?? [];
+                      const vals = ids
+                        .map(id => scores[p]?.[id]?.score)
+                        .filter((v): v is number => v != null);
+                      entry[p] = vals.length
+                        ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+                        : 0;
+                    });
+                    return entry;
+                  });
+
                   return (
-                    <div>
-                      <SvgRadar
-                        comps={comps}
-                        periodKeys={pds}
-                        periodColors={colors}
-                        sel={sel}
-                        scores={scores}
-                        gridStroke={gridStroke}
-                        axisLabelFill={axisLabelFill}
-                      />
-                      {/* Per-period colour + dash legend */}
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center mt-2">
-                        {pds.map((p, i) => (
-                          <div key={p} className="flex items-center gap-1.5">
-                            <svg width="22" height="10" style={{ overflow: "visible" }}>
-                              <line x1="0" y1="5" x2="22" y2="5"
-                                stroke={colors[i]} strokeWidth="2.5"
-                                strokeDasharray={STROKE_PATTERNS[i % STROKE_PATTERNS.length] === "0"
-                                  ? undefined : STROKE_PATTERNS[i % STROKE_PATTERNS.length]}
+                    <div key={domain.key} className={`rounded-xl border p-4 space-y-2 ${domain.bg}`}>
+                      <p className={`text-[11px] font-bold uppercase tracking-widest ${domain.text}`}>
+                        {domain.label}
+                      </p>
+                      {!domainHasScores ? (
+                        <div className="flex items-center justify-center h-[200px]">
+                          <p className="text-[11px] text-muted-foreground/50 italic">No scores for this domain yet</p>
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height={260}>
+                          <RadarChart data={data} margin={{ top: 16, right: 28, bottom: 16, left: 28 }}>
+                            <PolarGrid stroke="#cbd5e1" />
+                            <PolarAngleAxis
+                              dataKey="subject"
+                              tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }}
+                            />
+                            <PolarRadiusAxis
+                              angle={90}
+                              domain={[0, 4]}
+                              tickCount={5}
+                              tick={{ fontSize: 8, fill: "#94a3b8" }}
+                            />
+                            {activePeriods.map((p, i) => (
+                              <Radar
+                                key={p}
+                                name={p}
+                                dataKey={p}
+                                stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
+                                fill={RADAR_COLORS[i % RADAR_COLORS.length]}
+                                fillOpacity={0.12}
+                                strokeWidth={2}
+                                dot={{ r: 3 } as any}
                               />
-                              <circle cx="11" cy="5" r="3.5" fill={colors[i]} stroke="white" strokeWidth="1.5" />
-                            </svg>
-                            <span className="text-[10px] font-semibold" style={{ color: colors[i] }}>{p}</span>
-                          </div>
-                        ))}
-                      </div>
+                            ))}
+                            <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+                            <RechartsTooltip
+                              formatter={(value: number) => [`${Number(value).toFixed(1)} / 4`]}
+                              contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }}
+                            />
+                          </RadarChart>
+                        </ResponsiveContainer>
+                      )}
                     </div>
                   );
-                };
+                })}
+              </div>
+
+              {/* Combined chart — all components from both domains */}
+              {(() => {
+                const combinedData = MSR_DOMAINS.flatMap(domain =>
+                  domain.components.map(comp => {
+                    const entry: Record<string, string | number> = {
+                      subject: shortLabel(comp.label),
+                    };
+                    activePeriods.forEach(p => {
+                      const ids = sel[comp.key] ?? [];
+                      const vals = ids
+                        .map(id => scores[p]?.[id]?.score)
+                        .filter((v): v is number => v != null);
+                      entry[p] = vals.length
+                        ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+                        : 0;
+                    });
+                    return entry;
+                  })
+                );
 
                 return (
-                  <>
-                    {/* Per-domain charts */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      {MSR_DOMAINS.map(domain => (
-                        <div key={domain.key} className={`rounded-xl border p-4 space-y-1 ${domain.bg}`}>
-                          <p className={`text-[11px] font-bold uppercase tracking-widest ${domain.text}`}>
-                            {domain.label}
-                          </p>
-                          {renderRadar(domain.components, "#cbd5e1", "#64748b")}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Combined — all domains */}
-                    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-1">
-                      <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-700">
-                        Combined — All Domains
-                      </p>
-                      {renderRadar(MSR_DOMAINS.flatMap(d => d.components), "#c7d2fe", "#4f46e5")}
-                    </div>
-                  </>
+                  <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-2">
+                    <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-700">
+                      Combined — All Domains
+                    </p>
+                    <ResponsiveContainer width="100%" height={320}>
+                      <RadarChart data={combinedData} margin={{ top: 16, right: 40, bottom: 16, left: 40 }}>
+                        <PolarGrid stroke="#c7d2fe" />
+                        <PolarAngleAxis
+                          dataKey="subject"
+                          tick={{ fontSize: 10, fill: "#4f46e5", fontWeight: 500 }}
+                        />
+                        <PolarRadiusAxis
+                          angle={90}
+                          domain={[0, 4]}
+                          tickCount={5}
+                          tick={{ fontSize: 8, fill: "#818cf8" }}
+                        />
+                        {activePeriods.map((p, i) => (
+                          <Radar
+                            key={p}
+                            name={p}
+                            dataKey={p}
+                            stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
+                            fill={RADAR_COLORS[i % RADAR_COLORS.length]}
+                            fillOpacity={0.1}
+                            strokeWidth={2}
+                            dot={{ r: 3 } as any}
+                          />
+                        ))}
+                        <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+                        <RechartsTooltip
+                          formatter={(value: number) => [`${Number(value).toFixed(1)} / 4`]}
+                          contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }}
+                        />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
                 );
               })()}
             </div>
