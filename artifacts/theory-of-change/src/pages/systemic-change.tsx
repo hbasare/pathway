@@ -3185,137 +3185,75 @@ function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]
               <p className="text-sm text-muted-foreground">Score some indicators in the matrix to generate radar charts.</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Individual domain charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {MSR_DOMAINS.map(domain => {
-                  const domainHasScores = domain.components.some(comp => {
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {MSR_DOMAINS.map(domain => {
+                const domainHasScores = domain.components.some(comp => {
+                  const ids = sel[comp.key] ?? [];
+                  return ids.some(id => activePeriods.some(p => scores[p]?.[id]?.score != null));
+                });
+
+                const data = domain.components.map(comp => {
+                  const entry: Record<string, string | number> = { subject: shortLabel(comp.label) };
+                  activePeriods.forEach(p => {
                     const ids = sel[comp.key] ?? [];
-                    return ids.some(id => activePeriods.some(p => scores[p]?.[id]?.score != null));
+                    const vals = ids
+                      .map(id => scores[p]?.[id]?.score)
+                      .filter((v): v is number => v != null);
+                    entry[p] = vals.length
+                      ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+                      : 0;
                   });
-
-                  const data = domain.components.map(comp => {
-                    const entry: Record<string, string | number> = { subject: shortLabel(comp.label) };
-                    activePeriods.forEach(p => {
-                      const ids = sel[comp.key] ?? [];
-                      const vals = ids
-                        .map(id => scores[p]?.[id]?.score)
-                        .filter((v): v is number => v != null);
-                      entry[p] = vals.length
-                        ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
-                        : 0;
-                    });
-                    return entry;
-                  });
-
-                  return (
-                    <div key={domain.key} className={`rounded-xl border p-4 space-y-2 ${domain.bg}`}>
-                      <p className={`text-[11px] font-bold uppercase tracking-widest ${domain.text}`}>
-                        {domain.label}
-                      </p>
-                      {!domainHasScores ? (
-                        <div className="flex items-center justify-center h-[200px]">
-                          <p className="text-[11px] text-muted-foreground/50 italic">No scores for this domain yet</p>
-                        </div>
-                      ) : (
-                        <ResponsiveContainer width="100%" height={260}>
-                          <RadarChart data={data} margin={{ top: 16, right: 28, bottom: 16, left: 28 }}>
-                            <PolarGrid stroke="#cbd5e1" />
-                            <PolarAngleAxis
-                              dataKey="subject"
-                              tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }}
-                            />
-                            <PolarRadiusAxis
-                              angle={90}
-                              domain={[0, 4]}
-                              tickCount={5}
-                              tick={{ fontSize: 8, fill: "#94a3b8" }}
-                            />
-                            {activePeriods.map((p, i) => (
-                              <Radar
-                                key={p}
-                                name={p}
-                                dataKey={p}
-                                stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
-                                fill={RADAR_COLORS[i % RADAR_COLORS.length]}
-                                fillOpacity={0.12}
-                                strokeWidth={2}
-                                dot={{ r: 3 } as any}
-                              />
-                            ))}
-                            <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                            <RechartsTooltip
-                              formatter={(value: number) => [`${Number(value).toFixed(1)} / 4`]}
-                              contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }}
-                            />
-                          </RadarChart>
-                        </ResponsiveContainer>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* Combined chart — all components from both domains */}
-              {(() => {
-                const combinedData = MSR_DOMAINS.flatMap(domain =>
-                  domain.components.map(comp => {
-                    const entry: Record<string, string | number> = {
-                      subject: shortLabel(comp.label),
-                    };
-                    activePeriods.forEach(p => {
-                      const ids = sel[comp.key] ?? [];
-                      const vals = ids
-                        .map(id => scores[p]?.[id]?.score)
-                        .filter((v): v is number => v != null);
-                      entry[p] = vals.length
-                        ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
-                        : 0;
-                    });
-                    return entry;
-                  })
-                );
+                  return entry;
+                });
 
                 return (
-                  <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-2">
-                    <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-700">
-                      Combined — All Domains
+                  <div key={domain.key} className={`rounded-xl border p-4 space-y-2 ${domain.bg}`}>
+                    <p className={`text-[11px] font-bold uppercase tracking-widest ${domain.text}`}>
+                      {domain.label}
                     </p>
-                    <ResponsiveContainer width="100%" height={320}>
-                      <RadarChart data={combinedData} margin={{ top: 16, right: 40, bottom: 16, left: 40 }}>
-                        <PolarGrid stroke="#c7d2fe" />
-                        <PolarAngleAxis
-                          dataKey="subject"
-                          tick={{ fontSize: 10, fill: "#4f46e5", fontWeight: 500 }}
-                        />
-                        <PolarRadiusAxis
-                          angle={90}
-                          domain={[0, 4]}
-                          tickCount={5}
-                          tick={{ fontSize: 8, fill: "#818cf8" }}
-                        />
-                        {activePeriods.map((p, i) => (
-                          <Radar
-                            key={p}
-                            name={p}
-                            dataKey={p}
-                            stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
-                            fill={RADAR_COLORS[i % RADAR_COLORS.length]}
-                            fillOpacity={0.1}
-                            strokeWidth={2}
-                            dot={{ r: 3 } as any}
+                    {!domainHasScores ? (
+                      <div className="flex items-center justify-center h-[200px]">
+                        <p className="text-[11px] text-muted-foreground/50 italic">No scores for this domain yet</p>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={260}>
+                        <RadarChart data={data} margin={{ top: 16, right: 28, bottom: 16, left: 28 }}>
+                          <PolarGrid stroke="#cbd5e1" />
+                          <PolarAngleAxis
+                            dataKey="subject"
+                            tick={{ fontSize: 10, fill: "#64748b", fontWeight: 500 }}
                           />
-                        ))}
-                        <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
-                        <RechartsTooltip
-                          formatter={(value: number) => [`${Number(value).toFixed(1)} / 4`]}
-                          contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }}
-                        />
-                      </RadarChart>
-                    </ResponsiveContainer>
+                          <PolarRadiusAxis
+                            angle={90}
+                            domain={[0, 4]}
+                            tickCount={5}
+                            tick={{ fontSize: 8, fill: "#94a3b8" }}
+                          />
+                          {activePeriods.map((p, i) => (
+                            <Radar
+                              key={p}
+                              name={p}
+                              dataKey={p}
+                              stroke={RADAR_COLORS[i % RADAR_COLORS.length]}
+                              fill={RADAR_COLORS[i % RADAR_COLORS.length]}
+                              fillOpacity={0.12}
+                              strokeWidth={2}
+                              dot={{ r: 3 } as any}
+                            />
+                          ))}
+                          <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 4 }} />
+                          <RechartsTooltip
+                            formatter={(value: number) => [
+                              `${Number(value).toFixed(1)} / 4`,
+                            ]}
+                            contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }}
+                          />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    )}
                   </div>
                 );
-              })()}
+              })}
             </div>
           )}
         </div>
