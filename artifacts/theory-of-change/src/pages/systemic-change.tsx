@@ -3590,7 +3590,7 @@ function MsrFrameworkDiagram() {
       >
         <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         <span className="text-xs font-semibold text-slate-600 flex-1">MSR Framework Reference</span>
-        <span className="text-[10px] text-slate-400 mr-1">Reactive ↔ Proactive spectrum</span>
+        <span className="text-[10px] text-slate-400 mr-1 italic">DAI/USAID · Market Systems Resilience: A Framework for Measurement</span>
         {open ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
       </button>
 
