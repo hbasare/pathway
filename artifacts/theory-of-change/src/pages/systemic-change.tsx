@@ -3148,7 +3148,7 @@ function useMsrData(theoryId: number, apiBase: string) {
 const RADAR_COLORS = ["#6366f1","#f43f5e","#f59e0b","#10b981","#8b5cf6","#06b6d4","#ec4899","#84cc16"];
 
 function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]>; scores: PeriodScores; periods: string[] }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
 
   const shortLabel = (label: string) => label.length > 14 ? label.slice(0, 13) + "…" : label;
 
@@ -3185,7 +3185,7 @@ function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]
               <p className="text-sm text-muted-foreground">Score some indicators in the matrix to generate radar charts.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3">
               {MSR_DOMAINS.map(domain => {
                 const domainHasScores = domain.components.some(comp => {
                   const ids = sel[comp.key] ?? [];
@@ -3207,17 +3207,17 @@ function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]
                 });
 
                 return (
-                  <div key={domain.key} className={`rounded-xl border p-4 space-y-2 ${domain.bg}`}>
-                    <p className={`text-[11px] font-bold uppercase tracking-widest ${domain.text}`}>
+                  <div key={domain.key} className={`rounded-xl border p-3 space-y-1 ${domain.bg}`}>
+                    <p className={`text-[10px] font-bold uppercase tracking-widest ${domain.text}`}>
                       {domain.label}
                     </p>
                     {!domainHasScores ? (
-                      <div className="flex items-center justify-center h-[200px]">
-                        <p className="text-[11px] text-muted-foreground/50 italic">No scores for this domain yet</p>
+                      <div className="flex items-center justify-center h-[140px]">
+                        <p className="text-[11px] text-muted-foreground/50 italic">No scores yet</p>
                       </div>
                     ) : (
-                      <ResponsiveContainer width="100%" height={260}>
-                        <RadarChart data={data} margin={{ top: 16, right: 28, bottom: 16, left: 28 }}>
+                      <ResponsiveContainer width="100%" height={170}>
+                        <RadarChart data={data} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
                           <PolarGrid stroke="#cbd5e1" />
                           <PolarAngleAxis
                             dataKey="subject"
