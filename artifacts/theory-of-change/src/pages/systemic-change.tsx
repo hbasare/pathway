@@ -3146,6 +3146,95 @@ function useMsrData(theoryId: number, apiBase: string) {
 }
 
 const RADAR_COLORS = ["#6366f1","#f43f5e","#f59e0b","#10b981","#8b5cf6","#06b6d4","#ec4899","#84cc16"];
+const STROKE_PATTERNS = ["0", "6 3", "2 3", "8 3 2 3", "12 4"];
+
+// Recharts RadarChart cannot skip axes — null values always render as 0 and spike
+// the polygon to the centre. We bypass this by drawing every polygon in plain SVG,
+// connecting ONLY the axes that have an actual score for that period.
+function SvgRadar({
+  comps, periodKeys, periodColors, sel, scores,
+  gridStroke = "#e2e8f0", axisLabelFill = "#64748b",
+}: {
+  comps: Array<{ key: string; label: string }>;
+  periodKeys: string[];
+  periodColors: string[];
+  sel: Record<string, string[]>;
+  scores: PeriodScores;
+  gridStroke?: string;
+  axisLabelFill?: string;
+}) {
+  const SIZE = 300;
+  const cx = SIZE / 2;
+  const cy = SIZE / 2;
+  const R = SIZE / 2 - 54;
+  const MAX = 4;
+  const N = comps.length;
+  if (N < 2) return null;
+
+  const ang = (i: number) => (i / N) * 2 * Math.PI - Math.PI / 2;
+  const pt = (i: number, v: number) => ({
+    x: cx + (v / MAX) * R * Math.cos(ang(i)),
+    y: cy + (v / MAX) * R * Math.sin(ang(i)),
+  });
+
+  const polygons = periodKeys.map((p, pi) => {
+    const scored: Array<{ x: number; y: number; val: number }> = [];
+    comps.forEach((comp, i) => {
+      const ids = sel[comp.key] ?? [];
+      const vals = ids.map(id => scores[p]?.[id]?.score).filter((v): v is number => v != null);
+      if (vals.length) {
+        const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+        scored.push({ ...pt(i, avg), val: avg });
+      }
+    });
+    if (scored.length < 2) return null;
+    const d = scored.map((s, j) => `${j === 0 ? "M" : "L"}${s.x.toFixed(1)},${s.y.toFixed(1)}`).join(" ") + " Z";
+    return { d, pts: scored, color: periodColors[pi], pattern: STROKE_PATTERNS[pi % STROKE_PATTERNS.length], isLatest: pi === periodKeys.length - 1 };
+  });
+
+  const shortLbl = (s: string) => s.length > 13 ? s.slice(0, 12) + "…" : s;
+
+  return (
+    <svg viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ width: "100%", height: "auto", display: "block" }} role="img">
+      {[1, 2, 3, 4].map(lvl => (
+        <circle key={lvl} cx={cx} cy={cy} r={(lvl / MAX) * R} fill="none" stroke={gridStroke} strokeWidth={lvl === MAX ? 1.5 : 0.75} />
+      ))}
+      {comps.map((_, i) => {
+        const end = pt(i, MAX);
+        return <line key={i} x1={cx} y1={cy} x2={end.x} y2={end.y} stroke={gridStroke} strokeWidth={1} />;
+      })}
+      {[1, 2, 3, 4].map(lvl => {
+        const { x, y } = pt(0, lvl);
+        return <text key={lvl} x={x + 3} y={y - 2} fontSize={7} fill="#94a3b8" fontFamily="sans-serif">{lvl}</text>;
+      })}
+      {polygons.map((poly, pi) => poly?.isLatest && (
+        <path key={`f${pi}`} d={poly.d} fill={poly.color} fillOpacity={0.13} stroke="none" />
+      ))}
+      {polygons.map((poly, pi) => poly && (
+        <path key={`l${pi}`} d={poly.d} fill="none" stroke={poly.color} strokeWidth={2.5}
+          strokeDasharray={poly.pattern === "0" ? undefined : poly.pattern}
+          strokeLinejoin="round" strokeLinecap="round" />
+      ))}
+      {polygons.map((poly, pi) => poly && poly.pts.map((p2, j) => (
+        <circle key={`d${pi}${j}`} cx={p2.x} cy={p2.y} r={4} fill={poly.color} stroke="white" strokeWidth={1.5} />
+      )))}
+      {comps.map((comp, i) => {
+        const a = ang(i);
+        const lr = R + 20;
+        const lx = cx + lr * Math.cos(a);
+        const ly = cy + lr * Math.sin(a);
+        const cosA = Math.cos(a);
+        const anchor = cosA > 0.15 ? "start" : cosA < -0.15 ? "end" : "middle";
+        return (
+          <text key={i} x={lx} y={ly} textAnchor={anchor} dominantBaseline="middle"
+            fontSize={9} fontWeight="600" fill={axisLabelFill} fontFamily="sans-serif">
+            {shortLbl(comp.label)}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
 
 function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]>; scores: PeriodScores; periods: string[] }) {
   const [open, setOpen] = useState(true);
@@ -3186,35 +3275,9 @@ function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Stroke pattern per period so years are doubly distinct (colour + dash) */}
               {(() => {
-                const STROKE_PATTERNS = ["0", "6 3", "2 3", "8 3 2 3", "12 4"];
-
-                // Build data for a set of components, only including those with selected
-                // indicators. For each period, use the actual avg or null (not 0) so
-                // unscored axes don't spike to the centre.
-                const buildData = (comps: typeof MSR_DOMAINS[0]["components"]) =>
-                  comps
-                    .filter(comp => (sel[comp.key] ?? []).length > 0)
-                    .map(comp => {
-                      const entry: Record<string, string | number | null> = { subject: shortLabel(comp.label) };
-                      activePeriods.forEach(p => {
-                        const ids = sel[comp.key] ?? [];
-                        const vals = ids
-                          .map(id => scores[p]?.[id]?.score)
-                          .filter((v): v is number => v != null);
-                        // Use actual avg when scored; leave as 0 only when comp has
-                        // some selections but none scored for this period — this keeps
-                        // the polygon closed while making the gap visible.
-                        entry[p] = vals.length
-                          ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
-                          : null;
-                      });
-                      return entry;
-                    });
-
-                // Only render a <Radar> for periods with at least one real score
-                const scoredPeriods = (comps: typeof MSR_DOMAINS[0]["components"]) =>
+                // Helper: periods that have at least one actual score for the given components
+                const activePeriodsWith = (comps: typeof MSR_DOMAINS[0]["components"]) =>
                   activePeriods.filter(p =>
                     comps.some(comp => {
                       const ids = sel[comp.key] ?? [];
@@ -3222,87 +3285,71 @@ function MsrRadarCharts({ sel, scores, periods }: { sel: Record<string, string[]
                     })
                   );
 
-                const renderChart = (
+                const renderRadar = (
                   comps: typeof MSR_DOMAINS[0]["components"],
-                  gridColor: string,
-                  axisColor: string,
-                  radiusColor: string,
-                  height: number,
+                  gridStroke: string,
+                  axisLabelFill: string,
                 ) => {
-                  const data = buildData(comps);
-                  const periods = scoredPeriods(comps);
-                  if (data.length === 0 || periods.length === 0) {
+                  const pds = activePeriodsWith(comps);
+                  if (pds.length === 0) {
                     return (
-                      <div className="flex items-center justify-center h-[200px]">
+                      <div className="flex items-center justify-center h-[160px]">
                         <p className="text-[11px] text-muted-foreground/50 italic">No scores yet</p>
                       </div>
                     );
                   }
+                  const colors = pds.map((_, i) => RADAR_COLORS[i % RADAR_COLORS.length]);
                   return (
-                    <ResponsiveContainer width="100%" height={height}>
-                      <RadarChart data={data} margin={{ top: 20, right: 36, bottom: 20, left: 36 }}>
-                        <PolarGrid stroke={gridColor} />
-                        <PolarAngleAxis
-                          dataKey="subject"
-                          tick={{ fontSize: 10, fill: axisColor, fontWeight: 600 }}
-                        />
-                        <PolarRadiusAxis
-                          angle={90}
-                          domain={[0, 4]}
-                          tickCount={5}
-                          tick={{ fontSize: 8, fill: radiusColor }}
-                        />
-                        {periods.map((p, i) => {
-                          const color = RADAR_COLORS[i % RADAR_COLORS.length];
-                          return (
-                            <Radar
-                              key={p}
-                              name={p}
-                              dataKey={p}
-                              stroke={color}
-                              fill={color}
-                              fillOpacity={i === periods.length - 1 ? 0.08 : 0}
-                              strokeWidth={2.5}
-                              strokeDasharray={STROKE_PATTERNS[i % STROKE_PATTERNS.length]}
-                              dot={{ r: 4, fill: color, stroke: "white", strokeWidth: 1.5 } as any}
-                            />
-                          );
-                        })}
-                        <RechartsLegend wrapperStyle={{ fontSize: 10, paddingTop: 8 }} />
-                        <RechartsTooltip
-                          formatter={(value: number | null) =>
-                            value != null ? [`${Number(value).toFixed(1)} / 4`] : ["—"]
-                          }
-                          contentStyle={{ fontSize: 11, padding: "6px 10px", borderRadius: 8 }}
-                        />
-                      </RadarChart>
-                    </ResponsiveContainer>
+                    <div>
+                      <SvgRadar
+                        comps={comps}
+                        periodKeys={pds}
+                        periodColors={colors}
+                        sel={sel}
+                        scores={scores}
+                        gridStroke={gridStroke}
+                        axisLabelFill={axisLabelFill}
+                      />
+                      {/* Per-period colour + dash legend */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 justify-center mt-2">
+                        {pds.map((p, i) => (
+                          <div key={p} className="flex items-center gap-1.5">
+                            <svg width="22" height="10" style={{ overflow: "visible" }}>
+                              <line x1="0" y1="5" x2="22" y2="5"
+                                stroke={colors[i]} strokeWidth="2.5"
+                                strokeDasharray={STROKE_PATTERNS[i % STROKE_PATTERNS.length] === "0"
+                                  ? undefined : STROKE_PATTERNS[i % STROKE_PATTERNS.length]}
+                              />
+                              <circle cx="11" cy="5" r="3.5" fill={colors[i]} stroke="white" strokeWidth="1.5" />
+                            </svg>
+                            <span className="text-[10px] font-semibold" style={{ color: colors[i] }}>{p}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   );
                 };
 
                 return (
                   <>
-                    {/* Individual domain charts */}
+                    {/* Per-domain charts */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                       {MSR_DOMAINS.map(domain => (
-                        <div key={domain.key} className={`rounded-xl border p-4 space-y-2 ${domain.bg}`}>
+                        <div key={domain.key} className={`rounded-xl border p-4 space-y-1 ${domain.bg}`}>
                           <p className={`text-[11px] font-bold uppercase tracking-widest ${domain.text}`}>
                             {domain.label}
                           </p>
-                          {renderChart(domain.components, "#cbd5e1", "#64748b", "#94a3b8", 260)}
+                          {renderRadar(domain.components, "#cbd5e1", "#64748b")}
                         </div>
                       ))}
                     </div>
 
-                    {/* Combined chart — all components from both domains */}
-                    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-2">
+                    {/* Combined — all domains */}
+                    <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 space-y-1">
                       <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-700">
                         Combined — All Domains
                       </p>
-                      {renderChart(
-                        MSR_DOMAINS.flatMap(d => d.components),
-                        "#c7d2fe", "#4f46e5", "#818cf8", 340,
-                      )}
+                      {renderRadar(MSR_DOMAINS.flatMap(d => d.components), "#c7d2fe", "#4f46e5")}
                     </div>
                   </>
                 );
