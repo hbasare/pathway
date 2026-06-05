@@ -2787,6 +2787,11 @@ function MsrMatrix({ periods, sel, scores, scoringCell, selectingFor, onSelectCe
   onSelectCell: (period: string, indicatorId: string, componentKey: string) => void;
   onEditIndicators: (componentKey: string) => void;
 }) {
+  // Tracks which component keys are collapsed (hides all their indicator rows)
+  const [collapsedComps, setCollapsedComps] = useState<Set<string>>(new Set());
+  const toggleComp = (key: string) =>
+    setCollapsedComps(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+
   // Tracks which "componentKey::groupName" pairs are collapsed
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const toggleGroup = (key: string) =>
@@ -2842,10 +2847,16 @@ function MsrMatrix({ periods, sel, scores, scoringCell, selectingFor, onSelectCe
                       <tr className={`border-b border-border/50 ${isSelectingThis ? "bg-violet-50/70" : "bg-muted/20"}`}>
                         <td className="px-4 py-2.5 sticky left-0 bg-inherit z-10 border-r border-border/30">
                           <div className="flex items-center justify-between gap-2">
-                            <div className="min-w-0">
-                              <span className="text-xs font-bold text-foreground">{comp.label}</span>
-                              <span className="ml-2 text-[10px] text-muted-foreground/60 hidden sm:inline">{comp.desc}</span>
-                            </div>
+                            <button
+                              onClick={() => toggleComp(comp.key)}
+                              className="flex items-center gap-1.5 min-w-0 text-left group"
+                              title={collapsedComps.has(comp.key) ? "Expand indicators" : "Collapse indicators"}>
+                              {collapsedComps.has(comp.key)
+                                ? <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />
+                                : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0" />}
+                              <span className="text-xs font-bold text-foreground group-hover:text-violet-700 transition-colors">{comp.label}</span>
+                              <span className="ml-1 text-[10px] text-muted-foreground/60 hidden sm:inline">{comp.desc}</span>
+                            </button>
                             <button
                               onClick={() => onEditIndicators(comp.key)}
                               className={`shrink-0 flex items-center gap-1 text-[10px] font-semibold px-2 py-1 rounded-md border transition-colors ${
@@ -2876,15 +2887,16 @@ function MsrMatrix({ periods, sel, scores, scoringCell, selectingFor, onSelectCe
                         })}
                       </tr>
 
-                      {/* Indicator sub-rows — grouped */}
-                      {selectedIds.length === 0 ? (
+                      {/* Indicator sub-rows — hidden when component is collapsed */}
+                      {!collapsedComps.has(comp.key) && selectedIds.length === 0 && (
                         <tr>
                           <td colSpan={2 + periods.length}
                             className="pl-10 pr-4 py-2 text-[11px] text-muted-foreground/40 italic border-b border-border/20 bg-background">
                             No indicators selected — click "Select indicators" to add rows for this component
                           </td>
                         </tr>
-                      ) : comp.indicatorGroups.map(grp => {
+                      )}
+                      {!collapsedComps.has(comp.key) && selectedIds.length > 0 && comp.indicatorGroups.map(grp => {
                         const grpSelected = grp.indicators.filter(i => selectedIds.includes(i.id));
                         if (grpSelected.length === 0) return null;
 
