@@ -3614,7 +3614,22 @@ function MsrFrameworkDiagram({
       .sort((a, b) => b.avg - a.avg);
   };
 
-  // Generate a concise summary statement from scored indicators for a component
+  // Collect unique, non-empty evidence notes across all periods for a component's indicators
+  const compNotes = (compKey: string): string[] => {
+    if (!scores || !sel || !periods) return [];
+    const ids = sel[compKey] ?? [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const id of ids) {
+      for (const p of [...periods].reverse()) { // most-recent period first
+        const n = scores[p]?.[id]?.notes?.trim();
+        if (n && !seen.has(n)) { seen.add(n); out.push(n); }
+      }
+    }
+    return out;
+  };
+
+  // Generate a concise summary statement from scored indicators + evidence notes for a component
   const compSummary = (compKey: string): string | null => {
     const avg = compAvg(compKey);
     if (avg === null) return null;
@@ -3626,17 +3641,29 @@ function MsrFrameworkDiagram({
       avg < 2.0 ? "reactive-leaning" :
       avg < 2.5 ? "transitioning" :
       avg < 3.0 ? "proactive-leaning" : "strongly proactive";
-    const trunc = (s: string) => s.length > 36 ? s.slice(0, 34) + "…" : s;
     const top = inds[0];
     const bottom = inds[inds.length - 1];
+
+    // Score part
+    let stmt: string;
     if (avg < 2.0) {
-      return `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}). "${trunc(bottom.label)}" is the primary constraint.`;
+      stmt = `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}).`;
     } else if (avg >= 3.0) {
-      return `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}). "${trunc(top.label)}" stands out as a strength.`;
+      stmt = `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}).`;
     } else {
-      const spread = count > 1 ? ` Scores range from ${bottom.avg.toFixed(1)} to ${top.avg.toFixed(1)}/4.` : "";
-      return `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}).${spread}`;
+      const spread = count > 1 ? ` Range: ${bottom.avg.toFixed(1)}–${top.avg.toFixed(1)}/4.` : "";
+      stmt = `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}).${spread}`;
     }
+
+    // Evidence notes part
+    const notes = compNotes(compKey);
+    if (notes.length > 0) {
+      const combined = notes.join(" · ");
+      const truncated = combined.length > 220 ? combined.slice(0, 218) + "…" : combined;
+      stmt += ` Evidence: "${truncated}"`;
+    }
+
+    return stmt;
   };
 
   const cols = {
