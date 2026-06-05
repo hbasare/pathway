@@ -3629,13 +3629,12 @@ function MsrFrameworkDiagram({
     return out;
   };
 
-  // Generate a concise summary statement from scored indicators + evidence notes for a component
+  // Generate a concise score-only statement for a component (evidence shown separately)
   const compSummary = (compKey: string): string | null => {
     const avg = compAvg(compKey);
     if (avg === null) return null;
     const inds = getScoredInds(compKey);
     if (inds.length === 0) return null;
-    const count = inds.length;
     const direction =
       avg < 1.5 ? "strongly reactive" :
       avg < 2.0 ? "reactive-leaning" :
@@ -3643,28 +3642,20 @@ function MsrFrameworkDiagram({
       avg < 3.0 ? "proactive-leaning" : "strongly proactive";
     const top = inds[0];
     const bottom = inds[inds.length - 1];
-
-    // Score part
-    let stmt: string;
-    if (avg < 2.0) {
-      stmt = `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}).`;
-    } else if (avg >= 3.0) {
-      stmt = `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}).`;
-    } else {
-      const spread = count > 1 ? ` Range: ${bottom.avg.toFixed(1)}–${top.avg.toFixed(1)}/4.` : "";
-      stmt = `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}).${spread}`;
-    }
-
-    // Evidence notes part
-    const notes = compNotes(compKey);
-    if (notes.length > 0) {
-      const combined = notes.join(" · ");
-      const truncated = combined.length > 220 ? combined.slice(0, 218) + "…" : combined;
-      stmt += ` Evidence: "${truncated}"`;
-    }
-
-    return stmt;
+    const range = inds.length > 1 && Math.abs(top.avg - bottom.avg) > 0.1
+      ? ` Range: ${bottom.avg.toFixed(1)}–${top.avg.toFixed(1)}/4.` : "";
+    return `Avg ${avg.toFixed(1)}/4 (${direction}).${range}`;
   };
+
+  // All component metadata for evidence panel
+  const ALL_COMP_META: { compKey: string; label: string }[] = MSR_DOMAINS.flatMap(d =>
+    d.components.map(c => ({ compKey: c.key, label: c.label }))
+  );
+
+  // Collect all evidence notes across every component, grouped by component label
+  const allEvidenceItems: { label: string; notes: string[] }[] = ALL_COMP_META
+    .map(({ compKey, label }) => ({ label, notes: compNotes(compKey) }))
+    .filter(x => x.notes.length > 0);
 
   const cols = {
     reactive: {
@@ -3863,6 +3854,28 @@ function MsrFrameworkDiagram({
             </div>
 
           </div>
+
+          {/* Combined evidence & notes visual summary */}
+          {allEvidenceItems.length > 0 && (
+            <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-3 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-500">
+                Evidence &amp; Notes Summary
+              </p>
+              <div className="space-y-1.5">
+                {allEvidenceItems.map(({ label, notes }) => (
+                  <div key={label} className="flex gap-2 items-start">
+                    <span className="shrink-0 text-[9px] font-bold text-indigo-700 bg-indigo-100 border border-indigo-200 px-1.5 py-0.5 rounded-sm mt-[1px] leading-tight whitespace-nowrap">
+                      {label}
+                    </span>
+                    <p className="text-[11px] text-slate-700 leading-snug">
+                      {notes.join(" · ")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
         </div>
       )}
     </div>
