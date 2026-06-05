@@ -3593,6 +3593,27 @@ function MsrFrameworkDiagram({
     return [words.slice(0, mid).join(" ").slice(0, 13), words.slice(mid).join(" ").slice(0, 13)];
   })();
 
+  // Build flat indicator label map from MSR_DOMAINS
+  const indicatorLabels: Record<string, string> = {};
+  MSR_DOMAINS.forEach(d => d.components.forEach(c =>
+    c.indicatorGroups.forEach(g => g.indicators.forEach(ind => {
+      indicatorLabels[ind.id] = ind.label;
+    }))
+  ));
+
+  // Return scored indicators for a component key, sorted best→worst
+  const getScoredInds = (compKey: string): { id: string; label: string; avg: number }[] => {
+    if (!scores || !sel || !periods) return [];
+    const ids = sel[compKey] ?? [];
+    return ids
+      .map(id => {
+        const vals = periods.map(p => scores[p]?.[id]?.score).filter((v): v is number => v != null);
+        return { id, label: indicatorLabels[id] ?? id, avg: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null };
+      })
+      .filter((x): x is { id: string; label: string; avg: number } => x.avg !== null)
+      .sort((a, b) => b.avg - a.avg);
+  };
+
   const cols = {
     reactive: {
       structural: [
@@ -3637,29 +3658,26 @@ function MsrFrameworkDiagram({
       </button>
 
       {open && (
-        <div className="bg-white p-4 space-y-3">
+        <div className="bg-white p-4 space-y-4">
+
           {/* Gradient bar + position marker */}
-          <div className="space-y-1">
-            <div className="relative flex items-center h-7 rounded-md overflow-hidden select-none">
+          <div className="space-y-1.5">
+            <div className="relative flex items-center h-8 rounded-lg overflow-hidden select-none">
               <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-400 to-blue-600" />
-              <span className="relative text-white text-[11px] font-bold px-3 drop-shadow-sm">← Reactive</span>
+              <span className="relative text-white text-xs font-bold px-4 drop-shadow">← Reactive</span>
               <div className="flex-1" />
-              <span className="relative text-white text-[11px] font-bold px-3 drop-shadow-sm">Proactive →</span>
+              <span className="relative text-white text-xs font-bold px-4 drop-shadow">Proactive →</span>
               {positionPct != null && (
-                <div
-                  className="absolute bottom-0 -translate-x-1/2 flex flex-col items-center pointer-events-none"
-                  style={{ left: `${positionPct}%` }}
-                >
-                  <div className="w-0.5 h-7 bg-white/80" />
-                </div>
+                <div className="absolute top-0 bottom-0 w-px bg-white/90 pointer-events-none" style={{ left: `${positionPct}%` }} />
               )}
             </div>
             {positionPct != null && overallAvg != null && (
-              <div className="relative h-4">
-                <div className="absolute -translate-x-1/2 flex items-center gap-1" style={{ left: `${Math.min(Math.max(positionPct, 8), 88)}%` }}>
-                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotCls(overallAvg)}`} />
-                  <span className={`text-[10px] font-bold whitespace-nowrap ${scoreLabelColor(overallAvg)}`}>
-                    {actor?.actorName ? `${actor.actorName}: ` : ""}{scoreLabel(overallAvg)} ({overallAvg.toFixed(1)}/4)
+              <div className="relative h-5">
+                <div className="absolute -translate-x-1/2 flex items-center gap-1.5"
+                  style={{ left: `${Math.min(Math.max(positionPct, 10), 90)}%` }}>
+                  <div className={`w-2 h-2 rounded-full shrink-0 ${dotCls(overallAvg)}`} />
+                  <span className={`text-[11px] font-bold whitespace-nowrap ${scoreLabelColor(overallAvg)}`}>
+                    {actor?.actorName ? `${actor.actorName} — ` : ""}{scoreLabel(overallAvg)} ({overallAvg.toFixed(1)}/4)
                   </span>
                 </div>
               </div>
@@ -3667,23 +3685,39 @@ function MsrFrameworkDiagram({
           </div>
 
           {/* 3-column body */}
-          <div className="grid grid-cols-[1fr_200px_1fr] gap-4 items-center">
+          <div className="grid grid-cols-[1fr_190px_1fr] gap-4 items-start">
 
             {/* Left: Reactive */}
-            <div className="space-y-3 text-[11px] text-slate-700">
+            <div className="space-y-4 text-[11px] text-slate-700">
               {(["structural", "behavioral"] as const).map(dom => (
                 <div key={dom}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-red-400 mb-2">
                     {dom === "structural" ? "Structural" : "Behavioral"}
                   </p>
-                  <ul className="space-y-1 leading-snug">
+                  <ul className="space-y-2.5">
                     {cols.reactive[dom].map(({ term, compKey, desc }) => {
                       const s = compAvg(compKey);
+                      const inds = getScoredInds(compKey);
                       return (
-                        <li key={term} className="flex items-start gap-1.5">
-                          <span className={`w-1.5 h-1.5 rounded-full mt-[3px] shrink-0 ${dotCls(s)}`}
-                            title={s != null ? `${s.toFixed(1)}/4` : "Not scored"} />
-                          <span><strong className="text-slate-900">{term}</strong> {desc}</span>
+                        <li key={term} className="space-y-1">
+                          <div className="flex items-start gap-1.5">
+                            <span className={`w-2 h-2 rounded-full mt-[2px] shrink-0 border border-white shadow-sm ${dotCls(s)}`}
+                              title={s != null ? `${s.toFixed(1)}/4` : "Not scored"} />
+                            <span className="leading-snug">
+                              <strong className="text-slate-900">{term}</strong> {desc}
+                            </span>
+                          </div>
+                          {inds.length > 0 && (
+                            <ul className="ml-3.5 space-y-0.5">
+                              {inds.map(ind => (
+                                <li key={ind.id} className="flex items-center gap-1 text-[10px] text-slate-500">
+                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotCls(ind.avg)}`} />
+                                  <span className="truncate flex-1">{ind.label.length > 42 ? ind.label.slice(0, 40) + "…" : ind.label}</span>
+                                  <span className="shrink-0 font-semibold tabular-nums text-slate-600">{ind.avg.toFixed(1)}/4</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </li>
                       );
                     })}
@@ -3693,83 +3727,90 @@ function MsrFrameworkDiagram({
             </div>
 
             {/* Centre diamond */}
-            <div className="flex flex-col items-stretch gap-1">
-              {/* Top panels */}
+            <div className="flex flex-col items-stretch gap-1.5">
               <div className="grid grid-cols-2 gap-1">
-                <div className="text-[9px] leading-snug text-center bg-red-50 border border-red-200 rounded p-1.5 text-red-900">
-                  Evolves to reinforce group loyalty and authority to cope with current risks and maintain existing performance
+                <div className="text-[10px] leading-snug text-center bg-red-50 border border-red-200 rounded p-2 text-red-800 font-medium">
+                  Reinforces group loyalty to cope with current risks
                 </div>
-                <div className="text-[9px] leading-snug text-center bg-blue-50 border border-blue-200 rounded p-1.5 text-blue-900">
-                  Evolves to innovate its way around future risk by developing new norms and incentives
+                <div className="text-[10px] leading-snug text-center bg-blue-50 border border-blue-200 rounded p-2 text-blue-800 font-medium">
+                  Innovates to navigate future risk with new norms
                 </div>
               </div>
 
-              {/* Diamond SVG */}
-              <svg viewBox="0 0 200 110" className="w-full h-auto">
+              <svg viewBox="0 0 200 120" className="w-full h-auto">
                 <defs>
-                  <linearGradient id="msrTopGrad" x1="0" y1="0" x2="1" y2="0">
+                  <linearGradient id="msrTopGrad2" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor="#fca5a5" />
                     <stop offset="50%" stopColor="#c084fc" />
                     <stop offset="100%" stopColor="#93c5fd" />
                   </linearGradient>
-                  <linearGradient id="msrLeftGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#cbd5e1" />
-                    <stop offset="100%" stopColor="#e2e8f0" />
-                  </linearGradient>
-                  <linearGradient id="msrRightGrad" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#e2e8f0" />
-                    <stop offset="100%" stopColor="#cbd5e1" />
-                  </linearGradient>
                 </defs>
-                <polygon points="100,5 4,55 100,105" fill="url(#msrLeftGrad)" />
-                <polygon points="100,5 196,55 100,105" fill="url(#msrRightGrad)" />
-                <polygon points="100,5 4,55 196,55" fill="url(#msrTopGrad)" />
-                <polygon points="4,55 196,55 100,105" fill="#334155" />
-                <circle cx="100" cy="55" r="28" fill="white" stroke="#e2e8f0" strokeWidth="1.5" />
+                {/* Diamond quadrants */}
+                <polygon points="100,6 6,60 100,114" fill="#e2e8f0" />
+                <polygon points="100,6 194,60 100,114" fill="#e2e8f0" />
+                <polygon points="100,6 6,60 194,60" fill="url(#msrTopGrad2)" />
+                <polygon points="6,60 194,60 100,114" fill="#1e293b" />
+                {/* "Emergent" labels in the gray side triangles — readable size */}
+                <text x="40" y="60" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="8.5" fontWeight="600" transform="rotate(-60 40 60)">Emergent</text>
+                <text x="40" y="60" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="8.5" fontWeight="600" transform="rotate(-60 40 60) translate(0 10)">Behaviors</text>
+                <text x="160" y="60" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="8.5" fontWeight="600" transform="rotate(60 160 60)">Emergent</text>
+                <text x="160" y="60" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="8.5" fontWeight="600" transform="rotate(60 160 60) translate(0 10)">Behaviors</text>
+                {/* Centre circle */}
+                <circle cx="100" cy="60" r="30" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
                 {svgLines[1] ? (
                   <>
-                    <text x="100" y="48" textAnchor="middle" fill="#0f172a" fontSize="7.5" fontWeight="700">{svgLines[0]}</text>
-                    <text x="100" y="58" textAnchor="middle" fill="#0f172a" fontSize="7.5" fontWeight="700">{svgLines[1]}</text>
-                    {overallAvg != null && (
-                      <text x="100" y="68" textAnchor="middle" fill="#64748b" fontSize="6">{overallAvg.toFixed(1)}/4</text>
-                    )}
+                    <text x="100" y="53" textAnchor="middle" fill="#0f172a" fontSize="9" fontWeight="700">{svgLines[0]}</text>
+                    <text x="100" y="64" textAnchor="middle" fill="#0f172a" fontSize="9" fontWeight="700">{svgLines[1]}</text>
+                    {overallAvg != null && <text x="100" y="75" textAnchor="middle" fill="#64748b" fontSize="8">{overallAvg.toFixed(1)}/4</text>}
                   </>
                 ) : (
                   <>
-                    <text x="100" y="52" textAnchor="middle" fill="#0f172a" fontSize="8" fontWeight="700">{svgLines[0]}</text>
-                    {overallAvg != null ? (
-                      <text x="100" y="63" textAnchor="middle" fill="#64748b" fontSize="6.5">{overallAvg.toFixed(1)}/4</text>
-                    ) : (
-                      <text x="100" y="63" textAnchor="middle" fill="#94a3b8" fontSize="6.5">actor</text>
-                    )}
+                    <text x="100" y="57" textAnchor="middle" fill="#0f172a" fontSize="11" fontWeight="700">{svgLines[0]}</text>
+                    {overallAvg != null
+                      ? <text x="100" y="70" textAnchor="middle" fill="#64748b" fontSize="9">{overallAvg.toFixed(1)}/4</text>
+                      : <text x="100" y="70" textAnchor="middle" fill="#94a3b8" fontSize="9">actor</text>
+                    }
                   </>
                 )}
-                <text x="38" y="55" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="7" fontWeight="600" transform="rotate(-62 38 55)">Emergent Behaviors</text>
-                <text x="162" y="55" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="7" fontWeight="600" transform="rotate(62 162 55)">Emergent Behaviors</text>
               </svg>
 
-              {/* Bottom note */}
-              <div className="text-[9px] leading-snug text-center bg-slate-700 text-white rounded px-2 py-1.5">
-                How the system evolves is highly influenced by the bias in the system to be reactive or proactive to managing risks
-                <div className="mt-0.5 text-slate-300">⟵ ⟶</div>
+              <div className="text-[10px] leading-snug text-center bg-slate-800 text-slate-100 rounded px-3 py-2 font-medium">
+                System evolution is shaped by whether agents are biased toward reactive or proactive risk management
+                <div className="mt-1 text-slate-400 tracking-widest">⟵ ⟶</div>
               </div>
             </div>
 
             {/* Right: Proactive */}
-            <div className="space-y-3 text-[11px] text-slate-700">
+            <div className="space-y-4 text-[11px] text-slate-700">
               {(["structural", "behavioral"] as const).map(dom => (
                 <div key={dom}>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-blue-500 mb-2">
                     {dom === "structural" ? "Structural" : "Behavioral"}
                   </p>
-                  <ul className="space-y-1 leading-snug">
+                  <ul className="space-y-2.5">
                     {cols.proactive[dom].map(({ term, compKey, desc }) => {
                       const s = compAvg(compKey);
+                      const inds = getScoredInds(compKey);
                       return (
-                        <li key={term} className="flex items-start gap-1.5">
-                          <span className={`w-1.5 h-1.5 rounded-full mt-[3px] shrink-0 ${dotCls(s)}`}
-                            title={s != null ? `${s.toFixed(1)}/4` : "Not scored"} />
-                          <span><strong className="text-slate-900">{term}</strong> {desc}</span>
+                        <li key={term} className="space-y-1">
+                          <div className="flex items-start gap-1.5">
+                            <span className={`w-2 h-2 rounded-full mt-[2px] shrink-0 border border-white shadow-sm ${dotCls(s)}`}
+                              title={s != null ? `${s.toFixed(1)}/4` : "Not scored"} />
+                            <span className="leading-snug">
+                              <strong className="text-slate-900">{term}</strong> {desc}
+                            </span>
+                          </div>
+                          {inds.length > 0 && (
+                            <ul className="ml-3.5 space-y-0.5">
+                              {inds.map(ind => (
+                                <li key={ind.id} className="flex items-center gap-1 text-[10px] text-slate-500">
+                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotCls(ind.avg)}`} />
+                                  <span className="truncate flex-1">{ind.label.length > 42 ? ind.label.slice(0, 40) + "…" : ind.label}</span>
+                                  <span className="shrink-0 font-semibold tabular-nums text-slate-600">{ind.avg.toFixed(1)}/4</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
                         </li>
                       );
                     })}
