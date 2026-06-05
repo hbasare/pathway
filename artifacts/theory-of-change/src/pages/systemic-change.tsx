@@ -3614,6 +3614,31 @@ function MsrFrameworkDiagram({
       .sort((a, b) => b.avg - a.avg);
   };
 
+  // Generate a concise summary statement from scored indicators for a component
+  const compSummary = (compKey: string): string | null => {
+    const avg = compAvg(compKey);
+    if (avg === null) return null;
+    const inds = getScoredInds(compKey);
+    if (inds.length === 0) return null;
+    const count = inds.length;
+    const direction =
+      avg < 1.5 ? "strongly reactive" :
+      avg < 2.0 ? "reactive-leaning" :
+      avg < 2.5 ? "transitioning" :
+      avg < 3.0 ? "proactive-leaning" : "strongly proactive";
+    const trunc = (s: string) => s.length > 36 ? s.slice(0, 34) + "…" : s;
+    const top = inds[0];
+    const bottom = inds[inds.length - 1];
+    if (avg < 2.0) {
+      return `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}). "${trunc(bottom.label)}" is the primary constraint.`;
+    } else if (avg >= 3.0) {
+      return `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}). "${trunc(top.label)}" stands out as a strength.`;
+    } else {
+      const spread = count > 1 ? ` Scores range from ${bottom.avg.toFixed(1)} to ${top.avg.toFixed(1)}/4.` : "";
+      return `${count} indicator${count > 1 ? "s" : ""} scored — avg ${avg.toFixed(1)}/4 (${direction}).${spread}`;
+    }
+  };
+
   const cols = {
     reactive: {
       structural: [
@@ -3707,16 +3732,10 @@ function MsrFrameworkDiagram({
                               <strong className="text-slate-900">{term}</strong> {desc}
                             </span>
                           </div>
-                          {inds.length > 0 && (
-                            <ul className="ml-3.5 space-y-0.5">
-                              {inds.map(ind => (
-                                <li key={ind.id} className="flex items-center gap-1 text-[10px] text-slate-500">
-                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotCls(ind.avg)}`} />
-                                  <span className="truncate flex-1">{ind.label.length > 42 ? ind.label.slice(0, 40) + "…" : ind.label}</span>
-                                  <span className="shrink-0 font-semibold tabular-nums text-slate-600">{ind.avg.toFixed(1)}/4</span>
-                                </li>
-                              ))}
-                            </ul>
+                          {compSummary(compKey) && (
+                            <p className="ml-3.5 text-[10px] text-slate-500 leading-snug italic">
+                              {compSummary(compKey)}
+                            </p>
                           )}
                         </li>
                       );
@@ -3750,11 +3769,11 @@ function MsrFrameworkDiagram({
                 <polygon points="100,6 194,60 100,114" fill="#e2e8f0" />
                 <polygon points="100,6 6,60 194,60" fill="url(#msrTopGrad2)" />
                 <polygon points="6,60 194,60 100,114" fill="#1e293b" />
-                {/* "Emergent" labels in the gray side triangles — readable size */}
-                <text x="40" y="60" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="8.5" fontWeight="600" transform="rotate(-60 40 60)">Emergent</text>
-                <text x="40" y="60" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="8.5" fontWeight="600" transform="rotate(-60 40 60) translate(0 10)">Behaviors</text>
-                <text x="160" y="60" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="8.5" fontWeight="600" transform="rotate(60 160 60)">Emergent</text>
-                <text x="160" y="60" textAnchor="middle" dominantBaseline="middle" fill="#64748b" fontSize="8.5" fontWeight="600" transform="rotate(60 160 60) translate(0 10)">Behaviors</text>
+                {/* "Emergent Behaviors" — two lines each side, centred in each gray triangle */}
+                <text x="43" y="53" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">Emergent</text>
+                <text x="43" y="64" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">Behaviors</text>
+                <text x="157" y="53" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">Emergent</text>
+                <text x="157" y="64" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">Behaviors</text>
                 {/* Centre circle */}
                 <circle cx="100" cy="60" r="30" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
                 {svgLines[1] ? (
@@ -3800,16 +3819,10 @@ function MsrFrameworkDiagram({
                               <strong className="text-slate-900">{term}</strong> {desc}
                             </span>
                           </div>
-                          {inds.length > 0 && (
-                            <ul className="ml-3.5 space-y-0.5">
-                              {inds.map(ind => (
-                                <li key={ind.id} className="flex items-center gap-1 text-[10px] text-slate-500">
-                                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotCls(ind.avg)}`} />
-                                  <span className="truncate flex-1">{ind.label.length > 42 ? ind.label.slice(0, 40) + "…" : ind.label}</span>
-                                  <span className="shrink-0 font-semibold tabular-nums text-slate-600">{ind.avg.toFixed(1)}/4</span>
-                                </li>
-                              ))}
-                            </ul>
+                          {compSummary(compKey) && (
+                            <p className="ml-3.5 text-[10px] text-slate-500 leading-snug italic">
+                              {compSummary(compKey)}
+                            </p>
                           )}
                         </li>
                       );
