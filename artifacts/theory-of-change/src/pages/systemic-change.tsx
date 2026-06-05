@@ -3783,42 +3783,45 @@ function MsrFrameworkDiagram({
                 </div>
               </div>
 
-              <svg viewBox="0 0 200 120" className="w-full h-auto">
-                <defs>
-                  <linearGradient id="msrTopGrad2" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0%" stopColor="#fca5a5" />
-                    <stop offset="50%" stopColor="#c084fc" />
-                    <stop offset="100%" stopColor="#93c5fd" />
-                  </linearGradient>
-                </defs>
-                {/* Diamond quadrants */}
-                <polygon points="100,6 6,60 100,114" fill="#e2e8f0" />
-                <polygon points="100,6 194,60 100,114" fill="#e2e8f0" />
-                <polygon points="100,6 6,60 194,60" fill="url(#msrTopGrad2)" />
-                <polygon points="6,60 194,60 100,114" fill="#1e293b" />
-                {/* "Emergent Behaviors" — two lines each side, centred in each gray triangle */}
-                <text x="43" y="53" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">Emergent</text>
-                <text x="43" y="64" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">Behaviors</text>
-                <text x="157" y="53" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">Emergent</text>
-                <text x="157" y="64" textAnchor="middle" fill="#64748b" fontSize="9" fontWeight="600">Behaviors</text>
-                {/* Centre circle */}
-                <circle cx="100" cy="60" r="30" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
-                {svgLines[1] ? (
-                  <>
-                    <text x="100" y="53" textAnchor="middle" fill="#0f172a" fontSize="9" fontWeight="700">{svgLines[0]}</text>
-                    <text x="100" y="64" textAnchor="middle" fill="#0f172a" fontSize="9" fontWeight="700">{svgLines[1]}</text>
-                    {overallAvg != null && <text x="100" y="75" textAnchor="middle" fill="#64748b" fontSize="8">{overallAvg.toFixed(1)}/4</text>}
-                  </>
-                ) : (
-                  <>
-                    <text x="100" y="57" textAnchor="middle" fill="#0f172a" fontSize="11" fontWeight="700">{svgLines[0]}</text>
-                    {overallAvg != null
-                      ? <text x="100" y="70" textAnchor="middle" fill="#64748b" fontSize="9">{overallAvg.toFixed(1)}/4</text>
-                      : <text x="100" y="70" textAnchor="middle" fill="#94a3b8" fontSize="9">actor</text>
-                    }
-                  </>
-                )}
-              </svg>
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] font-semibold text-slate-400 tracking-wide shrink-0 select-none"
+                  style={{ writingMode: "vertical-rl", transform: "rotate(180deg)" }}>
+                  Emergent Behaviors
+                </span>
+                <svg viewBox="0 0 200 120" className="flex-1 h-auto">
+                  <defs>
+                    <linearGradient id="msrTopGrad2" x1="0" y1="0" x2="1" y2="0">
+                      <stop offset="0%" stopColor="#fca5a5" />
+                      <stop offset="50%" stopColor="#c084fc" />
+                      <stop offset="100%" stopColor="#93c5fd" />
+                    </linearGradient>
+                  </defs>
+                  <polygon points="100,6 6,60 100,114" fill="#e2e8f0" />
+                  <polygon points="100,6 194,60 100,114" fill="#e2e8f0" />
+                  <polygon points="100,6 6,60 194,60" fill="url(#msrTopGrad2)" />
+                  <polygon points="6,60 194,60 100,114" fill="#1e293b" />
+                  <circle cx="100" cy="60" r="30" fill="white" stroke="#cbd5e1" strokeWidth="1.5" />
+                  {svgLines[1] ? (
+                    <>
+                      <text x="100" y="53" textAnchor="middle" fill="#0f172a" fontSize="9" fontWeight="700">{svgLines[0]}</text>
+                      <text x="100" y="64" textAnchor="middle" fill="#0f172a" fontSize="9" fontWeight="700">{svgLines[1]}</text>
+                      {overallAvg != null && <text x="100" y="75" textAnchor="middle" fill="#64748b" fontSize="8">{overallAvg.toFixed(1)}/4</text>}
+                    </>
+                  ) : (
+                    <>
+                      <text x="100" y="57" textAnchor="middle" fill="#0f172a" fontSize="11" fontWeight="700">{svgLines[0]}</text>
+                      {overallAvg != null
+                        ? <text x="100" y="70" textAnchor="middle" fill="#64748b" fontSize="9">{overallAvg.toFixed(1)}/4</text>
+                        : <text x="100" y="70" textAnchor="middle" fill="#94a3b8" fontSize="9">actor</text>
+                      }
+                    </>
+                  )}
+                </svg>
+                <span className="text-[9px] font-semibold text-slate-400 tracking-wide shrink-0 select-none"
+                  style={{ writingMode: "vertical-rl" }}>
+                  Emergent Behaviors
+                </span>
+              </div>
 
               <div className="text-[10px] leading-snug text-center bg-slate-800 text-slate-100 rounded px-3 py-2 font-medium">
                 System evolution is shaped by whether agents are biased toward reactive or proactive risk management
