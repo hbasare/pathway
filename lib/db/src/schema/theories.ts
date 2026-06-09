@@ -254,6 +254,28 @@ export type InsertSystemicChange = z.infer<typeof insertSystemicChangeSchema>;
 export type SystemicChange = typeof systemicChangesTable.$inferSelect;
 export type BusinessModelActor = typeof businessModelActorsTable.$inferSelect;
 
+// ─── Theory Locations ─────────────────────────────────────────────────────────
+export const theoryLocationsTable = pgTable("theory_locations", {
+  id: serial("id").primaryKey(),
+  theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  displayName: text("display_name").notNull().default(""),
+  country: text("country").notNull().default(""),
+  countryCode: text("country_code").notNull().default(""),
+  adminLevel1: text("admin_level1").notNull().default(""),
+  adminLevel2: text("admin_level2").notNull().default(""),
+  lat: real("lat"),
+  lng: real("lng"),
+  boundaryGeoJson: text("boundary_geojson").notNull().default(""),
+  level: text("level").notNull().default("country"),
+  nominatimId: text("nominatim_id").notNull().default(""),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const insertTheoryLocationSchema = createInsertSchema(theoryLocationsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertTheoryLocation = z.infer<typeof insertTheoryLocationSchema>;
+export type TheoryLocation = typeof theoryLocationsTable.$inferSelect;
+
 // ─── Theory Assignments ────────────────────────────────────────────────────────
 // Maps team members (role: "member") to the specific theories they manage.
 // Members can edit only their assigned theories; all others are view-only.
