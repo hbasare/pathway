@@ -2308,27 +2308,29 @@ function OhMscAIAnalysis({ theoryId, fw, entries }: { theoryId: number; fw: Fram
 
   return (
     <div className={`rounded-2xl border-2 ${accentBorder} bg-gradient-to-br ${accentFrom} via-background to-blue-50 overflow-hidden`}>
-      <button onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center gap-3 px-5 py-4 border-b border-inherit bg-white/60 text-left hover:bg-white/80 transition-colors">
-        <div className={`w-8 h-8 rounded-full ${iconBg} flex items-center justify-center shrink-0`}>
-          <Sparkles className="w-4 h-4 text-white" />
-        </div>
-        <div className="flex-1">
-          <h3 className="text-sm font-bold text-foreground">AI Analysis</h3>
-          <p className="text-xs text-muted-foreground">
-            {isOH ? "Synthesise themes, gaps and recommendations from your outcome harvest"
-                   : "Identify patterns and priorities across your collected change stories"}
-          </p>
-        </div>
-        <Button size="sm" onClick={e => { e.stopPropagation(); generate(); }}
+      <div className="flex items-center gap-3 px-5 py-4 border-b border-inherit bg-white/60">
+        <button onClick={() => setOpen(o => !o)}
+          className="flex items-center gap-3 flex-1 min-w-0 text-left hover:opacity-80 transition-opacity cursor-pointer">
+          <div className={`w-8 h-8 rounded-full ${iconBg} flex items-center justify-center shrink-0`}>
+            <Sparkles className="w-4 h-4 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h3 className="text-sm font-bold text-foreground">AI Analysis</h3>
+            <p className="text-xs text-muted-foreground">
+              {isOH ? "Synthesise themes, gaps and recommendations from your outcome harvest"
+                     : "Identify patterns and priorities across your collected change stories"}
+            </p>
+          </div>
+          {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+        </button>
+        <Button size="sm" onClick={generate}
           disabled={loading || !hasEntries}
           className={`${btnCls} text-white shrink-0 gap-1.5`}>
           {loading
             ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Analysing…</>
             : <><Sparkles className="w-3.5 h-3.5" />{analysis ? "Regenerate" : "Generate Analysis"}</>}
         </Button>
-        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
-      </button>
+      </div>
 
       <div className={open ? "px-5 py-4 space-y-4" : "hidden"}>
         {!hasEntries && !analysis && (
@@ -4978,8 +4980,8 @@ export default function SystemicChange() {
             )
             .sort((a, b) => {
               if (!sortCol) return 0;
-              const av = String((a as Record<string, unknown>)[sortCol] ?? "");
-              const bv = String((b as Record<string, unknown>)[sortCol] ?? "");
+              const av = String((a as unknown as Record<string, unknown>)[sortCol] ?? "");
+              const bv = String((b as unknown as Record<string, unknown>)[sortCol] ?? "");
               return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
             });
           const hasFilters = filterTag !== "all" || filterLevel !== "all" || filterStatus !== "all";
