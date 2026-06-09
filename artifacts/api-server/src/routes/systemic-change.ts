@@ -264,10 +264,15 @@ Return ONLY valid JSON (no markdown, no extra text):
 
 router.get("/theories/:theoryId/systemic-changes", async (req, res) => {
   const theoryId = Number(req.params.theoryId);
+  const framework = req.query.framework as string | undefined;
   const rows = await db
     .select()
     .from(systemicChangesTable)
-    .where(eq(systemicChangesTable.theoryId, theoryId))
+    .where(
+      framework
+        ? and(eq(systemicChangesTable.theoryId, theoryId), eq(systemicChangesTable.framework, framework))
+        : eq(systemicChangesTable.theoryId, theoryId)
+    )
     .orderBy(systemicChangesTable.position, systemicChangesTable.createdAt);
   res.json(rows);
 });

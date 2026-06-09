@@ -3427,7 +3427,7 @@ function useMsrData(theoryId: number, apiBase: string) {
   const load = async () => {
     try {
       const [scRes, actRes] = await Promise.all([
-        fetch(`${apiBase}/theories/${theoryId}/systemic-changes`, { credentials: "include" }),
+        fetch(`${apiBase}/theories/${theoryId}/systemic-changes?framework=msr`, { credentials: "include" }),
         fetch(`${apiBase}/theories/${theoryId}/business-model/actors`, { credentials: "include" }),
       ]);
       if (actRes.ok) setActors((await actRes.json()) as BusinessModelActor[]);
@@ -3471,7 +3471,7 @@ function useMsrData(theoryId: number, apiBase: string) {
       } else {
         const res = await fetch(`${apiBase}/theories/${theoryId}/systemic-changes`, {
           method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
-          body: JSON.stringify(body),
+          body: JSON.stringify({ ...body, framework: "msr" }),
         });
         if (res.ok) { const row = await res.json(); setMsrEntryId(row.id); }
       }
@@ -4724,7 +4724,11 @@ export default function SystemicChange() {
     if (!id || loading) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/theories/${id}/systemic-changes`, { credentials: "include" });
+      const fwKey = localFrameworkKey ?? (theory as any)?.systemicChangeFramework ?? "";
+      const url = fwKey
+        ? `${API_BASE}/theories/${id}/systemic-changes?framework=${encodeURIComponent(fwKey)}`
+        : `${API_BASE}/theories/${id}/systemic-changes`;
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error(await res.text());
       setEntries(await res.json());
     } catch (err) {
@@ -4798,7 +4802,7 @@ export default function SystemicChange() {
     try {
       const res = await fetch(`${API_BASE}/theories/${id}/systemic-changes`, {
         method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include",
-        body: JSON.stringify({ ...data, position: entries.length }),
+        body: JSON.stringify({ ...data, framework: localFrameworkKey ?? "", position: entries.length }),
       });
       if (!res.ok) throw new Error(await res.text());
       const created = await res.json() as Entry;

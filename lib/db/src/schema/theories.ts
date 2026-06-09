@@ -235,6 +235,7 @@ export type InsertBusinessModelActor = z.infer<typeof insertBusinessModelActorSc
 export const systemicChangesTable = pgTable("systemic_changes", {
   id: serial("id").primaryKey(),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  framework: text("framework").notNull().default(""), // 'aaer' | 'msr' | 'oh' | 'msc'
   dimension: text("dimension").notNull().default(""),
   description: text("description").notNull().default(""),
   changeObserved: text("change_observed").notNull().default(""),
