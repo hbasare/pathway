@@ -4765,6 +4765,15 @@ export default function SystemicChange() {
   const handleSelectFramework = (key: FrameworkKey) => {
     setLocalFrameworkKey(key);
     setShowSelector(false);
+    setEntries([]);
+    setLoaded(false);
+    setAddingRow(false);
+    setEditingId(null);
+    setFilterTag("all");
+    setFilterLevel("all");
+    setFilterStatus("all");
+    setSortCol(null);
+    setSortDir("asc");
     updateTheory.mutate({ id, data: { systemicChangeFramework: key } as any });
   };
 
