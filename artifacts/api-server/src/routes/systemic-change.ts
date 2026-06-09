@@ -173,6 +173,95 @@ If a domain has no scores (all null), set status to "no-data", score to 0, headl
 });
 
 
+router.post("/theories/:theoryId/oh-msc-ai-analysis", async (req, res) => {
+  const { frameworkKey, entries } = req.body as {
+    frameworkKey: "oh" | "msc";
+    entries: Array<Record<string, string | null>>;
+  };
+
+  const isOH = frameworkKey === "oh";
+
+  const systemPrompt = isOH
+    ? `You are an expert in Outcome Harvesting (OH), an M&E methodology developed by Wilson-Grau. OH works backwards from observed outcomes — collecting evidence of changes in behaviour, relationships, policies, and actions that an intervention contributed to.
+
+Analyse the provided Outcome Harvesting data and return a structured JSON assessment.
+
+Readiness levels:
+- emerging: few outcomes, limited verification, narrow scope
+- developing: growing evidence base, mixed verification, some scope diversity
+- established: strong evidence across multiple outcome types, mostly verified
+- transformative: systemic, verified outcomes across all levels with clear attribution
+
+Return ONLY valid JSON (no markdown, no extra text):
+{
+  "overallReadiness": "<emerging|developing|established|transformative>",
+  "summary": "<2-3 sentence overall narrative of the harvest>",
+  "keyThemes": [
+    { "theme": "<theme name>", "description": "<1-2 sentences on what this theme shows>", "entryCount": <number of outcomes contributing> }
+  ],
+  "strengthAreas": ["<strength 1>", "<strength 2>"],
+  "gaps": ["<gap 1>", "<gap 2>", "<gap 3>"],
+  "recommendations": ["<recommendation 1>", "<recommendation 2>", "<recommendation 3>"]
+}`
+    : `You are an expert in Most Significant Change (MSC), a participatory M&E technique developed by Davies and Dart. MSC collects "stories of significant change" from stakeholders and uses a structured panel review process to select the most significant stories.
+
+Analyse the provided MSC story data and return a structured JSON assessment.
+
+Readiness levels:
+- emerging: few stories, mostly draft, limited domains covered
+- developing: growing story base, some panel review, mixed domains
+- established: strong stories across domains, panel-reviewed, selected stories identified
+- transformative: rich, diverse stories with full panel review and a verified selection process
+
+Return ONLY valid JSON (no markdown, no extra text):
+{
+  "overallReadiness": "<emerging|developing|established|transformative>",
+  "summary": "<2-3 sentence overall narrative of the stories collected>",
+  "keyThemes": [
+    { "theme": "<theme name>", "description": "<1-2 sentences on what this theme shows>", "entryCount": <number of stories contributing> }
+  ],
+  "strengthAreas": ["<strength 1>", "<strength 2>"],
+  "gaps": ["<gap 1>", "<gap 2>", "<gap 3>"],
+  "recommendations": ["<recommendation 1>", "<recommendation 2>", "<recommendation 3>"]
+}`;
+
+  const userMessage = `Here are the ${isOH ? "Outcome Harvesting" : "Most Significant Change"} entries:\n\n${JSON.stringify(
+    entries.map(e => ({
+      who: e.dimension,
+      type: e.frameworkTag,
+      outcomeOrTitle: e.description,
+      evidenceOrWhy: e.changeObserved,
+      scope: e.level,
+      status: e.status,
+    })),
+    null,
+    2
+  )}\n\nPlease analyse and return the structured JSON assessment.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-5.4",
+      max_completion_tokens: 4096,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user",   content: userMessage },
+      ],
+    });
+    const raw = response.choices[0]?.message?.content ?? "{}";
+    let analysis: Record<string, unknown>;
+    try { analysis = JSON.parse(raw); }
+    catch {
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error("No JSON found in response");
+      analysis = JSON.parse(match[0]);
+    }
+    res.json(analysis);
+  } catch (err) {
+    console.error("OH/MSC AI analysis error:", err);
+    res.status(500).json({ error: "Failed to generate AI analysis" });
+  }
+});
+
 router.get("/theories/:theoryId/systemic-changes", async (req, res) => {
   const theoryId = Number(req.params.theoryId);
   const rows = await db

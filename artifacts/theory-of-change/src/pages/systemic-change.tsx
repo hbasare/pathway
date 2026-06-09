@@ -11,6 +11,7 @@ import {
   ArrowLeft, Plus, Trash2, Pencil, Check, X, Loader2, GitBranch,
   ChevronRight, RefreshCw, Info, Settings, ChevronDown, ChevronUp,
   Sparkles, AlertCircle, TrendingUp, ListChecks, Users, BookOpen,
+  Filter, BarChart2, ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +23,8 @@ import {
 } from "@/components/ui/tooltip";
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  PieChart, Pie, Cell,
+  BarChart, Bar, XAxis, YAxis,
   ResponsiveContainer,
   Tooltip as RechartsTooltip,
   Legend as RechartsLegend,
@@ -2101,6 +2104,330 @@ function SystemicChangeAIAnalysis({ theoryId, hasEntries }: { theoryId: number; 
                     <li key={i} className="flex gap-2 text-sm text-amber-900 leading-relaxed">
                       <span className="shrink-0 font-black text-amber-600">{i + 1}.</span>
                       <span>{a}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── OH / MSC Module ──────────────────────────────────────────────────────────
+
+const OH_TAG_COLORS: Record<string, string> = {
+  practices:     "#f97316",
+  policies:      "#eab308",
+  relationships: "#22c55e",
+  norms:         "#3b82f6",
+  resources:     "#a855f7",
+};
+const MSC_TAG_COLORS: Record<string, string> = {
+  livelihoods: "#f43f5e",
+  access:      "#ec4899",
+  empowerment: "#8b5cf6",
+  environment: "#10b981",
+  wellbeing:   "#f59e0b",
+  other:       "#94a3b8",
+};
+
+interface OhMscAnalysisResult {
+  overallReadiness: string;
+  summary: string;
+  keyThemes: { theme: string; description: string; entryCount: number }[];
+  strengthAreas: string[];
+  gaps: string[];
+  recommendations: string[];
+}
+
+const READINESS_CONFIG: Record<string, { label: string; color: string; bg: string; border: string }> = {
+  emerging:       { label: "Emerging",       color: "text-orange-700",  bg: "bg-orange-50",  border: "border-orange-200" },
+  developing:     { label: "Developing",     color: "text-amber-700",   bg: "bg-amber-50",   border: "border-amber-200" },
+  established:    { label: "Established",    color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200" },
+  transformative: { label: "Transformative", color: "text-indigo-700",  bg: "bg-indigo-50",  border: "border-indigo-200" },
+};
+
+function OhMscSummaryCards({ entries, fw }: { entries: Entry[]; fw: FrameworkDef }) {
+  const total    = entries.length;
+  const byTag    = fw.tagOptions.map(t => ({ ...t, count: entries.filter(e => e.frameworkTag === t.value).length }));
+  const byStatus = fw.statusOptions.map(s => ({ ...s, count: entries.filter(e => e.status    === s.value).length }));
+  const byLevel  = fw.levelOptions.map(l  => ({ ...l,  count: entries.filter(e => e.level    === l.value).length }));
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="rounded-xl border border-border bg-card p-4 flex flex-col gap-1">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Total Entries</p>
+        <p className="text-3xl font-black text-foreground leading-none mt-1">{total}</p>
+        <p className="text-[10px] text-muted-foreground mt-1">{fw.key === "oh" ? "outcomes harvested" : "stories collected"}</p>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">{fw.key === "oh" ? "By Outcome Type" : "By Domain"}</p>
+        <div className="space-y-1.5">
+          {byTag.map(t => (
+            <div key={t.value} className="flex items-center gap-2">
+              <span className="text-[11px] text-foreground/70 flex-1 truncate">{t.label}</span>
+              <span className="text-[11px] font-bold text-foreground w-4 text-right">{t.count}</span>
+              <div className="w-14 h-1.5 rounded-full bg-muted overflow-hidden shrink-0">
+                <div className="h-full rounded-full bg-indigo-400 transition-all" style={{ width: total ? `${(t.count / total) * 100}%` : "0%" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">{fw.key === "oh" ? "Verification" : "Review Status"}</p>
+        <div className="space-y-1.5">
+          {byStatus.map(s => (
+            <div key={s.value} className="flex items-center justify-between gap-2">
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${s.color}`}>{s.label}</span>
+              <span className="text-xs font-bold text-foreground">{s.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2.5">By Scope</p>
+        <div className="space-y-2">
+          {byLevel.map(l => (
+            <div key={l.value} className="flex items-center gap-2">
+              <span className="text-[11px] text-foreground/70 flex-1">{l.label}</span>
+              <span className="text-[11px] font-bold text-foreground">{l.count}</span>
+              <div className="w-14 h-1.5 rounded-full bg-muted overflow-hidden shrink-0">
+                <div className="h-full rounded-full bg-slate-400 transition-all" style={{ width: total ? `${(l.count / total) * 100}%` : "0%" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const PIE_LABEL = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: {
+  cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number;
+}) => {
+  if (percent < 0.06) return null;
+  const R = Math.PI / 180;
+  const r = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + r * Math.cos(-midAngle * R);
+  const y = cy + r * Math.sin(-midAngle * R);
+  return <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight="bold">{`${(percent * 100).toFixed(0)}%`}</text>;
+};
+
+const SCOPE_COLORS = ["#6366f1", "#a78bfa", "#c4b5fd", "#818cf8", "#4f46e5", "#7c3aed"];
+
+function OhMscCharts({ entries, fw }: { entries: Entry[]; fw: FrameworkDef }) {
+  if (entries.length === 0) return null;
+
+  const tagColors = fw.key === "oh" ? OH_TAG_COLORS : MSC_TAG_COLORS;
+
+  const tagData = fw.tagOptions
+    .map(t => ({ name: t.label, value: entries.filter(e => e.frameworkTag === t.value).length, color: tagColors[t.value] ?? "#94a3b8" }))
+    .filter(d => d.value > 0);
+
+  const statusData = fw.statusOptions.map(s => {
+    const statusEntries = entries.filter(e => e.status === s.value);
+    const row: Record<string, string | number> = { status: s.label };
+    fw.levelOptions.forEach(l => { row[l.label] = statusEntries.filter(e => e.level === l.value).length; });
+    return row;
+  });
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">{fw.key === "oh" ? "Outcomes by Type" : "Stories by Domain"}</p>
+        <ResponsiveContainer width="100%" height={200}>
+          <PieChart>
+            <Pie data={tagData} cx="50%" cy="50%" innerRadius={52} outerRadius={82} paddingAngle={2} dataKey="value" labelLine={false} label={PIE_LABEL}>
+              {tagData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+            </Pie>
+            <RechartsTooltip formatter={(v: number, name: string) => [`${v} entr${v === 1 ? "y" : "ies"}`, name]} />
+            <RechartsLegend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="rounded-xl border border-border bg-card p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">{fw.key === "oh" ? "Verification by Scope" : "Review Status by Scope"}</p>
+        <ResponsiveContainer width="100%" height={200}>
+          <BarChart data={statusData} layout="vertical" barSize={16} margin={{ top: 4, right: 20, bottom: 4, left: 72 }}>
+            <XAxis type="number" allowDecimals={false} tick={{ fontSize: 10 }} />
+            <YAxis type="category" dataKey="status" tick={{ fontSize: 10 }} width={70} />
+            <RechartsTooltip />
+            <RechartsLegend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
+            {fw.levelOptions.map((l, i) => (
+              <Bar key={l.value} dataKey={l.label} stackId="a" fill={SCOPE_COLORS[i % SCOPE_COLORS.length]}
+                radius={i === fw.levelOptions.length - 1 ? [0, 3, 3, 0] : undefined} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+function OhMscAIAnalysis({ theoryId, fw, entries }: { theoryId: number; fw: FrameworkDef; entries: Entry[] }) {
+  const { toast } = useToast();
+  const [analysis, setAnalysis] = useState<OhMscAnalysisResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(true);
+
+  const generate = async () => {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/theories/${theoryId}/oh-msc-ai-analysis`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ frameworkKey: fw.key, entries }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      setAnalysis(await res.json());
+    } catch (err) {
+      toast({ title: "Analysis failed", description: String(err), variant: "destructive" });
+    } finally { setLoading(false); }
+  };
+
+  const hasEntries = entries.length > 0;
+  const rc = analysis ? (READINESS_CONFIG[analysis.overallReadiness] ?? READINESS_CONFIG.emerging) : null;
+  const isOH = fw.key === "oh";
+  const accentBorder = isOH ? "border-orange-200" : "border-rose-200";
+  const accentFrom   = isOH ? "from-orange-50"   : "from-rose-50";
+  const btnCls       = isOH ? "bg-orange-500 hover:bg-orange-600" : "bg-rose-500 hover:bg-rose-600";
+  const iconBg       = isOH ? "bg-orange-500"     : "bg-rose-500";
+  const spinnerCls   = isOH ? "text-orange-500"   : "text-rose-500";
+  const sparkCls     = isOH ? "text-orange-500"   : "text-rose-500";
+  const readyBg      = isOH ? "bg-orange-100"     : "bg-rose-100";
+
+  return (
+    <div className={`rounded-2xl border-2 ${accentBorder} bg-gradient-to-br ${accentFrom} via-background to-blue-50 overflow-hidden`}>
+      <button onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center gap-3 px-5 py-4 border-b border-inherit bg-white/60 text-left hover:bg-white/80 transition-colors">
+        <div className={`w-8 h-8 rounded-full ${iconBg} flex items-center justify-center shrink-0`}>
+          <Sparkles className="w-4 h-4 text-white" />
+        </div>
+        <div className="flex-1">
+          <h3 className="text-sm font-bold text-foreground">AI Analysis</h3>
+          <p className="text-xs text-muted-foreground">
+            {isOH ? "Synthesise themes, gaps and recommendations from your outcome harvest"
+                   : "Identify patterns and priorities across your collected change stories"}
+          </p>
+        </div>
+        <Button size="sm" onClick={e => { e.stopPropagation(); generate(); }}
+          disabled={loading || !hasEntries}
+          className={`${btnCls} text-white shrink-0 gap-1.5`}>
+          {loading
+            ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Analysing…</>
+            : <><Sparkles className="w-3.5 h-3.5" />{analysis ? "Regenerate" : "Generate Analysis"}</>}
+        </Button>
+        {open ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+      </button>
+
+      <div className={open ? "px-5 py-4 space-y-4" : "hidden"}>
+        {!hasEntries && !analysis && (
+          <div className="flex flex-col items-center gap-2 py-8 text-center">
+            <AlertCircle className="w-8 h-8 text-muted-foreground/30" />
+            <p className="text-sm font-medium text-muted-foreground">No entries yet</p>
+            <p className="text-xs text-muted-foreground/70">Add some {isOH ? "outcomes" : "stories"} first to generate an analysis.</p>
+          </div>
+        )}
+
+        {hasEntries && !analysis && !loading && (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <div className={`w-14 h-14 rounded-full ${readyBg} flex items-center justify-center`}>
+              <Sparkles className={`w-7 h-7 ${sparkCls}`} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Ready to analyse</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+                {isOH ? `${entries.length} outcome${entries.length !== 1 ? "s" : ""} ready for synthesis.`
+                       : `${entries.length} stor${entries.length !== 1 ? "ies" : "y"} ready for analysis.`}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className="flex flex-col items-center gap-3 py-8 text-center">
+            <Loader2 className={`w-8 h-8 animate-spin ${spinnerCls}`} />
+            <p className="text-sm font-semibold text-foreground">Analysing {isOH ? "outcomes" : "stories"}…</p>
+          </div>
+        )}
+
+        {analysis && !loading && (
+          <>
+            <div className={`rounded-xl border p-4 ${rc!.bg} ${rc!.border}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${rc!.color} ${rc!.bg} ${rc!.border}`}>
+                  {rc!.label}
+                </span>
+              </div>
+              <p className={`text-sm leading-relaxed ${rc!.color}`}>{analysis.summary}</p>
+            </div>
+
+            {analysis.keyThemes.length > 0 && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Key Themes</p>
+                <div className="space-y-2">
+                  {analysis.keyThemes.map((th, i) => (
+                    <div key={i} className="rounded-lg border border-border bg-card p-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-bold text-foreground">{th.theme}</span>
+                        {th.entryCount > 0 && (
+                          <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{th.entryCount}</span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground leading-relaxed">{th.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {analysis.strengthAreas.length > 0 && (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-emerald-700 mb-2">Strengths</p>
+                  <ul className="space-y-1.5">
+                    {analysis.strengthAreas.map((s, i) => (
+                      <li key={i} className="flex gap-2 text-xs text-emerald-900">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {analysis.gaps.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-amber-700 mb-2">Gaps & Risks</p>
+                  <ul className="space-y-1.5">
+                    {analysis.gaps.map((g, i) => (
+                      <li key={i} className="flex gap-2 text-xs text-amber-900">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                        <span>{g}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
+            {analysis.recommendations.length > 0 && (
+              <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-700 mb-2">Recommendations</p>
+                <ul className="space-y-1.5">
+                  {analysis.recommendations.map((r, i) => (
+                    <li key={i} className="flex gap-2 text-sm text-indigo-900 leading-relaxed">
+                      <span className="shrink-0 font-black text-indigo-600">{i + 1}.</span>
+                      <span>{r}</span>
                     </li>
                   ))}
                 </ul>
@@ -4383,6 +4710,11 @@ export default function SystemicChange() {
   const [showSelector, setShowSelector] = useState(false);
   const [localFrameworkKey, setLocalFrameworkKey] = useState<FrameworkKey | null>(null);
   const [cellModal, setCellModal] = useState<CellModalState | null>(null);
+  const [filterTag,    setFilterTag]    = useState("all");
+  const [filterLevel,  setFilterLevel]  = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [sortCol,      setSortCol]      = useState<string | null>(null);
+  const [sortDir,      setSortDir]      = useState<"asc" | "desc">("asc");
   const [localSettings, setLocalSettings] = useState<AaerSettings>({ startYear: 0, endYear: 0, granularity: "annual", pilotDuration: "none", enabledStages: ["adopt","adapt","expand","respond"], periodStageMap: {}, customQuestions: {}, pilotPeriods: [] });
   const [settingsSynced, setSettingsSynced] = useState(false);
 
@@ -4636,68 +4968,147 @@ export default function SystemicChange() {
           </>
         )}
 
-        {/* Non-AAER / Non-MSR: Table */}
-        {!isAaer && !isMsr && fw!.cols.length > 0 && (
-          <>
-            <div className="rounded-xl border border-border overflow-hidden shadow-sm">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm border-collapse min-w-[900px]">
-                  <thead>
-                    <tr className="bg-muted/60 border-b border-border">
-                      <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-10">{t("systemicChange.rowNum")}</th>
-                      {fw!.cols.map(col => (
-                        <th key={col.key} className={`text-left px-3 py-3 font-semibold text-muted-foreground text-xs ${col.width ?? ""}`}>
-                          <div className="flex items-center gap-1">
-                            {t(`systemicChange.frameworks.${fw!.key}.cols.${col.key}`, { defaultValue: col.header })}
-                            {col.tooltip && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Info className="w-3 h-3 text-muted-foreground/50 cursor-help" />
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-[200px] text-xs">{col.tooltip}</TooltipContent>
-                              </Tooltip>
-                            )}
-                          </div>
-                        </th>
-                      ))}
-                      <th className="w-20 px-3 py-3" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {entries.map((entry, i) =>
-                      editingId === entry.id ? (
-                        <EditRow key={entry.id} initial={entry} rowNum={i + 1} fw={fw!}
-                          onSave={d => handleUpdate(entry.id, d)} onCancel={() => setEditingId(null)} />
-                      ) : (
-                        <EntryRow key={entry.id} entry={entry} rowNum={i + 1} fw={fw!}
-                          onEdit={() => { setEditingId(entry.id); setAddingRow(false); }}
-                          onDelete={() => handleDelete(entry.id)} />
-                      )
-                    )}
-                    {addingRow && (
-                      <EditRow initial={{}} rowNum={entries.length + 1} fw={fw!}
-                        onSave={handleCreate} onCancel={() => setAddingRow(false)} />
-                    )}
-                    {entries.length === 0 && !addingRow && (
-                      <tr>
-                        <td colSpan={fw!.cols.length + 2} className="px-4 py-14 text-center">
-                          <GitBranch className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
-                          <p className="text-sm font-medium text-muted-foreground">{t("systemicChange.noEntriesYet")}</p>
-                          <p className="text-xs text-muted-foreground/60 mt-1">{t("systemicChange.noEntriesHintTable")}</p>
-                        </td>
+        {/* Non-AAER / Non-MSR: Summary + Charts + Table + AI Analysis */}
+        {!isAaer && !isMsr && fw!.cols.length > 0 && (() => {
+          const displayEntries = entries
+            .filter(e =>
+              (filterTag    === "all" || e.frameworkTag === filterTag) &&
+              (filterLevel  === "all" || e.level        === filterLevel) &&
+              (filterStatus === "all" || e.status       === filterStatus)
+            )
+            .sort((a, b) => {
+              if (!sortCol) return 0;
+              const av = String((a as Record<string, unknown>)[sortCol] ?? "");
+              const bv = String((b as Record<string, unknown>)[sortCol] ?? "");
+              return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+            });
+          const hasFilters = filterTag !== "all" || filterLevel !== "all" || filterStatus !== "all";
+
+          return (
+            <>
+              {entries.length > 0 && <OhMscSummaryCards entries={entries} fw={fw!} />}
+              {entries.length > 1  && <OhMscCharts      entries={entries} fw={fw!} />}
+
+              {/* Filter + sort bar */}
+              {entries.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Filter className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <Select value={filterTag} onValueChange={v => { setFilterTag(v); setEditingId(null); }}>
+                    <SelectTrigger className="h-7 text-xs w-40">
+                      <SelectValue placeholder={fw!.key === "oh" ? "All types" : "All domains"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{fw!.key === "oh" ? "All types" : "All domains"}</SelectItem>
+                      {fw!.tagOptions.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterLevel} onValueChange={v => { setFilterLevel(v); setEditingId(null); }}>
+                    <SelectTrigger className="h-7 text-xs w-36">
+                      <SelectValue placeholder="All scopes" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All scopes</SelectItem>
+                      {fw!.levelOptions.map(l => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  <Select value={filterStatus} onValueChange={v => { setFilterStatus(v); setEditingId(null); }}>
+                    <SelectTrigger className="h-7 text-xs w-40">
+                      <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      {fw!.statusOptions.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {hasFilters && (
+                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-muted-foreground"
+                      onClick={() => { setFilterTag("all"); setFilterLevel("all"); setFilterStatus("all"); }}>
+                      <X className="w-3 h-3" />Clear
+                    </Button>
+                  )}
+                  <span className="text-[10px] text-muted-foreground ml-auto">
+                    {displayEntries.length} of {entries.length}
+                  </span>
+                </div>
+              )}
+
+              {/* Table */}
+              <div className="rounded-xl border border-border overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm border-collapse min-w-[900px]">
+                    <thead>
+                      <tr className="bg-muted/60 border-b border-border">
+                        <th className="text-left px-3 py-3 font-semibold text-muted-foreground text-xs w-10">{t("systemicChange.rowNum")}</th>
+                        {fw!.cols.map(col => (
+                          <th key={col.key} className={`text-left px-3 py-3 font-semibold text-muted-foreground text-xs ${col.width ?? ""}`}>
+                            <div className="flex items-center gap-1">
+                              <button
+                                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                                onClick={() => {
+                                  if (sortCol === col.key) setSortDir(d => d === "asc" ? "desc" : "asc");
+                                  else { setSortCol(col.key as string); setSortDir("asc"); }
+                                }}
+                              >
+                                {t(`systemicChange.frameworks.${fw!.key}.cols.${col.key}`, { defaultValue: col.header })}
+                                {sortCol === col.key
+                                  ? (sortDir === "asc" ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />)
+                                  : <ArrowUpDown className="w-3 h-3 opacity-30" />}
+                              </button>
+                              {col.tooltip && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild><Info className="w-3 h-3 text-muted-foreground/50 cursor-help" /></TooltipTrigger>
+                                  <TooltipContent side="top" className="max-w-[200px] text-xs">{col.tooltip}</TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+                          </th>
+                        ))}
+                        <th className="w-20 px-3 py-3" />
                       </tr>
-                    )}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {displayEntries.map((entry, i) =>
+                        editingId === entry.id ? (
+                          <EditRow key={entry.id} initial={entry} rowNum={i + 1} fw={fw!}
+                            onSave={d => handleUpdate(entry.id, d)} onCancel={() => setEditingId(null)} />
+                        ) : (
+                          <EntryRow key={entry.id} entry={entry} rowNum={i + 1} fw={fw!}
+                            onEdit={() => { setEditingId(entry.id); setAddingRow(false); }}
+                            onDelete={() => handleDelete(entry.id)} />
+                        )
+                      )}
+                      {addingRow && (
+                        <EditRow initial={{}} rowNum={entries.length + 1} fw={fw!}
+                          onSave={handleCreate} onCancel={() => setAddingRow(false)} />
+                      )}
+                      {displayEntries.length === 0 && !addingRow && (
+                        <tr>
+                          <td colSpan={fw!.cols.length + 2} className="px-4 py-14 text-center">
+                            <GitBranch className="w-8 h-8 text-muted-foreground/30 mx-auto mb-3" />
+                            <p className="text-sm font-medium text-muted-foreground">
+                              {entries.length === 0 ? t("systemicChange.noEntriesYet") : "No entries match your filters"}
+                            </p>
+                            <p className="text-xs text-muted-foreground/60 mt-1">
+                              {entries.length === 0 ? t("systemicChange.noEntriesHintTable") : "Try clearing the filters above"}
+                            </p>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-            {!addingRow && entries.length > 0 && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => { setAddingRow(true); setEditingId(null); }}>
-                <Plus className="w-4 h-4" />{t("systemicChange.addEntry")}
-              </Button>
-            )}
-          </>
-        )}
+
+              {!addingRow && entries.length > 0 && (
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => { setAddingRow(true); setEditingId(null); }}>
+                  <Plus className="w-4 h-4" />{t("systemicChange.addEntry")}
+                </Button>
+              )}
+
+              <OhMscAIAnalysis theoryId={id} fw={fw!} entries={entries} />
+            </>
+          );
+        })()}
 
       </div>
 
