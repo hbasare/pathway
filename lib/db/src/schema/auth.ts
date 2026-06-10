@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, timestamp, varchar, json, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -25,3 +25,11 @@ export const usersTable = pgTable("users", {
 export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof usersTable.$inferSelect;
+
+// ── Session store (connect-pg-simple) ─────────────────────────────────────────
+// This table MUST remain in the schema so push-force never drops it.
+export const sessionTable = pgTable("session", {
+  sid:    varchar("sid").notNull().primaryKey(),
+  sess:   json("sess").notNull(),
+  expire: timestamp("expire", { precision: 6 }).notNull(),
+}, t => [index("IDX_session_expire").on(t.expire)]);
