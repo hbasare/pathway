@@ -278,6 +278,8 @@ export const theoryLocationsTable = pgTable("theory_locations", {
   activityType: text("activity_type").notNull().default(""),
   beneficiaryType: text("beneficiary_type").notNull().default(""),
   numBeneficiaries: integer("num_beneficiaries"),
+  numMale: integer("num_male"),
+  numFemale: integer("num_female"),
   gender: text("gender").notNull().default(""),
   youthFocused: boolean("youth_focused").notNull().default(false),
   implementingPartner: text("implementing_partner").notNull().default(""),

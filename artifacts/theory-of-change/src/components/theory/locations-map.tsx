@@ -71,7 +71,8 @@ interface LocationRecord {
   icon: string; figureLabel: string; targetFigure: string; actualFigure: string;
   // GIS extended fields
   sector: string; activityType: string; beneficiaryType: string;
-  numBeneficiaries: number | null; gender: string; youthFocused: boolean;
+  numBeneficiaries: number | null; numMale: number | null; numFemale: number | null;
+  gender: string; youthFocused: boolean;
   implementingPartner: string; fundingSource: string; notes: string;
 }
 
@@ -244,16 +245,18 @@ function SelectField({ label, value, onChange, options, placeholder }: {
 // ── GIS details form (shared between Add and Edit) ────────────────────────────
 interface GisFields {
   community: string; sector: string; activityType: string; beneficiaryType: string;
-  numBeneficiaries: string; gender: string; youthFocused: boolean;
+  numBeneficiaries: string; numMale: string; numFemale: string;
+  gender: string; youthFocused: boolean;
   implementingPartner: string; fundingSource: string; notes: string;
 }
 function emptyGis(): GisFields {
-  return { community: "", sector: "", activityType: "", beneficiaryType: "", numBeneficiaries: "", gender: "", youthFocused: false, implementingPartner: "", fundingSource: "", notes: "" };
+  return { community: "", sector: "", activityType: "", beneficiaryType: "", numBeneficiaries: "", numMale: "", numFemale: "", gender: "", youthFocused: false, implementingPartner: "", fundingSource: "", notes: "" };
 }
 function gisFromRecord(loc: LocationRecord): GisFields {
   return {
     community: loc.community || "", sector: loc.sector || "", activityType: loc.activityType || "",
     beneficiaryType: loc.beneficiaryType || "", numBeneficiaries: loc.numBeneficiaries?.toString() ?? "",
+    numMale: loc.numMale?.toString() ?? "", numFemale: loc.numFemale?.toString() ?? "",
     gender: loc.gender || "", youthFocused: loc.youthFocused ?? false,
     implementingPartner: loc.implementingPartner || "", fundingSource: loc.fundingSource || "", notes: loc.notes || "",
   };
@@ -663,7 +666,7 @@ iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;displa
   }
 
   if (sections.has("details")) {
-    html += `<h2>GIS Details</h2><table><tr><th>Location</th><th>Sector</th><th>Activity Type</th><th>Beneficiary Type</th><th>Beneficiaries</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
+    html += `<h2>GIS Details</h2><table><tr><th>Location</th><th>Sector</th><th>Activity Type</th><th>Beneficiary Type</th><th>Total</th><th>Males</th><th>Females</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
     locations.forEach(loc => {
       const sectorHtml = loc.sector ? `<span class="sector-badge" style="background:${sectorColours[loc.sector]??'#6366f1'}">${escHtml(loc.sector)}</span>${loc.youthFocused ? '<span class="youth">Youth</span>' : ""}` : (loc.youthFocused ? '<span class="youth">Youth</span>' : '<span class="dim">—</span>');
       html += `<tr>
@@ -672,6 +675,8 @@ iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;displa
 <td class="dim">${escHtml(loc.activityType || "—")}</td>
 <td class="dim">${escHtml(loc.beneficiaryType || "—")}</td>
 <td class="dim">${loc.numBeneficiaries != null ? loc.numBeneficiaries.toLocaleString() : "—"}</td>
+<td style="color:#1d4ed8">${loc.numMale != null ? loc.numMale.toLocaleString() : "—"}</td>
+<td style="color:#be185d">${loc.numFemale != null ? loc.numFemale.toLocaleString() : "—"}</td>
 <td class="dim">${escHtml(loc.gender || "—")}</td>
 <td class="dim">${escHtml(loc.implementingPartner || "—")}</td>
 <td class="dim">${escHtml(loc.fundingSource || "—")}</td>
@@ -791,6 +796,8 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
           community: gis.community, sector: gis.sector, activityType: gis.activityType,
           beneficiaryType: gis.beneficiaryType,
           numBeneficiaries: gis.numBeneficiaries !== "" ? Number(gis.numBeneficiaries) : null,
+          numMale: gis.numMale !== "" ? Number(gis.numMale) : null,
+          numFemale: gis.numFemale !== "" ? Number(gis.numFemale) : null,
           gender: gis.gender, youthFocused: gis.youthFocused,
           implementingPartner: gis.implementingPartner, fundingSource: gis.fundingSource, notes: gis.notes,
         };
@@ -858,6 +865,27 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
                     placeholder="e.g. 4,200 households" className="pl-8 h-9 text-sm" />
                 </div>
               </div>
+              {gis.gender && (
+                <div className="border-t pt-4 space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Gender Breakdown · <span className="normal-case font-normal">{gis.gender}</span>
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-blue-600">♂ No. of Males</label>
+                      <Input type="number" min={0} value={gis.numMale}
+                        onChange={e => setGis(g => ({ ...g, numMale: e.target.value }))}
+                        placeholder="e.g. 2,400" className="h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-pink-600">♀ No. of Females</label>
+                      <Input type="number" min={0} value={gis.numFemale}
+                        onChange={e => setGis(g => ({ ...g, numFemale: e.target.value }))}
+                        placeholder="e.g. 2,600" className="h-9 text-sm" />
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="border-t pt-4">
                 <MarkerPicker value={icon} onChange={setIcon} />
               </div>
@@ -908,6 +936,8 @@ function EditLocationDialog({ loc, theory, onClose, onSaved }: {
           community: gis.community, sector: gis.sector, activityType: gis.activityType,
           beneficiaryType: gis.beneficiaryType,
           numBeneficiaries: gis.numBeneficiaries !== "" ? Number(gis.numBeneficiaries) : null,
+          numMale: gis.numMale !== "" ? Number(gis.numMale) : null,
+          numFemale: gis.numFemale !== "" ? Number(gis.numFemale) : null,
           gender: gis.gender, youthFocused: gis.youthFocused,
           implementingPartner: gis.implementingPartner, fundingSource: gis.fundingSource, notes: gis.notes,
         }),
@@ -989,6 +1019,27 @@ function EditLocationDialog({ loc, theory, onClose, onSaved }: {
                     placeholder="e.g. 4,200 households" className="pl-8 h-9 text-sm" />
                 </div>
               </div>
+              {gis.gender && (
+                <div className="border-t pt-4 space-y-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Gender Breakdown · <span className="normal-case font-normal">{gis.gender}</span>
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-blue-600">♂ No. of Males</label>
+                      <Input type="number" min={0} value={gis.numMale}
+                        onChange={e => setGis(g => ({ ...g, numMale: e.target.value }))}
+                        placeholder="e.g. 2,400" className="h-9 text-sm" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-medium text-pink-600">♀ No. of Females</label>
+                      <Input type="number" min={0} value={gis.numFemale}
+                        onChange={e => setGis(g => ({ ...g, numFemale: e.target.value }))}
+                        placeholder="e.g. 2,600" className="h-9 text-sm" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1098,6 +1149,12 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                             {[loc.beneficiaryType, loc.numBeneficiaries != null ? `${loc.numBeneficiaries.toLocaleString()} beneficiaries` : ""].filter(Boolean).join(" · ")}
                           </p>
                         )}
+                        {(loc.numMale != null || loc.numFemale != null) && (
+                          <p className="text-[11px] text-muted-foreground pt-0.5 flex items-center gap-2">
+                            {loc.numMale != null && <span className="text-blue-600">♂ {loc.numMale.toLocaleString()}</span>}
+                            {loc.numFemale != null && <span className="text-pink-600">♀ {loc.numFemale.toLocaleString()}</span>}
+                          </p>
+                        )}
                         {loc.activityType && (
                           <p className="text-[11px] text-muted-foreground truncate">
                             <Briefcase className="w-2.5 h-2.5 inline mr-0.5" />{loc.activityType}
@@ -1184,6 +1241,13 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                             {loc.activityType  && <p>🔧 <strong>Activity:</strong> {loc.activityType}</p>}
                             {loc.beneficiaryType && <p>👥 <strong>Beneficiaries:</strong> {loc.beneficiaryType}{loc.numBeneficiaries != null ? ` (${loc.numBeneficiaries.toLocaleString()})` : ""}</p>}
                             {loc.gender        && <p>⚧ <strong>Gender:</strong> {loc.gender}</p>}
+                            {(loc.numMale != null || loc.numFemale != null) && (
+                              <p>
+                                {loc.numMale != null && <span className="text-blue-600">♂ {loc.numMale.toLocaleString()} males</span>}
+                                {loc.numMale != null && loc.numFemale != null && <span className="text-gray-400"> · </span>}
+                                {loc.numFemale != null && <span className="text-pink-600">♀ {loc.numFemale.toLocaleString()} females</span>}
+                              </p>
+                            )}
                             {loc.youthFocused  && <p>🌱 <strong>Youth-focused</strong></p>}
                           </div>
                         )}

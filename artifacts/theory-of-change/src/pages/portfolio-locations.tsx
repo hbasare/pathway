@@ -53,7 +53,8 @@ interface LocationRecord {
   boundaryGeoJson: string; level: string; nominatimId: string;
   icon: string; figureLabel: string; targetFigure: string; actualFigure: string;
   sector: string; activityType: string; beneficiaryType: string;
-  numBeneficiaries: number | null; gender: string; youthFocused: boolean;
+  numBeneficiaries: number | null; numMale: number | null; numFemale: number | null;
+  gender: string; youthFocused: boolean;
   implementingPartner: string; fundingSource: string; notes: string;
 }
 
@@ -182,10 +183,10 @@ iframe{width:100%;height:400px;border:1px solid #e5e7eb;border-radius:6px;displa
     html += `<h2>GIS Details by Intervention</h2>`;
     vis.forEach(e => {
       html += `<h3><span class="dot" style="background:${esc(e.color)}"></span>${esc(e.title)}</h3>`;
-      html += `<table><tr><th>Location</th><th>Sector</th><th>Activity Type</th><th>Beneficiary Type</th><th>Beneficiaries</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
+      html += `<table><tr><th>Location</th><th>Sector</th><th>Activity Type</th><th>Beneficiary Type</th><th>Total</th><th>Males</th><th>Females</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
       e.locations.forEach(loc => {
         const sectorHtml = loc.sector ? `<span class="sector-badge" style="background:${sectorColours[loc.sector]??'#6366f1'}">${esc(loc.sector)}</span>${loc.youthFocused?'<span class="youth">Youth</span>':""}` : (loc.youthFocused?'<span class="youth">Youth</span>':'<span class="dim">—</span>');
-        html += `<tr><td style="font-weight:600">${esc(shortName(loc))}</td><td>${sectorHtml}</td><td class="dim">${esc(loc.activityType||"—")}</td><td class="dim">${esc(loc.beneficiaryType||"—")}</td><td class="dim">${loc.numBeneficiaries!=null?loc.numBeneficiaries.toLocaleString():"—"}</td><td class="dim">${esc(loc.gender||"—")}</td><td class="dim">${esc(loc.implementingPartner||"—")}</td><td class="dim">${esc(loc.fundingSource||"—")}</td></tr>`;
+        html += `<tr><td style="font-weight:600">${esc(shortName(loc))}</td><td>${sectorHtml}</td><td class="dim">${esc(loc.activityType||"—")}</td><td class="dim">${esc(loc.beneficiaryType||"—")}</td><td class="dim">${loc.numBeneficiaries!=null?loc.numBeneficiaries.toLocaleString():"—"}</td><td style="color:#1d4ed8">${loc.numMale!=null?loc.numMale.toLocaleString():"—"}</td><td style="color:#be185d">${loc.numFemale!=null?loc.numFemale.toLocaleString():"—"}</td><td class="dim">${esc(loc.gender||"—")}</td><td class="dim">${esc(loc.implementingPartner||"—")}</td><td class="dim">${esc(loc.fundingSource||"—")}</td></tr>`;
       });
       html += `</table>`;
       const withNotes = e.locations.filter(l => l.notes);
@@ -505,6 +506,13 @@ export default function PortfolioLocations() {
                               {loc.activityType   && <p>🔧 <strong>Activity:</strong> {loc.activityType}</p>}
                               {loc.beneficiaryType && <p>👥 <strong>Beneficiaries:</strong> {loc.beneficiaryType}{loc.numBeneficiaries != null ? ` (${loc.numBeneficiaries.toLocaleString()})` : ""}</p>}
                               {loc.gender         && <p>⚧ <strong>Gender:</strong> {loc.gender}</p>}
+                              {(loc.numMale != null || loc.numFemale != null) && (
+                                <p>
+                                  {loc.numMale != null && <span className="text-blue-600">♂ {loc.numMale.toLocaleString()} males</span>}
+                                  {loc.numMale != null && loc.numFemale != null && <span className="text-gray-400"> · </span>}
+                                  {loc.numFemale != null && <span className="text-pink-600">♀ {loc.numFemale.toLocaleString()} females</span>}
+                                </p>
+                              )}
                               {loc.youthFocused   && <p>🌱 <strong>Youth-focused</strong></p>}
                             </div>
                           )}
