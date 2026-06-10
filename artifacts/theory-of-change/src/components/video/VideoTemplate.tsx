@@ -63,6 +63,18 @@ function OutroLockup() {
       >
         Start Mapping Today
       </motion.div>
+      <motion.button
+        className="mt-[3vh] flex items-center gap-[0.6vw] text-[1.1vw] text-indigo-300/70 hover:text-white transition-colors"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 1.2 }}
+        onClick={() => window.location.reload()}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="1.2vw" height="1.2vw">
+          <path d="M1 4v6h6M23 20v-6h-6" /><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4-4.64 4.36A9 9 0 0 1 3.51 15" />
+        </svg>
+        Watch again
+      </motion.button>
     </motion.div>
   );
 }
