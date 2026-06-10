@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   MapPin, Plus, Trash2, Loader2, Search, Globe,
   Check, Navigation, Target, TrendingUp, Pencil, X, Printer,
+  Users, Briefcase, Building2, ChevronDown,
 } from "lucide-react";
 import type { Theory } from "@workspace/api-client-react";
 
@@ -64,11 +65,26 @@ const markerEmoji = (id: string | null | undefined) =>
 interface LocationRecord {
   id: number; theoryId: number;
   displayName: string; country: string; countryCode: string;
-  adminLevel1: string; adminLevel2: string;
+  adminLevel1: string; adminLevel2: string; community: string;
   lat: number | null; lng: number | null;
   boundaryGeoJson: string; level: string; nominatimId: string;
   icon: string; figureLabel: string; targetFigure: string; actualFigure: string;
+  // GIS extended fields
+  sector: string; activityType: string; beneficiaryType: string;
+  numBeneficiaries: number | null; gender: string; youthFocused: boolean;
+  implementingPartner: string; fundingSource: string; notes: string;
 }
+
+// ── GIS option lists ──────────────────────────────────────────────────────────
+const SECTORS = ["Agriculture","Health","Education","WASH","Livelihoods","Governance","Nutrition","Environment","Infrastructure","Humanitarian","Market Systems","Research"];
+const ACTIVITY_TYPES = ["Training","Grant / Cash Transfer","Input Distribution","Technical Assistance","Capacity Building","Demonstration / Pilot","Community Mobilisation","Market Linkage","Infrastructure Works","Research / Survey","Monitoring Visit"];
+const BENEFICIARY_TYPES = ["Farmers","Smallholders","Agri-businesses","SMEs","Cooperatives","Schools","Health Facilities","Communities","Households","Youth Groups","Women's Groups","Processing Facilities","Markets","Service Providers","Other"];
+const GENDER_OPTIONS = ["Mixed","Male","Female","Male-led","Female-led"];
+const SECTOR_COLOURS: Record<string, string> = {
+  Agriculture: "#84cc16", Health: "#ec4899", Education: "#3b82f6", WASH: "#06b6d4",
+  Livelihoods: "#f97316", Governance: "#8b5cf6", Nutrition: "#eab308", Environment: "#10b981",
+  Infrastructure: "#6366f1", Humanitarian: "#ef4444", "Market Systems": "#14b8a6", Research: "#a855f7",
+};
 interface NominatimResult {
   place_id: number; display_name: string; lat: string; lon: string;
   geojson?: object;
@@ -203,6 +219,104 @@ function LevelBadge({ level }: { level: string }) {
   };
   const d = map[level] ?? { label: level, cls: "bg-muted text-muted-foreground border-border" };
   return <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${d.cls}`}>{d.label}</span>;
+}
+
+// ── Reusable select field ─────────────────────────────────────────────────────
+function SelectField({ label, value, onChange, options, placeholder }: {
+  label: string; value: string; onChange: (v: string) => void;
+  options: string[]; placeholder?: string;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</label>
+      <div className="relative">
+        <select value={value} onChange={e => onChange(e.target.value)}
+          className="w-full h-9 pl-3 pr-8 text-sm border rounded-md bg-card appearance-none focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors">
+          <option value="">{placeholder ?? `Select ${label.toLowerCase()}…`}</option>
+          {options.map(o => <option key={o} value={o}>{o}</option>)}
+        </select>
+        <ChevronDown className="absolute right-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+      </div>
+    </div>
+  );
+}
+
+// ── GIS details form (shared between Add and Edit) ────────────────────────────
+interface GisFields {
+  community: string; sector: string; activityType: string; beneficiaryType: string;
+  numBeneficiaries: string; gender: string; youthFocused: boolean;
+  implementingPartner: string; fundingSource: string; notes: string;
+}
+function emptyGis(): GisFields {
+  return { community: "", sector: "", activityType: "", beneficiaryType: "", numBeneficiaries: "", gender: "", youthFocused: false, implementingPartner: "", fundingSource: "", notes: "" };
+}
+function gisFromRecord(loc: LocationRecord): GisFields {
+  return {
+    community: loc.community || "", sector: loc.sector || "", activityType: loc.activityType || "",
+    beneficiaryType: loc.beneficiaryType || "", numBeneficiaries: loc.numBeneficiaries?.toString() ?? "",
+    gender: loc.gender || "", youthFocused: loc.youthFocused ?? false,
+    implementingPartner: loc.implementingPartner || "", fundingSource: loc.fundingSource || "", notes: loc.notes || "",
+  };
+}
+function GisDetailsForm({ fields, onChange }: { fields: GisFields; onChange: (f: GisFields) => void }) {
+  const set = (k: keyof GisFields, v: string | boolean) => onChange({ ...fields, [k]: v });
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Sector" value={fields.sector} onChange={v => set("sector", v)} options={SECTORS} />
+        <SelectField label="Activity Type" value={fields.activityType} onChange={v => set("activityType", v)} options={ACTIVITY_TYPES} />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Beneficiary Type" value={fields.beneficiaryType} onChange={v => set("beneficiaryType", v)} options={BENEFICIARY_TYPES} />
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">No. of Beneficiaries</label>
+          <div className="relative">
+            <Users className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input type="number" min={0} value={fields.numBeneficiaries} onChange={e => set("numBeneficiaries", e.target.value)}
+              placeholder="e.g. 500" className="pl-8 h-9 text-sm" />
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField label="Gender Focus" value={fields.gender} onChange={v => set("gender", v)} options={GENDER_OPTIONS} />
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Community / Village</label>
+          <Input value={fields.community} onChange={e => set("community", e.target.value)} placeholder="e.g. Tamale North" className="h-9 text-sm" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Implementing Partner</label>
+          <div className="relative">
+            <Building2 className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input value={fields.implementingPartner} onChange={e => set("implementingPartner", e.target.value)} placeholder="e.g. CARE Ghana" className="pl-8 h-9 text-sm" />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Funding Source</label>
+          <div className="relative">
+            <Briefcase className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input value={fields.fundingSource} onChange={e => set("fundingSource", e.target.value)} placeholder="e.g. USAID / FCDO" className="pl-8 h-9 text-sm" />
+          </div>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Notes</label>
+        <textarea value={fields.notes} onChange={e => set("notes", e.target.value)}
+          placeholder="Any additional context about this location…"
+          rows={3} className="w-full rounded-md border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-none" />
+      </div>
+      <div className="flex items-center gap-2.5 pt-1">
+        <button type="button" onClick={() => set("youthFocused", !fields.youthFocused)}
+          className={`w-9 h-5 rounded-full transition-colors flex-none ${fields.youthFocused ? "bg-primary" : "bg-muted-foreground/30"}`}>
+          <span className={`block w-4 h-4 rounded-full bg-white shadow transition-transform mx-0.5 ${fields.youthFocused ? "translate-x-4" : "translate-x-0"}`} />
+        </button>
+        <label className="text-sm cursor-pointer select-none" onClick={() => set("youthFocused", !fields.youthFocused)}>
+          Youth-focused activity
+        </label>
+      </div>
+    </div>
+  );
 }
 
 // ── Marker picker ─────────────────────────────────────────────────────────────
@@ -478,8 +592,9 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
 
 // ── Print ─────────────────────────────────────────────────────────────────────
 const PRINT_SECTIONS = [
-  { id: "map",       label: "Map",           desc: "OpenStreetMap showing all location boundaries" },
-  { id: "locations", label: "Location list", desc: "Table of all locations with coordinates" },
+  { id: "map",       label: "Map",             desc: "OpenStreetMap showing all location boundaries" },
+  { id: "locations", label: "Location list",   desc: "Table of all locations with coordinates" },
+  { id: "details",   label: "GIS Details",     desc: "Sector, activity type, beneficiaries, partners" },
   { id: "figures",   label: "Target & Actual", desc: "Figures table per location" },
 ] as const;
 
@@ -497,6 +612,8 @@ tr:last-child td{border-bottom:none}
 .br{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
 .bd{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
 .badge{display:inline-block;padding:1px 7px;border-radius:9999px;font-size:10px;font-weight:600}
+.sector-badge{display:inline-block;padding:1px 7px;border-radius:9999px;font-size:10px;font-weight:600;color:#fff}
+.youth{display:inline-block;padding:1px 6px;border-radius:9999px;font-size:10px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;margin-left:3px}
 .chip{display:inline-block;padding:1px 7px;border-radius:9999px;border:1px solid #c7d2fe;color:#4f46e5;font-size:10px;margin:1px 2px 1px 0}
 .t{color:#1d4ed8;font-weight:700}
 .a{color:#15803d;font-weight:700}
@@ -511,6 +628,8 @@ iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;displa
   tr{page-break-inside:avoid}
   h2{page-break-after:avoid}
 }`;
+
+  const sectorColours: Record<string,string> = {Agriculture:"#84cc16",Health:"#ec4899",Education:"#3b82f6",WASH:"#06b6d4",Livelihoods:"#f97316",Governance:"#8b5cf6",Nutrition:"#eab308",Environment:"#10b981",Infrastructure:"#6366f1",Humanitarian:"#ef4444","Market Systems":"#14b8a6",Research:"#a855f7"};
 
   let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escHtml(theoryName || "Pathways")} — Locations</title><style>${css}</style></head><body>`;
   html += `<h1>${escHtml(theoryName || "Theory of Change")}</h1><p class="meta">Locations · ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })} · ${locations.length} location${locations.length !== 1 ? "s" : ""}</p>`;
@@ -528,18 +647,43 @@ iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;displa
   if (sections.has("locations")) {
     const levelLabel: Record<string, string> = { country: "Country", admin1: "Region", admin2: "District" };
     const levelCls:   Record<string, string> = { country: "bc", admin1: "br", admin2: "bd" };
-    html += `<h2>Locations (${locations.length})</h2><table><tr><th>Location</th><th>Level</th><th>Region / State</th><th>Country</th><th>Coordinates</th></tr>`;
+    html += `<h2>Locations (${locations.length})</h2><table><tr><th>Location</th><th>Level</th><th>Community</th><th>Region / State</th><th>Country</th><th>Coordinates</th></tr>`;
     locations.forEach(loc => {
       const region = loc.adminLevel2 || loc.adminLevel1 || "—";
       html += `<tr>
 <td style="font-weight:600">${escHtml(shortNameStr(loc))}</td>
 <td><span class="badge ${levelCls[loc.level] ?? "bc"}">${levelLabel[loc.level] ?? loc.level}</span></td>
+<td class="dim">${escHtml(loc.community || "—")}</td>
 <td class="dim">${escHtml(region)}</td>
 <td>${escHtml(loc.country)}</td>
 <td class="mono dim">${loc.lat != null ? loc.lat.toFixed(4) : "—"}, ${loc.lng != null ? loc.lng.toFixed(4) : "—"}</td>
 </tr>`;
     });
     html += `</table>`;
+  }
+
+  if (sections.has("details")) {
+    html += `<h2>GIS Details</h2><table><tr><th>Location</th><th>Sector</th><th>Activity Type</th><th>Beneficiary Type</th><th>Beneficiaries</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
+    locations.forEach(loc => {
+      const sectorHtml = loc.sector ? `<span class="sector-badge" style="background:${sectorColours[loc.sector]??'#6366f1'}">${escHtml(loc.sector)}</span>${loc.youthFocused ? '<span class="youth">Youth</span>' : ""}` : (loc.youthFocused ? '<span class="youth">Youth</span>' : '<span class="dim">—</span>');
+      html += `<tr>
+<td style="font-weight:600">${escHtml(shortNameStr(loc))}</td>
+<td>${sectorHtml}</td>
+<td class="dim">${escHtml(loc.activityType || "—")}</td>
+<td class="dim">${escHtml(loc.beneficiaryType || "—")}</td>
+<td class="dim">${loc.numBeneficiaries != null ? loc.numBeneficiaries.toLocaleString() : "—"}</td>
+<td class="dim">${escHtml(loc.gender || "—")}</td>
+<td class="dim">${escHtml(loc.implementingPartner || "—")}</td>
+<td class="dim">${escHtml(loc.fundingSource || "—")}</td>
+</tr>`;
+    });
+    html += `</table>`;
+    const withNotes = locations.filter(l => l.notes);
+    if (withNotes.length) {
+      html += `<h2>Notes</h2><table><tr><th>Location</th><th>Notes</th></tr>`;
+      withNotes.forEach(loc => { html += `<tr><td style="font-weight:600;white-space:nowrap">${escHtml(shortNameStr(loc))}</td><td>${escHtml(loc.notes)}</td></tr>`; });
+      html += `</table>`;
+    }
   }
 
   if (sections.has("figures")) {
@@ -620,12 +764,14 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
   const [icon, setIcon]                 = useState("general");
   const [manualTarget, setManualTarget] = useState("");
   const [manualActual, setManualActual] = useState("");
+  const [gis, setGis]                   = useState<GisFields>(emptyGis());
   const [saving, setSaving]             = useState(false);
-  const [tab, setTab]                   = useState<"locations" | "target">("locations");
+  const [tab, setTab]                   = useState<"locations" | "details" | "target">("locations");
 
   const resetAll = () => {
     setConfirmed([]); setIcon("general");
-    setManualTarget(""); setManualActual(""); setTab("locations");
+    setManualTarget(""); setManualActual("");
+    setGis(emptyGis()); setTab("locations");
   };
   const handleClose = () => { resetAll(); onClose(); };
 
@@ -642,6 +788,11 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
           lat: loc.lat, lng: loc.lng, boundaryGeoJson: loc.boundaryGeoJson,
           level: loc.level, nominatimId: String((loc.district ?? loc.region)?.place_id ?? ""),
           icon, figureLabel: "", targetFigure: manualTarget, actualFigure: manualActual,
+          community: gis.community, sector: gis.sector, activityType: gis.activityType,
+          beneficiaryType: gis.beneficiaryType,
+          numBeneficiaries: gis.numBeneficiaries !== "" ? Number(gis.numBeneficiaries) : null,
+          gender: gis.gender, youthFocused: gis.youthFocused,
+          implementingPartner: gis.implementingPartner, fundingSource: gis.fundingSource, notes: gis.notes,
         };
         const res = await fetch(`${API_BASE}/theories/${theory.id}/locations`, {
           method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(body),
@@ -667,13 +818,14 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
-      <DialogContent className="max-w-[560px] p-0 flex flex-col gap-0 max-h-[90vh]">
+      <DialogContent className="max-w-[580px] p-0 flex flex-col gap-0 max-h-[90vh]">
         <DialogHeader className="px-5 pt-4 pb-3 border-b flex-none">
           <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
             <MapPin className="w-4 h-4 text-primary flex-none" /> Add Intervention Locations
           </DialogTitle>
-          <div className="flex gap-1 mt-2">
+          <div className="flex gap-1 mt-2 flex-wrap">
             <TabBtn id="locations" label="Locations" badge={confirmed.length} />
+            <TabBtn id="details"   label="Details" />
             <TabBtn id="target"    label="Target &amp; Actual" />
           </div>
         </DialogHeader>
@@ -684,6 +836,9 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
               onAdd={loc => setConfirmed(p => [...p, loc])}
               onRemove={uid => setConfirmed(p => p.filter(l => l.uid !== uid))}
               lang={lang} />
+          )}
+          {tab === "details" && (
+            <GisDetailsForm fields={gis} onChange={setGis} />
           )}
           {tab === "target" && (
             <div className="space-y-5">
@@ -738,14 +893,24 @@ function EditLocationDialog({ loc, theory, onClose, onSaved }: {
   const [manualActual, setManualActual] = useState(loc.actualFigure || "");
   const [gpsLat, setGpsLat]             = useState(loc.lat?.toString() ?? "");
   const [gpsLng, setGpsLng]             = useState(loc.lng?.toString() ?? "");
+  const [gis, setGis]                   = useState<GisFields>(() => gisFromRecord(loc));
   const [saving, setSaving]             = useState(false);
+  const [tab, setTab]                   = useState<"location" | "details" | "target">("location");
 
   const handleSave = async () => {
     setSaving(true);
     try {
       const res = await fetch(`${API_BASE}/theories/${theory.id}/locations/${loc.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include",
-        body: JSON.stringify({ icon, targetFigure: manualTarget, actualFigure: manualActual, lat: parseFloat(gpsLat) || loc.lat, lng: parseFloat(gpsLng) || loc.lng }),
+        body: JSON.stringify({
+          icon, targetFigure: manualTarget, actualFigure: manualActual,
+          lat: parseFloat(gpsLat) || loc.lat, lng: parseFloat(gpsLng) || loc.lng,
+          community: gis.community, sector: gis.sector, activityType: gis.activityType,
+          beneficiaryType: gis.beneficiaryType,
+          numBeneficiaries: gis.numBeneficiaries !== "" ? Number(gis.numBeneficiaries) : null,
+          gender: gis.gender, youthFocused: gis.youthFocused,
+          implementingPartner: gis.implementingPartner, fundingSource: gis.fundingSource, notes: gis.notes,
+        }),
       });
       if (!res.ok) throw new Error(await res.text());
       onSaved(await res.json() as LocationRecord);
@@ -756,63 +921,76 @@ function EditLocationDialog({ loc, theory, onClose, onSaved }: {
     } finally { setSaving(false); }
   };
 
+  const TabBtn = ({ id, label }: { id: typeof tab; label: string }) => (
+    <button onClick={() => setTab(id)}
+      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${tab === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
+      {label}
+    </button>
+  );
+
   return (
     <Dialog open onOpenChange={v => { if (!v) onClose(); }}>
-      <DialogContent className="max-w-[540px] p-0 flex flex-col gap-0 max-h-[90vh]">
+      <DialogContent className="max-w-[580px] p-0 flex flex-col gap-0 max-h-[90vh]">
         <DialogHeader className="px-5 pt-4 pb-3 border-b flex-none">
           <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
             <Pencil className="w-4 h-4 text-primary flex-none" /> Edit Location
           </DialogTitle>
+          <div className="rounded-lg border bg-muted/30 px-3 py-2 mt-2 flex items-center gap-2">
+            <span className="text-base">{markerEmoji(loc.icon)}</span>
+            <span className="font-semibold text-sm flex-1 min-w-0 truncate">{shortNameStr(loc)}</span>
+            <LevelBadge level={loc.level} />
+          </div>
+          <div className="flex gap-1 mt-2">
+            <TabBtn id="location" label="Location" />
+            <TabBtn id="details"  label="Details" />
+            <TabBtn id="target"   label="Target &amp; Actual" />
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0 space-y-5">
-          <div className="rounded-lg border bg-muted/30 px-4 py-3 space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-base">{markerEmoji(loc.icon)}</span>
-              <span className="font-semibold text-sm">{shortNameStr(loc)}</span>
-              <LevelBadge level={loc.level} />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {loc.level === "admin2" ? `${loc.adminLevel1} · ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">GPS Coordinates</label>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="relative">
-                <Navigation className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input value={gpsLat} onChange={e => setGpsLat(e.target.value)} placeholder="Latitude" className="pl-8 h-9 text-sm font-mono" />
+        <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0">
+          {tab === "location" && (
+            <div className="space-y-5">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">GPS Coordinates</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="relative">
+                    <Navigation className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input value={gpsLat} onChange={e => setGpsLat(e.target.value)} placeholder="Latitude" className="pl-8 h-9 text-sm font-mono" />
+                  </div>
+                  <div className="relative">
+                    <Navigation className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none rotate-90" />
+                    <Input value={gpsLng} onChange={e => setGpsLng(e.target.value)} placeholder="Longitude" className="pl-8 h-9 text-sm font-mono" />
+                  </div>
+                </div>
               </div>
-              <div className="relative">
-                <Navigation className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none rotate-90" />
-                <Input value={gpsLng} onChange={e => setGpsLng(e.target.value)} placeholder="Longitude" className="pl-8 h-9 text-sm font-mono" />
+              <div className="border-t pt-4">
+                <MarkerPicker value={icon} onChange={setIcon} />
               </div>
             </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <MarkerPicker value={icon} onChange={setIcon} />
-          </div>
-
-          <div className="border-t pt-4 space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target Figure</label>
-              <div className="relative">
-                <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input value={manualTarget} onChange={e => setManualTarget(e.target.value)}
-                  placeholder="e.g. 5,000 households" className="pl-8 h-9 text-sm" />
+          )}
+          {tab === "details" && (
+            <GisDetailsForm fields={gis} onChange={setGis} />
+          )}
+          {tab === "target" && (
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target Figure</label>
+                <div className="relative">
+                  <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input value={manualTarget} onChange={e => setManualTarget(e.target.value)}
+                    placeholder="e.g. 5,000 households" className="pl-8 h-9 text-sm" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual Figure</label>
+                <div className="relative">
+                  <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input value={manualActual} onChange={e => setManualActual(e.target.value)}
+                    placeholder="e.g. 4,200 households" className="pl-8 h-9 text-sm" />
+                </div>
               </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual Figure</label>
-              <div className="relative">
-                <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input value={manualActual} onChange={e => setManualActual(e.target.value)}
-                  placeholder="e.g. 4,200 households" className="pl-8 h-9 text-sm" />
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         <div className="flex-none border-t px-5 py-3 flex items-center justify-end gap-2 bg-card">
@@ -900,9 +1078,31 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                       <div className="min-w-0 flex-1 space-y-0.5">
                         <p className="text-sm font-medium leading-tight truncate" title={shortNameStr(loc)}>{shortNameStr(loc)}</p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {loc.level === "admin2" ? `${loc.adminLevel1}, ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
+                          {loc.community ? `${loc.community} · ` : ""}{loc.level === "admin2" ? `${loc.adminLevel1}, ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
                         </p>
-                        <div className="pt-0.5"><LevelBadge level={loc.level} /></div>
+                        <div className="pt-0.5 flex flex-wrap gap-1">
+                          <LevelBadge level={loc.level} />
+                          {loc.sector && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border text-white"
+                              style={{ background: SECTOR_COLOURS[loc.sector] ?? "#6366f1", borderColor: "transparent" }}>
+                              {loc.sector}
+                            </span>
+                          )}
+                          {loc.youthFocused && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border bg-amber-50 text-amber-700 border-amber-200">Youth</span>
+                          )}
+                        </div>
+                        {(loc.beneficiaryType || loc.numBeneficiaries != null) && (
+                          <p className="text-[11px] text-muted-foreground pt-0.5">
+                            <Users className="w-2.5 h-2.5 inline mr-0.5" />
+                            {[loc.beneficiaryType, loc.numBeneficiaries != null ? `${loc.numBeneficiaries.toLocaleString()} beneficiaries` : ""].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                        {loc.activityType && (
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            <Briefcase className="w-2.5 h-2.5 inline mr-0.5" />{loc.activityType}
+                          </p>
+                        )}
                         {(loc.targetFigure || loc.actualFigure) && (
                           <div className="flex flex-wrap gap-1.5 pt-0.5">
                             {loc.targetFigure && (
@@ -966,14 +1166,42 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                 })()}
                 {loc.lat != null && loc.lng != null && (
                   <Marker key={`mk-${loc.id}`} position={[loc.lat, loc.lng]} icon={makeIcon(emoji, color)}>
-                    <Popup maxWidth={280}>
+                    <Popup maxWidth={300}>
                       <div className="space-y-1.5 py-0.5">
                         <p className="font-semibold text-sm flex items-center gap-1.5"><span>{emoji}</span>{shortNameStr(loc)}</p>
-                        <p className="text-xs text-gray-500">{loc.level === "admin2" ? `${loc.adminLevel1} · ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}</p>
+                        <p className="text-xs text-gray-500">
+                          {loc.community ? `${loc.community} · ` : ""}
+                          {loc.level === "admin2" ? `${loc.adminLevel1} · ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
+                        </p>
+                        {loc.sector && (
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-white"
+                            style={{ background: SECTOR_COLOURS[loc.sector] ?? "#6366f1" }}>
+                            {loc.sector}
+                          </span>
+                        )}
+                        {(loc.activityType || loc.beneficiaryType || loc.numBeneficiaries != null || loc.gender || loc.youthFocused) && (
+                          <div className="pt-1 border-t border-gray-200 space-y-0.5 text-xs text-gray-600">
+                            {loc.activityType  && <p>🔧 <strong>Activity:</strong> {loc.activityType}</p>}
+                            {loc.beneficiaryType && <p>👥 <strong>Beneficiaries:</strong> {loc.beneficiaryType}{loc.numBeneficiaries != null ? ` (${loc.numBeneficiaries.toLocaleString()})` : ""}</p>}
+                            {loc.gender        && <p>⚧ <strong>Gender:</strong> {loc.gender}</p>}
+                            {loc.youthFocused  && <p>🌱 <strong>Youth-focused</strong></p>}
+                          </div>
+                        )}
+                        {(loc.implementingPartner || loc.fundingSource) && (
+                          <div className="pt-1 border-t border-gray-200 space-y-0.5 text-xs text-gray-600">
+                            {loc.implementingPartner && <p>🏢 <strong>Partner:</strong> {loc.implementingPartner}</p>}
+                            {loc.fundingSource       && <p>💼 <strong>Funder:</strong> {loc.fundingSource}</p>}
+                          </div>
+                        )}
                         {(loc.targetFigure || loc.actualFigure) && (
                           <div className="pt-1 border-t border-gray-200 space-y-0.5">
                             {loc.targetFigure && <p className="text-xs text-blue-600">🎯 Target: <strong>{loc.targetFigure}</strong></p>}
                             {loc.actualFigure && <p className="text-xs text-emerald-600">📈 Actual: <strong>{loc.actualFigure}</strong></p>}
+                          </div>
+                        )}
+                        {loc.notes && (
+                          <div className="pt-1 border-t border-gray-200">
+                            <p className="text-xs text-gray-500 italic">{loc.notes}</p>
                           </div>
                         )}
                       </div>

@@ -31,7 +31,9 @@ router.patch("/theories/:theoryId/locations/:id", async (req, res) => {
   const theoryId = Number(req.params.theoryId);
   const allowed  = [
     "icon", "figureLabel", "targetFigure", "actualFigure",
-    "lat", "lng", "displayName",
+    "lat", "lng", "displayName", "community",
+    "sector", "activityType", "beneficiaryType", "numBeneficiaries",
+    "gender", "youthFocused", "implementingPartner", "fundingSource", "notes",
   ] as const;
   const patch: Record<string, unknown> = {};
   for (const key of allowed) {

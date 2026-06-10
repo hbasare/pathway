@@ -48,11 +48,20 @@ const markerEmoji = (id?: string | null) => MARKER_EMOJIS[id ?? "general"] ?? "�
 interface LocationRecord {
   id: number; theoryId: number;
   displayName: string; country: string; countryCode: string;
-  adminLevel1: string; adminLevel2: string;
+  adminLevel1: string; adminLevel2: string; community: string;
   lat: number | null; lng: number | null;
   boundaryGeoJson: string; level: string; nominatimId: string;
   icon: string; figureLabel: string; targetFigure: string; actualFigure: string;
+  sector: string; activityType: string; beneficiaryType: string;
+  numBeneficiaries: number | null; gender: string; youthFocused: boolean;
+  implementingPartner: string; fundingSource: string; notes: string;
 }
+
+const SECTOR_COLOURS: Record<string, string> = {
+  Agriculture: "#84cc16", Health: "#ec4899", Education: "#3b82f6", WASH: "#06b6d4",
+  Livelihoods: "#f97316", Governance: "#8b5cf6", Nutrition: "#eab308", Environment: "#10b981",
+  Infrastructure: "#6366f1", Humanitarian: "#ef4444", "Market Systems": "#14b8a6", Research: "#a855f7",
+};
 
 interface InterventionEntry {
   id: number;
@@ -113,14 +122,16 @@ function LevelBadge({ level }: { level: string }) {
 
 // ── Print ─────────────────────────────────────────────────────────────────────
 const PRINT_SECTIONS = [
-  { id: "map",       label: "Map",           desc: "OpenStreetMap view of all visible locations" },
-  { id: "locations", label: "Location list", desc: "All locations grouped by intervention" },
+  { id: "map",       label: "Map",             desc: "OpenStreetMap view of all visible locations" },
+  { id: "locations", label: "Location list",   desc: "All locations grouped by intervention" },
+  { id: "details",   label: "GIS Details",     desc: "Sector, activity type, beneficiaries, partners" },
   { id: "figures",   label: "Target & Actual", desc: "Figures per location by intervention" },
 ] as const;
 
 function generatePrintHtml(entries: InterventionEntry[], visible: Set<number>, sections: Set<string>, name: string): string {
   const vis = entries.filter(e => visible.has(e.id) && e.locations.length > 0);
   const allLocs = vis.flatMap(e => e.locations);
+  const sectorColours: Record<string,string> = {Agriculture:"#84cc16",Health:"#ec4899",Education:"#3b82f6",WASH:"#06b6d4",Livelihoods:"#f97316",Governance:"#8b5cf6",Nutrition:"#eab308",Environment:"#10b981",Infrastructure:"#6366f1",Humanitarian:"#ef4444","Market Systems":"#14b8a6",Research:"#a855f7"};
   const css = `
 body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:32px;color:#111;line-height:1.5}
 h1{font-size:22px;font-weight:700;margin:0 0 2px}h2{font-size:15px;font-weight:600;margin:28px 0 10px;padding-bottom:5px;border-bottom:2px solid #e5e7eb}
@@ -131,6 +142,8 @@ th{padding:6px 10px;text-align:left;border-bottom:2px solid #e5e7eb;font-weight:
 td{padding:5px 10px;border-bottom:1px solid #f3f4f6;vertical-align:top}
 .bc{background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe}.br{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}.bd{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
 .badge{display:inline-block;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:600}
+.sector-badge{display:inline-block;padding:1px 6px;border-radius:9999px;font-size:10px;font-weight:600;color:#fff}
+.youth{display:inline-block;padding:1px 5px;border-radius:9999px;font-size:10px;background:#fef3c7;color:#92400e;border:1px solid #fde68a;margin-left:2px}
 .chip{display:inline-block;padding:1px 6px;border-radius:9999px;border:1px solid #c7d2fe;color:#4f46e5;font-size:10px;margin:1px}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .t{color:#1d4ed8;font-weight:700}.a{color:#15803d;font-weight:700}.dim{color:#9ca3af}.mono{font-family:monospace;font-size:10px}
@@ -157,11 +170,30 @@ iframe{width:100%;height:400px;border:1px solid #e5e7eb;border-radius:6px;displa
     html += `<h2>Locations by Intervention</h2>`;
     vis.forEach(e => {
       html += `<h3><span class="dot" style="background:${esc(e.color)}"></span>${esc(e.title)} <span class="dim" style="font-size:11px;font-weight:400">(${e.locations.length})</span></h3>`;
-      html += `<table><tr><th>Location</th><th>Level</th><th>Region / State</th><th>Country</th><th>Coordinates</th></tr>`;
+      html += `<table><tr><th>Location</th><th>Level</th><th>Community</th><th>Region / State</th><th>Country</th><th>Coordinates</th></tr>`;
       e.locations.forEach(loc => {
-        html += `<tr><td style="font-weight:600">${esc(shortName(loc))}</td><td><span class="badge ${levelCls[loc.level]??"bc"}">${levelLabel[loc.level]??loc.level}</span></td><td class="dim">${esc(loc.adminLevel2||loc.adminLevel1||"—")}</td><td>${esc(loc.country)}</td><td class="mono dim">${loc.lat!=null?loc.lat.toFixed(4):"—"}, ${loc.lng!=null?loc.lng.toFixed(4):"—"}</td></tr>`;
+        html += `<tr><td style="font-weight:600">${esc(shortName(loc))}</td><td><span class="badge ${levelCls[loc.level]??"bc"}">${levelLabel[loc.level]??loc.level}</span></td><td class="dim">${esc(loc.community||"—")}</td><td class="dim">${esc(loc.adminLevel2||loc.adminLevel1||"—")}</td><td>${esc(loc.country)}</td><td class="mono dim">${loc.lat!=null?loc.lat.toFixed(4):"—"}, ${loc.lng!=null?loc.lng.toFixed(4):"—"}</td></tr>`;
       });
       html += `</table>`;
+    });
+  }
+
+  if (sections.has("details")) {
+    html += `<h2>GIS Details by Intervention</h2>`;
+    vis.forEach(e => {
+      html += `<h3><span class="dot" style="background:${esc(e.color)}"></span>${esc(e.title)}</h3>`;
+      html += `<table><tr><th>Location</th><th>Sector</th><th>Activity Type</th><th>Beneficiary Type</th><th>Beneficiaries</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
+      e.locations.forEach(loc => {
+        const sectorHtml = loc.sector ? `<span class="sector-badge" style="background:${sectorColours[loc.sector]??'#6366f1'}">${esc(loc.sector)}</span>${loc.youthFocused?'<span class="youth">Youth</span>':""}` : (loc.youthFocused?'<span class="youth">Youth</span>':'<span class="dim">—</span>');
+        html += `<tr><td style="font-weight:600">${esc(shortName(loc))}</td><td>${sectorHtml}</td><td class="dim">${esc(loc.activityType||"—")}</td><td class="dim">${esc(loc.beneficiaryType||"—")}</td><td class="dim">${loc.numBeneficiaries!=null?loc.numBeneficiaries.toLocaleString():"—"}</td><td class="dim">${esc(loc.gender||"—")}</td><td class="dim">${esc(loc.implementingPartner||"—")}</td><td class="dim">${esc(loc.fundingSource||"—")}</td></tr>`;
+      });
+      html += `</table>`;
+      const withNotes = e.locations.filter(l => l.notes);
+      if (withNotes.length) {
+        html += `<table style="margin-top:4px"><tr><th>Location</th><th>Notes</th></tr>`;
+        withNotes.forEach(loc => { html += `<tr><td style="font-weight:600;white-space:nowrap">${esc(shortName(loc))}</td><td>${esc(loc.notes)}</td></tr>`; });
+        html += `</table>`;
+      }
     });
   }
 
@@ -445,9 +477,8 @@ export default function PortfolioLocations() {
                   {loc.lat != null && loc.lng != null && (
                     <Marker key={`mk-${loc.theoryId}-${loc.id}`}
                       position={[loc.lat, loc.lng]} icon={makeIcon(emoji, color)}>
-                      <Popup maxWidth={280}>
+                      <Popup maxWidth={300}>
                         <div className="space-y-1.5 py-0.5">
-                          {/* Intervention tag */}
                           <div>
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full text-white"
                               style={{ background: color }}>
@@ -458,10 +489,31 @@ export default function PortfolioLocations() {
                             <span>{emoji}</span>{shortName(loc)}
                           </p>
                           <p className="text-xs text-gray-500">
+                            {loc.community ? `${loc.community} · ` : ""}
                             {loc.level === "admin2"
                               ? `${loc.adminLevel1} · ${loc.country}`
                               : loc.level === "admin1" ? loc.country : "Country level"}
                           </p>
+                          {loc.sector && (
+                            <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold text-white"
+                              style={{ background: SECTOR_COLOURS[loc.sector] ?? "#6366f1" }}>
+                              {loc.sector}
+                            </span>
+                          )}
+                          {(loc.activityType || loc.beneficiaryType || loc.numBeneficiaries != null || loc.gender || loc.youthFocused) && (
+                            <div className="pt-1 border-t border-gray-200 space-y-0.5 text-xs text-gray-600">
+                              {loc.activityType   && <p>🔧 <strong>Activity:</strong> {loc.activityType}</p>}
+                              {loc.beneficiaryType && <p>👥 <strong>Beneficiaries:</strong> {loc.beneficiaryType}{loc.numBeneficiaries != null ? ` (${loc.numBeneficiaries.toLocaleString()})` : ""}</p>}
+                              {loc.gender         && <p>⚧ <strong>Gender:</strong> {loc.gender}</p>}
+                              {loc.youthFocused   && <p>🌱 <strong>Youth-focused</strong></p>}
+                            </div>
+                          )}
+                          {(loc.implementingPartner || loc.fundingSource) && (
+                            <div className="pt-1 border-t border-gray-200 space-y-0.5 text-xs text-gray-600">
+                              {loc.implementingPartner && <p>🏢 <strong>Partner:</strong> {loc.implementingPartner}</p>}
+                              {loc.fundingSource       && <p>💼 <strong>Funder:</strong> {loc.fundingSource}</p>}
+                            </div>
+                          )}
                           {(loc.targetFigure || loc.actualFigure) && (
                             <div className="pt-1 border-t border-gray-200 space-y-0.5">
                               {loc.targetFigure && (
@@ -474,6 +526,11 @@ export default function PortfolioLocations() {
                                   <TrendingUp className="w-3 h-3" /> Actual: <strong>{loc.actualFigure}</strong>
                                 </p>
                               )}
+                            </div>
+                          )}
+                          {loc.notes && (
+                            <div className="pt-1 border-t border-gray-200">
+                              <p className="text-xs text-gray-500 italic">{loc.notes}</p>
                             </div>
                           )}
                         </div>
