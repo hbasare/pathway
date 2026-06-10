@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   MapPin, Plus, Trash2, Loader2, Search, Globe,
   Check, Navigation, Target, TrendingUp, Pencil, X, Printer,
-  Users, Briefcase, Building2, ChevronDown,
+  Users, Briefcase, Building2, ChevronDown, ClipboardList, PlusCircle, Calendar,
 } from "lucide-react";
 import type { Theory } from "@workspace/api-client-react";
 
@@ -972,6 +972,284 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
   );
 }
 
+// ── Location entry types & helpers ────────────────────────────────────────────
+interface LocationEntry {
+  id: number; locationId: number; theoryId: number;
+  activityDate: string; activityType: string; activityOther: string; activityCommodity: string;
+  beneficiaryType: string; numBeneficiaries: number | null; numMale: number | null; numFemale: number | null;
+  gender: string; implementingPartner: string; fundingSource: string;
+  targetFigure: string; actualFigure: string; notes: string;
+  createdAt: string;
+}
+function emptyEntry(): Omit<LocationEntry, "id" | "locationId" | "theoryId" | "createdAt"> {
+  return {
+    activityDate: new Date().toISOString().slice(0, 10),
+    activityType: "", activityOther: "", activityCommodity: "",
+    beneficiaryType: "", numBeneficiaries: null, numMale: null, numFemale: null,
+    gender: "", implementingPartner: "", fundingSource: "",
+    targetFigure: "", actualFigure: "", notes: "",
+  };
+}
+
+// ── Log tab inner component ───────────────────────────────────────────────────
+function LocationLogTab({ loc, theory }: { loc: LocationRecord; theory: Theory }) {
+  const { toast } = useToast();
+  const [entries, setEntries]       = useState<LocationEntry[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [showForm, setShowForm]     = useState(false);
+  const [editingEntry, setEditingEntry] = useState<LocationEntry | null>(null);
+  const [form, setForm]             = useState(emptyEntry());
+  const [saving, setSaving]         = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  const entriesUrl = `${API_BASE}/theories/${theory.id}/locations/${loc.id}/entries`;
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await fetch(entriesUrl, { credentials: "include" });
+        if (r.ok) setEntries(await r.json());
+      } catch { /* silent */ } finally { setLoading(false); }
+    })();
+  }, [entriesUrl]);
+
+  const openNew = () => { setEditingEntry(null); setForm(emptyEntry()); setShowForm(true); };
+  const openEdit = (e: LocationEntry) => {
+    setEditingEntry(e);
+    setForm({
+      activityDate: e.activityDate, activityType: e.activityType,
+      activityOther: e.activityOther, activityCommodity: e.activityCommodity,
+      beneficiaryType: e.beneficiaryType,
+      numBeneficiaries: e.numBeneficiaries, numMale: e.numMale, numFemale: e.numFemale,
+      gender: e.gender, implementingPartner: e.implementingPartner,
+      fundingSource: e.fundingSource, targetFigure: e.targetFigure,
+      actualFigure: e.actualFigure, notes: e.notes,
+    });
+    setShowForm(true);
+  };
+
+  const handleSaveEntry = async () => {
+    setSaving(true);
+    try {
+      const body = {
+        ...form,
+        numBeneficiaries: form.numBeneficiaries != null && String(form.numBeneficiaries) !== "" ? Number(form.numBeneficiaries) : null,
+        numMale:          form.numMale != null && String(form.numMale) !== "" ? Number(form.numMale) : null,
+        numFemale:        form.numFemale != null && String(form.numFemale) !== "" ? Number(form.numFemale) : null,
+      };
+      if (editingEntry) {
+        const r = await fetch(`${entriesUrl}/${editingEntry.id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(body),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        const updated = await r.json() as LocationEntry;
+        setEntries(prev => prev.map(e => e.id === updated.id ? updated : e));
+        toast({ title: "Entry updated" });
+      } else {
+        const r = await fetch(entriesUrl, {
+          method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(body),
+        });
+        if (!r.ok) throw new Error(await r.text());
+        const created = await r.json() as LocationEntry;
+        setEntries(prev => [created, ...prev]);
+        toast({ title: "Entry added" });
+      }
+      setShowForm(false);
+    } catch (err) {
+      toast({ title: "Failed to save entry", description: String(err), variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  const handleDeleteEntry = async (id: number) => {
+    setDeletingId(id);
+    try {
+      await fetch(`${entriesUrl}/${id}`, { method: "DELETE", credentials: "include" });
+      setEntries(prev => prev.filter(e => e.id !== id));
+    } catch {
+      toast({ title: "Failed to delete entry", variant: "destructive" });
+    } finally { setDeletingId(null); }
+  };
+
+  const setF = (k: keyof typeof form, v: string | number | null) => setForm(f => ({ ...f, [k]: v }));
+
+  if (showForm) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 mb-1">
+          <button onClick={() => setShowForm(false)} className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1">
+            <X className="w-3 h-3" /> Back to log
+          </button>
+          <span className="text-xs font-semibold text-foreground ml-1">
+            {editingEntry ? "Edit Entry" : "New Entry"}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Date</label>
+            <Input type="date" value={form.activityDate} onChange={e => setF("activityDate", e.target.value)} className="h-9 text-sm" />
+          </div>
+          <SelectField label="Activity Type" value={form.activityType} onChange={v => setF("activityType", v)} options={ACTIVITY_TYPES} />
+        </div>
+
+        {form.activityType === "Other" && (
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Please Specify</label>
+            <Input value={form.activityOther} onChange={e => setF("activityOther", e.target.value)} placeholder="Describe the activity…" className="h-9 text-sm" />
+          </div>
+        )}
+        {form.activityType === "Agriculture" && (
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">🌾 Commodity</label>
+            <Input value={form.activityCommodity} onChange={e => setF("activityCommodity", e.target.value)} placeholder="e.g. Maize, Soybean…" className="h-9 text-sm" />
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <SelectField label="Beneficiary Type" value={form.beneficiaryType} onChange={v => setF("beneficiaryType", v)} options={BENEFICIARY_TYPES} />
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">No. of Beneficiaries</label>
+            <div className="relative">
+              <Users className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <Input type="number" min={0} value={form.numBeneficiaries ?? ""} onChange={e => setF("numBeneficiaries", e.target.value === "" ? null : Number(e.target.value))}
+                placeholder="e.g. 500" className="pl-8 h-9 text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <SelectField label="Gender Focus" value={form.gender} onChange={v => setF("gender", v)} options={GENDER_OPTIONS} />
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Implementing Partner</label>
+            <Input value={form.implementingPartner} onChange={e => setF("implementingPartner", e.target.value)} placeholder="e.g. CARE Ghana" className="h-9 text-sm" />
+          </div>
+        </div>
+
+        {form.gender && (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-blue-600">♂ No. of Males</label>
+              <Input type="number" min={0} value={form.numMale ?? ""} onChange={e => setF("numMale", e.target.value === "" ? null : Number(e.target.value))}
+                placeholder="e.g. 2,400" className="h-9 text-sm" />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-medium text-pink-600">♀ No. of Females</label>
+              <Input type="number" min={0} value={form.numFemale ?? ""} onChange={e => setF("numFemale", e.target.value === "" ? null : Number(e.target.value))}
+                placeholder="e.g. 2,600" className="h-9 text-sm" />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target Figure</label>
+            <div className="relative">
+              <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <Input value={form.targetFigure} onChange={e => setF("targetFigure", e.target.value)} placeholder="e.g. 1,000" className="pl-8 h-9 text-sm" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual Figure</label>
+            <div className="relative">
+              <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+              <Input value={form.actualFigure} onChange={e => setF("actualFigure", e.target.value)} placeholder="e.g. 850" className="pl-8 h-9 text-sm" />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Funding Source</label>
+          <Input value={form.fundingSource} onChange={e => setF("fundingSource", e.target.value)} placeholder="e.g. USAID / FCDO" className="h-9 text-sm" />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Notes</label>
+          <textarea value={form.notes} onChange={e => setF("notes", e.target.value)}
+            placeholder="Any observations from this visit or reporting period…"
+            rows={3} className="w-full rounded-md border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors resize-none" />
+        </div>
+
+        <div className="flex justify-end gap-2 pt-1">
+          <Button variant="outline" size="sm" onClick={() => setShowForm(false)}>Cancel</Button>
+          <Button size="sm" disabled={saving} onClick={handleSaveEntry} className="gap-1.5 min-w-[110px]">
+            {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</> : <><Check className="w-3.5 h-3.5" />{editingEntry ? "Update Entry" : "Add Entry"}</>}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+          <ClipboardList className="w-3.5 h-3.5" /> Activity Log
+          {entries.length > 0 && <span className="ml-1 px-1.5 py-0.5 rounded-full bg-muted text-foreground text-[10px] font-bold">{entries.length}</span>}
+        </p>
+        <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={openNew}>
+          <PlusCircle className="w-3.5 h-3.5" /> New Entry
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
+      ) : entries.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-10 text-center">
+          <ClipboardList className="w-8 h-8 text-muted-foreground/25" />
+          <p className="text-sm font-medium text-muted-foreground">No entries yet</p>
+          <p className="text-xs text-muted-foreground/70">Add entries to track activity visits, reporting periods, or field updates over time.</p>
+          <Button size="sm" variant="outline" className="mt-1 gap-1.5" onClick={openNew}><PlusCircle className="w-3.5 h-3.5" />Add First Entry</Button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {entries.map(e => (
+            <div key={e.id} className="rounded-lg border bg-card p-3 space-y-1.5 group relative">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <span className="text-base flex-none">{activityEmoji(e.activityType || loc.activityType)}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">
+                      {e.activityType || loc.activityType || "Activity"}
+                      {e.activityOther && ` — ${e.activityOther}`}
+                      {e.activityCommodity && ` (${e.activityCommodity})`}
+                    </p>
+                    {e.activityDate && (
+                      <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <Calendar className="w-2.5 h-2.5" /> {e.activityDate}
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-1 flex-none opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => openEdit(e)} className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                  <button onClick={() => handleDeleteEntry(e.id)} disabled={deletingId === e.id}
+                    className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600">
+                    {deletingId === e.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
+                {e.beneficiaryType && <span>👥 {e.beneficiaryType}{e.numBeneficiaries != null ? ` · ${e.numBeneficiaries.toLocaleString()}` : ""}</span>}
+                {e.numMale != null && <span className="text-blue-600">♂ {e.numMale.toLocaleString()}</span>}
+                {e.numFemale != null && <span className="text-pink-600">♀ {e.numFemale.toLocaleString()}</span>}
+                {e.gender && <span>⚧ {e.gender}</span>}
+                {e.targetFigure && <span><Target className="w-2.5 h-2.5 inline" /> {e.targetFigure}</span>}
+                {e.actualFigure && <span><TrendingUp className="w-2.5 h-2.5 inline text-emerald-600" /> {e.actualFigure}</span>}
+                {e.implementingPartner && <span>🏢 {e.implementingPartner}</span>}
+                {e.fundingSource && <span>💰 {e.fundingSource}</span>}
+              </div>
+              {e.notes && <p className="text-[11px] text-muted-foreground italic border-t pt-1.5">{e.notes}</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Edit location dialog ──────────────────────────────────────────────────────
 function EditLocationDialog({ loc, theory, onClose, onSaved }: {
   loc: LocationRecord; theory: Theory;
@@ -985,7 +1263,7 @@ function EditLocationDialog({ loc, theory, onClose, onSaved }: {
   const [gpsLng, setGpsLng]             = useState(loc.lng?.toString() ?? "");
   const [gis, setGis]                   = useState<GisFields>(() => gisFromRecord(loc));
   const [saving, setSaving]             = useState(false);
-  const [tab, setTab]                   = useState<"location" | "details" | "target">("location");
+  const [tab, setTab]                   = useState<"location" | "details" | "target" | "log">("location");
 
   const handleSave = async () => {
     setSaving(true);
@@ -1033,10 +1311,11 @@ function EditLocationDialog({ loc, theory, onClose, onSaved }: {
             <span className="font-semibold text-sm flex-1 min-w-0 truncate">{shortNameStr(loc)}</span>
             <LevelBadge level={loc.level} />
           </div>
-          <div className="flex gap-1 mt-2">
+          <div className="flex gap-1 mt-2 flex-wrap">
             <TabBtn id="location" label="Location" />
             <TabBtn id="details"  label="Details" />
             <TabBtn id="target"   label="Target &amp; Actual" />
+            <TabBtn id="log"      label="Activity Log" />
           </div>
         </DialogHeader>
 
@@ -1105,14 +1384,24 @@ function EditLocationDialog({ loc, theory, onClose, onSaved }: {
               )}
             </div>
           )}
+          {tab === "log" && (
+            <LocationLogTab loc={loc} theory={theory} />
+          )}
         </div>
 
-        <div className="flex-none border-t px-5 py-3 flex items-center justify-end gap-2 bg-card">
-          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-          <Button size="sm" disabled={saving} onClick={handleSave} className="gap-1.5 min-w-[110px]">
-            {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</> : <><Check className="w-3.5 h-3.5" />Save Changes</>}
-          </Button>
-        </div>
+        {tab !== "log" && (
+          <div className="flex-none border-t px-5 py-3 flex items-center justify-end gap-2 bg-card">
+            <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+            <Button size="sm" disabled={saving} onClick={handleSave} className="gap-1.5 min-w-[110px]">
+              {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</> : <><Check className="w-3.5 h-3.5" />Save Changes</>}
+            </Button>
+          </div>
+        )}
+        {tab === "log" && (
+          <div className="flex-none border-t px-5 py-3 flex items-center justify-end gap-2 bg-card">
+            <Button variant="outline" size="sm" onClick={onClose}>Close</Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
