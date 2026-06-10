@@ -113,10 +113,9 @@ function LevelBadge({ level }: { level: string }) {
 
 // ── Print ─────────────────────────────────────────────────────────────────────
 const PRINT_SECTIONS = [
-  { id: "map",           label: "Map",                desc: "OpenStreetMap view of all visible locations" },
-  { id: "locations",     label: "Location list",      desc: "All locations grouped by intervention" },
-  { id: "beneficiaries", label: "Beneficiary groups", desc: "Which groups each location serves" },
-  { id: "figures",       label: "Target & Actual",    desc: "Figures per location by intervention" },
+  { id: "map",       label: "Map",           desc: "OpenStreetMap view of all visible locations" },
+  { id: "locations", label: "Location list", desc: "All locations grouped by intervention" },
+  { id: "figures",   label: "Target & Actual", desc: "Figures per location by intervention" },
 ] as const;
 
 function generatePrintHtml(entries: InterventionEntry[], visible: Set<number>, sections: Set<string>, name: string): string {
@@ -166,18 +165,6 @@ iframe{width:100%;height:400px;border:1px solid #e5e7eb;border-radius:6px;displa
     });
   }
 
-  if (sections.has("beneficiaries")) {
-    html += `<h2>Beneficiary Groups</h2>`;
-    vis.forEach(e => {
-      html += `<h3><span class="dot" style="background:${esc(e.color)}"></span>${esc(e.title)}</h3><table><tr><th>Location</th><th>Beneficiary Groups</th></tr>`;
-      e.locations.forEach(loc => {
-        const groups = loc.figureLabel ? loc.figureLabel.split(";").map(s=>s.trim()).filter(Boolean) : [];
-        html += `<tr><td style="font-weight:600">${esc(shortName(loc))}</td><td>${groups.length?groups.map(g=>`<span class="chip">${esc(g)}</span>`).join(""):`<span class="dim">—</span>`}</td></tr>`;
-      });
-      html += `</table>`;
-    });
-  }
-
   if (sections.has("figures")) {
     html += `<h2>Target &amp; Actual Figures</h2>`;
     vis.forEach(e => {
@@ -197,7 +184,7 @@ function PrintDialog({ open, onClose, entries, visible, name }: {
   open: boolean; onClose: () => void;
   entries: InterventionEntry[]; visible: Set<number>; name: string;
 }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(["map","locations","beneficiaries","figures"]));
+  const [selected, setSelected] = useState<Set<string>>(new Set(["map","locations","figures"]));
   const toggle = (id: string) => setSelected(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const visCount = entries.filter(e => visible.has(e.id) && e.locations.length > 0).length;
   const totalLocs = entries.filter(e => visible.has(e.id)).reduce((a,e) => a + e.locations.length, 0);
@@ -475,13 +462,6 @@ export default function PortfolioLocations() {
                               ? `${loc.adminLevel1} · ${loc.country}`
                               : loc.level === "admin1" ? loc.country : "Country level"}
                           </p>
-                          {loc.figureLabel && (
-                            <div className="flex flex-wrap gap-1 pt-0.5">
-                              {loc.figureLabel.split(";").map(b => b.trim()).filter(Boolean).map(b => (
-                                <span key={b} className="text-[10px] px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full">{b}</span>
-                              ))}
-                            </div>
-                          )}
                           {(loc.targetFigure || loc.actualFigure) && (
                             <div className="pt-1 border-t border-gray-200 space-y-0.5">
                               {loc.targetFigure && (

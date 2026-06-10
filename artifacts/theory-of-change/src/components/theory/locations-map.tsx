@@ -10,8 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   MapPin, Plus, Trash2, Loader2, Search, Globe,
-  Check, Navigation, Target, TrendingUp, Pencil, X,
-  ChevronDown, Printer,
+  Check, Navigation, Target, TrendingUp, Pencil, X, Printer,
 } from "lucide-react";
 import type { Theory } from "@workspace/api-client-react";
 
@@ -87,12 +86,6 @@ interface ConfirmedLoc {
   level: "country" | "admin1" | "admin2";
   displayName: string;
 }
-interface MeasurementIndicator {
-  id: number; name: string;
-  targetFigure: string; actualFigure: string;
-  componentName: string;
-}
-
 // ── Constants ─────────────────────────────────────────────────────────────────
 const COLOURS = [
   "#6366f1","#f97316","#10b981","#ec4899","#3b82f6",
@@ -151,19 +144,6 @@ function shortNameStr(loc: LocationRecord) {
 function escHtml(s: string) {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function parseBeneficiaries(text: string): string[] {
-  return text.split(/[\n;|]/).map(s => s.replace(/^[-–•*\d.)]\s*/, "").trim()).filter(s => s.length > 2);
-}
-function theoryBeneficiaries(theory: Theory): string[] {
-  const combined = [
-    theory.targetBeneficiary ?? "",
-    theory.privateSectorPartners ?? "",
-    theory.publicSectorPartners ?? "",
-    theory.serviceProviders ?? "",
-  ].join("\n");
-  return [...new Set(parseBeneficiaries(combined))];
-}
-
 // ── Map helpers ───────────────────────────────────────────────────────────────
 function makeIcon(emoji: string, color: string) {
   return L.divIcon({
@@ -232,111 +212,6 @@ function LevelBadge({ level }: { level: string }) {
   };
   const d = map[level] ?? { label: level, cls: "bg-muted text-muted-foreground border-border" };
   return <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${d.cls}`}>{d.label}</span>;
-}
-
-// ── Shared: fetch indicators from measurement plan ────────────────────────────
-async function fetchIndicators(theoryId: number): Promise<MeasurementIndicator[]> {
-  try {
-    const res = await fetch(`${API_BASE}/theories/${theoryId}`, { credentials: "include" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    const list: MeasurementIndicator[] = [];
-    for (const comp of (data.components ?? [])) {
-      for (const ind of (comp.componentIndicators ?? [])) {
-        if (ind.name?.trim()) {
-          list.push({ id: ind.id, name: ind.name, targetFigure: ind.targetFigure ?? "", actualFigure: ind.actualFigure ?? "", componentName: comp.title ?? comp.name ?? "" });
-        }
-      }
-    }
-    return list;
-  } catch { return []; }
-}
-
-// ── Single indicator selector (for one field) ─────────────────────────────────
-function IndSelect({ label, icon: Icon, indicators, selectedId, onSelect, manualValue, onManualChange, fieldKey, disabled }: {
-  label: string;
-  icon: React.FC<{ className?: string }>;
-  indicators: MeasurementIndicator[];
-  selectedId: number | null;
-  onSelect: (id: number | null) => void;
-  manualValue: string;
-  onManualChange: (v: string) => void;
-  fieldKey: "targetFigure" | "actualFigure";
-  disabled?: boolean;
-}) {
-  const [open, setOpen] = useState(false);
-  const sel = indicators.find(i => i.id === selectedId);
-  const displayVal = sel ? sel[fieldKey] : manualValue;
-
-  return (
-    <div className="space-y-1.5">
-      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</label>
-      {indicators.length > 0 && (
-        <div className="relative mb-1.5">
-          <button onClick={() => !disabled && setOpen(o => !o)} disabled={disabled}
-            className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 border rounded-md text-xs bg-card hover:bg-muted/40 transition-colors disabled:opacity-50">
-            {sel ? (
-              <span className="flex-1 text-left truncate font-medium text-primary">{sel.name}<span className="text-muted-foreground font-normal ml-1">({sel[fieldKey] || "no value"})</span></span>
-            ) : (
-              <span className="text-muted-foreground flex-1 text-left">From measurement plan…</span>
-            )}
-            <div className="flex items-center gap-1">
-              {sel && <button onClick={e => { e.stopPropagation(); onSelect(null); }} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>}
-              <ChevronDown className="w-3 h-3 text-muted-foreground flex-none" />
-            </div>
-          </button>
-          {open && (
-            <div className="absolute z-10 top-full left-0 right-0 mt-0.5 border rounded-md bg-card shadow-md max-h-44 overflow-y-auto divide-y divide-border">
-              <button onClick={() => { onSelect(null); setOpen(false); }} className="w-full text-left px-3 py-2 text-xs text-muted-foreground hover:bg-muted/60">— None —</button>
-              {indicators.map(ind => (
-                <button key={ind.id} onClick={() => { onSelect(ind.id); setOpen(false); }}
-                  className={`w-full text-left px-3 py-2 hover:bg-muted/60 ${ind.id === selectedId ? "bg-primary/5 font-medium text-primary" : ""}`}>
-                  <span className="block text-xs truncate">{ind.name}</span>
-                  <span className="text-[10px] text-muted-foreground">{ind.componentName}{ind[fieldKey] ? ` · ${fieldKey === "targetFigure" ? "Target" : "Actual"}: ${ind[fieldKey]}` : " · no value"}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      <div className="relative">
-        <Icon className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-        <Input value={displayVal} onChange={e => { if (!sel) onManualChange(e.target.value); }}
-          readOnly={!!sel} placeholder="e.g. 5,000"
-          className={`pl-8 h-9 text-sm ${sel ? "bg-muted/40 text-muted-foreground" : ""}`} />
-      </div>
-      {sel && <p className="text-[10px] text-muted-foreground pl-1">Linked to measurement plan — click × above to override.</p>}
-    </div>
-  );
-}
-
-// ── Beneficiary picker ────────────────────────────────────────────────────────
-function BeneficiaryPicker({ allBeneficiaries, selected, onChange }: {
-  allBeneficiaries: string[]; selected: string[]; onChange: (s: string[]) => void;
-}) {
-  const toggle = (b: string) => onChange(selected.includes(b) ? selected.filter(s => s !== b) : [...selected, b]);
-  if (allBeneficiaries.length === 0) return (
-    <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 text-center text-xs text-muted-foreground space-y-1">
-      <p className="font-medium">No beneficiaries defined yet</p>
-      <p>Go to <span className="font-semibold">About → Beneficiaries &amp; Partners</span> and fill in the Target Beneficiary Group. Entries will appear here.</p>
-    </div>
-  );
-  return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">Select the groups from the About section that this location serves.</p>
-      <div className="flex flex-wrap gap-2">
-        {allBeneficiaries.map(b => {
-          const on = selected.includes(b);
-          return (
-            <button key={b} onClick={() => toggle(b)}
-              className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${on ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"}`}>
-              {b}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
 }
 
 // ── Marker picker ─────────────────────────────────────────────────────────────
@@ -500,10 +375,9 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
 
 // ── Print ─────────────────────────────────────────────────────────────────────
 const PRINT_SECTIONS = [
-  { id: "map",           label: "Map",               desc: "OpenStreetMap showing all location boundaries" },
-  { id: "locations",     label: "Location list",     desc: "Table of all locations with coordinates" },
-  { id: "beneficiaries", label: "Beneficiary groups", desc: "Which groups each location serves" },
-  { id: "figures",       label: "Target & Actual",   desc: "Figures table per location" },
+  { id: "map",       label: "Map",           desc: "OpenStreetMap showing all location boundaries" },
+  { id: "locations", label: "Location list", desc: "Table of all locations with coordinates" },
+  { id: "figures",   label: "Target & Actual", desc: "Figures table per location" },
 ] as const;
 
 function generatePrintHtml(locations: LocationRecord[], sections: Set<string>, theoryName: string): string {
@@ -565,15 +439,6 @@ iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;displa
     html += `</table>`;
   }
 
-  if (sections.has("beneficiaries")) {
-    html += `<h2>Beneficiary Groups by Location</h2><table><tr><th>Location</th><th>Groups</th></tr>`;
-    locations.forEach(loc => {
-      const groups = loc.figureLabel ? loc.figureLabel.split(";").map(s => s.trim()).filter(Boolean) : [];
-      html += `<tr><td style="font-weight:600">${escHtml(shortNameStr(loc))}</td><td>${groups.length ? groups.map(g => `<span class="chip">${escHtml(g)}</span>`).join("") : '<span class="dim">—</span>'}</td></tr>`;
-    });
-    html += `</table>`;
-  }
-
   if (sections.has("figures")) {
     html += `<h2>Target &amp; Actual Figures</h2><table><tr><th>Location</th><th>Target</th><th>Actual</th></tr>`;
     locations.forEach(loc => {
@@ -590,7 +455,7 @@ function PrintDialog({ open, onClose, locations, theoryName }: {
   open: boolean; onClose: () => void;
   locations: LocationRecord[]; theoryName: string;
 }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set(["map", "locations", "beneficiaries", "figures"]));
+  const [selected, setSelected] = useState<Set<string>>(new Set(["map", "locations", "figures"]));
   const toggle = (id: string) => setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
 
   const doPrint = () => {
@@ -648,35 +513,22 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
   onSaved: (locs: LocationRecord[]) => void; lang: string;
 }) {
   const { toast } = useToast();
-  const [confirmed, setConfirmed]   = useState<ConfirmedLoc[]>([]);
-  const [benef, setBenef]           = useState<string[]>([]);
-  const [icon, setIcon]             = useState("general");
-  const [indicators, setIndicators] = useState<MeasurementIndicator[]>([]);
-  const [selTargetId, setSelTargetId] = useState<number | null>(null);
-  const [selActualId, setSelActualId] = useState<number | null>(null);
+  const [confirmed, setConfirmed]       = useState<ConfirmedLoc[]>([]);
+  const [icon, setIcon]                 = useState("general");
   const [manualTarget, setManualTarget] = useState("");
   const [manualActual, setManualActual] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [tab, setTab]       = useState<"locations" | "beneficiaries" | "target">("locations");
-
-  const allBenef = useMemo(() => theoryBeneficiaries(theory), [theory]);
-  const selTargetInd = indicators.find(i => i.id === selTargetId);
-  const selActualInd = indicators.find(i => i.id === selActualId);
-
-  useEffect(() => { if (open) fetchIndicators(theory.id).then(setIndicators); }, [open, theory.id]);
+  const [saving, setSaving]             = useState(false);
+  const [tab, setTab]                   = useState<"locations" | "target">("locations");
 
   const resetAll = () => {
-    setConfirmed([]); setBenef([]); setIcon("general");
-    setSelTargetId(null); setSelActualId(null); setManualTarget(""); setManualActual(""); setTab("locations");
+    setConfirmed([]); setIcon("general");
+    setManualTarget(""); setManualActual(""); setTab("locations");
   };
   const handleClose = () => { resetAll(); onClose(); };
 
   const handleSave = async () => {
     if (!confirmed.length) return;
     setSaving(true);
-    const figureLabel  = benef.join("; ");
-    const targetFigure = selTargetInd?.targetFigure ?? manualTarget;
-    const actualFigure = selActualInd?.actualFigure ?? manualActual;
     const created: LocationRecord[] = [];
     try {
       for (const loc of confirmed) {
@@ -686,7 +538,7 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
           adminLevel2: loc.district?.address?.county ?? loc.district?.address?.district ?? loc.district?.address?.municipality ?? "",
           lat: loc.lat, lng: loc.lng, boundaryGeoJson: loc.boundaryGeoJson,
           level: loc.level, nominatimId: String((loc.district ?? loc.region)?.place_id ?? ""),
-          icon, figureLabel, targetFigure, actualFigure,
+          icon, figureLabel: "", targetFigure: manualTarget, actualFigure: manualActual,
         };
         const res = await fetch(`${API_BASE}/theories/${theory.id}/locations`, {
           method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(body),
@@ -718,9 +570,8 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
             <MapPin className="w-4 h-4 text-primary flex-none" /> Add Intervention Locations
           </DialogTitle>
           <div className="flex gap-1 mt-2">
-            <TabBtn id="locations"     label="Locations"      badge={confirmed.length} />
-            <TabBtn id="beneficiaries" label="Beneficiaries"  badge={benef.length || undefined} />
-            <TabBtn id="target"        label="Target &amp; Actual" />
+            <TabBtn id="locations" label="Locations" badge={confirmed.length} />
+            <TabBtn id="target"    label="Target &amp; Actual" />
           </div>
         </DialogHeader>
 
@@ -731,21 +582,26 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
               onRemove={uid => setConfirmed(p => p.filter(l => l.uid !== uid))}
               lang={lang} />
           )}
-          {tab === "beneficiaries" && (
-            <div className="space-y-5">
-              <BeneficiaryPicker allBeneficiaries={allBenef} selected={benef} onChange={setBenef} />
-              <div className="border-t pt-4"><MarkerPicker value={icon} onChange={setIcon} /></div>
-            </div>
-          )}
           {tab === "target" && (
             <div className="space-y-5">
-              <IndSelect label="Target figure" icon={Target} indicators={indicators}
-                selectedId={selTargetId} onSelect={setSelTargetId}
-                manualValue={manualTarget} onManualChange={setManualTarget} fieldKey="targetFigure" />
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target Figure</label>
+                <div className="relative">
+                  <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input value={manualTarget} onChange={e => setManualTarget(e.target.value)}
+                    placeholder="e.g. 5,000 households" className="pl-8 h-9 text-sm" />
+                </div>
+              </div>
+              <div className="border-t pt-4 space-y-1.5">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual Figure</label>
+                <div className="relative">
+                  <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input value={manualActual} onChange={e => setManualActual(e.target.value)}
+                    placeholder="e.g. 4,200 households" className="pl-8 h-9 text-sm" />
+                </div>
+              </div>
               <div className="border-t pt-4">
-                <IndSelect label="Actual figure" icon={TrendingUp} indicators={indicators}
-                  selectedId={selActualId} onSelect={setSelActualId}
-                  manualValue={manualActual} onManualChange={setManualActual} fieldKey="actualFigure" />
+                <MarkerPicker value={icon} onChange={setIcon} />
               </div>
             </div>
           )}
@@ -754,7 +610,7 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
         <div className="flex-none border-t px-5 py-3 flex items-center justify-between gap-4 bg-card">
           <p className="text-xs text-muted-foreground truncate flex-1 min-w-0">
             {confirmed.length === 0 ? "No locations selected"
-              : <><span className="font-medium text-foreground">{confirmed.length} location{confirmed.length > 1 ? "s" : ""}</span>{benef.length > 0 && <> · {benef.slice(0, 2).join(", ")}{benef.length > 2 ? "…" : ""}</>}</>}
+              : <span className="font-medium text-foreground">{confirmed.length} location{confirmed.length > 1 ? "s" : ""} selected</span>}
           </p>
           <div className="flex gap-2 flex-none">
             <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
@@ -769,35 +625,24 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
 }
 
 // ── Edit location dialog ──────────────────────────────────────────────────────
-function EditLocationDialog({ loc, theory, indicators, onClose, onSaved }: {
+function EditLocationDialog({ loc, theory, onClose, onSaved }: {
   loc: LocationRecord; theory: Theory;
-  indicators: MeasurementIndicator[];
   onClose: () => void; onSaved: (updated: LocationRecord) => void;
 }) {
   const { toast } = useToast();
-  const allBenef = useMemo(() => theoryBeneficiaries(theory), [theory]);
-  const [benef, setBenef]         = useState<string[]>(() => loc.figureLabel ? loc.figureLabel.split(";").map(s => s.trim()).filter(Boolean) : []);
-  const [icon, setIcon]           = useState(loc.icon || "general");
-  const [selTargetId, setSelTargetId] = useState<number | null>(null);
-  const [selActualId, setSelActualId] = useState<number | null>(null);
+  const [icon, setIcon]                 = useState(loc.icon || "general");
   const [manualTarget, setManualTarget] = useState(loc.targetFigure || "");
   const [manualActual, setManualActual] = useState(loc.actualFigure || "");
-  const [gpsLat, setGpsLat]       = useState(loc.lat?.toString() ?? "");
-  const [gpsLng, setGpsLng]       = useState(loc.lng?.toString() ?? "");
-  const [saving, setSaving]       = useState(false);
-
-  const selTargetInd = indicators.find(i => i.id === selTargetId);
-  const selActualInd = indicators.find(i => i.id === selActualId);
+  const [gpsLat, setGpsLat]             = useState(loc.lat?.toString() ?? "");
+  const [gpsLng, setGpsLng]             = useState(loc.lng?.toString() ?? "");
+  const [saving, setSaving]             = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
-    const figureLabel  = benef.join("; ");
-    const targetFigure = selTargetInd?.targetFigure ?? manualTarget;
-    const actualFigure = selActualInd?.actualFigure ?? manualActual;
     try {
       const res = await fetch(`${API_BASE}/theories/${theory.id}/locations/${loc.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include",
-        body: JSON.stringify({ icon, figureLabel, targetFigure, actualFigure, lat: parseFloat(gpsLat) || loc.lat, lng: parseFloat(gpsLng) || loc.lng }),
+        body: JSON.stringify({ icon, targetFigure: manualTarget, actualFigure: manualActual, lat: parseFloat(gpsLat) || loc.lat, lng: parseFloat(gpsLng) || loc.lng }),
       });
       if (!res.ok) throw new Error(await res.text());
       onSaved(await res.json() as LocationRecord);
@@ -843,22 +688,27 @@ function EditLocationDialog({ loc, theory, indicators, onClose, onSaved }: {
             </div>
           </div>
 
-          <div className="space-y-2 border-t pt-4">
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Beneficiary Groups</label>
-            <BeneficiaryPicker allBeneficiaries={allBenef} selected={benef} onChange={setBenef} />
-          </div>
-
           <div className="border-t pt-4">
             <MarkerPicker value={icon} onChange={setIcon} />
           </div>
 
           <div className="border-t pt-4 space-y-4">
-            <IndSelect label="Target figure" icon={Target} indicators={indicators}
-              selectedId={selTargetId} onSelect={id => { setSelTargetId(id); if (!id) setManualTarget(loc.targetFigure || ""); }}
-              manualValue={manualTarget} onManualChange={setManualTarget} fieldKey="targetFigure" />
-            <IndSelect label="Actual figure" icon={TrendingUp} indicators={indicators}
-              selectedId={selActualId} onSelect={id => { setSelActualId(id); if (!id) setManualActual(loc.actualFigure || ""); }}
-              manualValue={manualActual} onManualChange={setManualActual} fieldKey="actualFigure" />
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target Figure</label>
+              <div className="relative">
+                <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <Input value={manualTarget} onChange={e => setManualTarget(e.target.value)}
+                  placeholder="e.g. 5,000 households" className="pl-8 h-9 text-sm" />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual Figure</label>
+              <div className="relative">
+                <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <Input value={manualActual} onChange={e => setManualActual(e.target.value)}
+                  placeholder="e.g. 4,200 households" className="pl-8 h-9 text-sm" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -879,10 +729,9 @@ export function LocationsMap({ theory }: { theory: Theory }) {
   const { toast } = useToast();
   const [locations, setLocations]     = useState<LocationRecord[]>([]);
   const [loadingLocs, setLoadingLocs] = useState(true);
-  const [showAdd, setShowAdd]         = useState(false);
-  const [editing, setEditing]         = useState<LocationRecord | null>(null);
-  const [showPrint, setShowPrint]     = useState(false);
-  const [indicators, setIndicators]   = useState<MeasurementIndicator[]>([]);
+  const [showAdd, setShowAdd]     = useState(false);
+  const [editing, setEditing]     = useState<LocationRecord | null>(null);
+  const [showPrint, setShowPrint] = useState(false);
 
   const tile = TILE_LAYERS[i18n.language] ?? TILE_LAYERS.default;
 
@@ -894,8 +743,6 @@ export function LocationsMap({ theory }: { theory: Theory }) {
       } catch { /* silent */ } finally { setLoadingLocs(false); }
     })();
   }, [theory.id]);
-
-  useEffect(() => { fetchIndicators(theory.id).then(setIndicators); }, [theory.id]);
 
   const handleDelete = async (locId: number) => {
     try {
@@ -940,7 +787,6 @@ export function LocationsMap({ theory }: { theory: Theory }) {
             <ul className="divide-y divide-border">
               {locations.map((loc, i) => {
                 const color = COLOURS[i % COLOURS.length];
-                const benefGroups = loc.figureLabel ? loc.figureLabel.split(";").map(s => s.trim()).filter(Boolean) : [];
                 return (
                   <li key={loc.id} className="group px-4 py-3 hover:bg-muted/30 transition-colors">
                     <div className="flex items-start gap-2.5">
@@ -954,14 +800,6 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                           {loc.level === "admin2" ? `${loc.adminLevel1}, ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
                         </p>
                         <div className="pt-0.5"><LevelBadge level={loc.level} /></div>
-                        {benefGroups.length > 0 && (
-                          <div className="flex flex-wrap gap-1 pt-1">
-                            {benefGroups.slice(0, 3).map(b => (
-                              <span key={b} className="text-[10px] px-1.5 py-0.5 bg-primary/8 border border-primary/20 text-primary rounded-full">{b}</span>
-                            ))}
-                            {benefGroups.length > 3 && <span className="text-[10px] text-muted-foreground">+{benefGroups.length - 3}</span>}
-                          </div>
-                        )}
                         {(loc.targetFigure || loc.actualFigure) && (
                           <div className="flex flex-wrap gap-1.5 pt-0.5">
                             {loc.targetFigure && (
@@ -1029,13 +867,6 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                       <div className="space-y-1.5 py-0.5">
                         <p className="font-semibold text-sm flex items-center gap-1.5"><span>{emoji}</span>{shortNameStr(loc)}</p>
                         <p className="text-xs text-gray-500">{loc.level === "admin2" ? `${loc.adminLevel1} · ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}</p>
-                        {loc.figureLabel && (
-                          <div className="flex flex-wrap gap-1 pt-0.5">
-                            {loc.figureLabel.split(";").map(b => b.trim()).filter(Boolean).map(b => (
-                              <span key={b} className="text-[10px] px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full">{b}</span>
-                            ))}
-                          </div>
-                        )}
                         {(loc.targetFigure || loc.actualFigure) && (
                           <div className="pt-1 border-t border-gray-200 space-y-0.5">
                             {loc.targetFigure && <p className="text-xs text-blue-600">🎯 Target: <strong>{loc.targetFigure}</strong></p>}
@@ -1070,7 +901,7 @@ export function LocationsMap({ theory }: { theory: Theory }) {
         onSaved={locs => setLocations(prev => [...prev, ...locs])} lang={i18n.language} />
 
       {editing && (
-        <EditLocationDialog loc={editing} theory={theory} indicators={indicators}
+        <EditLocationDialog loc={editing} theory={theory}
           onClose={() => setEditing(null)}
           onSaved={updated => { setLocations(prev => prev.map(l => l.id === updated.id ? updated : l)); setEditing(null); }} />
       )}
