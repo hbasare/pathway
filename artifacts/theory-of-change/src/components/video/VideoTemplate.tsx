@@ -15,25 +15,28 @@ const SCENE_DURATIONS = {
   outro: 9000,
 };
 
+const SCENE_CLIPS = [
+  "pathways-scene1.mp3",
+  "pathways-scene2.mp3",
+  "pathways-scene3.mp3",
+  "pathways-scene4.mp3",
+  "pathways-scene5.mp3",
+];
+
 export default function VideoTemplate() {
   const { currentScene } = useVideoPlayer({ durations: SCENE_DURATIONS });
-  const voiceRef = useRef<HTMLAudioElement>(null);
   const musicRef = useRef<HTMLAudioElement>(null);
   const [started, setStarted] = useState(false);
 
-  const handleStart = () => {
-    const voice = voiceRef.current;
-    const music = musicRef.current;
+  const sceneRef0 = useRef<HTMLAudioElement>(null);
+  const sceneRef1 = useRef<HTMLAudioElement>(null);
+  const sceneRef2 = useRef<HTMLAudioElement>(null);
+  const sceneRef3 = useRef<HTMLAudioElement>(null);
+  const sceneRef4 = useRef<HTMLAudioElement>(null);
+  const sceneRefs = [sceneRef0, sceneRef1, sceneRef2, sceneRef3, sceneRef4];
 
-    // Reset both elements to a clean state before playing
-    // (a failed autoplay attempt can leave elements in a broken pending state)
-    if (voice) {
-      voice.pause();
-      voice.currentTime = 0;
-      voice.volume = 1.0;
-      voice.load();
-      voice.play().catch((e) => console.error("Voiceover play failed:", e));
-    }
+  const handleStart = () => {
+    const music = musicRef.current;
     if (music) {
       music.pause();
       music.currentTime = 0;
@@ -42,13 +45,37 @@ export default function VideoTemplate() {
       music.play().catch((e) => console.error("Music play failed:", e));
     }
 
-    // Dismiss overlay after kicking off playback
+    const voice = sceneRefs[0].current;
+    if (voice) {
+      voice.pause();
+      voice.currentTime = 0;
+      voice.volume = 1.0;
+      voice.load();
+      voice.play().catch((e) => console.error("Scene 1 voice failed:", e));
+    }
+
     setStarted(true);
   };
 
-  // Don't attempt autoplay — always show the overlay so the user click
-  // grants audio permission cleanly (iframes require explicit interaction)
-  useEffect(() => {}, []);
+  useEffect(() => {
+    if (!started) return;
+
+    sceneRefs.forEach((ref, i) => {
+      const el = ref.current;
+      if (!el) return;
+      if (i === currentScene) {
+        el.pause();
+        el.currentTime = 0;
+        el.volume = 1.0;
+        el.play().catch((e) => console.error(`Scene ${i + 1} voice failed:`, e));
+      } else {
+        el.pause();
+        el.currentTime = 0;
+      }
+    });
+  }, [currentScene, started]);
+
+  const BASE = import.meta.env.BASE_URL;
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-[#0a0a0a] text-white font-sans flex items-center justify-center">
@@ -77,10 +104,15 @@ export default function VideoTemplate() {
         {currentScene === 4 && <Scene5 key="scene5" />}
       </AnimatePresence>
 
-      <audio ref={voiceRef} src={`${import.meta.env.BASE_URL}audio/pathways-voiceover.mp3`} preload="auto" />
-      <audio ref={musicRef} src={`${import.meta.env.BASE_URL}audio/pathways-music.mp3`} preload="auto" loop />
+      {/* Per-scene voice tracks */}
+      {SCENE_CLIPS.map((clip, i) => (
+        <audio key={clip} ref={sceneRefs[i]} src={`${BASE}audio/${clip}`} preload="auto" />
+      ))}
 
-      {/* Click-to-play overlay — dismisses once audio starts */}
+      {/* Background music */}
+      <audio ref={musicRef} src={`${BASE}audio/pathways-music.mp3`} preload="auto" loop />
+
+      {/* Click-to-play overlay */}
       <AnimatePresence>
         {!started && (
           <motion.div

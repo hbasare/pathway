@@ -12,3 +12,33 @@ id = "NqT58JgPotkCU4InrQlhy"
 uri = "file://attached_assets/generated_audio/pathways-music.mp3"
 type = "audio"
 title = "pathways-background-music"
+
+[[outputs]]
+id = "KKyXzDYtU9wCLpQ9vz1Wf"
+uri = "file://attached_assets/generated_audio/pathways-scene2.mp3"
+type = "audio"
+title = "pathways-scene2"
+
+[[outputs]]
+id = "YqJd21pOyuoV_uJuMGsVx"
+uri = "file://attached_assets/generated_audio/pathways-scene3.mp3"
+type = "audio"
+title = "pathways-scene3"
+
+[[outputs]]
+id = "1SwxqyKcEpKdWq0LO8-kK"
+uri = "file://attached_assets/generated_audio/pathways-scene1.mp3"
+type = "audio"
+title = "pathways-scene1"
+
+[[outputs]]
+id = "gzRi31A02BHX-LSYTYime"
+uri = "file://attached_assets/generated_audio/pathways-scene4.mp3"
+type = "audio"
+title = "pathways-scene4"
+
+[[outputs]]
+id = "XubBTY_Q79aeQWtRDf5kD"
+uri = "file://attached_assets/generated_audio/pathways-scene5.mp3"
+type = "audio"
+title = "pathways-scene5"

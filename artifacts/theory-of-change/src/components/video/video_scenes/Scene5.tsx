@@ -1,15 +1,14 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { Layers, GitBranch, FolderOpen, Network, Users2, Settings, Plus, Search } from "lucide-react";
+import { Home, LayoutGrid, FolderGit2, Users, Settings, Plus, Search } from "lucide-react";
 import { PathwaysLogo } from "../../PathwaysLogo";
 
 const Sidebar = ({ active }: { active: string }) => {
   const items = [
-    { name: "Dashboard", icon: Layers },
-    { name: "Theories", icon: GitBranch },
-    { name: "Portfolios", icon: FolderOpen },
-    { name: "Market System", icon: Network },
-    { name: "Users", icon: Users2 },
+    { name: "Dashboard", icon: Home },
+    { name: "Program Logframe", icon: LayoutGrid },
+    { name: "Theories", icon: FolderGit2 },
+    { name: "Users", icon: Users },
   ];
 
   return (
