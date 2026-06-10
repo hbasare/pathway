@@ -24,6 +24,7 @@ import LoginPage from "@/pages/login";
 import SignupPage from "@/pages/signup";
 import SetupPage from "@/pages/setup";
 import NotFound from "@/pages/not-found";
+import VideoPage from "@/pages/video";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ const queryClient = new QueryClient({
 function Router() {
   return (
     <Switch>
+      <Route path="/video" component={VideoPage} />
       <Route path="/" component={Dashboard} />
       <Route path="/program-logframe" component={ProgramLogframe} />
       <Route path="/portfolio/:id/logframe" component={PortfolioLogframe} />
@@ -79,6 +81,7 @@ function AppShell() {
   // Public routes — accessible without being logged in
   if (!user) {
     if (location === "/signup") return <SignupPage />;
+    if (location === "/video") return <VideoPage />;
     return <LoginPage />;
   }
 
