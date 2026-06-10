@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
-import { FolderGit2, Plus, Home, Layers, LayoutGrid, Users, LogOut, Shield, User, Eye, Search, Heart } from "lucide-react";
+import { FolderGit2, Plus, Home, Layers, LayoutGrid, Users, LogOut, Shield, User, Eye, Search, Heart, Sun, Moon, Monitor } from "lucide-react";
+import { useTheme } from "@/contexts/theme-context";
 import { useListTheories } from "@workspace/api-client-react";
 import { useState } from "react";
 import {
@@ -23,6 +24,50 @@ import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { ColorSettingsTrigger } from "@/components/ColorSettings";
 import { PathwaysLogo } from "@/components/PathwaysLogo";
+
+// ── Theme Toggle ──────────────────────────────────────────────────────────────
+function ThemeToggle() {
+  const { theme, setTheme } = useTheme();
+  const [open, setOpen] = useState(false);
+
+  const options: { value: "light" | "dark" | "system"; icon: React.ReactNode; label: string }[] = [
+    { value: "light",  icon: <Sun className="w-3.5 h-3.5" />,     label: "Light"  },
+    { value: "dark",   icon: <Moon className="w-3.5 h-3.5" />,    label: "Dark"   },
+    { value: "system", icon: <Monitor className="w-3.5 h-3.5" />, label: "System" },
+  ];
+
+  const current = options.find(o => o.value === theme) ?? options[0];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(o => !o)}
+        title="Toggle theme"
+        className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      >
+        {current.icon}
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute bottom-full mb-1 right-0 z-50 bg-popover border border-border rounded-lg shadow-lg py-1 min-w-[110px]">
+            {options.map(o => (
+              <button
+                key={o.value}
+                onClick={() => { setTheme(o.value); setOpen(false); }}
+                className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-accent transition-colors text-left ${theme === o.value ? "text-primary font-semibold" : "text-foreground"}`}
+              >
+                {o.icon}
+                {o.label}
+                {theme === o.value && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export function AppSidebar() {
   const [location] = useLocation();
@@ -133,10 +178,13 @@ export function AppSidebar() {
 
       {/* Logged-in user footer */}
       <SidebarFooter className="border-t p-3 space-y-2">
-        {/* Language picker */}
+        {/* Language picker + theme toggle */}
         <div className="flex items-center justify-between px-1">
           <LanguageSwitcher />
-          <ColorSettingsTrigger />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <ColorSettingsTrigger />
+          </div>
         </div>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">

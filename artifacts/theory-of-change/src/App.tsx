@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { ColorSettingsProvider } from "@/contexts/color-settings";
+import { ThemeProvider } from "@/contexts/theme-context";
 
 // Pages
 import Dashboard from "@/pages/dashboard";
@@ -106,18 +107,20 @@ function AppShell() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <AuthProvider>
-            <ColorSettingsProvider>
-              <AppShell />
-            </ColorSettingsProvider>
-          </AuthProvider>
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <AuthProvider>
+              <ColorSettingsProvider>
+                <AppShell />
+              </ColorSettingsProvider>
+            </AuthProvider>
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   );
 }
 
