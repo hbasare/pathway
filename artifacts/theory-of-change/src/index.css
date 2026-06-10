@@ -151,3 +151,27 @@
     @apply font-semibold tracking-tight;
   }
 }
+
+@media print {
+  /* Hide the app sidebar and its trigger — they should never appear in reports */
+  [data-sidebar="sidebar"],
+  [data-sidebar="trigger"],
+  [data-sidebar="rail"] {
+    display: none !important;
+  }
+
+  /* Remove overflow clipping so full page content prints */
+  body,
+  #root,
+  .flex.h-screen,
+  main {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* Remove fixed widths imposed by sidebar layout */
+  .peer ~ div {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+  }
+}

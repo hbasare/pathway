@@ -155,20 +155,43 @@ td{padding:5px 10px;border-bottom:1px solid #f3f4f6;vertical-align:top}
 .chip{display:inline-block;padding:1px 6px;border-radius:9999px;border:1px solid #c7d2fe;color:#4f46e5;font-size:10px;margin:1px}
 .dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0}
 .t{color:#1d4ed8;font-weight:700}.a{color:#15803d;font-weight:700}.dim{color:#9ca3af}.mono{font-family:monospace;font-size:10px}
-iframe{width:100%;height:400px;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:4px}
-@media print{body{padding:12px}iframe{height:320px;page-break-after:always}h2{page-break-after:avoid}h3{page-break-after:avoid}tr{page-break-inside:avoid}}`;
+#_map{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:4px}
+.map-note{font-size:10px;color:#9ca3af;margin-bottom:4px}
+@media print{body{padding:12px}#_map{height:340px;page-break-after:always}h2{page-break-after:avoid}h3{page-break-after:avoid}tr{page-break-inside:avoid}}`;
 
-  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(name)} — Locations</title><style>${css}</style></head><body>`;
+  const mappableLocs = allLocs.filter(l => l.lat != null && l.lng != null);
+  const markerJson = JSON.stringify(
+    vis.flatMap(e => e.locations.filter(l => l.lat != null && l.lng != null).map(l => ({
+      lat: l.lat as number, lng: l.lng as number, color: e.color, name: shortName(l), title: e.title,
+    })))
+  );
+
+  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${esc(name)} — Locations</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
+<style>${css}</style></head><body>`;
   html += `<h1>${esc(name)}</h1><p class="meta">Programme Locations · ${new Date().toLocaleDateString(undefined,{year:"numeric",month:"long",day:"numeric"})} · ${vis.length} intervention${vis.length!==1?"s":""} · ${allLocs.length} location${allLocs.length!==1?"s":""}</p>`;
 
-  if (sections.has("map") && allLocs.length > 0) {
-    const lats = allLocs.filter(l => l.lat != null).map(l => l.lat as number);
-    const lngs = allLocs.filter(l => l.lng != null).map(l => l.lng as number);
-    if (lats.length) {
-      const p = 3;
-      const bbox = `${Math.min(...lngs)-p},${Math.min(...lats)-p},${Math.max(...lngs)+p},${Math.max(...lats)+p}`;
-      html += `<h2>Map</h2><iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&amp;layer=mapnik" loading="eager"></iframe><p class="dim" style="font-size:10px">Open the Pathways application for the full interactive map.</p>`;
-    }
+  if (sections.has("map") && mappableLocs.length > 0) {
+    html += `<h2>Map</h2><div id="_map"></div><p class="map-note">Map shows ${mappableLocs.length} location${mappableLocs.length!==1?"s":""} colour-coded by intervention.</p>
+<script>
+var _pts=${markerJson};
+var _done=false;
+function _print(){if(_done)return;_done=true;window.print();}
+window.addEventListener('load',function(){
+  var map=L.map('_map',{zoomControl:true,attributionControl:false});
+  var tiles=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
+  var bounds=[];
+  _pts.forEach(function(m){
+    L.circleMarker([m.lat,m.lng],{radius:9,color:'#fff',weight:2,fillColor:m.color,fillOpacity:0.9}).addTo(map).bindTooltip('<strong>'+m.name+'</strong><br><span style="color:#6b7280;font-size:11px">'+m.title+'</span>',{direction:'top'});
+    bounds.push([m.lat,m.lng]);
+  });
+  if(bounds.length===1){map.setView(bounds[0],8);}
+  else if(bounds.length>1){map.fitBounds(L.latLngBounds(bounds),{padding:[50,50]});}
+  tiles.once('load',function(){setTimeout(_print,600);});
+  setTimeout(_print,4000);
+});
+<\/script>`;
   }
 
   const levelLabel: Record<string,string> = {country:"Country",admin1:"Region",admin2:"District"};
@@ -218,7 +241,11 @@ iframe{width:100%;height:400px;border:1px solid #e5e7eb;border-radius:6px;displa
     });
   }
 
-  html += `<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},800);});</script></body></html>`;
+  // If no map section was included, we still need to trigger print after load
+  if (!sections.has("map") || mappableLocs.length === 0) {
+    html += `<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},600);});<\/script>`;
+  }
+  html += `</body></html>`;
   return html;
 }
 

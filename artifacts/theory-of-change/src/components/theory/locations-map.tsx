@@ -679,11 +679,11 @@ tr:last-child td{border-bottom:none}
 .a{color:#15803d;font-weight:700}
 .dim{color:#9ca3af}
 .mono{font-family:monospace;font-size:10px}
-iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:6px}
+#_map{width:100%;height:440px;border:1px solid #e5e7eb;border-radius:6px;margin-bottom:6px}
 .map-note{font-size:10px;color:#9ca3af;margin-bottom:4px}
 @media print{
   body{padding:12px}
-  iframe{height:350px;page-break-after:always}
+  #_map{height:360px;page-break-after:always}
   table{page-break-inside:auto}
   tr{page-break-inside:avoid}
   h2{page-break-after:avoid}
@@ -691,17 +691,38 @@ iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;displa
 
   const sectorColours: Record<string,string> = {Agriculture:"#84cc16",Health:"#ec4899",Education:"#3b82f6",WASH:"#06b6d4",Livelihoods:"#f97316",Governance:"#8b5cf6",Nutrition:"#eab308",Environment:"#10b981",Infrastructure:"#6366f1",Humanitarian:"#ef4444","Market Systems":"#14b8a6",Research:"#a855f7"};
 
-  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escHtml(theoryName || "Pathways")} — Locations</title><style>${css}</style></head><body>`;
+  const mappableLocs = locations.filter(l => l.lat != null && l.lng != null);
+  const markerJson = JSON.stringify(
+    mappableLocs.map(l => ({ lat: l.lat as number, lng: l.lng as number, emoji: markerEmoji(l.icon), name: shortNameStr(l) }))
+  );
+
+  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escHtml(theoryName || "Pathways")} — Locations</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
+<style>${css}</style></head><body>`;
   html += `<h1>${escHtml(theoryName || "Theory of Change")}</h1><p class="meta">Locations · ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })} · ${locations.length} location${locations.length !== 1 ? "s" : ""}</p>`;
 
-  if (sections.has("map") && locations.length > 0) {
-    const lats = locations.filter(l => l.lat != null).map(l => l.lat as number);
-    const lngs = locations.filter(l => l.lng != null).map(l => l.lng as number);
-    if (lats.length) {
-      const pad = 3;
-      const bbox = `${Math.min(...lngs) - pad},${Math.min(...lats) - pad},${Math.max(...lngs) + pad},${Math.max(...lats) + pad}`;
-      html += `<h2>Map</h2><iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&amp;layer=mapnik" loading="eager"></iframe><p class="map-note">Interactive map: open in the Pathways application for full functionality.</p>`;
-    }
+  if (sections.has("map") && mappableLocs.length > 0) {
+    html += `<h2>Map</h2><div id="_map"></div><p class="map-note">Map shows ${mappableLocs.length} location${mappableLocs.length !== 1 ? "s" : ""} with their assigned icons.</p>
+<script>
+var _pts=${markerJson};
+var _done=false;
+function _print(){if(_done)return;_done=true;window.print();}
+window.addEventListener('load',function(){
+  var map=L.map('_map',{zoomControl:true,attributionControl:false});
+  var tiles=L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
+  var bounds=[];
+  _pts.forEach(function(m){
+    var icon=L.divIcon({className:'',html:'<span style="font-size:24px;line-height:1;display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))">'+m.emoji+'</span>',iconSize:[28,28],iconAnchor:[14,14]});
+    L.marker([m.lat,m.lng],{icon:icon}).addTo(map).bindTooltip(m.name,{direction:'top',permanent:false});
+    bounds.push([m.lat,m.lng]);
+  });
+  if(bounds.length===1){map.setView(bounds[0],8);}
+  else if(bounds.length>1){map.fitBounds(L.latLngBounds(bounds),{padding:[50,50]});}
+  tiles.once('load',function(){setTimeout(_print,600);});
+  setTimeout(_print,4000);
+});
+<\/script>`;
   }
 
   if (sections.has("locations")) {
@@ -760,7 +781,11 @@ iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;displa
     html += `</table>`;
   }
 
-  html += `<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},800);});</script></body></html>`;
+  // If no map section was included, we still need to trigger print after load
+  if (!sections.has("map") || mappableLocs.length === 0) {
+    html += `<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},600);});<\/script>`;
+  }
+  html += `</body></html>`;
   return html;
 }
 
