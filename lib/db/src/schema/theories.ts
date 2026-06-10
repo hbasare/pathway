@@ -296,33 +296,6 @@ export const insertTheoryLocationSchema = createInsertSchema(theoryLocationsTabl
 export type InsertTheoryLocation = z.infer<typeof insertTheoryLocationSchema>;
 export type TheoryLocation = typeof theoryLocationsTable.$inferSelect;
 
-// ─── Theory Location Entries (activity log per location) ──────────────────────
-export const theoryLocationEntriesTable = pgTable("theory_location_entries", {
-  id:                serial("id").primaryKey(),
-  locationId:        integer("location_id").notNull().references(() => theoryLocationsTable.id, { onDelete: "cascade" }),
-  theoryId:          integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
-  activityDate:      text("activity_date").notNull().default(""),
-  activityType:      text("activity_type").notNull().default(""),
-  activityOther:     text("activity_other").notNull().default(""),
-  activityCommodity: text("activity_commodity").notNull().default(""),
-  beneficiaryType:   text("beneficiary_type").notNull().default(""),
-  numBeneficiaries:  integer("num_beneficiaries"),
-  numMale:           integer("num_male"),
-  numFemale:         integer("num_female"),
-  gender:            text("gender").notNull().default(""),
-  implementingPartner: text("implementing_partner").notNull().default(""),
-  fundingSource:     text("funding_source").notNull().default(""),
-  targetFigure:      text("target_figure").notNull().default(""),
-  actualFigure:      text("actual_figure").notNull().default(""),
-  notes:             text("notes").notNull().default(""),
-  createdAt:         timestamp("created_at").notNull().defaultNow(),
-  updatedAt:         timestamp("updated_at").notNull().defaultNow(),
-});
-
-export const insertTheoryLocationEntrySchema = createInsertSchema(theoryLocationEntriesTable).omit({ id: true, createdAt: true, updatedAt: true });
-export type InsertTheoryLocationEntry = z.infer<typeof insertTheoryLocationEntrySchema>;
-export type TheoryLocationEntry = typeof theoryLocationEntriesTable.$inferSelect;
-
 // ─── Theory Assignments ────────────────────────────────────────────────────────
 // Maps team members (role: "member") to the specific theories they manage.
 // Members can edit only their assigned theories; all others are view-only.
