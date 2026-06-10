@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -174,33 +174,24 @@ function FitBounds({ locations }: { locations: LocationRecord[] }) {
   return null;
 }
 
-// ── Nominatim search hook ─────────────────────────────────────────────────────
-function useNominatimSearch(countryCode: string, featureType: "state" | "county", lang: string) {
-  const [query, setQuery]     = useState("");
-  const [results, setResults] = useState<NominatimResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const acceptLang = NOMINATIM_LANG[lang] ?? "en";
-
-  const search = useCallback((q: string) => {
-    if (timer.current) clearTimeout(timer.current);
-    setQuery(q);
-    if (!q.trim() || !countryCode) { setResults([]); return; }
-    timer.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({ q, format: "json", polygon_geojson: "1", addressdetails: "1", limit: "12", countrycodes: countryCode });
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, { headers: { "Accept-Language": acceptLang } });
-        const data: NominatimResult[] = await res.json();
-        const filter = featureType === "state" ? ["state","province","region","administrative"] : ["county","district","municipality","city","administrative"];
-        setResults(data.filter(r => filter.includes(r.type) || r.class === "boundary"));
-      } catch { setResults([]); }
-      finally { setLoading(false); }
-    }, 450);
-  }, [countryCode, featureType, acceptLang]);
-
-  const clear = useCallback(() => { setQuery(""); setResults([]); }, []);
-  return { query, results, loading, search, clear };
+// ── Nominatim helpers ─────────────────────────────────────────────────────────
+function regionDisplayName(r: NominatimResult): string {
+  return r.address?.state ?? r.address?.region ?? r.display_name.split(",")[0].trim();
+}
+function districtDisplayName(r: NominatimResult): string {
+  return r.address?.county ?? r.address?.district ?? r.address?.municipality ?? r.address?.city ?? r.display_name.split(",")[0].trim();
+}
+async function nomFetch(params: Record<string, string>, acceptLang: string): Promise<NominatimResult[]> {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${new URLSearchParams(params)}`, { headers: { "Accept-Language": acceptLang } });
+    return res.ok ? (await res.json() as NominatimResult[]) : [];
+  } catch { return []; }
+}
+function mergeUnique(lists: NominatimResult[][]): NominatimResult[] {
+  const seen = new Set<number>();
+  const out: NominatimResult[] = [];
+  for (const r of lists.flat()) { if (!seen.has(r.place_id)) { seen.add(r.place_id); out.push(r); } }
+  return out;
 }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
@@ -239,38 +230,170 @@ function makeConfirmedLoc(country: Country, region: NominatimResult | null, dist
   const lng = src ? parseFloat(src.lon) : 0;
   const level: ConfirmedLoc["level"] = district ? "admin2" : region ? "admin1" : "country";
   const parts: string[] = [];
-  if (district) parts.push(district.address?.county ?? district.address?.district ?? district.address?.municipality ?? district.display_name.split(",")[0]);
-  else if (region) parts.push(region.address?.state ?? region.address?.region ?? region.display_name.split(",")[0]);
+  if (district) parts.push(districtDisplayName(district));
+  else if (region) parts.push(regionDisplayName(region));
   parts.push(country.name);
   return { uid: `${Date.now()}-${Math.random()}`, country, region, district, lat, lng, boundaryGeoJson: src?.geojson ? JSON.stringify(src.geojson) : "", level, displayName: parts.filter(Boolean).join(", ") };
+}
+
+// ── Checkbox multi-select list ────────────────────────────────────────────────
+function MultiCheckList({ items, selected, onToggle, getLabel, loading, filter, onFilter, placeholder, emptyMsg }: {
+  items: NominatimResult[]; selected: NominatimResult[];
+  onToggle: (r: NominatimResult) => void;
+  getLabel: (r: NominatimResult) => string;
+  loading: boolean; filter: string; onFilter: (v: string) => void;
+  placeholder: string; emptyMsg: string;
+}) {
+  const selectedIds = useMemo(() => new Set(selected.map(s => s.place_id)), [selected]);
+  const filtered = useMemo(
+    () => items.filter(it => getLabel(it).toLowerCase().includes(filter.toLowerCase())),
+    [items, filter, getLabel],
+  );
+
+  return (
+    <div className="space-y-1.5">
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <Input value={filter} onChange={e => onFilter(e.target.value)} placeholder={placeholder} className="pl-8 h-8 text-sm" />
+        {loading && items.length === 0 && <Loader2 className="absolute right-2.5 top-2.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+      </div>
+
+      {loading && items.length === 0 ? (
+        <div className="flex items-center gap-1.5 justify-center py-4 text-xs text-muted-foreground">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Loading…
+        </div>
+      ) : filtered.length === 0 ? (
+        <p className="text-xs text-muted-foreground px-1 py-2">{emptyMsg}</p>
+      ) : (
+        <div className="border rounded-md max-h-48 overflow-y-auto divide-y divide-border bg-card">
+          {filtered.map(item => {
+            const on = selectedIds.has(item.place_id);
+            return (
+              <button key={item.place_id} onClick={() => onToggle(item)}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-left transition-colors hover:bg-muted/50 ${on ? "bg-primary/5" : ""}`}>
+                <div className={`w-4 h-4 rounded border-2 flex-none flex items-center justify-center transition-colors ${on ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
+                  {on && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                </div>
+                <span className="flex-1 truncate">{getLabel(item)}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1 pt-0.5">
+          {selected.map(s => (
+            <span key={s.place_id} className="flex items-center gap-1 text-[11px] px-2 py-0.5 bg-primary/10 border border-primary/20 text-primary rounded-full max-w-[180px]">
+              <span className="truncate">{getLabel(s)}</span>
+              <button onClick={e => { e.stopPropagation(); onToggle(s); }} className="hover:text-destructive flex-none"><X className="w-2.5 h-2.5" /></button>
+            </span>
+          ))}
+          {selected.length > 1 && (
+            <button onClick={() => selected.forEach(s => onToggle(s))} className="text-[11px] text-muted-foreground hover:text-destructive underline self-center">clear all</button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
   confirmed: ConfirmedLoc[]; onAdd: (loc: ConfirmedLoc) => void; onRemove: (uid: string) => void; lang: string;
 }) {
-  const [country, setCountry]   = useState<Country | null>(null);
-  const [region, setRegion]     = useState<NominatimResult | null>(null);
-  const [district, setDistrict] = useState<NominatimResult | null>(null);
-  const [countryQ, setCountryQ] = useState("");
-  const regionHook   = useNominatimSearch(country?.code ?? "", "state", lang);
-  const districtHook = useNominatimSearch(country?.code ?? "", "county", lang);
-  const filteredCountries = useMemo(() => COUNTRIES.filter(c => c.name.toLowerCase().includes(countryQ.toLowerCase())), [countryQ]);
+  const [country, setCountry]               = useState<Country | null>(null);
+  const [countryQ, setCountryQ]             = useState("");
+  const [allRegions, setAllRegions]         = useState<NominatimResult[]>([]);
+  const [regionsLoading, setRegionsLoading] = useState(false);
+  const [regionFilter, setRegionFilter]     = useState("");
+  const [selRegions, setSelRegions]         = useState<NominatimResult[]>([]);
+  const [allDistricts, setAllDistricts]         = useState<NominatimResult[]>([]);
+  const [districtsLoading, setDistrictsLoading] = useState(false);
+  const [districtFilter, setDistrictFilter]     = useState("");
+  const [selDistricts, setSelDistricts]         = useState<NominatimResult[]>([]);
 
-  const addAndReset = () => {
+  const acceptLang = NOMINATIM_LANG[lang] ?? "en";
+  const filteredCountries = useMemo(
+    () => COUNTRIES.filter(c => c.name.toLowerCase().includes(countryQ.toLowerCase())),
+    [countryQ],
+  );
+
+  // Auto-load all regions when country changes
+  useEffect(() => {
+    setAllRegions([]); setSelRegions([]); setRegionFilter("");
+    setAllDistricts([]); setSelDistricts([]); setDistrictFilter("");
     if (!country) return;
-    onAdd(makeConfirmedLoc(country, region, district));
-    setRegion(null); setDistrict(null); regionHook.clear(); districtHook.clear();
+    setRegionsLoading(true);
+    const base = { format: "json", polygon_geojson: "1", addressdetails: "1", limit: "50", countrycodes: country.code };
+    Promise.all(["state", "province", "region"].map(q =>
+      nomFetch({ ...base, q }, acceptLang)
+        .then(data => data.filter(r => ["state","province","region","administrative"].includes(r.type) || r.class === "boundary"))
+    )).then(lists => {
+      setAllRegions(mergeUnique(lists).sort((a, b) => regionDisplayName(a).localeCompare(regionDisplayName(b))));
+      setRegionsLoading(false);
+    });
+  }, [country, acceptLang]);
+
+  // Auto-load districts whenever selected regions change
+  useEffect(() => {
+    setAllDistricts([]); setSelDistricts([]); setDistrictFilter("");
+    if (!selRegions.length || !country) return;
+    setDistrictsLoading(true);
+    const base = { format: "json", polygon_geojson: "1", addressdetails: "1", limit: "50", countrycodes: country.code };
+    Promise.all(selRegions.map(reg =>
+      Promise.all(["county", "district", "municipality"].map(q =>
+        nomFetch({ ...base, q: `${q} ${regionDisplayName(reg)}` }, acceptLang)
+          .then(data => data.filter(r => ["county","district","municipality","administrative","city"].includes(r.type) || r.class === "boundary"))
+      )).then(lists => lists.flat())
+    )).then(results => {
+      setAllDistricts(mergeUnique(results).sort((a, b) => districtDisplayName(a).localeCompare(districtDisplayName(b))));
+      setDistrictsLoading(false);
+    });
+  }, [selRegions, country, acceptLang]);
+
+  const toggleRegion = (r: NominatimResult) =>
+    setSelRegions(prev => prev.some(p => p.place_id === r.place_id) ? prev.filter(p => p.place_id !== r.place_id) : [...prev, r]);
+  const toggleDistrict = (d: NominatimResult) =>
+    setSelDistricts(prev => prev.some(p => p.place_id === d.place_id) ? prev.filter(p => p.place_id !== d.place_id) : [...prev, d]);
+
+  const resetCountry = () => {
+    setCountry(null); setCountryQ("");
+    setAllRegions([]); setSelRegions([]); setRegionFilter("");
+    setAllDistricts([]); setSelDistricts([]); setDistrictFilter("");
   };
 
+  const handleAdd = () => {
+    if (!country) return;
+    if (selDistricts.length > 0) {
+      selDistricts.forEach(dist => {
+        const parentRegion = selRegions.find(r => dist.display_name.toLowerCase().includes(regionDisplayName(r).toLowerCase())) ?? selRegions[0] ?? null;
+        onAdd(makeConfirmedLoc(country, parentRegion, dist));
+      });
+    } else if (selRegions.length > 0) {
+      selRegions.forEach(reg => onAdd(makeConfirmedLoc(country, reg, null)));
+    } else {
+      onAdd(makeConfirmedLoc(country, null, null));
+    }
+    setSelRegions([]); setSelDistricts([]);
+    setRegionFilter(""); setDistrictFilter("");
+  };
+
+  const addLabel = !country ? "Select a country to continue"
+    : selDistricts.length > 0 ? `Add ${selDistricts.length} district${selDistricts.length !== 1 ? "s" : ""}`
+    : selRegions.length > 0 ? `Add ${selRegions.length} region${selRegions.length !== 1 ? "s" : ""}`
+    : `Add: ${country.name} (country level)`;
+
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
+
+      {/* ── Country ── */}
       <div className="space-y-1.5">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Country</label>
         {country ? (
           <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-primary/5 border-primary/30">
             <Globe className="w-3.5 h-3.5 text-primary flex-none" />
             <span className="text-sm font-medium flex-1">{country.name}</span>
-            <button onClick={() => { setCountry(null); setRegion(null); setDistrict(null); setCountryQ(""); regionHook.clear(); districtHook.clear(); }} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+            <button onClick={resetCountry} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
           </div>
         ) : (
           <div className="space-y-1">
@@ -278,83 +401,63 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
               <Input autoFocus placeholder="Search country…" value={countryQ} onChange={e => setCountryQ(e.target.value)} className="pl-8 h-8 text-sm" />
             </div>
-            <div className="border rounded-md max-h-36 overflow-y-auto bg-card divide-y divide-border">
-              {filteredCountries.length === 0 ? <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
-                : filteredCountries.map(c => <button key={c.code} onClick={() => { setCountry(c); setCountryQ(""); }} className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">{c.name}</button>)}
+            <div className="border rounded-md max-h-44 overflow-y-auto bg-card divide-y divide-border">
+              {filteredCountries.length === 0
+                ? <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
+                : filteredCountries.map(c => (
+                  <button key={c.code} onClick={() => { setCountry(c); setCountryQ(""); }}
+                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">{c.name}</button>
+                ))}
             </div>
           </div>
         )}
       </div>
 
+      {/* ── Regions ── */}
       {country && (
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Region / State <span className="normal-case font-normal">(optional)</span></label>
-          {region ? (
-            <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-orange-50 border-orange-200">
-              <Check className="w-3.5 h-3.5 text-orange-600 flex-none" />
-              <span className="text-sm font-medium flex-1 text-orange-800">{region.address?.state ?? region.address?.region ?? region.display_name.split(",")[0]}</span>
-              <button onClick={() => { setRegion(null); setDistrict(null); regionHook.clear(); districtHook.clear(); }} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input placeholder={`Search region in ${country.name}…`} value={regionHook.query} onChange={e => regionHook.search(e.target.value)} className="pl-8 h-8 text-sm" />
-                {regionHook.loading && <Loader2 className="absolute right-2.5 top-2.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />}
-              </div>
-              {regionHook.results.length > 0 && (
-                <div className="border rounded-md max-h-32 overflow-y-auto bg-card divide-y divide-border">
-                  {regionHook.results.map(r => (
-                    <button key={r.place_id} onClick={() => { setRegion(r); regionHook.clear(); }} className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">
-                      {r.address?.state ?? r.address?.region ?? r.display_name.split(",")[0]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Region / State
+            <span className="ml-1.5 normal-case font-normal text-muted-foreground/70">optional · select multiple</span>
+          </label>
+          <MultiCheckList
+            items={allRegions} selected={selRegions} onToggle={toggleRegion}
+            getLabel={regionDisplayName} loading={regionsLoading}
+            filter={regionFilter} onFilter={setRegionFilter}
+            placeholder={`Filter regions in ${country.name}…`}
+            emptyMsg={regionsLoading ? "Loading…" : "No regions found — try adding the country level instead"}
+          />
         </div>
       )}
 
-      {region && (
+      {/* ── Districts ── */}
+      {selRegions.length > 0 && (
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">District / LGA <span className="normal-case font-normal">(optional)</span></label>
-          {district ? (
-            <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-emerald-50 border-emerald-200">
-              <Check className="w-3.5 h-3.5 text-emerald-600 flex-none" />
-              <span className="text-sm font-medium flex-1 text-emerald-800">{district.address?.county ?? district.address?.district ?? district.address?.municipality ?? district.display_name.split(",")[0]}</span>
-              <button onClick={() => { setDistrict(null); districtHook.clear(); }} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input placeholder={`Search district in ${region.address?.state ?? country?.name}…`} value={districtHook.query} onChange={e => districtHook.search(e.target.value)} className="pl-8 h-8 text-sm" />
-                {districtHook.loading && <Loader2 className="absolute right-2.5 top-2.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />}
-              </div>
-              {districtHook.results.length > 0 && (
-                <div className="border rounded-md max-h-32 overflow-y-auto bg-card divide-y divide-border">
-                  {districtHook.results.map(r => (
-                    <button key={r.place_id} onClick={() => { setDistrict(r); districtHook.clear(); }} className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">
-                      {r.address?.county ?? r.address?.district ?? r.address?.municipality ?? r.display_name.split(",")[0]}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            District / LGA
+            <span className="ml-1.5 normal-case font-normal text-muted-foreground/70">optional · select multiple</span>
+          </label>
+          <MultiCheckList
+            items={allDistricts} selected={selDistricts} onToggle={toggleDistrict}
+            getLabel={districtDisplayName} loading={districtsLoading}
+            filter={districtFilter} onFilter={setDistrictFilter}
+            placeholder="Filter districts…"
+            emptyMsg={districtsLoading ? "Loading…" : "No districts found for selected region(s)"}
+          />
         </div>
       )}
 
-      <Button size="sm" variant="outline" disabled={!country} onClick={addAndReset} className="w-full gap-1.5 border-dashed">
-        <Plus className="w-3.5 h-3.5" />
-        {country ? `Add: ${district ? (district.address?.county ?? district.address?.district ?? district.display_name.split(",")[0]) : region ? (region.address?.state ?? region.address?.region ?? region.display_name.split(",")[0]) : country.name}` : "Select a country to add"}
+      {/* ── Add button ── */}
+      <Button size="sm" variant="outline" disabled={!country} onClick={handleAdd}
+        className="w-full gap-1.5 border-dashed">
+        <Plus className="w-3.5 h-3.5" /> {addLabel}
       </Button>
 
+      {/* ── Confirmed list ── */}
       {confirmed.length > 0 && (
-        <div className="pt-1 space-y-1.5">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Selected ({confirmed.length})</p>
+        <div className="pt-1 space-y-1.5 border-t">
+          <div className="flex items-center justify-between pt-1">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Added ({confirmed.length})</p>
             <button onClick={() => confirmed.forEach(l => onRemove(l.uid))} className="text-[11px] text-muted-foreground hover:text-destructive underline">Clear all</button>
           </div>
           <div className="space-y-1 max-h-40 overflow-y-auto pr-0.5">
