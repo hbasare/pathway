@@ -11,6 +11,7 @@ import theoriesRouter from "./theories";
 import businessModelRouter from "./business-model";
 import systemicChangeRouter from "./systemic-change";
 import locationsRouter from "./locations";
+import marketSystemsRouter from "./market-systems";
 import storageRouter from "./storage";
 import theoryDocumentsRouter from "./theory-documents";
 
@@ -67,6 +68,7 @@ router.use(theoriesRouter);
 router.use(businessModelRouter);
 router.use(systemicChangeRouter);
 router.use(locationsRouter);
+router.use(marketSystemsRouter);
 router.use(theoryDocumentsRouter);
 
 export default router;

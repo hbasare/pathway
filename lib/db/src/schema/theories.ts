@@ -296,6 +296,43 @@ export const insertTheoryLocationSchema = createInsertSchema(theoryLocationsTabl
 export type InsertTheoryLocation = z.infer<typeof insertTheoryLocationSchema>;
 export type TheoryLocation = typeof theoryLocationsTable.$inferSelect;
 
+// ─── Market System Analysis (M4P Doughnut) ────────────────────────────────────
+export const marketSystemsTable = pgTable("market_systems", {
+  id:          serial("id").primaryKey(),
+  theoryId:    integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  title:       text("title").notNull().default(""),
+  description: text("description").notNull().default(""),
+  marketFocus: text("market_focus").notNull().default(""),
+  color:       text("color").notNull().default("#6366f1"),
+  position:    integer("position").notNull().default(0),
+  createdAt:   timestamp("created_at").notNull().defaultNow(),
+  updatedAt:   timestamp("updated_at").notNull().defaultNow(),
+});
+export const insertMarketSystemSchema = createInsertSchema(marketSystemsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertMarketSystem = z.infer<typeof insertMarketSystemSchema>;
+export type MarketSystem = typeof marketSystemsTable.$inferSelect;
+
+export const marketSystemElementsTable = pgTable("market_system_elements", {
+  id:                    serial("id").primaryKey(),
+  marketSystemId:        integer("market_system_id").notNull().references(() => marketSystemsTable.id, { onDelete: "cascade" }),
+  theoryId:              integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  ring:                  text("ring").notNull().default("supporting"),   // 'core' | 'supporting' | 'rules'
+  category:              text("category").notNull().default(""),          // core: 'demand'|'supply'; supporting: free text; rules: 'formal'|'informal'
+  title:                 text("title").notNull().default(""),
+  description:           text("description").notNull().default(""),
+  actors:                text("actors").notNull().default(""),
+  constraints:           text("constraints").notNull().default(""),
+  opportunities:         text("opportunities").notNull().default(""),
+  color:                 text("color").notNull().default(""),
+  position:              integer("position").notNull().default(0),
+  linkedMarketSystemId:  integer("linked_market_system_id"),
+  createdAt:             timestamp("created_at").notNull().defaultNow(),
+  updatedAt:             timestamp("updated_at").notNull().defaultNow(),
+});
+export const insertMarketSystemElementSchema = createInsertSchema(marketSystemElementsTable).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertMarketSystemElement = z.infer<typeof insertMarketSystemElementSchema>;
+export type MarketSystemElement = typeof marketSystemElementsTable.$inferSelect;
+
 // ─── Theory Assignments ────────────────────────────────────────────────────────
 // Maps team members (role: "member") to the specific theories they manage.
 // Members can edit only their assigned theories; all others are view-only.
