@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   MapPin, Plus, Trash2, Loader2, Search, Globe,
   Check, Navigation, Target, TrendingUp, Pencil, X,
-  ChevronDown,
+  ChevronDown, Printer,
 } from "lucide-react";
 import type { Theory } from "@workspace/api-client-react";
 
@@ -25,7 +25,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// ── Language-aware tile layers (OSM standard = "more detailed") ───────────────
+// ── Tile layers ───────────────────────────────────────────────────────────────
 const TILE_LAYERS: Record<string, { url: string; subdomains?: string; attribution: string }> = {
   default: {
     url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -43,7 +43,7 @@ const NOMINATIM_LANG: Record<string, string> = {
   it: "it", nl: "nl", sw: "sw,en", ha: "ha,en", af: "af,en",
 };
 
-// ── Visual marker icons (map pin appearance only) ─────────────────────────────
+// ── Visual marker icons ───────────────────────────────────────────────────────
 const MARKER_ICONS = [
   { id: "general",        emoji: "📍", label: "General" },
   { id: "education",      emoji: "🏫", label: "Education" },
@@ -88,9 +88,8 @@ interface ConfirmedLoc {
   displayName: string;
 }
 interface MeasurementIndicator {
-  id: number;
-  name: string;
-  targetFigure: string;
+  id: number; name: string;
+  targetFigure: string; actualFigure: string;
   componentName: string;
 }
 
@@ -143,15 +142,18 @@ const COUNTRIES: Country[] = [
   { name: "Zambia", code: "zm" }, { name: "Zimbabwe", code: "zw" },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
-// ── Beneficiary parsing (from About → Beneficiaries & Partners text) ──────────
-function parseBeneficiaries(text: string): string[] {
-  return text
-    .split(/[\n;|]/)
-    .map(s => s.replace(/^[-–•*\d.)]\s*/, "").trim())
-    .filter(s => s.length > 2);
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function shortNameStr(loc: LocationRecord) {
+  if (loc.adminLevel2) return loc.adminLevel2;
+  if (loc.adminLevel1) return loc.adminLevel1;
+  return loc.country;
 }
-
-// Combine all beneficiary/partner fields from the theory
+function escHtml(s: string) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function parseBeneficiaries(text: string): string[] {
+  return text.split(/[\n;|]/).map(s => s.replace(/^[-–•*\d.)]\s*/, "").trim()).filter(s => s.length > 2);
+}
 function theoryBeneficiaries(theory: Theory): string[] {
   const combined = [
     theory.targetBeneficiary ?? "",
@@ -159,20 +161,14 @@ function theoryBeneficiaries(theory: Theory): string[] {
     theory.publicSectorPartners ?? "",
     theory.serviceProviders ?? "",
   ].join("\n");
-  const items = parseBeneficiaries(combined);
-  return [...new Set(items)];  // deduplicate
+  return [...new Set(parseBeneficiaries(combined))];
 }
 
 // ── Map helpers ───────────────────────────────────────────────────────────────
 function makeIcon(emoji: string, color: string) {
   return L.divIcon({
     className: "",
-    html: `<div style="
-      width:36px;height:36px;border-radius:50% 50% 50% 0;
-      background:${color};transform:rotate(-45deg);
-      display:flex;align-items:center;justify-content:center;
-      box-shadow:0 2px 8px rgba(0,0,0,.3);border:2.5px solid rgba(255,255,255,.95);
-    "><span style="transform:rotate(45deg);font-size:15px;line-height:1">${emoji}</span></div>`,
+    html: `<div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:${color};transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);border:2.5px solid rgba(255,255,255,.95)"><span style="transform:rotate(45deg);font-size:15px;line-height:1">${emoji}</span></div>`,
     iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -38],
   });
 }
@@ -227,27 +223,145 @@ function useNominatimSearch(countryCode: string, featureType: "state" | "county"
   return { query, results, loading, search, clear };
 }
 
-// ── Sidebar helpers ───────────────────────────────────────────────────────────
-function shortName(loc: LocationRecord) {
-  if (loc.adminLevel2) return loc.adminLevel2;
-  if (loc.adminLevel1) return loc.adminLevel1;
-  return loc.country;
-}
+// ── UI helpers ────────────────────────────────────────────────────────────────
 function LevelBadge({ level }: { level: string }) {
   const map: Record<string, { label: string; cls: string }> = {
-    country: { label: "Country",        cls: "bg-indigo-100 text-indigo-700 border-indigo-200" },
-    admin1:  { label: "Region / State", cls: "bg-orange-100 text-orange-700 border-orange-200" },
-    admin2:  { label: "District / LGA", cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    country: { label: "Country",         cls: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+    admin1:  { label: "Region / State",  cls: "bg-orange-100 text-orange-700 border-orange-200" },
+    admin2:  { label: "District / LGA",  cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
   };
   const d = map[level] ?? { label: level, cls: "bg-muted text-muted-foreground border-border" };
   return <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${d.cls}`}>{d.label}</span>;
 }
 
-// ── Location Picker (multi-add) ───────────────────────────────────────────────
+// ── Shared: fetch indicators from measurement plan ────────────────────────────
+async function fetchIndicators(theoryId: number): Promise<MeasurementIndicator[]> {
+  try {
+    const res = await fetch(`${API_BASE}/theories/${theoryId}`, { credentials: "include" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list: MeasurementIndicator[] = [];
+    for (const comp of (data.components ?? [])) {
+      for (const ind of (comp.componentIndicators ?? [])) {
+        if (ind.name?.trim()) {
+          list.push({ id: ind.id, name: ind.name, targetFigure: ind.targetFigure ?? "", actualFigure: ind.actualFigure ?? "", componentName: comp.title ?? comp.name ?? "" });
+        }
+      }
+    }
+    return list;
+  } catch { return []; }
+}
+
+// ── Single indicator selector (for one field) ─────────────────────────────────
+function IndSelect({ label, icon: Icon, indicators, selectedId, onSelect, manualValue, onManualChange, fieldKey, disabled }: {
+  label: string;
+  icon: React.FC<{ className?: string }>;
+  indicators: MeasurementIndicator[];
+  selectedId: number | null;
+  onSelect: (id: number | null) => void;
+  manualValue: string;
+  onManualChange: (v: string) => void;
+  fieldKey: "targetFigure" | "actualFigure";
+  disabled?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const sel = indicators.find(i => i.id === selectedId);
+  const displayVal = sel ? sel[fieldKey] : manualValue;
+
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</label>
+      {indicators.length > 0 && (
+        <div className="relative mb-1.5">
+          <button onClick={() => !disabled && setOpen(o => !o)} disabled={disabled}
+            className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 border rounded-md text-xs bg-card hover:bg-muted/40 transition-colors disabled:opacity-50">
+            {sel ? (
+              <span className="flex-1 text-left truncate font-medium text-primary">{sel.name}<span className="text-muted-foreground font-normal ml-1">({sel[fieldKey] || "no value"})</span></span>
+            ) : (
+              <span className="text-muted-foreground flex-1 text-left">From measurement plan…</span>
+            )}
+            <div className="flex items-center gap-1">
+              {sel && <button onClick={e => { e.stopPropagation(); onSelect(null); }} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>}
+              <ChevronDown className="w-3 h-3 text-muted-foreground flex-none" />
+            </div>
+          </button>
+          {open && (
+            <div className="absolute z-10 top-full left-0 right-0 mt-0.5 border rounded-md bg-card shadow-md max-h-44 overflow-y-auto divide-y divide-border">
+              <button onClick={() => { onSelect(null); setOpen(false); }} className="w-full text-left px-3 py-2 text-xs text-muted-foreground hover:bg-muted/60">— None —</button>
+              {indicators.map(ind => (
+                <button key={ind.id} onClick={() => { onSelect(ind.id); setOpen(false); }}
+                  className={`w-full text-left px-3 py-2 hover:bg-muted/60 ${ind.id === selectedId ? "bg-primary/5 font-medium text-primary" : ""}`}>
+                  <span className="block text-xs truncate">{ind.name}</span>
+                  <span className="text-[10px] text-muted-foreground">{ind.componentName}{ind[fieldKey] ? ` · ${fieldKey === "targetFigure" ? "Target" : "Actual"}: ${ind[fieldKey]}` : " · no value"}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="relative">
+        <Icon className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <Input value={displayVal} onChange={e => { if (!sel) onManualChange(e.target.value); }}
+          readOnly={!!sel} placeholder="e.g. 5,000"
+          className={`pl-8 h-9 text-sm ${sel ? "bg-muted/40 text-muted-foreground" : ""}`} />
+      </div>
+      {sel && <p className="text-[10px] text-muted-foreground pl-1">Linked to measurement plan — click × above to override.</p>}
+    </div>
+  );
+}
+
+// ── Beneficiary picker ────────────────────────────────────────────────────────
+function BeneficiaryPicker({ allBeneficiaries, selected, onChange }: {
+  allBeneficiaries: string[]; selected: string[]; onChange: (s: string[]) => void;
+}) {
+  const toggle = (b: string) => onChange(selected.includes(b) ? selected.filter(s => s !== b) : [...selected, b]);
+  if (allBeneficiaries.length === 0) return (
+    <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 text-center text-xs text-muted-foreground space-y-1">
+      <p className="font-medium">No beneficiaries defined yet</p>
+      <p>Go to <span className="font-semibold">About → Beneficiaries &amp; Partners</span> and fill in the Target Beneficiary Group. Entries will appear here.</p>
+    </div>
+  );
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">Select the groups from the About section that this location serves.</p>
+      <div className="flex flex-wrap gap-2">
+        {allBeneficiaries.map(b => {
+          const on = selected.includes(b);
+          return (
+            <button key={b} onClick={() => toggle(b)}
+              className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${on ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"}`}>
+              {b}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ── Marker picker ─────────────────────────────────────────────────────────────
+function MarkerPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  return (
+    <div>
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">Map Marker Style</label>
+      <div className="grid grid-cols-6 gap-1">
+        {MARKER_ICONS.map(ic => (
+          <button key={ic.id} onClick={() => onChange(ic.id)} title={ic.label}
+            className={`flex flex-col items-center gap-0.5 py-2 rounded-lg border text-[10px] transition-all ${value === ic.id ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border hover:bg-muted/60 text-muted-foreground"}`}>
+            <span className="text-lg leading-none">{ic.emoji}</span>
+            <span className="leading-tight">{ic.label.split(" ")[0]}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Location picker (multi-add) ───────────────────────────────────────────────
 function makeConfirmedLoc(country: Country, region: NominatimResult | null, district: NominatimResult | null): ConfirmedLoc {
-  const src  = district ?? region;
-  const lat  = src ? parseFloat(src.lat) : 0;
-  const lng  = src ? parseFloat(src.lon) : 0;
+  const src = district ?? region;
+  const lat = src ? parseFloat(src.lat) : 0;
+  const lng = src ? parseFloat(src.lon) : 0;
   const level: ConfirmedLoc["level"] = district ? "admin2" : region ? "admin1" : "country";
   const parts: string[] = [];
   if (district) parts.push(district.address?.county ?? district.address?.district ?? district.address?.municipality ?? district.display_name.split(",")[0]);
@@ -257,34 +371,24 @@ function makeConfirmedLoc(country: Country, region: NominatimResult | null, dist
 }
 
 function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
-  confirmed: ConfirmedLoc[];
-  onAdd: (loc: ConfirmedLoc) => void;
-  onRemove: (uid: string) => void;
-  lang: string;
+  confirmed: ConfirmedLoc[]; onAdd: (loc: ConfirmedLoc) => void; onRemove: (uid: string) => void; lang: string;
 }) {
   const [country, setCountry]   = useState<Country | null>(null);
   const [region, setRegion]     = useState<NominatimResult | null>(null);
   const [district, setDistrict] = useState<NominatimResult | null>(null);
   const [countryQ, setCountryQ] = useState("");
-
   const regionHook   = useNominatimSearch(country?.code ?? "", "state", lang);
   const districtHook = useNominatimSearch(country?.code ?? "", "county", lang);
-
-  const filteredCountries = useMemo(
-    () => COUNTRIES.filter(c => c.name.toLowerCase().includes(countryQ.toLowerCase())),
-    [countryQ],
-  );
+  const filteredCountries = useMemo(() => COUNTRIES.filter(c => c.name.toLowerCase().includes(countryQ.toLowerCase())), [countryQ]);
 
   const addAndReset = () => {
     if (!country) return;
     onAdd(makeConfirmedLoc(country, region, district));
-    setRegion(null); setDistrict(null);
-    regionHook.clear(); districtHook.clear();
+    setRegion(null); setDistrict(null); regionHook.clear(); districtHook.clear();
   };
 
   return (
     <div className="space-y-3">
-      {/* Country */}
       <div className="space-y-1.5">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Country</label>
         {country ? (
@@ -301,16 +405,12 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
             </div>
             <div className="border rounded-md max-h-36 overflow-y-auto bg-card divide-y divide-border">
               {filteredCountries.length === 0 ? <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
-                : filteredCountries.map(c => (
-                  <button key={c.code} onClick={() => { setCountry(c); setCountryQ(""); }} className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">{c.name}</button>
-                ))
-              }
+                : filteredCountries.map(c => <button key={c.code} onClick={() => { setCountry(c); setCountryQ(""); }} className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">{c.name}</button>)}
             </div>
           </div>
         )}
       </div>
 
-      {/* Region */}
       {country && (
         <div className="space-y-1.5">
           <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Region / State <span className="normal-case font-normal">(optional)</span></label>
@@ -341,7 +441,6 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
         </div>
       )}
 
-      {/* District */}
       {region && (
         <div className="space-y-1.5">
           <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">District / LGA <span className="normal-case font-normal">(optional)</span></label>
@@ -399,178 +498,176 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
   );
 }
 
-// ── Beneficiary Picker ────────────────────────────────────────────────────────
-function BeneficiaryPicker({ allBeneficiaries, selected, onChange }: {
-  allBeneficiaries: string[];
-  selected: string[];
-  onChange: (s: string[]) => void;
-}) {
-  const toggle = (b: string) =>
-    onChange(selected.includes(b) ? selected.filter(s => s !== b) : [...selected, b]);
+// ── Print ─────────────────────────────────────────────────────────────────────
+const PRINT_SECTIONS = [
+  { id: "map",           label: "Map",               desc: "OpenStreetMap showing all location boundaries" },
+  { id: "locations",     label: "Location list",     desc: "Table of all locations with coordinates" },
+  { id: "beneficiaries", label: "Beneficiary groups", desc: "Which groups each location serves" },
+  { id: "figures",       label: "Target & Actual",   desc: "Figures table per location" },
+] as const;
 
-  if (allBeneficiaries.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 text-center text-xs text-muted-foreground space-y-1">
-        <p className="font-medium">No beneficiaries defined yet</p>
-        <p>Go to the <span className="font-semibold">About</span> tab → <span className="font-semibold">Beneficiaries &amp; Partners</span> and fill in the Target Beneficiary Group field. Those entries will appear here.</p>
-      </div>
-    );
-  }
-  return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">Select the groups from the About section that this location serves.</p>
-      <div className="flex flex-wrap gap-2">
-        {allBeneficiaries.map(b => {
-          const on = selected.includes(b);
-          return (
-            <button
-              key={b}
-              onClick={() => toggle(b)}
-              className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${
-                on ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
-              }`}
-            >
-              {b}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+function generatePrintHtml(locations: LocationRecord[], sections: Set<string>, theoryName: string): string {
+  const css = `
+body{font-family:system-ui,-apple-system,sans-serif;margin:0;padding:32px;color:#111;line-height:1.5}
+h1{font-size:22px;font-weight:700;margin:0 0 2px}
+.meta{color:#6b7280;font-size:12px;margin-bottom:24px}
+h2{font-size:15px;font-weight:600;margin:28px 0 10px;padding-bottom:5px;border-bottom:2px solid #e5e7eb}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:8px}
+th{padding:7px 10px;text-align:left;border-bottom:2px solid #e5e7eb;font-weight:600;color:#374151;white-space:nowrap}
+td{padding:6px 10px;border-bottom:1px solid #f3f4f6;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.bc{background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe}
+.br{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.bd{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.badge{display:inline-block;padding:1px 7px;border-radius:9999px;font-size:10px;font-weight:600}
+.chip{display:inline-block;padding:1px 7px;border-radius:9999px;border:1px solid #c7d2fe;color:#4f46e5;font-size:10px;margin:1px 2px 1px 0}
+.t{color:#1d4ed8;font-weight:700}
+.a{color:#15803d;font-weight:700}
+.dim{color:#9ca3af}
+.mono{font-family:monospace;font-size:10px}
+iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;display:block;margin-bottom:6px}
+.map-note{font-size:10px;color:#9ca3af;margin-bottom:4px}
+@media print{
+  body{padding:12px}
+  iframe{height:350px;page-break-after:always}
+  table{page-break-inside:auto}
+  tr{page-break-inside:avoid}
+  h2{page-break-after:avoid}
+}`;
 
-// ── Indicator Picker (from measurement plan) ──────────────────────────────────
-function IndicatorDropdown({ indicators, selectedId, onSelect, manualFigure, onManualChange }: {
-  indicators: MeasurementIndicator[];
-  selectedId: number | null;
-  onSelect: (ind: MeasurementIndicator | null) => void;
-  manualFigure: string;
-  onManualChange: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const sel = indicators.find(i => i.id === selectedId);
+  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${escHtml(theoryName || "Pathways")} — Locations</title><style>${css}</style></head><body>`;
+  html += `<h1>${escHtml(theoryName || "Theory of Change")}</h1><p class="meta">Locations · ${new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })} · ${locations.length} location${locations.length !== 1 ? "s" : ""}</p>`;
 
-  return (
-    <div className="space-y-2">
-      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target (from Measurement Plan)</label>
-      {indicators.length === 0 ? (
-        <p className="text-xs text-muted-foreground italic">No indicators found in the Measurement Plan for this theory.</p>
-      ) : (
-        <div className="relative">
-          <button
-            onClick={() => setOpen(o => !o)}
-            className="w-full flex items-center justify-between gap-2 px-3 py-2 border rounded-md text-sm bg-card hover:bg-muted/40 transition-colors"
-          >
-            {sel ? (
-              <span className="flex-1 text-left truncate">
-                <span className="font-medium">{sel.name}</span>
-                {sel.targetFigure && <span className="ml-2 text-muted-foreground text-xs">({sel.targetFigure})</span>}
-              </span>
-            ) : (
-              <span className="text-muted-foreground flex-1 text-left">Select an indicator…</span>
-            )}
-            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-none" />
-          </button>
-          {open && (
-            <div className="absolute z-10 top-full left-0 right-0 mt-1 border rounded-md bg-card shadow-md max-h-48 overflow-y-auto divide-y divide-border">
-              <button onClick={() => { onSelect(null); setOpen(false); }} className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-muted/60">
-                — None —
-              </button>
-              {indicators.map(ind => (
-                <button key={ind.id} onClick={() => { onSelect(ind); setOpen(false); }}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 ${ind.id === selectedId ? "bg-primary/5 font-medium text-primary" : ""}`}>
-                  <span className="block truncate">{ind.name}</span>
-                  <span className="text-[10px] text-muted-foreground">{ind.componentName}{ind.targetFigure ? ` · Target: ${ind.targetFigure}` : ""}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target figure</label>
-          <div className="relative">
-            <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <Input value={sel?.targetFigure ?? manualFigure} onChange={e => onManualChange(e.target.value)}
-              disabled={!!sel} placeholder="e.g. 5,000" className="pl-8 h-9 text-sm" />
-          </div>
-          {sel && <p className="text-[10px] text-muted-foreground pl-1">From measurement plan — deselect indicator to override.</p>}
-        </div>
-        <div className="space-y-1">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual figure</label>
-          <div className="relative">
-            <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-            <Input value={sel?.targetFigure ? "" : undefined} placeholder="e.g. 3,812" className="pl-8 h-9 text-sm" readOnly={false} id="actual-figure-add" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ── Marker icon picker ────────────────────────────────────────────────────────
-function MarkerPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
-  return (
-    <div>
-      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">Map Marker Style</label>
-      <div className="grid grid-cols-6 gap-1">
-        {MARKER_ICONS.map(ic => (
-          <button key={ic.id} onClick={() => onChange(ic.id)} title={ic.label}
-            className={`flex flex-col items-center gap-0.5 py-2 rounded-lg border text-[10px] transition-all ${value === ic.id ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border hover:bg-muted/60 text-muted-foreground"}`}>
-            <span className="text-lg leading-none">{ic.emoji}</span>
-            <span className="leading-tight">{ic.label.split(" ")[0]}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ── Shared: fetch measurement indicators for a theory ─────────────────────────
-async function fetchIndicators(theoryId: number): Promise<MeasurementIndicator[]> {
-  try {
-    const res = await fetch(`${API_BASE}/theories/${theoryId}`, { credentials: "include" });
-    if (!res.ok) return [];
-    const data = await res.json();
-    const list: MeasurementIndicator[] = [];
-    for (const comp of (data.components ?? [])) {
-      for (const ind of (comp.componentIndicators ?? [])) {
-        if (ind.name?.trim()) {
-          list.push({ id: ind.id, name: ind.name, targetFigure: ind.targetFigure ?? "", componentName: comp.title ?? comp.name ?? "" });
-        }
-      }
+  if (sections.has("map") && locations.length > 0) {
+    const lats = locations.filter(l => l.lat != null).map(l => l.lat as number);
+    const lngs = locations.filter(l => l.lng != null).map(l => l.lng as number);
+    if (lats.length) {
+      const pad = 3;
+      const bbox = `${Math.min(...lngs) - pad},${Math.min(...lats) - pad},${Math.max(...lngs) + pad},${Math.max(...lats) + pad}`;
+      html += `<h2>Map</h2><iframe src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&amp;layer=mapnik" loading="eager"></iframe><p class="map-note">Interactive map: open in the Pathways application for full functionality.</p>`;
     }
-    return list;
-  } catch { return []; }
+  }
+
+  if (sections.has("locations")) {
+    const levelLabel: Record<string, string> = { country: "Country", admin1: "Region", admin2: "District" };
+    const levelCls:   Record<string, string> = { country: "bc", admin1: "br", admin2: "bd" };
+    html += `<h2>Locations (${locations.length})</h2><table><tr><th>Location</th><th>Level</th><th>Region / State</th><th>Country</th><th>Coordinates</th></tr>`;
+    locations.forEach(loc => {
+      const region = loc.adminLevel2 || loc.adminLevel1 || "—";
+      html += `<tr>
+<td style="font-weight:600">${escHtml(shortNameStr(loc))}</td>
+<td><span class="badge ${levelCls[loc.level] ?? "bc"}">${levelLabel[loc.level] ?? loc.level}</span></td>
+<td class="dim">${escHtml(region)}</td>
+<td>${escHtml(loc.country)}</td>
+<td class="mono dim">${loc.lat != null ? loc.lat.toFixed(4) : "—"}, ${loc.lng != null ? loc.lng.toFixed(4) : "—"}</td>
+</tr>`;
+    });
+    html += `</table>`;
+  }
+
+  if (sections.has("beneficiaries")) {
+    html += `<h2>Beneficiary Groups by Location</h2><table><tr><th>Location</th><th>Groups</th></tr>`;
+    locations.forEach(loc => {
+      const groups = loc.figureLabel ? loc.figureLabel.split(";").map(s => s.trim()).filter(Boolean) : [];
+      html += `<tr><td style="font-weight:600">${escHtml(shortNameStr(loc))}</td><td>${groups.length ? groups.map(g => `<span class="chip">${escHtml(g)}</span>`).join("") : '<span class="dim">—</span>'}</td></tr>`;
+    });
+    html += `</table>`;
+  }
+
+  if (sections.has("figures")) {
+    html += `<h2>Target &amp; Actual Figures</h2><table><tr><th>Location</th><th>Target</th><th>Actual</th></tr>`;
+    locations.forEach(loc => {
+      html += `<tr><td style="font-weight:600">${escHtml(shortNameStr(loc))}</td><td class="t">${escHtml(loc.targetFigure || "—")}</td><td class="a">${escHtml(loc.actualFigure || "—")}</td></tr>`;
+    });
+    html += `</table>`;
+  }
+
+  html += `<script>window.addEventListener("load",function(){setTimeout(function(){window.print();},800);});</script></body></html>`;
+  return html;
 }
 
-// ── Add Location Dialog ───────────────────────────────────────────────────────
-function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
+function PrintDialog({ open, onClose, locations, theoryName }: {
   open: boolean; onClose: () => void;
-  theory: Theory; onSaved: (locs: LocationRecord[]) => void; lang: string;
+  locations: LocationRecord[]; theoryName: string;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(["map", "locations", "beneficiaries", "figures"]));
+  const toggle = (id: string) => setSelected(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+
+  const doPrint = () => {
+    const html = generatePrintHtml(locations, selected, theoryName);
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-sm p-0">
+        <DialogHeader className="px-5 pt-4 pb-3 border-b">
+          <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Printer className="w-4 h-4 text-primary" /> Print Locations
+          </DialogTitle>
+        </DialogHeader>
+        <div className="px-5 py-4 space-y-3">
+          <p className="text-xs text-muted-foreground">Choose which sections to include in the printable document.</p>
+          <div className="space-y-1">
+            {PRINT_SECTIONS.map(s => {
+              const on = selected.has(s.id);
+              return (
+                <label key={s.id} className={`flex items-start gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${on ? "bg-primary/5 border border-primary/20" : "border border-transparent hover:bg-muted/50"}`}>
+                  <div className={`mt-0.5 w-4 h-4 rounded border-2 flex-none flex items-center justify-center transition-colors ${on ? "bg-primary border-primary" : "border-muted-foreground/40"}`}>
+                    {on && <Check className="w-2.5 h-2.5 text-primary-foreground" />}
+                  </div>
+                  <input type="checkbox" className="sr-only" checked={on} onChange={() => toggle(s.id)} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium leading-tight">{s.label}</p>
+                    <p className="text-[11px] text-muted-foreground">{s.desc}</p>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+          {locations.length === 0 && <p className="text-xs text-amber-600 bg-amber-50 rounded px-3 py-2 border border-amber-200">No locations saved yet — add some first.</p>}
+        </div>
+        <div className="px-5 py-3 border-t flex justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" disabled={selected.size === 0 || locations.length === 0} onClick={doPrint} className="gap-1.5">
+            <Printer className="w-3.5 h-3.5" /> Open Print Preview
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Add location dialog ───────────────────────────────────────────────────────
+function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
+  open: boolean; onClose: () => void; theory: Theory;
+  onSaved: (locs: LocationRecord[]) => void; lang: string;
 }) {
   const { toast } = useToast();
   const [confirmed, setConfirmed]   = useState<ConfirmedLoc[]>([]);
   const [benef, setBenef]           = useState<string[]>([]);
   const [icon, setIcon]             = useState("general");
   const [indicators, setIndicators] = useState<MeasurementIndicator[]>([]);
-  const [selIndId, setSelIndId]     = useState<number | null>(null);
+  const [selTargetId, setSelTargetId] = useState<number | null>(null);
+  const [selActualId, setSelActualId] = useState<number | null>(null);
   const [manualTarget, setManualTarget] = useState("");
-  const [actualFigure, setActualFigure] = useState("");
-  const [saving, setSaving]         = useState(false);
-  const [tab, setTab]               = useState<"locations" | "beneficiaries" | "target">("locations");
+  const [manualActual, setManualActual] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [tab, setTab]       = useState<"locations" | "beneficiaries" | "target">("locations");
 
   const allBenef = useMemo(() => theoryBeneficiaries(theory), [theory]);
-  const selInd   = indicators.find(i => i.id === selIndId) ?? null;
+  const selTargetInd = indicators.find(i => i.id === selTargetId);
+  const selActualInd = indicators.find(i => i.id === selActualId);
 
-  useEffect(() => {
-    if (open) fetchIndicators(theory.id).then(setIndicators);
-  }, [open, theory.id]);
+  useEffect(() => { if (open) fetchIndicators(theory.id).then(setIndicators); }, [open, theory.id]);
 
   const resetAll = () => {
     setConfirmed([]); setBenef([]); setIcon("general");
-    setSelIndId(null); setManualTarget(""); setActualFigure(""); setTab("locations");
+    setSelTargetId(null); setSelActualId(null); setManualTarget(""); setManualActual(""); setTab("locations");
   };
   const handleClose = () => { resetAll(); onClose(); };
 
@@ -578,13 +675,13 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
     if (!confirmed.length) return;
     setSaving(true);
     const figureLabel  = benef.join("; ");
-    const targetFigure = selInd?.targetFigure ?? manualTarget;
+    const targetFigure = selTargetInd?.targetFigure ?? manualTarget;
+    const actualFigure = selActualInd?.actualFigure ?? manualActual;
     const created: LocationRecord[] = [];
     try {
       for (const loc of confirmed) {
         const body = {
-          displayName: loc.displayName, country: loc.country.name,
-          countryCode: loc.country.code.toUpperCase(),
+          displayName: loc.displayName, country: loc.country.name, countryCode: loc.country.code.toUpperCase(),
           adminLevel1: loc.region?.address?.state ?? loc.region?.address?.region ?? "",
           adminLevel2: loc.district?.address?.county ?? loc.district?.address?.district ?? loc.district?.address?.municipality ?? "",
           lat: loc.lat, lng: loc.lng, boundaryGeoJson: loc.boundaryGeoJson,
@@ -605,13 +702,11 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
     } finally { setSaving(false); }
   };
 
-  const Tab = ({ id, label, badge }: { id: typeof tab; label: string; badge?: number }) => (
+  const TabBtn = ({ id, label, badge }: { id: typeof tab; label: string; badge?: number }) => (
     <button onClick={() => setTab(id)}
       className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${tab === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
       {label}
-      {badge !== undefined && badge > 0 && (
-        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${tab === id ? "bg-white/20 text-white" : "bg-muted"}`}>{badge}</span>
-      )}
+      {badge != null && badge > 0 && <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${tab === id ? "bg-white/20 text-white" : "bg-muted"}`}>{badge}</span>}
     </button>
   );
 
@@ -623,9 +718,9 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
             <MapPin className="w-4 h-4 text-primary flex-none" /> Add Intervention Locations
           </DialogTitle>
           <div className="flex gap-1 mt-2">
-            <Tab id="locations"     label="Locations"     badge={confirmed.length} />
-            <Tab id="beneficiaries" label="Beneficiaries" badge={benef.length || undefined} />
-            <Tab id="target"        label="Target & Actual" />
+            <TabBtn id="locations"     label="Locations"      badge={confirmed.length} />
+            <TabBtn id="beneficiaries" label="Beneficiaries"  badge={benef.length || undefined} />
+            <TabBtn id="target"        label="Target &amp; Actual" />
           </div>
         </DialogHeader>
 
@@ -636,31 +731,21 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
               onRemove={uid => setConfirmed(p => p.filter(l => l.uid !== uid))}
               lang={lang} />
           )}
-
           {tab === "beneficiaries" && (
             <div className="space-y-5">
               <BeneficiaryPicker allBeneficiaries={allBenef} selected={benef} onChange={setBenef} />
-              <div className="border-t pt-4">
-                <MarkerPicker value={icon} onChange={setIcon} />
-              </div>
+              <div className="border-t pt-4"><MarkerPicker value={icon} onChange={setIcon} /></div>
             </div>
           )}
-
           {tab === "target" && (
-            <div className="space-y-4">
-              <IndicatorDropdown
-                indicators={indicators}
-                selectedId={selIndId}
-                onSelect={ind => setSelIndId(ind?.id ?? null)}
-                manualFigure={manualTarget}
-                onManualChange={setManualTarget}
-              />
-              <div className="space-y-1 border-t pt-3">
-                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual figure (optional)</label>
-                <div className="relative">
-                  <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                  <Input placeholder="e.g. 3,812" value={actualFigure} onChange={e => setActualFigure(e.target.value)} className="pl-8 h-9 text-sm" />
-                </div>
+            <div className="space-y-5">
+              <IndSelect label="Target figure" icon={Target} indicators={indicators}
+                selectedId={selTargetId} onSelect={setSelTargetId}
+                manualValue={manualTarget} onManualChange={setManualTarget} fieldKey="targetFigure" />
+              <div className="border-t pt-4">
+                <IndSelect label="Actual figure" icon={TrendingUp} indicators={indicators}
+                  selectedId={selActualId} onSelect={setSelActualId}
+                  manualValue={manualActual} onManualChange={setManualActual} fieldKey="actualFigure" />
               </div>
             </div>
           )}
@@ -668,7 +753,8 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
 
         <div className="flex-none border-t px-5 py-3 flex items-center justify-between gap-4 bg-card">
           <p className="text-xs text-muted-foreground truncate flex-1 min-w-0">
-            {confirmed.length === 0 ? "No locations selected" : <><span className="font-medium text-foreground">{confirmed.length} location{confirmed.length > 1 ? "s" : ""}</span>{benef.length > 0 && <> · {benef.slice(0, 2).join(", ")}{benef.length > 2 ? "…" : ""}</>}</>}
+            {confirmed.length === 0 ? "No locations selected"
+              : <><span className="font-medium text-foreground">{confirmed.length} location{confirmed.length > 1 ? "s" : ""}</span>{benef.length > 0 && <> · {benef.slice(0, 2).join(", ")}{benef.length > 2 ? "…" : ""}</>}</>}
           </p>
           <div className="flex gap-2 flex-none">
             <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
@@ -682,33 +768,32 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
   );
 }
 
-// ── Edit Location Dialog ──────────────────────────────────────────────────────
+// ── Edit location dialog ──────────────────────────────────────────────────────
 function EditLocationDialog({ loc, theory, indicators, onClose, onSaved }: {
-  loc: LocationRecord;
-  theory: Theory;
+  loc: LocationRecord; theory: Theory;
   indicators: MeasurementIndicator[];
-  onClose: () => void;
-  onSaved: (updated: LocationRecord) => void;
+  onClose: () => void; onSaved: (updated: LocationRecord) => void;
 }) {
   const { toast } = useToast();
   const allBenef = useMemo(() => theoryBeneficiaries(theory), [theory]);
-
-  // Parse stored figureLabel back into selected beneficiaries
-  const [benef, setBenef]       = useState<string[]>(() => loc.figureLabel ? loc.figureLabel.split(";").map(s => s.trim()).filter(Boolean) : []);
-  const [icon, setIcon]         = useState(loc.icon || "general");
-  const [selIndId, setSelIndId] = useState<number | null>(null);
+  const [benef, setBenef]         = useState<string[]>(() => loc.figureLabel ? loc.figureLabel.split(";").map(s => s.trim()).filter(Boolean) : []);
+  const [icon, setIcon]           = useState(loc.icon || "general");
+  const [selTargetId, setSelTargetId] = useState<number | null>(null);
+  const [selActualId, setSelActualId] = useState<number | null>(null);
   const [manualTarget, setManualTarget] = useState(loc.targetFigure || "");
-  const [actualFigure, setActualFigure] = useState(loc.actualFigure || "");
-  const [gpsLat, setGpsLat]     = useState(loc.lat?.toString() ?? "");
-  const [gpsLng, setGpsLng]     = useState(loc.lng?.toString() ?? "");
-  const [saving, setSaving]     = useState(false);
+  const [manualActual, setManualActual] = useState(loc.actualFigure || "");
+  const [gpsLat, setGpsLat]       = useState(loc.lat?.toString() ?? "");
+  const [gpsLng, setGpsLng]       = useState(loc.lng?.toString() ?? "");
+  const [saving, setSaving]       = useState(false);
 
-  const selInd = indicators.find(i => i.id === selIndId) ?? null;
+  const selTargetInd = indicators.find(i => i.id === selTargetId);
+  const selActualInd = indicators.find(i => i.id === selActualId);
 
   const handleSave = async () => {
     setSaving(true);
     const figureLabel  = benef.join("; ");
-    const targetFigure = selInd?.targetFigure ?? manualTarget;
+    const targetFigure = selTargetInd?.targetFigure ?? manualTarget;
+    const actualFigure = selActualInd?.actualFigure ?? manualActual;
     try {
       const res = await fetch(`${API_BASE}/theories/${theory.id}/locations/${loc.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include",
@@ -733,11 +818,10 @@ function EditLocationDialog({ loc, theory, indicators, onClose, onSaved }: {
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0 space-y-5">
-          {/* Location info (read-only) */}
           <div className="rounded-lg border bg-muted/30 px-4 py-3 space-y-1">
             <div className="flex items-center gap-2">
               <span className="text-base">{markerEmoji(loc.icon)}</span>
-              <span className="font-semibold text-sm">{shortName(loc)}</span>
+              <span className="font-semibold text-sm">{shortNameStr(loc)}</span>
               <LevelBadge level={loc.level} />
             </div>
             <p className="text-xs text-muted-foreground">
@@ -745,7 +829,6 @@ function EditLocationDialog({ loc, theory, indicators, onClose, onSaved }: {
             </p>
           </div>
 
-          {/* GPS */}
           <div className="space-y-1.5">
             <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">GPS Coordinates</label>
             <div className="grid grid-cols-2 gap-2">
@@ -760,33 +843,22 @@ function EditLocationDialog({ loc, theory, indicators, onClose, onSaved }: {
             </div>
           </div>
 
-          {/* Beneficiaries */}
           <div className="space-y-2 border-t pt-4">
             <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Beneficiary Groups</label>
             <BeneficiaryPicker allBeneficiaries={allBenef} selected={benef} onChange={setBenef} />
           </div>
 
-          {/* Marker */}
           <div className="border-t pt-4">
             <MarkerPicker value={icon} onChange={setIcon} />
           </div>
 
-          {/* Target & Actual */}
-          <div className="border-t pt-4 space-y-3">
-            <IndicatorDropdown
-              indicators={indicators}
-              selectedId={selIndId}
-              onSelect={ind => { setSelIndId(ind?.id ?? null); if (!ind) setManualTarget(loc.targetFigure || ""); }}
-              manualFigure={manualTarget}
-              onManualChange={setManualTarget}
-            />
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual figure</label>
-              <div className="relative">
-                <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input value={actualFigure} onChange={e => setActualFigure(e.target.value)} placeholder="e.g. 3,812" className="pl-8 h-9 text-sm" />
-              </div>
-            </div>
+          <div className="border-t pt-4 space-y-4">
+            <IndSelect label="Target figure" icon={Target} indicators={indicators}
+              selectedId={selTargetId} onSelect={id => { setSelTargetId(id); if (!id) setManualTarget(loc.targetFigure || ""); }}
+              manualValue={manualTarget} onManualChange={setManualTarget} fieldKey="targetFigure" />
+            <IndSelect label="Actual figure" icon={TrendingUp} indicators={indicators}
+              selectedId={selActualId} onSelect={id => { setSelActualId(id); if (!id) setManualActual(loc.actualFigure || ""); }}
+              manualValue={manualActual} onManualChange={setManualActual} fieldKey="actualFigure" />
           </div>
         </div>
 
@@ -801,7 +873,7 @@ function EditLocationDialog({ loc, theory, indicators, onClose, onSaved }: {
   );
 }
 
-// ── Main Component ────────────────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────────────────
 export function LocationsMap({ theory }: { theory: Theory }) {
   const { i18n } = useTranslation();
   const { toast } = useToast();
@@ -809,6 +881,7 @@ export function LocationsMap({ theory }: { theory: Theory }) {
   const [loadingLocs, setLoadingLocs] = useState(true);
   const [showAdd, setShowAdd]         = useState(false);
   const [editing, setEditing]         = useState<LocationRecord | null>(null);
+  const [showPrint, setShowPrint]     = useState(false);
   const [indicators, setIndicators]   = useState<MeasurementIndicator[]>([]);
 
   const tile = TILE_LAYERS[i18n.language] ?? TILE_LAYERS.default;
@@ -822,10 +895,7 @@ export function LocationsMap({ theory }: { theory: Theory }) {
     })();
   }, [theory.id]);
 
-  // Pre-load indicators so edit dialog opens instantly
-  useEffect(() => {
-    fetchIndicators(theory.id).then(setIndicators);
-  }, [theory.id]);
+  useEffect(() => { fetchIndicators(theory.id).then(setIndicators); }, [theory.id]);
 
   const handleDelete = async (locId: number) => {
     try {
@@ -839,15 +909,22 @@ export function LocationsMap({ theory }: { theory: Theory }) {
 
       {/* ── Sidebar ── */}
       <aside className="w-80 flex-none border-r bg-card flex flex-col overflow-hidden">
-        <div className="px-4 py-3 border-b flex items-center justify-between flex-none">
-          <div className="flex items-center gap-2">
-            <Globe className="w-4 h-4 text-primary" />
+        <div className="px-4 py-3 border-b flex items-center justify-between flex-none gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Globe className="w-4 h-4 text-primary flex-none" />
             <span className="font-semibold text-sm">Locations</span>
             {locations.length > 0 && <Badge variant="secondary" className="text-xs h-5 px-1.5">{locations.length}</Badge>}
           </div>
-          <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowAdd(true)}>
-            <Plus className="w-3.5 h-3.5" /> Add
-          </Button>
+          <div className="flex items-center gap-1.5 flex-none">
+            {locations.length > 0 && (
+              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setShowPrint(true)}>
+                <Printer className="w-3.5 h-3.5" /> Print
+              </Button>
+            )}
+            <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowAdd(true)}>
+              <Plus className="w-3.5 h-3.5" /> Add
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto">
@@ -862,16 +939,17 @@ export function LocationsMap({ theory }: { theory: Theory }) {
           ) : (
             <ul className="divide-y divide-border">
               {locations.map((loc, i) => {
+                const color = COLOURS[i % COLOURS.length];
                 const benefGroups = loc.figureLabel ? loc.figureLabel.split(";").map(s => s.trim()).filter(Boolean) : [];
                 return (
                   <li key={loc.id} className="group px-4 py-3 hover:bg-muted/30 transition-colors">
                     <div className="flex items-start gap-2.5">
                       <div className="mt-0.5 w-7 h-7 rounded-full flex-none flex items-center justify-center text-base"
-                        style={{ background: `${COLOURS[i % COLOURS.length]}22`, border: `2px solid ${COLOURS[i % COLOURS.length]}` }}>
+                        style={{ background: `${color}22`, border: `2px solid ${color}` }}>
                         {markerEmoji(loc.icon)}
                       </div>
                       <div className="min-w-0 flex-1 space-y-0.5">
-                        <p className="text-sm font-medium leading-tight truncate" title={shortName(loc)}>{shortName(loc)}</p>
+                        <p className="text-sm font-medium leading-tight truncate" title={shortNameStr(loc)}>{shortNameStr(loc)}</p>
                         <p className="text-xs text-muted-foreground truncate">
                           {loc.level === "admin2" ? `${loc.adminLevel1}, ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
                         </p>
@@ -936,7 +1014,6 @@ export function LocationsMap({ theory }: { theory: Theory }) {
         <MapContainer key={tile.url} center={[8, 22]} zoom={4} className="w-full h-full">
           <TileLayer url={tile.url} attribution={tile.attribution} subdomains={(tile.subdomains ?? "abc") as any} maxZoom={19} />
           <FitBounds locations={locations} />
-
           {locations.map((loc, i) => {
             const color = COLOURS[i % COLOURS.length];
             const emoji = markerEmoji(loc.icon);
@@ -950,7 +1027,7 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                   <Marker key={`mk-${loc.id}`} position={[loc.lat, loc.lng]} icon={makeIcon(emoji, color)}>
                     <Popup maxWidth={280}>
                       <div className="space-y-1.5 py-0.5">
-                        <p className="font-semibold text-sm flex items-center gap-1.5"><span>{emoji}</span>{shortName(loc)}</p>
+                        <p className="font-semibold text-sm flex items-center gap-1.5"><span>{emoji}</span>{shortNameStr(loc)}</p>
                         <p className="text-xs text-gray-500">{loc.level === "admin2" ? `${loc.adminLevel1} · ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}</p>
                         {loc.figureLabel && (
                           <div className="flex flex-wrap gap-1 pt-0.5">
@@ -989,26 +1066,17 @@ export function LocationsMap({ theory }: { theory: Theory }) {
       </div>
 
       {/* ── Dialogs ── */}
-      <AddLocationDialog
-        open={showAdd}
-        onClose={() => setShowAdd(false)}
-        theory={theory}
-        onSaved={locs => setLocations(prev => [...prev, ...locs])}
-        lang={i18n.language}
-      />
+      <AddLocationDialog open={showAdd} onClose={() => setShowAdd(false)} theory={theory}
+        onSaved={locs => setLocations(prev => [...prev, ...locs])} lang={i18n.language} />
 
       {editing && (
-        <EditLocationDialog
-          loc={editing}
-          theory={theory}
-          indicators={indicators}
+        <EditLocationDialog loc={editing} theory={theory} indicators={indicators}
           onClose={() => setEditing(null)}
-          onSaved={updated => {
-            setLocations(prev => prev.map(l => l.id === updated.id ? updated : l));
-            setEditing(null);
-          }}
-        />
+          onSaved={updated => { setLocations(prev => prev.map(l => l.id === updated.id ? updated : l)); setEditing(null); }} />
       )}
+
+      <PrintDialog open={showPrint} onClose={() => setShowPrint(false)}
+        locations={locations} theoryName={theory.name ?? theory.title ?? ""} />
     </div>
   );
 }
