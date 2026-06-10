@@ -2,82 +2,111 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { MapContainer, TileLayer, GeoJSON, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
-  MapPin, Plus, Trash2, Loader2, Search, Globe, ChevronDown,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  MapPin, Plus, Trash2, Loader2, Search, Globe,
   Check, Navigation, Target, TrendingUp, Palette, X,
 } from "lucide-react";
 import type { Theory } from "@workspace/api-client-react";
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
 
-// ── Types ────────────────────────────────────────────────────────────────────
+// ── Leaflet icon fix (Vite breaks default asset paths) ────────────────────────
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl:       "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl:     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
+// ── Language-aware tile layers ────────────────────────────────────────────────
+// CartoDB Voyager is the default: clean labels, good proportions, English/international names.
+// French gets the dedicated OSM-France tile server for French labels.
+// Swahili and other African languages fall back to standard OSM which has the best local coverage.
+const TILE_LAYERS: Record<string, { url: string; subdomains?: string; attribution: string }> = {
+  default: {
+    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    subdomains: "abcd",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  },
+  fr: {
+    url: "https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
+    subdomains: "abc",
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributeurs, &copy; <a href="https://www.openstreetmap.fr">OSM France</a>',
+  },
+  sw: {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    subdomains: "abc",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  },
+  ha: {
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    subdomains: "abc",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  },
+};
+
+// Nominatim accepts an Accept-Language header to return place names in the preferred language
+const NOMINATIM_LANG: Record<string, string> = {
+  en: "en",    fr: "fr",    pt: "pt",    es: "es",
+  it: "it",    nl: "nl",    sw: "sw,en", ha: "ha,en",
+  af: "af,en",
+};
+
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface LocationRecord {
-  id: number;
-  theoryId: number;
-  displayName: string;
-  country: string;
-  countryCode: string;
-  adminLevel1: string;
-  adminLevel2: string;
-  lat: number | null;
-  lng: number | null;
-  boundaryGeoJson: string;
-  level: string;
-  nominatimId: string;
-  icon: string;
-  figureLabel: string;
-  targetFigure: string;
-  actualFigure: string;
+  id: number; theoryId: number;
+  displayName: string; country: string; countryCode: string;
+  adminLevel1: string; adminLevel2: string;
+  lat: number | null; lng: number | null;
+  boundaryGeoJson: string; level: string; nominatimId: string;
+  icon: string; figureLabel: string; targetFigure: string; actualFigure: string;
 }
-
 interface NominatimResult {
-  place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
+  place_id: number; display_name: string; lat: string; lon: string;
   geojson?: object;
   address?: {
-    country?: string;
-    country_code?: string;
-    state?: string;
-    county?: string;
-    municipality?: string;
-    city?: string;
-    district?: string;
-    region?: string;
+    country?: string; country_code?: string; state?: string;
+    county?: string; municipality?: string; city?: string;
+    district?: string; region?: string;
   };
-  type: string;
-  class: string;
+  type: string; class: string;
+}
+interface Country { name: string; code: string; }
+interface Draft {
+  country: Country | null; region: NominatimResult | null; district: NominatimResult | null;
+  gpsLat: string; gpsLng: string; icon: string;
+  figureLabel: string; targetFigure: string; actualFigure: string;
 }
 
-interface Country { name: string; code: string; }
-
-// ── Constants ────────────────────────────────────────────────────────────────
-
+// ── Constants ─────────────────────────────────────────────────────────────────
 const COLOURS = [
   "#6366f1","#f97316","#10b981","#ec4899","#3b82f6",
   "#eab308","#8b5cf6","#14b8a6","#ef4444","#06b6d4",
 ];
 
-const ICONS: { id: string; emoji: string; label: string }[] = [
+const ICONS = [
   { id: "general",        emoji: "📍", label: "General" },
   { id: "education",      emoji: "🏫", label: "Education" },
   { id: "health",         emoji: "🏥", label: "Health" },
   { id: "agriculture",    emoji: "🌾", label: "Agriculture" },
-  { id: "water",          emoji: "💧", label: "Water & Sanitation" },
+  { id: "water",          emoji: "💧", label: "Water & WASH" },
   { id: "community",      emoji: "👥", label: "Community" },
-  { id: "infrastructure", emoji: "🏗️", label: "Infrastructure" },
+  { id: "infrastructure", emoji: "🏗️",  label: "Infrastructure" },
   { id: "environment",    emoji: "🌿", label: "Environment" },
   { id: "livelihoods",    emoji: "💼", label: "Livelihoods" },
-  { id: "governance",     emoji: "🏛️", label: "Governance" },
-  { id: "gender",         emoji: "♀️", label: "Gender & Inclusion" },
-  { id: "youth",          emoji: "🧑", label: "Youth" },
+  { id: "governance",     emoji: "🏛️",  label: "Governance" },
+  { id: "gender",         emoji: "♀️",  label: "Gender" },
+  { id: "youth",          emoji: "🧑",  label: "Youth" },
 ];
 
 const COUNTRIES: Country[] = [
@@ -122,11 +151,15 @@ const COUNTRIES: Country[] = [
   { name: "Zambia", code: "zm" }, { name: "Zimbabwe", code: "zw" },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
-const emojiFor = (icon: string) =>
-  ICONS.find(i => i.id === icon)?.emoji ?? "📍";
+const EMPTY_DRAFT: Draft = {
+  country: null, region: null, district: null,
+  gpsLat: "", gpsLng: "", icon: "general",
+  figureLabel: "", targetFigure: "", actualFigure: "",
+};
 
-// ── Map helpers ───────────────────────────────────────────────────────────────
+const emojiFor = (icon: string) => ICONS.find(i => i.id === icon)?.emoji ?? "📍";
 
+// ── Custom teardrop marker ────────────────────────────────────────────────────
 function makeIcon(emoji: string, color: string) {
   return L.divIcon({
     className: "",
@@ -134,14 +167,13 @@ function makeIcon(emoji: string, color: string) {
       width:34px;height:34px;border-radius:50% 50% 50% 0;
       background:${color};transform:rotate(-45deg);
       display:flex;align-items:center;justify-content:center;
-      box-shadow:0 2px 8px rgba(0,0,0,.35);border:2px solid white;
-    "><span style="transform:rotate(45deg);font-size:16px;line-height:1">${emoji}</span></div>`,
-    iconSize: [34, 34],
-    iconAnchor: [17, 34],
-    popupAnchor: [0, -36],
+      box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.9);
+    "><span style="transform:rotate(45deg);font-size:15px;line-height:1">${emoji}</span></div>`,
+    iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -36],
   });
 }
 
+// ── FitBounds (auto-zoom to all locations) ────────────────────────────────────
 function FitBounds({ locations }: { locations: LocationRecord[] }) {
   const map = useMap();
   const key = locations.map(l => l.id).join(",");
@@ -157,7 +189,7 @@ function FitBounds({ locations }: { locations: LocationRecord[] }) {
             pts.push([b.getNorth(), b.getEast()]);
             pts.push([b.getSouth(), b.getWest()]);
           }
-        } catch { /* skip */ }
+        } catch { /* skip bad GeoJSON */ }
       }
     });
     if (pts.length) map.fitBounds(pts, { padding: [40, 40], maxZoom: 10 });
@@ -166,38 +198,17 @@ function FitBounds({ locations }: { locations: LocationRecord[] }) {
   return null;
 }
 
-// ── Sidebar helpers ───────────────────────────────────────────────────────────
-
-function shortName(loc: LocationRecord) {
-  if (loc.adminLevel2) return loc.adminLevel2;
-  if (loc.adminLevel1) return loc.adminLevel1;
-  return loc.country;
-}
-
-function levelBadge(level: string) {
-  const map: Record<string, string> = {
-    country: "bg-indigo-100 text-indigo-700 border-indigo-200",
-    admin1:  "bg-orange-100 text-orange-700 border-orange-200",
-    admin2:  "bg-emerald-100 text-emerald-700 border-emerald-200",
-  };
-  const labels: Record<string, string> = {
-    country: "Country", admin1: "Region / State", admin2: "District / LGA",
-  };
-  const cls = map[level] ?? "bg-muted text-muted-foreground border-border";
-  return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${cls}`}>
-      {labels[level] ?? level}
-    </span>
-  );
-}
-
 // ── Nominatim search hook ─────────────────────────────────────────────────────
-
-function useNominatimSearch(countryCode: string, featureType: "state" | "county") {
-  const [query, setQuery] = useState("");
+function useNominatimSearch(
+  countryCode: string,
+  featureType: "state" | "county",
+  lang: string,
+) {
+  const [query, setQuery]   = useState("");
   const [results, setResults] = useState<NominatimResult[]>([]);
   const [loading, setLoading] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const acceptLang = NOMINATIM_LANG[lang] ?? "en";
 
   const search = useCallback((q: string) => {
     if (timer.current) clearTimeout(timer.current);
@@ -208,102 +219,126 @@ function useNominatimSearch(countryCode: string, featureType: "state" | "county"
       try {
         const params = new URLSearchParams({
           q, format: "json", polygon_geojson: "1",
-          addressdetails: "1", limit: "10",
+          addressdetails: "1", limit: "12",
           countrycodes: countryCode,
         });
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
-          headers: { "Accept-Language": "en" },
-        });
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?${params}`,
+          { headers: { "Accept-Language": acceptLang } },
+        );
         const data: NominatimResult[] = await res.json();
         const filter = featureType === "state"
-          ? ["state","province","region","administrative"]
-          : ["county","district","municipality","city","suburb","administrative"];
-        setResults(data.filter(r =>
-          filter.includes(r.type) || r.class === "boundary"
-        ));
+          ? ["state", "province", "region", "administrative"]
+          : ["county", "district", "municipality", "city", "administrative"];
+        setResults(
+          data.filter(r => filter.includes(r.type) || r.class === "boundary"),
+        );
       } catch { setResults([]); }
       finally { setLoading(false); }
     }, 450);
-  }, [countryCode, featureType]);
+  }, [countryCode, featureType, acceptLang]);
 
   const clear = useCallback(() => { setQuery(""); setResults([]); }, []);
-
   return { query, results, loading, search, clear };
 }
 
-// ── Draft state ───────────────────────────────────────────────────────────────
-
-interface Draft {
-  country: Country | null;
-  region: NominatimResult | null;
-  district: NominatimResult | null;
-  gpsLat: string;
-  gpsLng: string;
-  icon: string;
-  figureLabel: string;
-  targetFigure: string;
-  actualFigure: string;
+// ── Sidebar helpers ───────────────────────────────────────────────────────────
+function shortName(loc: LocationRecord) {
+  if (loc.adminLevel2) return loc.adminLevel2;
+  if (loc.adminLevel1) return loc.adminLevel1;
+  return loc.country;
 }
 
-const EMPTY_DRAFT: Draft = {
-  country: null, region: null, district: null,
-  gpsLat: "", gpsLng: "",
-  icon: "general",
-  figureLabel: "", targetFigure: "", actualFigure: "",
-};
+function LevelBadge({ level }: { level: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    country: { label: "Country",          cls: "bg-indigo-100 text-indigo-700 border-indigo-200" },
+    admin1:  { label: "Region / State",   cls: "bg-orange-100 text-orange-700 border-orange-200" },
+    admin2:  { label: "District / LGA",   cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+  };
+  const d = map[level] ?? { label: level, cls: "bg-muted text-muted-foreground border-border" };
+  return (
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${d.cls}`}>
+      {d.label}
+    </span>
+  );
+}
 
-// ── Add Location Sheet ────────────────────────────────────────────────────────
+// ── Section heading inside dialog ─────────────────────────────────────────────
+function Step({ n, title, done, children }: {
+  n: number; title: string; done?: boolean; children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-2.5">
+      <div className="flex items-center gap-2">
+        <span className={`w-5 h-5 rounded-full text-[10px] font-bold flex items-center justify-center flex-none
+          ${done ? "bg-emerald-500 text-white" : "bg-primary text-primary-foreground"}`}>
+          {done ? "✓" : n}
+        </span>
+        <span className="text-sm font-semibold text-foreground">{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
 
-function AddLocationSheet({
-  open, onClose, theoryId, onSaved,
+// ── Add Location Dialog ───────────────────────────────────────────────────────
+function AddLocationDialog({
+  open, onClose, theoryId, onSaved, lang,
 }: {
-  open: boolean;
-  onClose: () => void;
-  theoryId: number;
-  onSaved: (loc: LocationRecord) => void;
+  open: boolean; onClose: () => void;
+  theoryId: number; onSaved: (loc: LocationRecord) => void;
+  lang: string;
 }) {
   const { toast } = useToast();
-  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
-  const [saving, setSaving] = useState(false);
-  const [countrySearch, setCountrySearch] = useState("");
+  const [draft, setDraft]           = useState<Draft>(EMPTY_DRAFT);
+  const [saving, setSaving]         = useState(false);
+  const [countryQ, setCountryQ]     = useState("");
 
   const set = <K extends keyof Draft>(k: K, v: Draft[K]) =>
     setDraft(d => ({ ...d, [k]: v }));
 
-  const regionHook    = useNominatimSearch(draft.country?.code ?? "", "state");
-  const districtHook  = useNominatimSearch(draft.country?.code ?? "", "county");
+  const regionHook   = useNominatimSearch(draft.country?.code ?? "", "state", lang);
+  const districtHook = useNominatimSearch(draft.country?.code ?? "", "county", lang);
 
-  // Auto-fill GPS when a district or region is chosen
+  // Auto-populate GPS when a boundary is chosen
   useEffect(() => {
     const src = draft.district ?? draft.region;
-    if (src) { set("gpsLat", parseFloat(src.lat).toFixed(5)); set("gpsLng", parseFloat(src.lon).toFixed(5)); }
+    if (src) {
+      set("gpsLat", parseFloat(src.lat).toFixed(5));
+      set("gpsLng", parseFloat(src.lon).toFixed(5));
+    }
   }, [draft.district, draft.region]);
 
-  const filteredCountries = useMemo(() =>
-    COUNTRIES.filter(c => c.name.toLowerCase().includes(countrySearch.toLowerCase())),
-    [countrySearch]);
+  const filteredCountries = useMemo(
+    () => COUNTRIES.filter(c => c.name.toLowerCase().includes(countryQ.toLowerCase())),
+    [countryQ],
+  );
 
-  const resolveLevel = () => {
-    if (draft.district) return "admin2";
-    if (draft.region)   return "admin1";
-    return "country";
-  };
+  const resolveLevel = () =>
+    draft.district ? "admin2" : draft.region ? "admin1" : "country";
 
   const displayName = () => {
     const parts: string[] = [];
-    if (draft.district) parts.push(draft.district.address?.county ?? draft.district.address?.district ?? draft.district.address?.municipality ?? "");
-    else if (draft.region) parts.push(draft.region.address?.state ?? draft.region.address?.region ?? "");
+    if (draft.district)
+      parts.push(draft.district.address?.county ?? draft.district.address?.district ?? draft.district.address?.municipality ?? "");
+    else if (draft.region)
+      parts.push(draft.region.address?.state ?? draft.region.address?.region ?? "");
     if (draft.country) parts.push(draft.country.name);
     return parts.filter(Boolean).join(", ");
   };
 
   const canSave = !!draft.country && !!draft.gpsLat && !!draft.gpsLng;
 
+  const resetAndClose = () => {
+    setDraft(EMPTY_DRAFT); setCountryQ("");
+    regionHook.clear(); districtHook.clear();
+    onClose();
+  };
+
   const handleSave = async () => {
     if (!canSave) return;
     setSaving(true);
     const src = draft.district ?? draft.region;
-    const level = resolveLevel();
     const body = {
       displayName:     displayName(),
       country:         draft.country!.name,
@@ -313,7 +348,7 @@ function AddLocationSheet({
       lat:             parseFloat(draft.gpsLat),
       lng:             parseFloat(draft.gpsLng),
       boundaryGeoJson: src?.geojson ? JSON.stringify(src.geojson) : "",
-      level,
+      level:           resolveLevel(),
       nominatimId:     String(src?.place_id ?? ""),
       icon:            draft.icon,
       figureLabel:     draft.figureLabel,
@@ -329,46 +364,40 @@ function AddLocationSheet({
       const created = await res.json() as LocationRecord;
       onSaved(created);
       toast({ title: "Location saved", description: created.displayName });
-      setDraft(EMPTY_DRAFT);
-      setCountrySearch("");
-      regionHook.clear();
-      districtHook.clear();
-      onClose();
+      resetAndClose();
     } catch (err) {
       toast({ title: "Failed to save", description: String(err), variant: "destructive" });
     } finally { setSaving(false); }
   };
 
-  const Section = ({ step, title, children }: { step: number; title: string; children: React.ReactNode }) => (
-    <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <span className="w-5 h-5 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center flex-none">{step}</span>
-        <span className="text-sm font-semibold text-foreground">{title}</span>
-      </div>
-      {children}
-    </div>
-  );
-
   return (
-    <Sheet open={open} onOpenChange={v => { if (!v) onClose(); }}>
-      <SheetContent side="right" className="w-[400px] sm:w-[440px] overflow-y-auto flex flex-col gap-0 p-0">
-        <SheetHeader className="px-5 py-4 border-b flex-none">
-          <SheetTitle className="flex items-center gap-2 text-base">
-            <MapPin className="w-4 h-4 text-primary" />
+    <Dialog open={open} onOpenChange={v => { if (!v) resetAndClose(); }}>
+      <DialogContent className="max-w-[540px] p-0 flex flex-col gap-0 max-h-[92vh]">
+        {/* Header */}
+        <DialogHeader className="px-6 pt-5 pb-4 border-b flex-none">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <MapPin className="w-4 h-4 text-primary flex-none" />
             Add Intervention Location
-          </SheetTitle>
-        </SheetHeader>
+          </DialogTitle>
+        </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-7 min-h-0">
 
-          {/* ── Step 1: Country ── */}
-          <Section step={1} title="Country of Operation">
+          {/* Step 1 – Country */}
+          <Step n={1} title="Country of Operation" done={!!draft.country}>
             {draft.country ? (
-              <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-primary/5 border-primary/30">
+              <div className="flex items-center gap-2 px-3 py-2.5 border rounded-md bg-primary/5 border-primary/30">
                 <Globe className="w-4 h-4 text-primary flex-none" />
                 <span className="text-sm font-medium flex-1">{draft.country.name}</span>
-                <button onClick={() => { set("country", null); set("region", null); set("district", null); regionHook.clear(); districtHook.clear(); }}
-                  className="text-muted-foreground hover:text-destructive p-0.5">
+                <button
+                  onClick={() => {
+                    set("country", null); set("region", null); set("district", null);
+                    set("gpsLat", ""); set("gpsLng", "");
+                    regionHook.clear(); districtHook.clear();
+                  }}
+                  className="text-muted-foreground hover:text-destructive p-0.5 rounded"
+                >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -377,42 +406,45 @@ function AddLocationSheet({
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   <Input
-                    placeholder="Search country…"
-                    value={countrySearch}
-                    onChange={e => setCountrySearch(e.target.value)}
-                    className="pl-8 h-8 text-sm"
+                    autoFocus
+                    placeholder="Type to search country…"
+                    value={countryQ}
+                    onChange={e => setCountryQ(e.target.value)}
+                    className="pl-8 h-9 text-sm"
                   />
                 </div>
                 <div className="border rounded-md max-h-44 overflow-y-auto bg-card divide-y divide-border">
-                  {filteredCountries.map(c => (
-                    <button
-                      key={c.code}
-                      onClick={() => { set("country", c); setCountrySearch(""); }}
-                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors"
-                    >
-                      {c.name}
-                    </button>
-                  ))}
-                  {filteredCountries.length === 0 && (
-                    <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
-                  )}
+                  {filteredCountries.length === 0
+                    ? <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
+                    : filteredCountries.map(c => (
+                      <button
+                        key={c.code}
+                        onClick={() => { set("country", c); setCountryQ(""); }}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors"
+                      >
+                        {c.name}
+                      </button>
+                    ))
+                  }
                 </div>
               </div>
             )}
-          </Section>
+          </Step>
 
-          {/* ── Step 2: Region / State / Province ── */}
-          <Section step={2} title="Region / State / Province">
+          {/* Step 2 – Region */}
+          <Step n={2} title="Region / State / Province" done={!!draft.region}>
             {!draft.country ? (
-              <p className="text-xs text-muted-foreground">Select a country first.</p>
+              <p className="text-xs text-muted-foreground pl-7">Select a country first.</p>
             ) : draft.region ? (
-              <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-orange-50 border-orange-200">
+              <div className="flex items-center gap-2 px-3 py-2.5 border rounded-md bg-orange-50 border-orange-200">
                 <Check className="w-4 h-4 text-orange-600 flex-none" />
                 <span className="text-sm font-medium flex-1 text-orange-800">
-                  {draft.region.address?.state ?? draft.region.address?.region ?? draft.region.display_name}
+                  {draft.region.address?.state ?? draft.region.address?.region ?? draft.region.display_name.split(",")[0]}
                 </span>
-                <button onClick={() => { set("region", null); set("district", null); regionHook.clear(); districtHook.clear(); }}
-                  className="text-muted-foreground hover:text-destructive p-0.5">
+                <button
+                  onClick={() => { set("region", null); set("district", null); regionHook.clear(); districtHook.clear(); }}
+                  className="text-muted-foreground hover:text-destructive p-0.5 rounded"
+                >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -424,45 +456,46 @@ function AddLocationSheet({
                     placeholder={`Search region in ${draft.country.name}…`}
                     value={regionHook.query}
                     onChange={e => regionHook.search(e.target.value)}
-                    className="pl-8 h-8 text-sm"
+                    className="pl-8 h-9 text-sm"
                   />
-                  {regionHook.loading && <Loader2 className="absolute right-2.5 top-2.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+                  {regionHook.loading && (
+                    <Loader2 className="absolute right-2.5 top-2.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                  )}
                 </div>
                 {regionHook.results.length > 0 && (
-                  <div className="border rounded-md max-h-40 overflow-y-auto bg-card divide-y divide-border">
+                  <div className="border rounded-md max-h-36 overflow-y-auto bg-card divide-y divide-border">
                     {regionHook.results.map(r => (
                       <button
                         key={r.place_id}
                         onClick={() => { set("region", r); regionHook.clear(); }}
-                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors"
                       >
                         {r.address?.state ?? r.address?.region ?? r.display_name.split(",")[0]}
                       </button>
                     ))}
                   </div>
                 )}
-                <button
-                  onClick={() => set("region", null)}
-                  className="text-xs text-muted-foreground underline hover:text-foreground"
-                >
-                  Skip (country-level only)
-                </button>
+                <p className="text-xs text-muted-foreground/70 pl-1">
+                  Type to search, or leave empty to stay at country level.
+                </p>
               </div>
             )}
-          </Section>
+          </Step>
 
-          {/* ── Step 3: District / LGA ── */}
-          <Section step={3} title="District / Local Government Area">
+          {/* Step 3 – District */}
+          <Step n={3} title="District / Local Government Area" done={!!draft.district}>
             {!draft.region ? (
-              <p className="text-xs text-muted-foreground">Select a region first, or skip this step.</p>
+              <p className="text-xs text-muted-foreground pl-7">Select a region first, or skip to stay at region level.</p>
             ) : draft.district ? (
-              <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-emerald-50 border-emerald-200">
+              <div className="flex items-center gap-2 px-3 py-2.5 border rounded-md bg-emerald-50 border-emerald-200">
                 <Check className="w-4 h-4 text-emerald-600 flex-none" />
                 <span className="text-sm font-medium flex-1 text-emerald-800">
                   {draft.district.address?.county ?? draft.district.address?.district ?? draft.district.address?.municipality ?? draft.district.display_name.split(",")[0]}
                 </span>
-                <button onClick={() => { set("district", null); districtHook.clear(); }}
-                  className="text-muted-foreground hover:text-destructive p-0.5">
+                <button
+                  onClick={() => { set("district", null); districtHook.clear(); }}
+                  className="text-muted-foreground hover:text-destructive p-0.5 rounded"
+                >
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -471,160 +504,167 @@ function AddLocationSheet({
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   <Input
-                    placeholder={`Search district in ${draft.region.address?.state ?? draft.country?.name}…`}
+                    placeholder={`Search district / LGA in ${draft.region.address?.state ?? draft.country?.name}…`}
                     value={districtHook.query}
                     onChange={e => districtHook.search(e.target.value)}
-                    className="pl-8 h-8 text-sm"
+                    className="pl-8 h-9 text-sm"
                   />
-                  {districtHook.loading && <Loader2 className="absolute right-2.5 top-2.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />}
+                  {districtHook.loading && (
+                    <Loader2 className="absolute right-2.5 top-2.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />
+                  )}
                 </div>
                 {districtHook.results.length > 0 && (
-                  <div className="border rounded-md max-h-40 overflow-y-auto bg-card divide-y divide-border">
+                  <div className="border rounded-md max-h-36 overflow-y-auto bg-card divide-y divide-border">
                     {districtHook.results.map(r => (
                       <button
                         key={r.place_id}
                         onClick={() => { set("district", r); districtHook.clear(); }}
-                        className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors"
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-muted/60 transition-colors"
                       >
                         {r.address?.county ?? r.address?.district ?? r.address?.municipality ?? r.display_name.split(",")[0]}
                       </button>
                     ))}
                   </div>
                 )}
-                <button
-                  onClick={() => set("district", null)}
-                  className="text-xs text-muted-foreground underline hover:text-foreground"
-                >
-                  Skip (region-level only)
-                </button>
+                <p className="text-xs text-muted-foreground/70 pl-1">
+                  Type to search, or leave empty to stay at region level.
+                </p>
               </div>
             )}
-          </Section>
+          </Step>
 
-          {/* ── Step 4: GPS Coordinates ── */}
-          <Section step={4} title="GPS Coordinates">
-            <p className="text-xs text-muted-foreground">Auto-filled from your selection above. Override if needed.</p>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Latitude</label>
-                <div className="relative mt-0.5">
+          {/* Step 4 – GPS */}
+          <Step n={4} title="GPS Coordinates">
+            <p className="text-xs text-muted-foreground pl-7 -mt-1">
+              Auto-populated from your selection. Edit to pin a precise field location.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground pl-1">Latitude</label>
+                <div className="relative">
                   <Navigation className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   <Input
                     placeholder="e.g. 7.9465"
                     value={draft.gpsLat}
                     onChange={e => set("gpsLat", e.target.value)}
-                    className="pl-8 h-8 text-sm font-mono"
+                    className="pl-8 h-9 text-sm font-mono"
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Longitude</label>
-                <div className="relative mt-0.5">
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground pl-1">Longitude</label>
+                <div className="relative">
                   <Navigation className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none rotate-90" />
                   <Input
                     placeholder="e.g. -1.0232"
                     value={draft.gpsLng}
                     onChange={e => set("gpsLng", e.target.value)}
-                    className="pl-8 h-8 text-sm font-mono"
+                    className="pl-8 h-9 text-sm font-mono"
                   />
                 </div>
               </div>
             </div>
-          </Section>
+          </Step>
 
-          {/* ── Step 5: Icon ── */}
-          <Section step={5} title="Intervention Type Icon">
+          {/* Step 5 – Icon */}
+          <Step n={5} title="Intervention Type">
             <div className="grid grid-cols-4 gap-1.5">
               {ICONS.map(ic => (
                 <button
                   key={ic.id}
                   onClick={() => set("icon", ic.id)}
                   title={ic.label}
-                  className={`flex flex-col items-center gap-1 p-2 rounded-lg border text-xs transition-all ${
+                  className={`flex flex-col items-center gap-1 py-2.5 px-1 rounded-lg border text-xs transition-all ${
                     draft.icon === ic.id
-                      ? "border-primary bg-primary/10 text-primary font-semibold"
+                      ? "border-primary bg-primary/10 text-primary font-semibold shadow-sm"
                       : "border-border hover:bg-muted/60 text-muted-foreground"
                   }`}
                 >
-                  <span className="text-lg leading-none">{ic.emoji}</span>
-                  <span className="leading-tight text-center line-clamp-1">{ic.label.split(" ")[0]}</span>
+                  <span className="text-xl leading-none">{ic.emoji}</span>
+                  <span className="leading-tight text-center">{ic.label.split(" ")[0]}</span>
                 </button>
               ))}
             </div>
-          </Section>
+          </Step>
 
-          {/* ── Step 6: Target & Actual Figures ── */}
-          <Section step={6} title="Target & Actual Figures">
-            <p className="text-xs text-muted-foreground">Optional. Attach numeric targets and results to this location.</p>
-            <div>
-              <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Figure Label</label>
-              <div className="relative mt-0.5">
-                <Palette className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  placeholder="e.g. Beneficiaries reached"
-                  value={draft.figureLabel}
-                  onChange={e => set("figureLabel", e.target.value)}
-                  className="pl-8 h-8 text-sm"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Target</label>
-                <div className="relative mt-0.5">
-                  <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+          {/* Step 6 – Figures */}
+          <Step n={6} title="Target & Actual Figures (optional)">
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground pl-1">Figure Label</label>
+                <div className="relative">
+                  <Palette className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   <Input
-                    placeholder="e.g. 5,000"
-                    value={draft.targetFigure}
-                    onChange={e => set("targetFigure", e.target.value)}
-                    className="pl-8 h-8 text-sm"
+                    placeholder="e.g. Beneficiaries reached"
+                    value={draft.figureLabel}
+                    onChange={e => set("figureLabel", e.target.value)}
+                    className="pl-8 h-9 text-sm"
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">Actual</label>
-                <div className="relative mt-0.5">
-                  <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                  <Input
-                    placeholder="e.g. 3,812"
-                    value={draft.actualFigure}
-                    onChange={e => set("actualFigure", e.target.value)}
-                    className="pl-8 h-8 text-sm"
-                  />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground pl-1">Target</label>
+                  <div className="relative">
+                    <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      placeholder="e.g. 5,000"
+                      value={draft.targetFigure}
+                      onChange={e => set("targetFigure", e.target.value)}
+                      className="pl-8 h-9 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground pl-1">Actual</label>
+                  <div className="relative">
+                    <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      placeholder="e.g. 3,812"
+                      value={draft.actualFigure}
+                      onChange={e => set("actualFigure", e.target.value)}
+                      className="pl-8 h-9 text-sm"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
-          </Section>
+          </Step>
         </div>
 
         {/* Footer */}
-        <div className="flex-none border-t px-5 py-4 flex items-center justify-between gap-3 bg-card">
-          <p className="text-xs text-muted-foreground">
+        <div className="flex-none border-t px-6 py-4 flex items-center justify-between gap-4 bg-card">
+          <p className="text-xs text-muted-foreground truncate flex-1 min-w-0">
             {draft.country
-              ? <span className="font-medium text-foreground">{displayName() || draft.country.name}</span>
-              : "No country selected"
+              ? <><span className="font-medium text-foreground">{displayName() || draft.country.name}</span>{" · "}{emojiFor(draft.icon)}</>
+              : "Select a country to begin"
             }
           </p>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
-            <Button size="sm" disabled={!canSave || saving} onClick={handleSave} className="gap-1.5">
-              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              Save Location
+          <div className="flex gap-2 flex-none">
+            <Button variant="outline" size="sm" onClick={resetAndClose}>Cancel</Button>
+            <Button size="sm" disabled={!canSave || saving} onClick={handleSave} className="gap-1.5 min-w-[130px]">
+              {saving
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</>
+                : <><Check className="w-3.5 h-3.5" />Save Location</>
+              }
             </Button>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 // ── Main Component ────────────────────────────────────────────────────────────
-
 export function LocationsMap({ theory }: { theory: Theory }) {
+  const { i18n } = useTranslation();
   const { toast } = useToast();
   const [locations, setLocations]     = useState<LocationRecord[]>([]);
   const [loadingLocs, setLoadingLocs] = useState(true);
-  const [showSheet, setShowSheet]     = useState(false);
+  const [showDialog, setShowDialog]   = useState(false);
+
+  // Pick the tile layer matching the current UI language
+  const tile = TILE_LAYERS[i18n.language] ?? TILE_LAYERS.default;
 
   useEffect(() => {
     (async () => {
@@ -649,7 +689,7 @@ export function LocationsMap({ theory }: { theory: Theory }) {
   return (
     <div className="flex h-full overflow-hidden">
 
-      {/* ── Sidebar ─────────────────────────────────────────────────────── */}
+      {/* ── Sidebar ── */}
       <aside className="w-80 flex-none border-r bg-card flex flex-col overflow-hidden">
         <div className="px-4 py-3 border-b flex items-center justify-between flex-none">
           <div className="flex items-center gap-2">
@@ -659,7 +699,7 @@ export function LocationsMap({ theory }: { theory: Theory }) {
               <Badge variant="secondary" className="text-xs h-5 px-1.5">{locations.length}</Badge>
             )}
           </div>
-          <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowSheet(true)}>
+          <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowDialog(true)}>
             <Plus className="w-3.5 h-3.5" /> Add
           </Button>
         </div>
@@ -683,51 +723,52 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                 <li key={loc.id} className="group px-4 py-3 hover:bg-muted/30 transition-colors">
                   <div className="flex items-start gap-2.5">
                     <div
-                      className="mt-0.5 w-7 h-7 rounded-full flex-none flex items-center justify-center text-sm"
-                      style={{ backgroundColor: COLOURS[i % COLOURS.length] + "22", border: `2px solid ${COLOURS[i % COLOURS.length]}` }}
+                      className="mt-0.5 w-7 h-7 rounded-full flex-none flex items-center justify-center text-base"
+                      style={{
+                        background: `${COLOURS[i % COLOURS.length]}22`,
+                        border: `2px solid ${COLOURS[i % COLOURS.length]}`,
+                      }}
                     >
-                      <span>{emojiFor(loc.icon)}</span>
+                      {emojiFor(loc.icon)}
                     </div>
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 space-y-0.5">
                       <p className="text-sm font-medium leading-tight truncate" title={shortName(loc)}>
                         {shortName(loc)}
                       </p>
-                      {loc.adminLevel1 && loc.level !== "admin1" && (
-                        <p className="text-xs text-muted-foreground truncate">{loc.adminLevel1}, {loc.country}</p>
-                      )}
-                      {loc.level === "admin1" && (
-                        <p className="text-xs text-muted-foreground truncate">{loc.country}</p>
-                      )}
-                      {loc.level === "country" && (
-                        <p className="text-xs text-muted-foreground truncate">Country level</p>
-                      )}
-                      <div className="mt-1">{levelBadge(loc.level)}</div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {loc.level === "admin2"
+                          ? `${loc.adminLevel1}, ${loc.country}`
+                          : loc.level === "admin1"
+                          ? loc.country
+                          : "Country level"}
+                      </p>
+                      <div className="pt-0.5"><LevelBadge level={loc.level} /></div>
                       {(loc.targetFigure || loc.actualFigure) && (
-                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1.5 pt-1">
                           {loc.figureLabel && (
-                            <span className="text-[10px] text-muted-foreground">{loc.figureLabel}:</span>
+                            <span className="text-[10px] text-muted-foreground self-center">{loc.figureLabel}:</span>
                           )}
                           {loc.targetFigure && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
                               <Target className="w-2.5 h-2.5" />{loc.targetFigure}
                             </span>
                           )}
                           {loc.actualFigure && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5">
+                            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5">
                               <TrendingUp className="w-2.5 h-2.5" />{loc.actualFigure}
                             </span>
                           )}
                         </div>
                       )}
                       {loc.lat != null && (
-                        <p className="text-[10px] text-muted-foreground/60 font-mono mt-0.5">
+                        <p className="text-[10px] text-muted-foreground/50 font-mono">
                           {loc.lat.toFixed(4)}, {loc.lng?.toFixed(4)}
                         </p>
                       )}
                     </div>
                     <button
                       onClick={() => handleDelete(loc.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground flex-none mt-0.5"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground flex-none"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -741,25 +782,35 @@ export function LocationsMap({ theory }: { theory: Theory }) {
         {locations.length > 0 && (
           <div className="flex-none border-t px-4 py-2.5 space-y-1">
             {[
-              { level: "country", label: "Country",           col: "#6366f1" },
-              { level: "admin1",  label: "Region / State",    col: "#f97316" },
-              { level: "admin2",  label: "District / LGA",    col: "#10b981" },
-            ].filter(d => locations.some(l => l.level === d.level)).map(d => (
-              <div key={d.level} className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                <span className="w-3 h-0.5 rounded inline-block" style={{ backgroundColor: d.col }} />
-                {d.label}
-              </div>
-            ))}
+              { level: "country", label: "Country",         col: "#6366f1" },
+              { level: "admin1",  label: "Region / State",  col: "#f97316" },
+              { level: "admin2",  label: "District / LGA",  col: "#10b981" },
+            ]
+              .filter(d => locations.some(l => l.level === d.level))
+              .map(d => (
+                <div key={d.level} className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                  <span className="w-3 h-0.5 rounded inline-block" style={{ backgroundColor: d.col }} />
+                  {d.label}
+                </div>
+              ))}
           </div>
         )}
       </aside>
 
-      {/* ── Map ─────────────────────────────────────────────────────────── */}
+      {/* ── Map ── */}
       <div className="flex-1 relative">
-        <MapContainer center={[10, 15]} zoom={3} className="w-full h-full">
+        <MapContainer
+          key={tile.url}           // remount when tile changes (language switch)
+          center={[8, 22]}         // centred on sub-Saharan Africa
+          zoom={4}
+          className="w-full h-full"
+          zoomControl
+        >
           <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url={tile.url}
+            attribution={tile.attribution}
+            subdomains={(tile.subdomains ?? "abc") as any}
+            maxZoom={19}
           />
           <FitBounds locations={locations} />
 
@@ -772,41 +823,45 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                   try {
                     return (
                       <GeoJSON
-                        key={`geo-${loc.id}`}
-                        data={JSON.parse(loc.boundaryGeoJson)}
-                        style={{ color, weight: 2.5, fillColor: color, fillOpacity: 0.14 }}
+                        key={`geo-${loc.id}-${tile.url}`}
+                        data={JSON.parse(loc.boundaryGeoJson) as any}
+                        style={{ color, weight: 2.5, fillColor: color, fillOpacity: 0.15 }}
                       />
                     );
                   } catch { return null; }
                 })()}
+
                 {loc.lat != null && loc.lng != null && (
                   <Marker
                     key={`mk-${loc.id}`}
                     position={[loc.lat, loc.lng]}
                     icon={makeIcon(emoji, color)}
                   >
-                    <Popup maxWidth={240}>
-                      <div className="space-y-1 text-sm">
-                        <div className="font-semibold flex items-center gap-1.5">
-                          <span>{emoji}</span>
-                          <span>{shortName(loc)}</span>
-                        </div>
-                        {loc.level !== "country" && (
-                          <div className="text-xs text-gray-500">{loc.country}</div>
-                        )}
-                        <div className="text-xs text-gray-400 font-mono">
-                          {loc.lat?.toFixed(5)}, {loc.lng?.toFixed(5)}
-                        </div>
+                    <Popup maxWidth={260}>
+                      <div className="space-y-1 py-0.5">
+                        <p className="font-semibold text-sm flex items-center gap-1.5">
+                          <span>{emoji}</span> {shortName(loc)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {loc.level === "admin2"
+                            ? `${loc.adminLevel1} · ${loc.country}`
+                            : loc.level === "admin1"
+                            ? loc.country
+                            : "Country level"}
+                        </p>
+                        <p className="text-[10px] text-gray-400 font-mono">
+                          {loc.lat.toFixed(5)}, {loc.lng?.toFixed(5)}
+                        </p>
                         {(loc.targetFigure || loc.actualFigure) && (
-                          <div className="pt-1 border-t border-gray-200 space-y-0.5">
+                          <div className="pt-1.5 border-t border-gray-200 space-y-0.5">
                             {loc.figureLabel && (
-                              <div className="text-xs font-medium text-gray-600">{loc.figureLabel}</div>
+                              <p className="text-xs font-medium text-gray-600">{loc.figureLabel}</p>
                             )}
                             {loc.targetFigure && (
-                              <div className="text-xs text-blue-600">🎯 Target: <strong>{loc.targetFigure}</strong></div>
+                              <p className="text-xs text-blue-600">🎯 Target: <strong>{loc.targetFigure}</strong></p>
                             )}
                             {loc.actualFigure && (
-                              <div className="text-xs text-emerald-600">📈 Actual: <strong>{loc.actualFigure}</strong></div>
+                              <p className="text-xs text-emerald-600">📈 Actual: <strong>{loc.actualFigure}</strong></p>
                             )}
                           </div>
                         )}
@@ -825,9 +880,9 @@ export function LocationsMap({ theory }: { theory: Theory }) {
               <MapPin className="w-7 h-7 text-primary mx-auto mb-2" />
               <p className="font-semibold text-sm">Add your first location</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Select country → region → district, set GPS coordinates, choose an icon and attach target/actual figures.
+                Select country → region → district, enter GPS coordinates, choose an icon and attach target/actual figures.
               </p>
-              <Button size="sm" className="mt-3 gap-1.5" onClick={() => setShowSheet(true)}>
+              <Button size="sm" className="mt-3 gap-1.5" onClick={() => setShowDialog(true)}>
                 <Plus className="w-3.5 h-3.5" /> Add Location
               </Button>
             </div>
@@ -835,12 +890,13 @@ export function LocationsMap({ theory }: { theory: Theory }) {
         )}
       </div>
 
-      {/* ── Add Location Sheet ── */}
-      <AddLocationSheet
-        open={showSheet}
-        onClose={() => setShowSheet(false)}
+      {/* ── Dialog ── */}
+      <AddLocationDialog
+        open={showDialog}
+        onClose={() => setShowDialog(false)}
         theoryId={theory.id}
         onSaved={loc => setLocations(prev => [...prev, loc])}
+        lang={i18n.language}
       />
     </div>
   );
