@@ -42,3 +42,39 @@ id = "XubBTY_Q79aeQWtRDf5kD"
 uri = "file://attached_assets/generated_audio/pathways-scene5.mp3"
 type = "audio"
 title = "pathways-scene5"
+
+[[outputs]]
+id = "RXe6LwSpJt-jex6mIWBoj"
+uri = "file://attached_assets/generated_audio/pathways-scene2-v2.mp3"
+type = "audio"
+title = "pathways-scene2-v2"
+
+[[outputs]]
+id = "l8jyg96Qr-e3jj47N-NRb"
+uri = "file://attached_assets/generated_audio/pathways-scene3-v2.mp3"
+type = "audio"
+title = "pathways-scene3-v2"
+
+[[outputs]]
+id = "T8ESRa2ZfNM2DtrLOI6A3"
+uri = "file://attached_assets/generated_audio/pathways-scene4-v2.mp3"
+type = "audio"
+title = "pathways-scene4-v2"
+
+[[outputs]]
+id = "XOdRKtYEHQLp4MsskPemi"
+uri = "file://attached_assets/generated_audio/pathways-scene5-v2.mp3"
+type = "audio"
+title = "pathways-scene5-v2"
+
+[[outputs]]
+id = "h-7urB31NCsoGylQw-ek-"
+uri = "file://attached_assets/generated_audio/pathways-scene1-v2.mp3"
+type = "audio"
+title = "pathways-scene1-v2"
+
+[[outputs]]
+id = "N732YOHUbN2EKeoV1LUsu"
+uri = "file://attached_assets/generated_audio/pathways-music-upbeat.mp3"
+type = "audio"
+title = "generated_music"

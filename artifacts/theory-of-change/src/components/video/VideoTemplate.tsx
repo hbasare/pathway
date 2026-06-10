@@ -16,11 +16,11 @@ const SCENE_DURATIONS = {
 };
 
 const SCENE_CLIPS = [
-  "pathways-scene1.mp3",
-  "pathways-scene2.mp3",
-  "pathways-scene3.mp3",
-  "pathways-scene4.mp3",
-  "pathways-scene5.mp3",
+  "pathways-scene1-v2.mp3",
+  "pathways-scene2-v2.mp3",
+  "pathways-scene3-v2.mp3",
+  "pathways-scene4-v2.mp3",
+  "pathways-scene5-v2.mp3",
 ];
 
 export default function VideoTemplate() {
@@ -110,7 +110,7 @@ export default function VideoTemplate() {
       ))}
 
       {/* Background music */}
-      <audio ref={musicRef} src={`${BASE}audio/pathways-music.mp3`} preload="auto" loop />
+      <audio ref={musicRef} src={`${BASE}audio/pathways-music-upbeat.mp3`} preload="auto" loop />
 
       {/* Click-to-play overlay */}
       <AnimatePresence>
