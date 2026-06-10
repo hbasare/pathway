@@ -22,26 +22,33 @@ export default function VideoTemplate() {
   const [started, setStarted] = useState(false);
 
   const handleStart = () => {
-    setStarted(true);
     const voice = voiceRef.current;
     const music = musicRef.current;
-    if (voice) { voice.volume = 1.0; voice.play().catch(() => {}); }
-    if (music) { music.volume = 0.18; music.play().catch(() => {}); }
+
+    // Reset both elements to a clean state before playing
+    // (a failed autoplay attempt can leave elements in a broken pending state)
+    if (voice) {
+      voice.pause();
+      voice.currentTime = 0;
+      voice.volume = 1.0;
+      voice.load();
+      voice.play().catch((e) => console.error("Voiceover play failed:", e));
+    }
+    if (music) {
+      music.pause();
+      music.currentTime = 0;
+      music.volume = 0.18;
+      music.load();
+      music.play().catch((e) => console.error("Music play failed:", e));
+    }
+
+    // Dismiss overlay after kicking off playback
+    setStarted(true);
   };
 
-  useEffect(() => {
-    const tryAutoplay = async () => {
-      try {
-        await voiceRef.current?.play();
-        await musicRef.current?.play();
-        if (musicRef.current) musicRef.current.volume = 0.18;
-        setStarted(true);
-      } catch {
-        /* autoplay blocked — overlay will handle it */
-      }
-    };
-    tryAutoplay();
-  }, []);
+  // Don't attempt autoplay — always show the overlay so the user click
+  // grants audio permission cleanly (iframes require explicit interaction)
+  useEffect(() => {}, []);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-[#0a0a0a] text-white font-sans flex items-center justify-center">
