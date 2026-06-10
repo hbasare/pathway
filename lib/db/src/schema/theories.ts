@@ -268,6 +268,10 @@ export const theoryLocationsTable = pgTable("theory_locations", {
   boundaryGeoJson: text("boundary_geojson").notNull().default(""),
   level: text("level").notNull().default("country"),
   nominatimId: text("nominatim_id").notNull().default(""),
+  icon: text("icon").notNull().default("general"),
+  figureLabel: text("figure_label").notNull().default(""),
+  targetFigure: text("target_figure").notNull().default(""),
+  actualFigure: text("actual_figure").notNull().default(""),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
