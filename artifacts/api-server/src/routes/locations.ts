@@ -26,6 +26,27 @@ router.post("/theories/:theoryId/locations", async (req, res) => {
   res.status(201).json(row);
 });
 
+router.patch("/theories/:theoryId/locations/:id", async (req, res) => {
+  const id       = Number(req.params.id);
+  const theoryId = Number(req.params.theoryId);
+  const allowed  = [
+    "icon", "figureLabel", "targetFigure", "actualFigure",
+    "lat", "lng", "displayName",
+  ] as const;
+  const patch: Record<string, unknown> = {};
+  for (const key of allowed) {
+    if (key in req.body) patch[key] = req.body[key];
+  }
+  patch.updatedAt = new Date();
+  const [updated] = await db
+    .update(theoryLocationsTable)
+    .set(patch)
+    .where(and(eq(theoryLocationsTable.id, id), eq(theoryLocationsTable.theoryId, theoryId)))
+    .returning();
+  if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+  res.json(updated);
+});
+
 router.delete("/theories/:theoryId/locations/:id", async (req, res) => {
   const id = Number(req.params.id);
   const theoryId = Number(req.params.theoryId);

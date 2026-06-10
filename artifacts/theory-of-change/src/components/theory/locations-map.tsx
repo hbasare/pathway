@@ -10,7 +10,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   MapPin, Plus, Trash2, Loader2, Search, Globe,
-  Check, Navigation, Target, TrendingUp, Palette, X,
+  Check, Navigation, Target, TrendingUp, Pencil, X,
+  ChevronDown,
 } from "lucide-react";
 import type { Theory } from "@workspace/api-client-react";
 
@@ -24,26 +25,41 @@ L.Icon.Default.mergeOptions({
   shadowUrl:     "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// ── Language-aware tile layers ────────────────────────────────────────────────
+// ── Language-aware tile layers (OSM standard = "more detailed") ───────────────
 const TILE_LAYERS: Record<string, { url: string; subdomains?: string; attribution: string }> = {
   default: {
-    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-    subdomains: "abcd",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    subdomains: "abc",
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
   },
   fr: {
     url: "https://{s}.tile.openstreetmap.fr/osmfr/{z}/{x}/{y}.png",
     subdomains: "abc",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> France',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://www.openstreetmap.fr">OSM France</a>',
   },
-  sw: { url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", subdomains: "abc", attribution: '&copy; OpenStreetMap' },
-  ha: { url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", subdomains: "abc", attribution: '&copy; OpenStreetMap' },
 };
-
 const NOMINATIM_LANG: Record<string, string> = {
   en: "en", fr: "fr", pt: "pt", es: "es",
   it: "it", nl: "nl", sw: "sw,en", ha: "ha,en", af: "af,en",
 };
+
+// ── Visual marker icons (map pin appearance only) ─────────────────────────────
+const MARKER_ICONS = [
+  { id: "general",        emoji: "📍", label: "General" },
+  { id: "education",      emoji: "🏫", label: "Education" },
+  { id: "health",         emoji: "🏥", label: "Health" },
+  { id: "agriculture",    emoji: "🌾", label: "Agriculture" },
+  { id: "water",          emoji: "💧", label: "WASH" },
+  { id: "livelihoods",    emoji: "💼", label: "Livelihoods" },
+  { id: "governance",     emoji: "🏛️",  label: "Governance" },
+  { id: "humanitarian",   emoji: "🚨", label: "Humanitarian" },
+  { id: "environment",    emoji: "🌿", label: "Environment" },
+  { id: "infrastructure", emoji: "🏗️",  label: "Infrastructure" },
+  { id: "community",      emoji: "👥", label: "Community" },
+  { id: "research",       emoji: "🔬", label: "Research" },
+];
+const markerEmoji = (id: string | null | undefined) =>
+  MARKER_ICONS.find(m => m.id === (id ?? "general"))?.emoji ?? "📍";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface LocationRecord {
@@ -61,97 +77,22 @@ interface NominatimResult {
   type: string; class: string;
 }
 interface Country { name: string; code: string; }
-
-// A confirmed location chip (will become one LocationRecord on save)
 interface ConfirmedLoc {
   uid: string;
   country: Country;
   region: NominatimResult | null;
   district: NominatimResult | null;
-  lat: number;
-  lng: number;
+  lat: number; lng: number;
   boundaryGeoJson: string;
   level: "country" | "admin1" | "admin2";
   displayName: string;
 }
-
-// ── Icon universe, organised by category ─────────────────────────────────────
-const ICON_CATEGORIES = [
-  {
-    label: "Beneficiary Groups",
-    items: [
-      { id: "families",        emoji: "👨‍👩‍👧‍👦", label: "Families" },
-      { id: "women",           emoji: "👩",    label: "Women" },
-      { id: "men",             emoji: "👨",    label: "Men" },
-      { id: "children",        emoji: "🧒",    label: "Children" },
-      { id: "youth",           emoji: "🧑",    label: "Youth" },
-      { id: "elderly",         emoji: "👴",    label: "Elderly" },
-      { id: "disabled",        emoji: "♿",    label: "Persons w/ Disabilities" },
-      { id: "refugees",        emoji: "🏕️",   label: "Refugees & IDPs" },
-      { id: "indigenous",      emoji: "🌿",    label: "Indigenous Peoples" },
-      { id: "farmers",         emoji: "👨‍🌾",  label: "Smallholder Farmers" },
-      { id: "pastoralists",    emoji: "🐄",    label: "Pastoralists" },
-      { id: "fisherfolk",      emoji: "🐟",    label: "Fisherfolk" },
-      { id: "artisans",        emoji: "🎨",    label: "Artisans" },
-      { id: "students",        emoji: "📚",    label: "Students" },
-      { id: "healthworkers",   emoji: "👩‍⚕️",  label: "Health Workers" },
-      { id: "teachers",        emoji: "👩‍🏫",  label: "Teachers" },
-      { id: "leaders",         emoji: "🏘️",   label: "Community Leaders" },
-      { id: "entrepreneurs",   emoji: "🤑",    label: "Entrepreneurs" },
-    ],
-  },
-  {
-    label: "Thematic Sectors",
-    items: [
-      { id: "education",       emoji: "🏫",    label: "Education" },
-      { id: "health",          emoji: "🏥",    label: "Health & Medical" },
-      { id: "water",           emoji: "💧",    label: "Water & WASH" },
-      { id: "agriculture",     emoji: "🌾",    label: "Agriculture" },
-      { id: "food_security",   emoji: "🌽",    label: "Food Security" },
-      { id: "nutrition",       emoji: "🥗",    label: "Nutrition" },
-      { id: "environment",     emoji: "🌱",    label: "Environment & Climate" },
-      { id: "drr",             emoji: "🌊",    label: "Disaster Risk" },
-      { id: "energy",          emoji: "☀️",    label: "Energy & Renewables" },
-      { id: "infrastructure",  emoji: "🏗️",   label: "Infrastructure" },
-      { id: "transport",       emoji: "🛣️",   label: "Transport" },
-      { id: "shelter",         emoji: "🏠",    label: "Shelter & Housing" },
-      { id: "livelihoods",     emoji: "💼",    label: "Livelihoods" },
-      { id: "finance",         emoji: "💰",    label: "Microfinance" },
-      { id: "market",          emoji: "🏪",    label: "Markets & Trade" },
-      { id: "digital",         emoji: "📱",    label: "Digital & ICT" },
-      { id: "governance",      emoji: "🏛️",   label: "Governance" },
-      { id: "gender",          emoji: "♀️",    label: "Gender & GBV" },
-      { id: "srhr",            emoji: "❤️",    label: "SRHR" },
-      { id: "child_protection",emoji: "🛡️",   label: "Child Protection" },
-      { id: "mental_health",   emoji: "🧠",    label: "Mental Health" },
-      { id: "legal",           emoji: "⚖️",    label: "Legal Aid" },
-      { id: "humanitarian",    emoji: "🚨",    label: "Humanitarian" },
-      { id: "peacebuilding",   emoji: "☮️",    label: "Peacebuilding" },
-      { id: "urban",           emoji: "🏙️",   label: "Urban Dev." },
-      { id: "social",          emoji: "🧩",    label: "Social Cohesion" },
-    ],
-  },
-  {
-    label: "Approaches & Methods",
-    items: [
-      { id: "research",        emoji: "🔬",    label: "Research" },
-      { id: "training",        emoji: "🎓",    label: "Training & Capacity" },
-      { id: "advocacy",        emoji: "📢",    label: "Advocacy" },
-      { id: "policy",          emoji: "📋",    label: "Policy" },
-      { id: "monitoring",      emoji: "📊",    label: "M&E" },
-      { id: "partnerships",    emoji: "🤝",    label: "Partnerships" },
-      { id: "community",       emoji: "👥",    label: "Community" },
-      { id: "media",           emoji: "📰",    label: "Media & Comms" },
-      { id: "sports",          emoji: "⚽",    label: "Sports & Recreation" },
-      { id: "general",         emoji: "📍",    label: "General" },
-    ],
-  },
-];
-
-// Flat lookup for emoji by id
-const ALL_ICONS = ICON_CATEGORIES.flatMap(c => c.items);
-const emojiFor  = (icon: string | null | undefined) =>
-  (icon ?? "general").split(",").map(id => ALL_ICONS.find(i => i.id === id.trim())?.emoji ?? "📍").join(" ");
+interface MeasurementIndicator {
+  id: number;
+  name: string;
+  targetFigure: string;
+  componentName: string;
+}
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const COLOURS = [
@@ -202,53 +143,36 @@ const COUNTRIES: Country[] = [
   { name: "Zambia", code: "zm" }, { name: "Zimbabwe", code: "zw" },
 ].sort((a, b) => a.name.localeCompare(b.name));
 
-// ── Nominatim search hook ─────────────────────────────────────────────────────
-function useNominatimSearch(countryCode: string, featureType: "state" | "county", lang: string) {
-  const [query, setQuery]     = useState("");
-  const [results, setResults] = useState<NominatimResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const acceptLang = NOMINATIM_LANG[lang] ?? "en";
+// ── Beneficiary parsing (from About → Beneficiaries & Partners text) ──────────
+function parseBeneficiaries(text: string): string[] {
+  return text
+    .split(/[\n;|]/)
+    .map(s => s.replace(/^[-–•*\d.)]\s*/, "").trim())
+    .filter(s => s.length > 2);
+}
 
-  const search = useCallback((q: string) => {
-    if (timer.current) clearTimeout(timer.current);
-    setQuery(q);
-    if (!q.trim() || !countryCode) { setResults([]); return; }
-    timer.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({
-          q, format: "json", polygon_geojson: "1",
-          addressdetails: "1", limit: "12", countrycodes: countryCode,
-        });
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?${params}`,
-          { headers: { "Accept-Language": acceptLang } },
-        );
-        const data: NominatimResult[] = await res.json();
-        const filter = featureType === "state"
-          ? ["state","province","region","administrative"]
-          : ["county","district","municipality","city","administrative"];
-        setResults(data.filter(r => filter.includes(r.type) || r.class === "boundary"));
-      } catch { setResults([]); }
-      finally { setLoading(false); }
-    }, 450);
-  }, [countryCode, featureType, acceptLang]);
-
-  const clear = useCallback(() => { setQuery(""); setResults([]); }, []);
-  return { query, results, loading, search, clear };
+// Combine all beneficiary/partner fields from the theory
+function theoryBeneficiaries(theory: Theory): string[] {
+  const combined = [
+    theory.targetBeneficiary ?? "",
+    theory.privateSectorPartners ?? "",
+    theory.publicSectorPartners ?? "",
+    theory.serviceProviders ?? "",
+  ].join("\n");
+  const items = parseBeneficiaries(combined);
+  return [...new Set(items)];  // deduplicate
 }
 
 // ── Map helpers ───────────────────────────────────────────────────────────────
-function makeIcon(emojis: string, color: string) {
+function makeIcon(emoji: string, color: string) {
   return L.divIcon({
     className: "",
     html: `<div style="
       width:36px;height:36px;border-radius:50% 50% 50% 0;
       background:${color};transform:rotate(-45deg);
       display:flex;align-items:center;justify-content:center;
-      box-shadow:0 2px 8px rgba(0,0,0,.3);border:2px solid rgba(255,255,255,.9);
-    "><span style="transform:rotate(45deg);font-size:14px;line-height:1">${emojis.split(" ")[0]}</span></div>`,
+      box-shadow:0 2px 8px rgba(0,0,0,.3);border:2.5px solid rgba(255,255,255,.95);
+    "><span style="transform:rotate(45deg);font-size:15px;line-height:1">${emoji}</span></div>`,
     iconSize: [36, 36], iconAnchor: [18, 36], popupAnchor: [0, -38],
   });
 }
@@ -274,13 +198,41 @@ function FitBounds({ locations }: { locations: LocationRecord[] }) {
   return null;
 }
 
+// ── Nominatim search hook ─────────────────────────────────────────────────────
+function useNominatimSearch(countryCode: string, featureType: "state" | "county", lang: string) {
+  const [query, setQuery]     = useState("");
+  const [results, setResults] = useState<NominatimResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const acceptLang = NOMINATIM_LANG[lang] ?? "en";
+
+  const search = useCallback((q: string) => {
+    if (timer.current) clearTimeout(timer.current);
+    setQuery(q);
+    if (!q.trim() || !countryCode) { setResults([]); return; }
+    timer.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({ q, format: "json", polygon_geojson: "1", addressdetails: "1", limit: "12", countrycodes: countryCode });
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, { headers: { "Accept-Language": acceptLang } });
+        const data: NominatimResult[] = await res.json();
+        const filter = featureType === "state" ? ["state","province","region","administrative"] : ["county","district","municipality","city","administrative"];
+        setResults(data.filter(r => filter.includes(r.type) || r.class === "boundary"));
+      } catch { setResults([]); }
+      finally { setLoading(false); }
+    }, 450);
+  }, [countryCode, featureType, acceptLang]);
+
+  const clear = useCallback(() => { setQuery(""); setResults([]); }, []);
+  return { query, results, loading, search, clear };
+}
+
 // ── Sidebar helpers ───────────────────────────────────────────────────────────
 function shortName(loc: LocationRecord) {
   if (loc.adminLevel2) return loc.adminLevel2;
   if (loc.adminLevel1) return loc.adminLevel1;
   return loc.country;
 }
-
 function LevelBadge({ level }: { level: string }) {
   const map: Record<string, { label: string; cls: string }> = {
     country: { label: "Country",        cls: "bg-indigo-100 text-indigo-700 border-indigo-200" },
@@ -291,26 +243,9 @@ function LevelBadge({ level }: { level: string }) {
   return <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${d.cls}`}>{d.label}</span>;
 }
 
-// ── Confirmed location chip ───────────────────────────────────────────────────
-function LocChip({ loc, onRemove }: { loc: ConfirmedLoc; onRemove: () => void }) {
-  return (
-    <div className="flex items-center gap-1.5 px-2.5 py-1.5 border rounded-lg bg-card text-xs">
-      <span className="text-muted-foreground">{loc.level === "admin2" ? "📍" : loc.level === "admin1" ? "🗺️" : "🌍"}</span>
-      <span className="font-medium text-foreground flex-1 min-w-0 truncate">{loc.displayName}</span>
-      <LevelBadge level={loc.level} />
-      <button onClick={onRemove} className="ml-1 text-muted-foreground hover:text-destructive flex-none">
-        <X className="w-3 h-3" />
-      </button>
-    </div>
-  );
-}
-
-function makeConfirmedLoc(
-  country: Country,
-  region: NominatimResult | null,
-  district: NominatimResult | null,
-): ConfirmedLoc {
-  const src = district ?? region;
+// ── Location Picker (multi-add) ───────────────────────────────────────────────
+function makeConfirmedLoc(country: Country, region: NominatimResult | null, district: NominatimResult | null): ConfirmedLoc {
+  const src  = district ?? region;
   const lat  = src ? parseFloat(src.lat) : 0;
   const lng  = src ? parseFloat(src.lon) : 0;
   const level: ConfirmedLoc["level"] = district ? "admin2" : region ? "admin1" : "country";
@@ -318,19 +253,10 @@ function makeConfirmedLoc(
   if (district) parts.push(district.address?.county ?? district.address?.district ?? district.address?.municipality ?? district.display_name.split(",")[0]);
   else if (region) parts.push(region.address?.state ?? region.address?.region ?? region.display_name.split(",")[0]);
   parts.push(country.name);
-  return {
-    uid: `${Date.now()}-${Math.random()}`,
-    country, region, district, lat, lng,
-    boundaryGeoJson: src?.geojson ? JSON.stringify(src.geojson) : "",
-    level,
-    displayName: parts.filter(Boolean).join(", "),
-  };
+  return { uid: `${Date.now()}-${Math.random()}`, country, region, district, lat, lng, boundaryGeoJson: src?.geojson ? JSON.stringify(src.geojson) : "", level, displayName: parts.filter(Boolean).join(", ") };
 }
 
-// ── Location Picker (multi-add) ───────────────────────────────────────────────
-function LocationPicker({
-  confirmed, onAdd, onRemove, lang,
-}: {
+function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
   confirmed: ConfirmedLoc[];
   onAdd: (loc: ConfirmedLoc) => void;
   onRemove: (uid: string) => void;
@@ -352,14 +278,9 @@ function LocationPicker({
   const addAndReset = () => {
     if (!country) return;
     onAdd(makeConfirmedLoc(country, region, district));
-    // Reset to country level so they can add another region in same country or switch country
-    setRegion(null);
-    setDistrict(null);
-    regionHook.clear();
-    districtHook.clear();
+    setRegion(null); setDistrict(null);
+    regionHook.clear(); districtHook.clear();
   };
-
-  const canAdd = !!country;
 
   return (
     <div className="space-y-3">
@@ -370,24 +291,18 @@ function LocationPicker({
           <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-primary/5 border-primary/30">
             <Globe className="w-3.5 h-3.5 text-primary flex-none" />
             <span className="text-sm font-medium flex-1">{country.name}</span>
-            <button onClick={() => { setCountry(null); setRegion(null); setDistrict(null); setCountryQ(""); regionHook.clear(); districtHook.clear(); }}
-              className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+            <button onClick={() => { setCountry(null); setRegion(null); setDistrict(null); setCountryQ(""); regionHook.clear(); districtHook.clear(); }} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
           </div>
         ) : (
           <div className="space-y-1">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              <Input autoFocus placeholder="Search country…" value={countryQ}
-                onChange={e => setCountryQ(e.target.value)} className="pl-8 h-8 text-sm" />
+              <Input autoFocus placeholder="Search country…" value={countryQ} onChange={e => setCountryQ(e.target.value)} className="pl-8 h-8 text-sm" />
             </div>
             <div className="border rounded-md max-h-36 overflow-y-auto bg-card divide-y divide-border">
-              {filteredCountries.length === 0
-                ? <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
+              {filteredCountries.length === 0 ? <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
                 : filteredCountries.map(c => (
-                  <button key={c.code} onClick={() => { setCountry(c); setCountryQ(""); }}
-                    className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">
-                    {c.name}
-                  </button>
+                  <button key={c.code} onClick={() => { setCountry(c); setCountryQ(""); }} className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">{c.name}</button>
                 ))
               }
             </div>
@@ -398,29 +313,24 @@ function LocationPicker({
       {/* Region */}
       {country && (
         <div className="space-y-1.5">
-          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Region / State / Province <span className="normal-case font-normal">(optional)</span></label>
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Region / State <span className="normal-case font-normal">(optional)</span></label>
           {region ? (
             <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-orange-50 border-orange-200">
               <Check className="w-3.5 h-3.5 text-orange-600 flex-none" />
-              <span className="text-sm font-medium flex-1 text-orange-800">
-                {region.address?.state ?? region.address?.region ?? region.display_name.split(",")[0]}
-              </span>
-              <button onClick={() => { setRegion(null); setDistrict(null); regionHook.clear(); districtHook.clear(); }}
-                className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+              <span className="text-sm font-medium flex-1 text-orange-800">{region.address?.state ?? region.address?.region ?? region.display_name.split(",")[0]}</span>
+              <button onClick={() => { setRegion(null); setDistrict(null); regionHook.clear(); districtHook.clear(); }} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
             </div>
           ) : (
             <div className="space-y-1">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input placeholder={`Search region in ${country.name}…`} value={regionHook.query}
-                  onChange={e => regionHook.search(e.target.value)} className="pl-8 h-8 text-sm" />
+                <Input placeholder={`Search region in ${country.name}…`} value={regionHook.query} onChange={e => regionHook.search(e.target.value)} className="pl-8 h-8 text-sm" />
                 {regionHook.loading && <Loader2 className="absolute right-2.5 top-2.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />}
               </div>
               {regionHook.results.length > 0 && (
                 <div className="border rounded-md max-h-32 overflow-y-auto bg-card divide-y divide-border">
                   {regionHook.results.map(r => (
-                    <button key={r.place_id} onClick={() => { setRegion(r); regionHook.clear(); }}
-                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">
+                    <button key={r.place_id} onClick={() => { setRegion(r); regionHook.clear(); }} className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">
                       {r.address?.state ?? r.address?.region ?? r.display_name.split(",")[0]}
                     </button>
                   ))}
@@ -438,26 +348,20 @@ function LocationPicker({
           {district ? (
             <div className="flex items-center gap-2 px-3 py-2 border rounded-md bg-emerald-50 border-emerald-200">
               <Check className="w-3.5 h-3.5 text-emerald-600 flex-none" />
-              <span className="text-sm font-medium flex-1 text-emerald-800">
-                {district.address?.county ?? district.address?.district ?? district.address?.municipality ?? district.display_name.split(",")[0]}
-              </span>
-              <button onClick={() => { setDistrict(null); districtHook.clear(); }}
-                className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
+              <span className="text-sm font-medium flex-1 text-emerald-800">{district.address?.county ?? district.address?.district ?? district.address?.municipality ?? district.display_name.split(",")[0]}</span>
+              <button onClick={() => { setDistrict(null); districtHook.clear(); }} className="text-muted-foreground hover:text-destructive"><X className="w-3 h-3" /></button>
             </div>
           ) : (
             <div className="space-y-1">
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                <Input placeholder={`Search district in ${region.address?.state ?? country?.name}…`}
-                  value={districtHook.query} onChange={e => districtHook.search(e.target.value)}
-                  className="pl-8 h-8 text-sm" />
+                <Input placeholder={`Search district in ${region.address?.state ?? country?.name}…`} value={districtHook.query} onChange={e => districtHook.search(e.target.value)} className="pl-8 h-8 text-sm" />
                 {districtHook.loading && <Loader2 className="absolute right-2.5 top-2.5 w-3.5 h-3.5 animate-spin text-muted-foreground" />}
               </div>
               {districtHook.results.length > 0 && (
                 <div className="border rounded-md max-h-32 overflow-y-auto bg-card divide-y divide-border">
                   {districtHook.results.map(r => (
-                    <button key={r.place_id} onClick={() => { setDistrict(r); districtHook.clear(); }}
-                      className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">
+                    <button key={r.place_id} onClick={() => { setDistrict(r); districtHook.clear(); }} className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted/60 transition-colors">
                       {r.address?.county ?? r.address?.district ?? r.address?.municipality ?? r.display_name.split(",")[0]}
                     </button>
                   ))}
@@ -468,40 +372,25 @@ function LocationPicker({
         </div>
       )}
 
-      {/* Add-to-list button */}
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={!canAdd}
-        onClick={addAndReset}
-        className="w-full gap-1.5 border-dashed"
-      >
+      <Button size="sm" variant="outline" disabled={!country} onClick={addAndReset} className="w-full gap-1.5 border-dashed">
         <Plus className="w-3.5 h-3.5" />
-        {country
-          ? `Add ${district ? "district" : region ? "region" : "country"}: ${district
-              ? (district.address?.county ?? district.address?.district ?? district.display_name.split(",")[0])
-              : region
-              ? (region.address?.state ?? region.address?.region ?? region.display_name.split(",")[0])
-              : country.name}`
-          : "Select a country above to add"
-        }
+        {country ? `Add: ${district ? (district.address?.county ?? district.address?.district ?? district.display_name.split(",")[0]) : region ? (region.address?.state ?? region.address?.region ?? region.display_name.split(",")[0]) : country.name}` : "Select a country to add"}
       </Button>
 
-      {/* Confirmed chips */}
       {confirmed.length > 0 && (
         <div className="pt-1 space-y-1.5">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Selected locations ({confirmed.length})
-            </p>
-            <button onClick={() => confirmed.forEach(l => onRemove(l.uid))}
-              className="text-[11px] text-muted-foreground hover:text-destructive underline">
-              Clear all
-            </button>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Selected ({confirmed.length})</p>
+            <button onClick={() => confirmed.forEach(l => onRemove(l.uid))} className="text-[11px] text-muted-foreground hover:text-destructive underline">Clear all</button>
           </div>
-          <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
+          <div className="space-y-1 max-h-40 overflow-y-auto pr-0.5">
             {confirmed.map(loc => (
-              <LocChip key={loc.uid} loc={loc} onRemove={() => onRemove(loc.uid)} />
+              <div key={loc.uid} className="flex items-center gap-1.5 px-2.5 py-1.5 border rounded-lg bg-card text-xs">
+                <span className="text-muted-foreground">{loc.level === "admin2" ? "📍" : loc.level === "admin1" ? "🗺️" : "🌍"}</span>
+                <span className="font-medium flex-1 min-w-0 truncate">{loc.displayName}</span>
+                <LevelBadge level={loc.level} />
+                <button onClick={() => onRemove(loc.uid)} className="ml-1 text-muted-foreground hover:text-destructive flex-none"><X className="w-3 h-3" /></button>
+              </div>
             ))}
           </div>
         </div>
@@ -510,93 +399,200 @@ function LocationPicker({
   );
 }
 
-// ── Icon Picker (multi-select, categorised) ───────────────────────────────────
-function IconPicker({ selected, onChange }: { selected: string[]; onChange: (ids: string[]) => void }) {
-  const toggle = (id: string) =>
-    onChange(selected.includes(id) ? selected.filter(s => s !== id) : [...selected, id]);
+// ── Beneficiary Picker ────────────────────────────────────────────────────────
+function BeneficiaryPicker({ allBeneficiaries, selected, onChange }: {
+  allBeneficiaries: string[];
+  selected: string[];
+  onChange: (s: string[]) => void;
+}) {
+  const toggle = (b: string) =>
+    onChange(selected.includes(b) ? selected.filter(s => s !== b) : [...selected, b]);
 
+  if (allBeneficiaries.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-muted-foreground/30 p-4 text-center text-xs text-muted-foreground space-y-1">
+        <p className="font-medium">No beneficiaries defined yet</p>
+        <p>Go to the <span className="font-semibold">About</span> tab → <span className="font-semibold">Beneficiaries &amp; Partners</span> and fill in the Target Beneficiary Group field. Those entries will appear here.</p>
+      </div>
+    );
+  }
   return (
-    <div className="space-y-3">
-      {ICON_CATEGORIES.map(cat => (
-        <div key={cat.label}>
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">{cat.label}</p>
-          <div className="grid grid-cols-5 gap-1">
-            {cat.items.map(ic => {
-              const on = selected.includes(ic.id);
-              return (
-                <button
-                  key={ic.id}
-                  onClick={() => toggle(ic.id)}
-                  title={ic.label}
-                  className={`flex flex-col items-center gap-0.5 py-2 px-1 rounded-lg border text-[10px] transition-all leading-tight text-center ${
-                    on
-                      ? "border-primary bg-primary/10 text-primary font-semibold shadow-sm"
-                      : "border-border hover:bg-muted/60 text-muted-foreground"
-                  }`}
-                >
-                  <span className="text-lg leading-none">{ic.emoji}</span>
-                  <span className="line-clamp-2">{ic.label.split(" ").slice(0, 2).join(" ")}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">Select the groups from the About section that this location serves.</p>
+      <div className="flex flex-wrap gap-2">
+        {allBeneficiaries.map(b => {
+          const on = selected.includes(b);
+          return (
+            <button
+              key={b}
+              onClick={() => toggle(b)}
+              className={`px-2.5 py-1 rounded-full border text-xs font-medium transition-all ${
+                on ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border text-muted-foreground hover:border-primary/50 hover:text-foreground"
+              }`}
+            >
+              {b}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
+// ── Indicator Picker (from measurement plan) ──────────────────────────────────
+function IndicatorDropdown({ indicators, selectedId, onSelect, manualFigure, onManualChange }: {
+  indicators: MeasurementIndicator[];
+  selectedId: number | null;
+  onSelect: (ind: MeasurementIndicator | null) => void;
+  manualFigure: string;
+  onManualChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const sel = indicators.find(i => i.id === selectedId);
+
+  return (
+    <div className="space-y-2">
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target (from Measurement Plan)</label>
+      {indicators.length === 0 ? (
+        <p className="text-xs text-muted-foreground italic">No indicators found in the Measurement Plan for this theory.</p>
+      ) : (
+        <div className="relative">
+          <button
+            onClick={() => setOpen(o => !o)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2 border rounded-md text-sm bg-card hover:bg-muted/40 transition-colors"
+          >
+            {sel ? (
+              <span className="flex-1 text-left truncate">
+                <span className="font-medium">{sel.name}</span>
+                {sel.targetFigure && <span className="ml-2 text-muted-foreground text-xs">({sel.targetFigure})</span>}
+              </span>
+            ) : (
+              <span className="text-muted-foreground flex-1 text-left">Select an indicator…</span>
+            )}
+            <ChevronDown className="w-3.5 h-3.5 text-muted-foreground flex-none" />
+          </button>
+          {open && (
+            <div className="absolute z-10 top-full left-0 right-0 mt-1 border rounded-md bg-card shadow-md max-h-48 overflow-y-auto divide-y divide-border">
+              <button onClick={() => { onSelect(null); setOpen(false); }} className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:bg-muted/60">
+                — None —
+              </button>
+              {indicators.map(ind => (
+                <button key={ind.id} onClick={() => { onSelect(ind); setOpen(false); }}
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/60 ${ind.id === selectedId ? "bg-primary/5 font-medium text-primary" : ""}`}>
+                  <span className="block truncate">{ind.name}</span>
+                  <span className="text-[10px] text-muted-foreground">{ind.componentName}{ind.targetFigure ? ` · Target: ${ind.targetFigure}` : ""}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-1">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target figure</label>
+          <div className="relative">
+            <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input value={sel?.targetFigure ?? manualFigure} onChange={e => onManualChange(e.target.value)}
+              disabled={!!sel} placeholder="e.g. 5,000" className="pl-8 h-9 text-sm" />
+          </div>
+          {sel && <p className="text-[10px] text-muted-foreground pl-1">From measurement plan — deselect indicator to override.</p>}
+        </div>
+        <div className="space-y-1">
+          <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual figure</label>
+          <div className="relative">
+            <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+            <Input value={sel?.targetFigure ? "" : undefined} placeholder="e.g. 3,812" className="pl-8 h-9 text-sm" readOnly={false} id="actual-figure-add" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Marker icon picker ────────────────────────────────────────────────────────
+function MarkerPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  return (
+    <div>
+      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground block mb-1.5">Map Marker Style</label>
+      <div className="grid grid-cols-6 gap-1">
+        {MARKER_ICONS.map(ic => (
+          <button key={ic.id} onClick={() => onChange(ic.id)} title={ic.label}
+            className={`flex flex-col items-center gap-0.5 py-2 rounded-lg border text-[10px] transition-all ${value === ic.id ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border hover:bg-muted/60 text-muted-foreground"}`}>
+            <span className="text-lg leading-none">{ic.emoji}</span>
+            <span className="leading-tight">{ic.label.split(" ")[0]}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Shared: fetch measurement indicators for a theory ─────────────────────────
+async function fetchIndicators(theoryId: number): Promise<MeasurementIndicator[]> {
+  try {
+    const res = await fetch(`${API_BASE}/theories/${theoryId}`, { credentials: "include" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list: MeasurementIndicator[] = [];
+    for (const comp of (data.components ?? [])) {
+      for (const ind of (comp.componentIndicators ?? [])) {
+        if (ind.name?.trim()) {
+          list.push({ id: ind.id, name: ind.name, targetFigure: ind.targetFigure ?? "", componentName: comp.title ?? comp.name ?? "" });
+        }
+      }
+    }
+    return list;
+  } catch { return []; }
+}
+
 // ── Add Location Dialog ───────────────────────────────────────────────────────
-function AddLocationDialog({
-  open, onClose, theoryId, onSaved, lang,
-}: {
+function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
   open: boolean; onClose: () => void;
-  theoryId: number; onSaved: (locs: LocationRecord[]) => void;
-  lang: string;
+  theory: Theory; onSaved: (locs: LocationRecord[]) => void; lang: string;
 }) {
   const { toast } = useToast();
-  const [confirmed, setConfirmed] = useState<ConfirmedLoc[]>([]);
-  const [icons, setIcons]         = useState<string[]>(["general"]);
-  const [figureLabel, setFigureLabel]     = useState("");
-  const [targetFigure, setTargetFigure]   = useState("");
-  const [actualFigure, setActualFigure]   = useState("");
-  const [saving, setSaving]       = useState(false);
-  const [activeTab, setActiveTab] = useState<"locations" | "icons" | "figures">("locations");
+  const [confirmed, setConfirmed]   = useState<ConfirmedLoc[]>([]);
+  const [benef, setBenef]           = useState<string[]>([]);
+  const [icon, setIcon]             = useState("general");
+  const [indicators, setIndicators] = useState<MeasurementIndicator[]>([]);
+  const [selIndId, setSelIndId]     = useState<number | null>(null);
+  const [manualTarget, setManualTarget] = useState("");
+  const [actualFigure, setActualFigure] = useState("");
+  const [saving, setSaving]         = useState(false);
+  const [tab, setTab]               = useState<"locations" | "beneficiaries" | "target">("locations");
+
+  const allBenef = useMemo(() => theoryBeneficiaries(theory), [theory]);
+  const selInd   = indicators.find(i => i.id === selIndId) ?? null;
+
+  useEffect(() => {
+    if (open) fetchIndicators(theory.id).then(setIndicators);
+  }, [open, theory.id]);
 
   const resetAll = () => {
-    setConfirmed([]); setIcons(["general"]);
-    setFigureLabel(""); setTargetFigure(""); setActualFigure("");
-    setActiveTab("locations");
+    setConfirmed([]); setBenef([]); setIcon("general");
+    setSelIndId(null); setManualTarget(""); setActualFigure(""); setTab("locations");
   };
-
   const handleClose = () => { resetAll(); onClose(); };
 
   const handleSave = async () => {
     if (!confirmed.length) return;
     setSaving(true);
-    const iconStr = icons.join(",");
+    const figureLabel  = benef.join("; ");
+    const targetFigure = selInd?.targetFigure ?? manualTarget;
     const created: LocationRecord[] = [];
     try {
       for (const loc of confirmed) {
         const body = {
-          displayName:     loc.displayName,
-          country:         loc.country.name,
-          countryCode:     loc.country.code.toUpperCase(),
-          adminLevel1:     loc.region?.address?.state ?? loc.region?.address?.region ?? "",
-          adminLevel2:     loc.district?.address?.county ?? loc.district?.address?.district ?? loc.district?.address?.municipality ?? "",
-          lat:             loc.lat,
-          lng:             loc.lng,
-          boundaryGeoJson: loc.boundaryGeoJson,
-          level:           loc.level,
-          nominatimId:     String((loc.district ?? loc.region)?.place_id ?? ""),
-          icon:            iconStr,
-          figureLabel,
-          targetFigure,
-          actualFigure,
+          displayName: loc.displayName, country: loc.country.name,
+          countryCode: loc.country.code.toUpperCase(),
+          adminLevel1: loc.region?.address?.state ?? loc.region?.address?.region ?? "",
+          adminLevel2: loc.district?.address?.county ?? loc.district?.address?.district ?? loc.district?.address?.municipality ?? "",
+          lat: loc.lat, lng: loc.lng, boundaryGeoJson: loc.boundaryGeoJson,
+          level: loc.level, nominatimId: String((loc.district ?? loc.region)?.place_id ?? ""),
+          icon, figureLabel, targetFigure, actualFigure,
         };
-        const res = await fetch(`${API_BASE}/theories/${theoryId}/locations`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          credentials: "include", body: JSON.stringify(body),
+        const res = await fetch(`${API_BASE}/theories/${theory.id}/locations`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify(body),
         });
         if (!res.ok) throw new Error(await res.text());
         created.push(await res.json() as LocationRecord);
@@ -609,136 +605,196 @@ function AddLocationDialog({
     } finally { setSaving(false); }
   };
 
-  const Tab = ({ id, label, badge }: { id: typeof activeTab; label: string; badge?: number }) => (
-    <button
-      onClick={() => setActiveTab(id)}
-      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${
-        activeTab === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-      }`}
-    >
+  const Tab = ({ id, label, badge }: { id: typeof tab; label: string; badge?: number }) => (
+    <button onClick={() => setTab(id)}
+      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 ${tab === id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}>
       {label}
       {badge !== undefined && badge > 0 && (
-        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
-          activeTab === id ? "bg-white/20 text-white" : "bg-muted text-muted-foreground"
-        }`}>{badge}</span>
+        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${tab === id ? "bg-white/20 text-white" : "bg-muted"}`}>{badge}</span>
       )}
     </button>
   );
 
   return (
     <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
-      <DialogContent className="max-w-[580px] p-0 flex flex-col gap-0 max-h-[90vh]">
-        {/* Header */}
+      <DialogContent className="max-w-[560px] p-0 flex flex-col gap-0 max-h-[90vh]">
         <DialogHeader className="px-5 pt-4 pb-3 border-b flex-none">
           <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
-            <MapPin className="w-4 h-4 text-primary flex-none" />
-            Add Intervention Locations
+            <MapPin className="w-4 h-4 text-primary flex-none" /> Add Intervention Locations
           </DialogTitle>
-          {/* Tab bar */}
           <div className="flex gap-1 mt-2">
-            <Tab id="locations" label="Locations" badge={confirmed.length} />
-            <Tab id="icons"     label="Icons & Beneficiaries" badge={icons.filter(i => i !== "general").length || undefined} />
-            <Tab id="figures"   label="Figures" />
+            <Tab id="locations"     label="Locations"     badge={confirmed.length} />
+            <Tab id="beneficiaries" label="Beneficiaries" badge={benef.length || undefined} />
+            <Tab id="target"        label="Target & Actual" />
           </div>
         </DialogHeader>
 
-        {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0">
-          {activeTab === "locations" && (
-            <LocationPicker
-              confirmed={confirmed}
-              onAdd={loc => setConfirmed(prev => [...prev, loc])}
-              onRemove={uid => setConfirmed(prev => prev.filter(l => l.uid !== uid))}
-              lang={lang}
-            />
+          {tab === "locations" && (
+            <LocationPicker confirmed={confirmed}
+              onAdd={loc => setConfirmed(p => [...p, loc])}
+              onRemove={uid => setConfirmed(p => p.filter(l => l.uid !== uid))}
+              lang={lang} />
           )}
 
-          {activeTab === "icons" && (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Select one or more icons to represent the intervention type and beneficiary groups at these locations.
-                </p>
-                {icons.length > 0 && (
-                  <button onClick={() => setIcons([])}
-                    className="text-xs text-muted-foreground underline hover:text-foreground ml-3 flex-none">
-                    Clear
-                  </button>
-                )}
+          {tab === "beneficiaries" && (
+            <div className="space-y-5">
+              <BeneficiaryPicker allBeneficiaries={allBenef} selected={benef} onChange={setBenef} />
+              <div className="border-t pt-4">
+                <MarkerPicker value={icon} onChange={setIcon} />
               </div>
-              {icons.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 p-2.5 bg-muted/40 rounded-lg border">
-                  {icons.map(id => {
-                    const ic = ALL_ICONS.find(i => i.id === id);
-                    return ic ? (
-                      <span key={id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 border border-primary/30 text-primary rounded-full text-xs font-medium">
-                        {ic.emoji} {ic.label}
-                        <button onClick={() => setIcons(prev => prev.filter(s => s !== id))}>
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              )}
-              <IconPicker selected={icons} onChange={setIcons} />
             </div>
           )}
 
-          {activeTab === "figures" && (
+          {tab === "target" && (
             <div className="space-y-4">
-              <p className="text-xs text-muted-foreground">
-                Attach numeric targets and results. These figures are applied to all selected locations.
-              </p>
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Figure Label</label>
+              <IndicatorDropdown
+                indicators={indicators}
+                selectedId={selIndId}
+                onSelect={ind => setSelIndId(ind?.id ?? null)}
+                manualFigure={manualTarget}
+                onManualChange={setManualTarget}
+              />
+              <div className="space-y-1 border-t pt-3">
+                <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual figure (optional)</label>
                 <div className="relative">
-                  <Palette className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                  <Input placeholder="e.g. Beneficiaries reached" value={figureLabel}
-                    onChange={e => setFigureLabel(e.target.value)} className="pl-8 h-9 text-sm" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Target</label>
-                  <div className="relative">
-                    <Target className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                    <Input placeholder="e.g. 5,000" value={targetFigure}
-                      onChange={e => setTargetFigure(e.target.value)} className="pl-8 h-9 text-sm" />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual</label>
-                  <div className="relative">
-                    <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-                    <Input placeholder="e.g. 3,812" value={actualFigure}
-                      onChange={e => setActualFigure(e.target.value)} className="pl-8 h-9 text-sm" />
-                  </div>
+                  <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                  <Input placeholder="e.g. 3,812" value={actualFigure} onChange={e => setActualFigure(e.target.value)} className="pl-8 h-9 text-sm" />
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Footer */}
         <div className="flex-none border-t px-5 py-3 flex items-center justify-between gap-4 bg-card">
           <p className="text-xs text-muted-foreground truncate flex-1 min-w-0">
-            {confirmed.length === 0
-              ? "No locations selected"
-              : <><span className="font-medium text-foreground">{confirmed.length} location{confirmed.length > 1 ? "s" : ""}</span>
-                {icons.length > 0 && <> · {icons.slice(0, 3).map(id => ALL_ICONS.find(i => i.id === id)?.emoji).join(" ")}</>}
-              </>
-            }
+            {confirmed.length === 0 ? "No locations selected" : <><span className="font-medium text-foreground">{confirmed.length} location{confirmed.length > 1 ? "s" : ""}</span>{benef.length > 0 && <> · {benef.slice(0, 2).join(", ")}{benef.length > 2 ? "…" : ""}</>}</>}
           </p>
           <div className="flex gap-2 flex-none">
             <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
             <Button size="sm" disabled={confirmed.length === 0 || saving} onClick={handleSave} className="gap-1.5 min-w-[130px]">
-              {saving
-                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</>
-                : <><Check className="w-3.5 h-3.5" />Save {confirmed.length > 0 ? confirmed.length : ""} Location{confirmed.length !== 1 ? "s" : ""}</>
-              }
+              {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</> : <><Check className="w-3.5 h-3.5" />Save {confirmed.length > 0 ? confirmed.length : ""} Location{confirmed.length !== 1 ? "s" : ""}</>}
             </Button>
           </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Edit Location Dialog ──────────────────────────────────────────────────────
+function EditLocationDialog({ loc, theory, indicators, onClose, onSaved }: {
+  loc: LocationRecord;
+  theory: Theory;
+  indicators: MeasurementIndicator[];
+  onClose: () => void;
+  onSaved: (updated: LocationRecord) => void;
+}) {
+  const { toast } = useToast();
+  const allBenef = useMemo(() => theoryBeneficiaries(theory), [theory]);
+
+  // Parse stored figureLabel back into selected beneficiaries
+  const [benef, setBenef]       = useState<string[]>(() => loc.figureLabel ? loc.figureLabel.split(";").map(s => s.trim()).filter(Boolean) : []);
+  const [icon, setIcon]         = useState(loc.icon || "general");
+  const [selIndId, setSelIndId] = useState<number | null>(null);
+  const [manualTarget, setManualTarget] = useState(loc.targetFigure || "");
+  const [actualFigure, setActualFigure] = useState(loc.actualFigure || "");
+  const [gpsLat, setGpsLat]     = useState(loc.lat?.toString() ?? "");
+  const [gpsLng, setGpsLng]     = useState(loc.lng?.toString() ?? "");
+  const [saving, setSaving]     = useState(false);
+
+  const selInd = indicators.find(i => i.id === selIndId) ?? null;
+
+  const handleSave = async () => {
+    setSaving(true);
+    const figureLabel  = benef.join("; ");
+    const targetFigure = selInd?.targetFigure ?? manualTarget;
+    try {
+      const res = await fetch(`${API_BASE}/theories/${theory.id}/locations/${loc.id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "include",
+        body: JSON.stringify({ icon, figureLabel, targetFigure, actualFigure, lat: parseFloat(gpsLat) || loc.lat, lng: parseFloat(gpsLng) || loc.lng }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      onSaved(await res.json() as LocationRecord);
+      toast({ title: "Location updated" });
+      onClose();
+    } catch (err) {
+      toast({ title: "Failed to update", description: String(err), variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <Dialog open onOpenChange={v => { if (!v) onClose(); }}>
+      <DialogContent className="max-w-[540px] p-0 flex flex-col gap-0 max-h-[90vh]">
+        <DialogHeader className="px-5 pt-4 pb-3 border-b flex-none">
+          <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Pencil className="w-4 h-4 text-primary flex-none" /> Edit Location
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 min-h-0 space-y-5">
+          {/* Location info (read-only) */}
+          <div className="rounded-lg border bg-muted/30 px-4 py-3 space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-base">{markerEmoji(loc.icon)}</span>
+              <span className="font-semibold text-sm">{shortName(loc)}</span>
+              <LevelBadge level={loc.level} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {loc.level === "admin2" ? `${loc.adminLevel1} · ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
+            </p>
+          </div>
+
+          {/* GPS */}
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">GPS Coordinates</label>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="relative">
+                <Navigation className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <Input value={gpsLat} onChange={e => setGpsLat(e.target.value)} placeholder="Latitude" className="pl-8 h-9 text-sm font-mono" />
+              </div>
+              <div className="relative">
+                <Navigation className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none rotate-90" />
+                <Input value={gpsLng} onChange={e => setGpsLng(e.target.value)} placeholder="Longitude" className="pl-8 h-9 text-sm font-mono" />
+              </div>
+            </div>
+          </div>
+
+          {/* Beneficiaries */}
+          <div className="space-y-2 border-t pt-4">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Beneficiary Groups</label>
+            <BeneficiaryPicker allBeneficiaries={allBenef} selected={benef} onChange={setBenef} />
+          </div>
+
+          {/* Marker */}
+          <div className="border-t pt-4">
+            <MarkerPicker value={icon} onChange={setIcon} />
+          </div>
+
+          {/* Target & Actual */}
+          <div className="border-t pt-4 space-y-3">
+            <IndicatorDropdown
+              indicators={indicators}
+              selectedId={selIndId}
+              onSelect={ind => { setSelIndId(ind?.id ?? null); if (!ind) setManualTarget(loc.targetFigure || ""); }}
+              manualFigure={manualTarget}
+              onManualChange={setManualTarget}
+            />
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Actual figure</label>
+              <div className="relative">
+                <TrendingUp className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+                <Input value={actualFigure} onChange={e => setActualFigure(e.target.value)} placeholder="e.g. 3,812" className="pl-8 h-9 text-sm" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-none border-t px-5 py-3 flex items-center justify-end gap-2 bg-card">
+          <Button variant="outline" size="sm" onClick={onClose}>Cancel</Button>
+          <Button size="sm" disabled={saving} onClick={handleSave} className="gap-1.5 min-w-[110px]">
+            {saving ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Saving…</> : <><Check className="w-3.5 h-3.5" />Save Changes</>}
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -751,7 +807,9 @@ export function LocationsMap({ theory }: { theory: Theory }) {
   const { toast } = useToast();
   const [locations, setLocations]     = useState<LocationRecord[]>([]);
   const [loadingLocs, setLoadingLocs] = useState(true);
-  const [showDialog, setShowDialog]   = useState(false);
+  const [showAdd, setShowAdd]         = useState(false);
+  const [editing, setEditing]         = useState<LocationRecord | null>(null);
+  const [indicators, setIndicators]   = useState<MeasurementIndicator[]>([]);
 
   const tile = TILE_LAYERS[i18n.language] ?? TILE_LAYERS.default;
 
@@ -764,11 +822,14 @@ export function LocationsMap({ theory }: { theory: Theory }) {
     })();
   }, [theory.id]);
 
+  // Pre-load indicators so edit dialog opens instantly
+  useEffect(() => {
+    fetchIndicators(theory.id).then(setIndicators);
+  }, [theory.id]);
+
   const handleDelete = async (locId: number) => {
     try {
-      await fetch(`${API_BASE}/theories/${theory.id}/locations/${locId}`, {
-        method: "DELETE", credentials: "include",
-      });
+      await fetch(`${API_BASE}/theories/${theory.id}/locations/${locId}`, { method: "DELETE", credentials: "include" });
       setLocations(prev => prev.filter(l => l.id !== locId));
     } catch { toast({ title: "Failed to remove location", variant: "destructive" }); }
   };
@@ -782,71 +843,74 @@ export function LocationsMap({ theory }: { theory: Theory }) {
           <div className="flex items-center gap-2">
             <Globe className="w-4 h-4 text-primary" />
             <span className="font-semibold text-sm">Locations</span>
-            {locations.length > 0 && (
-              <Badge variant="secondary" className="text-xs h-5 px-1.5">{locations.length}</Badge>
-            )}
+            {locations.length > 0 && <Badge variant="secondary" className="text-xs h-5 px-1.5">{locations.length}</Badge>}
           </div>
-          <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowDialog(true)}>
+          <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowAdd(true)}>
             <Plus className="w-3.5 h-3.5" /> Add
           </Button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
           {loadingLocs ? (
-            <div className="flex items-center justify-center h-20">
-              <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-            </div>
+            <div className="flex items-center justify-center h-20"><Loader2 className="w-4 h-4 animate-spin text-muted-foreground" /></div>
           ) : locations.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-12 px-4 text-center">
               <MapPin className="w-8 h-8 text-muted-foreground/30" />
               <p className="text-sm font-medium text-muted-foreground">No locations yet</p>
-              <p className="text-xs text-muted-foreground/70">
-                Click "Add" to pin countries, regions or districts where this intervention operates.
-              </p>
+              <p className="text-xs text-muted-foreground/70">Click "Add" to pin countries, regions or districts where this intervention operates.</p>
             </div>
           ) : (
             <ul className="divide-y divide-border">
-              {locations.map((loc, i) => (
-                <li key={loc.id} className="group px-4 py-3 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-start gap-2.5">
-                    <div className="mt-0.5 w-7 h-7 rounded-full flex-none flex items-center justify-center text-sm"
-                      style={{ background: `${COLOURS[i % COLOURS.length]}22`, border: `2px solid ${COLOURS[i % COLOURS.length]}` }}>
-                      {(emojiFor(loc.icon) || "📍").split(" ")[0]}
-                    </div>
-                    <div className="min-w-0 flex-1 space-y-0.5">
-                      <p className="text-sm font-medium leading-tight truncate" title={shortName(loc)}>{shortName(loc)}</p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {loc.level === "admin2" ? `${loc.adminLevel1}, ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
-                      </p>
-                      <div className="pt-0.5 flex flex-wrap gap-1 items-center">
-                        <LevelBadge level={loc.level} />
-                        {loc.icon && loc.icon !== "general" && (
-                          <span className="text-sm leading-none">{emojiFor(loc.icon)}</span>
+              {locations.map((loc, i) => {
+                const benefGroups = loc.figureLabel ? loc.figureLabel.split(";").map(s => s.trim()).filter(Boolean) : [];
+                return (
+                  <li key={loc.id} className="group px-4 py-3 hover:bg-muted/30 transition-colors">
+                    <div className="flex items-start gap-2.5">
+                      <div className="mt-0.5 w-7 h-7 rounded-full flex-none flex items-center justify-center text-base"
+                        style={{ background: `${COLOURS[i % COLOURS.length]}22`, border: `2px solid ${COLOURS[i % COLOURS.length]}` }}>
+                        {markerEmoji(loc.icon)}
+                      </div>
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <p className="text-sm font-medium leading-tight truncate" title={shortName(loc)}>{shortName(loc)}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {loc.level === "admin2" ? `${loc.adminLevel1}, ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
+                        </p>
+                        <div className="pt-0.5"><LevelBadge level={loc.level} /></div>
+                        {benefGroups.length > 0 && (
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {benefGroups.slice(0, 3).map(b => (
+                              <span key={b} className="text-[10px] px-1.5 py-0.5 bg-primary/8 border border-primary/20 text-primary rounded-full">{b}</span>
+                            ))}
+                            {benefGroups.length > 3 && <span className="text-[10px] text-muted-foreground">+{benefGroups.length - 3}</span>}
+                          </div>
+                        )}
+                        {(loc.targetFigure || loc.actualFigure) && (
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {loc.targetFigure && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
+                                <Target className="w-2.5 h-2.5" />{loc.targetFigure}
+                              </span>
+                            )}
+                            {loc.actualFigure && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5">
+                                <TrendingUp className="w-2.5 h-2.5" />{loc.actualFigure}
+                              </span>
+                            )}
+                          </div>
                         )}
                       </div>
-                      {(loc.targetFigure || loc.actualFigure) && (
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {loc.figureLabel && <span className="text-[10px] text-muted-foreground self-center">{loc.figureLabel}:</span>}
-                          {loc.targetFigure && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5">
-                              <Target className="w-2.5 h-2.5" />{loc.targetFigure}
-                            </span>
-                          )}
-                          {loc.actualFigure && (
-                            <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5">
-                              <TrendingUp className="w-2.5 h-2.5" />{loc.actualFigure}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-none">
+                        <button onClick={() => setEditing(loc)} className="p-1 rounded hover:bg-primary/10 hover:text-primary text-muted-foreground">
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDelete(loc.id)} className="p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                    <button onClick={() => handleDelete(loc.id)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-destructive/10 hover:text-destructive text-muted-foreground flex-none">
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </li>
-              ))}
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
@@ -870,34 +934,33 @@ export function LocationsMap({ theory }: { theory: Theory }) {
       {/* ── Map ── */}
       <div className="flex-1 relative">
         <MapContainer key={tile.url} center={[8, 22]} zoom={4} className="w-full h-full">
-          <TileLayer url={tile.url} attribution={tile.attribution}
-            subdomains={(tile.subdomains ?? "abc") as any} maxZoom={19} />
+          <TileLayer url={tile.url} attribution={tile.attribution} subdomains={(tile.subdomains ?? "abc") as any} maxZoom={19} />
           <FitBounds locations={locations} />
 
           {locations.map((loc, i) => {
-            const color   = COLOURS[i % COLOURS.length];
-            const emojis  = emojiFor(loc.icon) || "📍";
+            const color = COLOURS[i % COLOURS.length];
+            const emoji = markerEmoji(loc.icon);
             return (
               <span key={loc.id}>
                 {loc.boundaryGeoJson && (() => {
-                  try {
-                    return <GeoJSON key={`geo-${loc.id}-${tile.url}`} data={JSON.parse(loc.boundaryGeoJson) as any}
-                      style={{ color, weight: 2.5, fillColor: color, fillOpacity: 0.15 }} />;
-                  } catch { return null; }
+                  try { return <GeoJSON key={`geo-${loc.id}`} data={JSON.parse(loc.boundaryGeoJson) as any} style={{ color, weight: 2.5, fillColor: color, fillOpacity: 0.15 }} />; }
+                  catch { return null; }
                 })()}
                 {loc.lat != null && loc.lng != null && (
-                  <Marker key={`mk-${loc.id}`} position={[loc.lat, loc.lng]} icon={makeIcon(emojis, color)}>
-                    <Popup maxWidth={260}>
-                      <div className="space-y-1 py-0.5">
-                        <p className="font-semibold text-sm flex items-center gap-1.5">
-                          <span>{emojis}</span> {shortName(loc)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {loc.level === "admin2" ? `${loc.adminLevel1} · ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}
-                        </p>
+                  <Marker key={`mk-${loc.id}`} position={[loc.lat, loc.lng]} icon={makeIcon(emoji, color)}>
+                    <Popup maxWidth={280}>
+                      <div className="space-y-1.5 py-0.5">
+                        <p className="font-semibold text-sm flex items-center gap-1.5"><span>{emoji}</span>{shortName(loc)}</p>
+                        <p className="text-xs text-gray-500">{loc.level === "admin2" ? `${loc.adminLevel1} · ${loc.country}` : loc.level === "admin1" ? loc.country : "Country level"}</p>
+                        {loc.figureLabel && (
+                          <div className="flex flex-wrap gap-1 pt-0.5">
+                            {loc.figureLabel.split(";").map(b => b.trim()).filter(Boolean).map(b => (
+                              <span key={b} className="text-[10px] px-1.5 py-0.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-full">{b}</span>
+                            ))}
+                          </div>
+                        )}
                         {(loc.targetFigure || loc.actualFigure) && (
-                          <div className="pt-1.5 border-t border-gray-200 space-y-0.5">
-                            {loc.figureLabel && <p className="text-xs font-medium text-gray-600">{loc.figureLabel}</p>}
+                          <div className="pt-1 border-t border-gray-200 space-y-0.5">
                             {loc.targetFigure && <p className="text-xs text-blue-600">🎯 Target: <strong>{loc.targetFigure}</strong></p>}
                             {loc.actualFigure && <p className="text-xs text-emerald-600">📈 Actual: <strong>{loc.actualFigure}</strong></p>}
                           </div>
@@ -916,10 +979,8 @@ export function LocationsMap({ theory }: { theory: Theory }) {
             <div className="bg-card/95 backdrop-blur-sm border rounded-xl px-6 py-5 shadow-xl text-center max-w-xs pointer-events-auto">
               <MapPin className="w-7 h-7 text-primary mx-auto mb-2" />
               <p className="font-semibold text-sm">Add your first location</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Add multiple countries, regions or districts in one batch — each gets its own pin on the map.
-              </p>
-              <Button size="sm" className="mt-3 gap-1.5" onClick={() => setShowDialog(true)}>
+              <p className="text-xs text-muted-foreground mt-1">Add multiple countries, regions or districts — each gets its own pin on the map.</p>
+              <Button size="sm" className="mt-3 gap-1.5" onClick={() => setShowAdd(true)}>
                 <Plus className="w-3.5 h-3.5" /> Add Locations
               </Button>
             </div>
@@ -927,14 +988,27 @@ export function LocationsMap({ theory }: { theory: Theory }) {
         )}
       </div>
 
-      {/* ── Dialog ── */}
+      {/* ── Dialogs ── */}
       <AddLocationDialog
-        open={showDialog}
-        onClose={() => setShowDialog(false)}
-        theoryId={theory.id}
+        open={showAdd}
+        onClose={() => setShowAdd(false)}
+        theory={theory}
         onSaved={locs => setLocations(prev => [...prev, ...locs])}
         lang={i18n.language}
       />
+
+      {editing && (
+        <EditLocationDialog
+          loc={editing}
+          theory={theory}
+          indicators={indicators}
+          onClose={() => setEditing(null)}
+          onSaved={updated => {
+            setLocations(prev => prev.map(l => l.id === updated.id ? updated : l));
+            setEditing(null);
+          }}
+        />
+      )}
     </div>
   );
 }
