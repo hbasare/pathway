@@ -1,0 +1,14 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "g4-ALUwpFhwAsU5kkS_Zh"
+uri = "file://attached_assets/generated_audio/pathways-voiceover.mp3"
+type = "audio"
+title = "pathways-voiceover"
+
+[[outputs]]
+id = "NqT58JgPotkCU4InrQlhy"
+uri = "file://attached_assets/generated_audio/pathways-music.mp3"
+type = "audio"
+title = "pathways-background-music"
