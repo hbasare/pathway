@@ -70,7 +70,7 @@ interface LocationRecord {
   boundaryGeoJson: string; level: string; nominatimId: string;
   icon: string; figureLabel: string; targetFigure: string; actualFigure: string;
   // GIS extended fields
-  sector: string; activityType: string; beneficiaryType: string;
+  sector: string; activityType: string; activityDate: string; activityOther: string; activityCommodity: string; beneficiaryType: string;
   numBeneficiaries: number | null; numMale: number | null; numFemale: number | null;
   gender: string; youthFocused: boolean;
   implementingPartner: string; fundingSource: string; notes: string;
@@ -78,7 +78,25 @@ interface LocationRecord {
 
 // ── GIS option lists ──────────────────────────────────────────────────────────
 const SECTORS = ["Agriculture","Health","Education","WASH","Livelihoods","Governance","Nutrition","Environment","Infrastructure","Humanitarian","Market Systems","Research"];
-const ACTIVITY_TYPES = ["Training","Grant / Cash Transfer","Input Distribution","Technical Assistance","Capacity Building","Demonstration / Pilot","Community Mobilisation","Market Linkage","Infrastructure Works","Research / Survey","Monitoring Visit"];
+const ACTIVITY_TYPES = ["Training","Grant / Cash Transfer","Input Distribution","Technical Assistance","Capacity Building","Demonstration / Pilot","Community Mobilisation","Market Linkage","Infrastructure Works","Research / Survey","Monitoring Visit","Agriculture","Other"];
+const ACTIVITY_TYPE_ICON_MAP: Record<string, string> = {
+  "Training":               "education",
+  "Grant / Cash Transfer":  "livelihoods",
+  "Input Distribution":     "agriculture",
+  "Technical Assistance":   "general",
+  "Capacity Building":      "community",
+  "Demonstration / Pilot":  "research",
+  "Community Mobilisation": "community",
+  "Market Linkage":         "livelihoods",
+  "Infrastructure Works":   "infrastructure",
+  "Research / Survey":      "research",
+  "Monitoring Visit":       "general",
+  "Agriculture":            "agriculture",
+  "Other":                  "general",
+};
+function activityEmoji(activityType: string) {
+  return markerEmoji(ACTIVITY_TYPE_ICON_MAP[activityType] ?? "general");
+}
 const BENEFICIARY_TYPES = ["Farmers","Smallholders","Agri-businesses","SMEs","Cooperatives","Schools","Health Facilities","Communities","Households","Youth Groups","Women's Groups","Processing Facilities","Markets","Service Providers","Other"];
 const GENDER_OPTIONS = ["Mixed","Male","Female","Male-led","Female-led"];
 const SECTOR_COLOURS: Record<string, string> = {
@@ -244,31 +262,70 @@ function SelectField({ label, value, onChange, options, placeholder }: {
 
 // ── GIS details form (shared between Add and Edit) ────────────────────────────
 interface GisFields {
-  community: string; sector: string; activityType: string; beneficiaryType: string;
-  numBeneficiaries: string; numMale: string; numFemale: string;
+  community: string; sector: string; activityType: string;
+  activityDate: string; activityOther: string; activityCommodity: string;
+  beneficiaryType: string; numBeneficiaries: string; numMale: string; numFemale: string;
   gender: string; youthFocused: boolean;
   implementingPartner: string; fundingSource: string; notes: string;
 }
 function emptyGis(): GisFields {
-  return { community: "", sector: "", activityType: "", beneficiaryType: "", numBeneficiaries: "", numMale: "", numFemale: "", gender: "", youthFocused: false, implementingPartner: "", fundingSource: "", notes: "" };
+  return { community: "", sector: "", activityType: "", activityDate: "", activityOther: "", activityCommodity: "",
+    beneficiaryType: "", numBeneficiaries: "", numMale: "", numFemale: "", gender: "", youthFocused: false,
+    implementingPartner: "", fundingSource: "", notes: "" };
 }
 function gisFromRecord(loc: LocationRecord): GisFields {
   return {
     community: loc.community || "", sector: loc.sector || "", activityType: loc.activityType || "",
+    activityDate: loc.activityDate || "", activityOther: loc.activityOther || "", activityCommodity: loc.activityCommodity || "",
     beneficiaryType: loc.beneficiaryType || "", numBeneficiaries: loc.numBeneficiaries?.toString() ?? "",
     numMale: loc.numMale?.toString() ?? "", numFemale: loc.numFemale?.toString() ?? "",
     gender: loc.gender || "", youthFocused: loc.youthFocused ?? false,
     implementingPartner: loc.implementingPartner || "", fundingSource: loc.fundingSource || "", notes: loc.notes || "",
   };
 }
-function GisDetailsForm({ fields, onChange }: { fields: GisFields; onChange: (f: GisFields) => void }) {
+function GisDetailsForm({ fields, onChange, onIconChange }: {
+  fields: GisFields; onChange: (f: GisFields) => void; onIconChange?: (iconId: string) => void;
+}) {
   const set = (k: keyof GisFields, v: string | boolean) => onChange({ ...fields, [k]: v });
+  const iconId = ACTIVITY_TYPE_ICON_MAP[fields.activityType];
+  const aEmoji = iconId ? markerEmoji(iconId) : null;
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
         <SelectField label="Sector" value={fields.sector} onChange={v => set("sector", v)} options={SECTORS} />
-        <SelectField label="Activity Type" value={fields.activityType} onChange={v => set("activityType", v)} options={ACTIVITY_TYPES} />
+        <SelectField label="Activity Type" value={fields.activityType} onChange={v => {
+          onChange({ ...fields, activityType: v, activityOther: "", activityCommodity: "" });
+          if (onIconChange) onIconChange(ACTIVITY_TYPE_ICON_MAP[v] ?? "general");
+        }} options={ACTIVITY_TYPES} />
       </div>
+      {fields.activityType && (
+        <div className="space-y-3 border-l-2 border-primary/20 pl-3">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-muted border text-sm font-medium">
+              <span className="text-base leading-none">{aEmoji}</span>
+              <span className="text-xs">{fields.activityType}{fields.activityOther ? ` — ${fields.activityOther}` : ""}{fields.activityCommodity ? ` (${fields.activityCommodity})` : ""}</span>
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Activity Date</label>
+            <Input type="date" value={fields.activityDate} onChange={e => set("activityDate", e.target.value)} className="h-9 text-sm" />
+          </div>
+          {fields.activityType === "Other" && (
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Please Specify</label>
+              <Input value={fields.activityOther} onChange={e => set("activityOther", e.target.value)}
+                placeholder="Describe the activity…" className="h-9 text-sm" autoFocus />
+            </div>
+          )}
+          {fields.activityType === "Agriculture" && (
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">🌾 Commodity</label>
+              <Input value={fields.activityCommodity} onChange={e => set("activityCommodity", e.target.value)}
+                placeholder="e.g. Maize, Soybean, Cassava…" className="h-9 text-sm" autoFocus />
+            </div>
+          )}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3">
         <SelectField label="Beneficiary Type" value={fields.beneficiaryType} onChange={v => set("beneficiaryType", v)} options={BENEFICIARY_TYPES} />
         <div className="space-y-1.5">
@@ -666,13 +723,17 @@ iframe{width:100%;height:420px;border:1px solid #e5e7eb;border-radius:6px;displa
   }
 
   if (sections.has("details")) {
-    html += `<h2>GIS Details</h2><table><tr><th>Location</th><th>Sector</th><th>Activity Type</th><th>Beneficiary Type</th><th>Total</th><th>Males</th><th>Females</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
+    html += `<h2>GIS Details</h2><table><tr><th>Location</th><th>Sector</th><th>Activity</th><th>Date</th><th>Specification</th><th>Beneficiary Type</th><th>Total</th><th>Males</th><th>Females</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
     locations.forEach(loc => {
       const sectorHtml = loc.sector ? `<span class="sector-badge" style="background:${sectorColours[loc.sector]??'#6366f1'}">${escHtml(loc.sector)}</span>${loc.youthFocused ? '<span class="youth">Youth</span>' : ""}` : (loc.youthFocused ? '<span class="youth">Youth</span>' : '<span class="dim">—</span>');
+      const actLabel = loc.activityType ? `${activityEmoji(loc.activityType)} ${escHtml(loc.activityType)}` : '<span class="dim">—</span>';
+      const spec = loc.activityOther ? escHtml(loc.activityOther) : loc.activityCommodity ? escHtml(loc.activityCommodity) : '<span class="dim">—</span>';
       html += `<tr>
 <td style="font-weight:600">${escHtml(shortNameStr(loc))}</td>
 <td>${sectorHtml}</td>
-<td class="dim">${escHtml(loc.activityType || "—")}</td>
+<td class="dim">${actLabel}</td>
+<td class="dim">${escHtml(loc.activityDate || "—")}</td>
+<td class="dim">${spec}</td>
 <td class="dim">${escHtml(loc.beneficiaryType || "—")}</td>
 <td class="dim">${loc.numBeneficiaries != null ? loc.numBeneficiaries.toLocaleString() : "—"}</td>
 <td style="color:#1d4ed8">${loc.numMale != null ? loc.numMale.toLocaleString() : "—"}</td>
@@ -794,6 +855,7 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
           level: loc.level, nominatimId: String((loc.district ?? loc.region)?.place_id ?? ""),
           icon, figureLabel: "", targetFigure: manualTarget, actualFigure: manualActual,
           community: gis.community, sector: gis.sector, activityType: gis.activityType,
+          activityDate: gis.activityDate, activityOther: gis.activityOther, activityCommodity: gis.activityCommodity,
           beneficiaryType: gis.beneficiaryType,
           numBeneficiaries: gis.numBeneficiaries !== "" ? Number(gis.numBeneficiaries) : null,
           numMale: gis.numMale !== "" ? Number(gis.numMale) : null,
@@ -845,7 +907,7 @@ function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
               lang={lang} />
           )}
           {tab === "details" && (
-            <GisDetailsForm fields={gis} onChange={setGis} />
+            <GisDetailsForm fields={gis} onChange={setGis} onIconChange={id => setIcon(id)} />
           )}
           {tab === "target" && (
             <div className="space-y-5">
@@ -934,6 +996,7 @@ function EditLocationDialog({ loc, theory, onClose, onSaved }: {
           icon, targetFigure: manualTarget, actualFigure: manualActual,
           lat: parseFloat(gpsLat) || loc.lat, lng: parseFloat(gpsLng) || loc.lng,
           community: gis.community, sector: gis.sector, activityType: gis.activityType,
+          activityDate: gis.activityDate, activityOther: gis.activityOther, activityCommodity: gis.activityCommodity,
           beneficiaryType: gis.beneficiaryType,
           numBeneficiaries: gis.numBeneficiaries !== "" ? Number(gis.numBeneficiaries) : null,
           numMale: gis.numMale !== "" ? Number(gis.numMale) : null,
@@ -999,7 +1062,7 @@ function EditLocationDialog({ loc, theory, onClose, onSaved }: {
             </div>
           )}
           {tab === "details" && (
-            <GisDetailsForm fields={gis} onChange={setGis} />
+            <GisDetailsForm fields={gis} onChange={setGis} onIconChange={id => setIcon(id)} />
           )}
           {tab === "target" && (
             <div className="space-y-4">
@@ -1157,7 +1220,11 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                         )}
                         {loc.activityType && (
                           <p className="text-[11px] text-muted-foreground truncate">
-                            <Briefcase className="w-2.5 h-2.5 inline mr-0.5" />{loc.activityType}
+                            <span className="mr-0.5">{activityEmoji(loc.activityType)}</span>
+                            {loc.activityType}
+                            {loc.activityOther && ` — ${loc.activityOther}`}
+                            {loc.activityCommodity && ` (${loc.activityCommodity})`}
+                            {loc.activityDate && <span className="ml-1 opacity-60">{loc.activityDate}</span>}
                           </p>
                         )}
                         {(loc.targetFigure || loc.actualFigure) && (
@@ -1238,7 +1305,8 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                         )}
                         {(loc.activityType || loc.beneficiaryType || loc.numBeneficiaries != null || loc.gender || loc.youthFocused) && (
                           <div className="pt-1 border-t border-gray-200 space-y-0.5 text-xs text-gray-600">
-                            {loc.activityType  && <p>🔧 <strong>Activity:</strong> {loc.activityType}</p>}
+                            {loc.activityType  && <p>{activityEmoji(loc.activityType)} <strong>Activity:</strong> {loc.activityType}{loc.activityOther ? ` — ${loc.activityOther}` : ""}{loc.activityCommodity ? ` (${loc.activityCommodity})` : ""}</p>}
+                            {loc.activityDate  && <p>📅 <strong>Date:</strong> {loc.activityDate}</p>}
                             {loc.beneficiaryType && <p>👥 <strong>Beneficiaries:</strong> {loc.beneficiaryType}{loc.numBeneficiaries != null ? ` (${loc.numBeneficiaries.toLocaleString()})` : ""}</p>}
                             {loc.gender        && <p>⚧ <strong>Gender:</strong> {loc.gender}</p>}
                             {(loc.numMale != null || loc.numFemale != null) && (

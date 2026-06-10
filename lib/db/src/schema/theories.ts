@@ -276,6 +276,9 @@ export const theoryLocationsTable = pgTable("theory_locations", {
   // GIS extended fields
   sector: text("sector").notNull().default(""),
   activityType: text("activity_type").notNull().default(""),
+  activityDate: text("activity_date").notNull().default(""),
+  activityOther: text("activity_other").notNull().default(""),
+  activityCommodity: text("activity_commodity").notNull().default(""),
   beneficiaryType: text("beneficiary_type").notNull().default(""),
   numBeneficiaries: integer("num_beneficiaries"),
   numMale: integer("num_male"),

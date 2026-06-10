@@ -43,6 +43,13 @@ const MARKER_EMOJIS: Record<string, string> = {
   infrastructure:"🏗️",community:"👥",research:"🔬",
 };
 const markerEmoji = (id?: string | null) => MARKER_EMOJIS[id ?? "general"] ?? "📍";
+const ACTIVITY_TYPE_ICON_MAP: Record<string, string> = {
+  "Training":"education","Grant / Cash Transfer":"livelihoods","Input Distribution":"agriculture",
+  "Technical Assistance":"general","Capacity Building":"community","Demonstration / Pilot":"research",
+  "Community Mobilisation":"community","Market Linkage":"livelihoods","Infrastructure Works":"infrastructure",
+  "Research / Survey":"research","Monitoring Visit":"general","Agriculture":"agriculture","Other":"general",
+};
+const activityEmoji = (t: string) => MARKER_EMOJIS[ACTIVITY_TYPE_ICON_MAP[t] ?? "general"] ?? "📍";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface LocationRecord {
@@ -52,7 +59,7 @@ interface LocationRecord {
   lat: number | null; lng: number | null;
   boundaryGeoJson: string; level: string; nominatimId: string;
   icon: string; figureLabel: string; targetFigure: string; actualFigure: string;
-  sector: string; activityType: string; beneficiaryType: string;
+  sector: string; activityType: string; activityDate: string; activityOther: string; activityCommodity: string; beneficiaryType: string;
   numBeneficiaries: number | null; numMale: number | null; numFemale: number | null;
   gender: string; youthFocused: boolean;
   implementingPartner: string; fundingSource: string; notes: string;
@@ -183,10 +190,12 @@ iframe{width:100%;height:400px;border:1px solid #e5e7eb;border-radius:6px;displa
     html += `<h2>GIS Details by Intervention</h2>`;
     vis.forEach(e => {
       html += `<h3><span class="dot" style="background:${esc(e.color)}"></span>${esc(e.title)}</h3>`;
-      html += `<table><tr><th>Location</th><th>Sector</th><th>Activity Type</th><th>Beneficiary Type</th><th>Total</th><th>Males</th><th>Females</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
+      html += `<table><tr><th>Location</th><th>Sector</th><th>Activity</th><th>Date</th><th>Specification</th><th>Beneficiary Type</th><th>Total</th><th>Males</th><th>Females</th><th>Gender</th><th>Partner</th><th>Funder</th></tr>`;
       e.locations.forEach(loc => {
         const sectorHtml = loc.sector ? `<span class="sector-badge" style="background:${sectorColours[loc.sector]??'#6366f1'}">${esc(loc.sector)}</span>${loc.youthFocused?'<span class="youth">Youth</span>':""}` : (loc.youthFocused?'<span class="youth">Youth</span>':'<span class="dim">—</span>');
-        html += `<tr><td style="font-weight:600">${esc(shortName(loc))}</td><td>${sectorHtml}</td><td class="dim">${esc(loc.activityType||"—")}</td><td class="dim">${esc(loc.beneficiaryType||"—")}</td><td class="dim">${loc.numBeneficiaries!=null?loc.numBeneficiaries.toLocaleString():"—"}</td><td style="color:#1d4ed8">${loc.numMale!=null?loc.numMale.toLocaleString():"—"}</td><td style="color:#be185d">${loc.numFemale!=null?loc.numFemale.toLocaleString():"—"}</td><td class="dim">${esc(loc.gender||"—")}</td><td class="dim">${esc(loc.implementingPartner||"—")}</td><td class="dim">${esc(loc.fundingSource||"—")}</td></tr>`;
+        const actLabel = loc.activityType ? `${activityEmoji(loc.activityType)} ${esc(loc.activityType)}` : '<span class="dim">—</span>';
+        const spec = loc.activityOther ? esc(loc.activityOther) : loc.activityCommodity ? esc(loc.activityCommodity) : '<span class="dim">—</span>';
+        html += `<tr><td style="font-weight:600">${esc(shortName(loc))}</td><td>${sectorHtml}</td><td class="dim">${actLabel}</td><td class="dim">${esc(loc.activityDate||"—")}</td><td class="dim">${spec}</td><td class="dim">${esc(loc.beneficiaryType||"—")}</td><td class="dim">${loc.numBeneficiaries!=null?loc.numBeneficiaries.toLocaleString():"—"}</td><td style="color:#1d4ed8">${loc.numMale!=null?loc.numMale.toLocaleString():"—"}</td><td style="color:#be185d">${loc.numFemale!=null?loc.numFemale.toLocaleString():"—"}</td><td class="dim">${esc(loc.gender||"—")}</td><td class="dim">${esc(loc.implementingPartner||"—")}</td><td class="dim">${esc(loc.fundingSource||"—")}</td></tr>`;
       });
       html += `</table>`;
       const withNotes = e.locations.filter(l => l.notes);
@@ -503,7 +512,8 @@ export default function PortfolioLocations() {
                           )}
                           {(loc.activityType || loc.beneficiaryType || loc.numBeneficiaries != null || loc.gender || loc.youthFocused) && (
                             <div className="pt-1 border-t border-gray-200 space-y-0.5 text-xs text-gray-600">
-                              {loc.activityType   && <p>🔧 <strong>Activity:</strong> {loc.activityType}</p>}
+                              {loc.activityType   && <p>{activityEmoji(loc.activityType)} <strong>Activity:</strong> {loc.activityType}{loc.activityOther ? ` — ${loc.activityOther}` : ""}{loc.activityCommodity ? ` (${loc.activityCommodity})` : ""}</p>}
+                              {loc.activityDate   && <p>📅 <strong>Date:</strong> {loc.activityDate}</p>}
                               {loc.beneficiaryType && <p>👥 <strong>Beneficiaries:</strong> {loc.beneficiaryType}{loc.numBeneficiaries != null ? ` (${loc.numBeneficiaries.toLocaleString()})` : ""}</p>}
                               {loc.gender         && <p>⚧ <strong>Gender:</strong> {loc.gender}</p>}
                               {(loc.numMale != null || loc.numFemale != null) && (

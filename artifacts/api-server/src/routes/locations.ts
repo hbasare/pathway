@@ -32,7 +32,8 @@ router.patch("/theories/:theoryId/locations/:id", async (req, res) => {
   const allowed  = [
     "icon", "figureLabel", "targetFigure", "actualFigure",
     "lat", "lng", "displayName", "community",
-    "sector", "activityType", "beneficiaryType", "numBeneficiaries", "numMale", "numFemale",
+    "sector", "activityType", "activityDate", "activityOther", "activityCommodity",
+    "beneficiaryType", "numBeneficiaries", "numMale", "numFemale",
     "gender", "youthFocused", "implementingPartner", "fundingSource", "notes",
   ] as const;
   const patch: Record<string, unknown> = {};
