@@ -16,6 +16,7 @@ import SupportCalculations from "@/pages/support-calculations";
 import SystemicChange from "@/pages/systemic-change";
 import Summary from "@/pages/summary";
 import PortfolioLogframe from "@/pages/portfolio-logframe";
+import PortfolioLocations from "@/pages/portfolio-locations";
 import ProgramLogframe from "@/pages/program-logframe";
 import UserManagement from "@/pages/user-management";
 import LoginPage from "@/pages/login";
@@ -38,6 +39,7 @@ function Router() {
       <Route path="/" component={Dashboard} />
       <Route path="/program-logframe" component={ProgramLogframe} />
       <Route path="/portfolio/:id/logframe" component={PortfolioLogframe} />
+      <Route path="/portfolio/:id/locations" component={PortfolioLocations} />
       <Route path="/theory/:id/measurement-plan" component={MeasurementPlan} />
       <Route path="/theory/:id/support-calculations" component={SupportCalculations} />
       <Route path="/theory/:id/systemic-change" component={SystemicChange} />

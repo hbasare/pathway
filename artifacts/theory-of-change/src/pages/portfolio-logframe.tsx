@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { getPermissions } from "@/lib/permissions";
 import { useGetPortfolioLogframe } from "@workspace/api-client-react";
-import { ArrowLeft, Printer, FolderOpen } from "lucide-react";
+import { ArrowLeft, Printer, FolderOpen, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -63,9 +63,16 @@ export default function PortfolioLogframe() {
             <span className="text-muted-foreground">Logframe</span>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2">
-          <Printer className="w-4 h-4" /> Print / Export
-        </Button>
+        <div className="flex items-center gap-2">
+          <Link href={`/portfolio/${portfolioId}/locations`}>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Globe className="w-4 h-4" /> Locations Map
+            </Button>
+          </Link>
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="gap-2">
+            <Printer className="w-4 h-4" /> Print / Export
+          </Button>
+        </div>
       </div>
 
       {/* Page content */}
