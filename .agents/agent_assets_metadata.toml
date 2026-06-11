@@ -149,3 +149,9 @@ id = "oX5QAz6TJngnZVmPB1fOa"
 uri = "file://attached_assets/generated_audio/pathways-scene5-v4.mp3"
 type = "audio"
 title = "pathways-scene5-v4"
+
+[[outputs]]
+id = "FYgckskWVXwEv6Hv_qaHO"
+uri = "file://attached_assets/generated_audio/pathways-outro.mp3"
+type = "audio"
+title = "pathways-outro"

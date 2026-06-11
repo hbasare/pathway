@@ -53,6 +53,15 @@ const NETWORK_EDGES = [
 ];
 
 function OutroLockup() {
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    el.volume = 1.0;
+    el.play().catch((e) => console.error("Outro voice failed:", e));
+  }, []);
+
   return (
     <motion.div
       className="absolute inset-0 bg-[#0d0d1a] flex flex-col items-center justify-center z-10 overflow-hidden"
@@ -135,6 +144,8 @@ function OutroLockup() {
         </svg>
         Watch again
       </motion.button>
+
+      <audio ref={audioRef} src={`${import.meta.env.BASE_URL}audio/pathways-outro.mp3`} preload="auto" />
     </motion.div>
   );
 }
