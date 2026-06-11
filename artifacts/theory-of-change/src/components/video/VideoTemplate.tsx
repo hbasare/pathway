@@ -24,20 +24,85 @@ const SCENE_CLIPS = [
   "pathways-scene5-v2.mp3",
 ];
 
+const NETWORK_NODES = [
+  { x: "12%", y: "20%", r: 4, delay: 0 },
+  { x: "28%", y: "65%", r: 6, delay: 0.3 },
+  { x: "42%", y: "30%", r: 5, delay: 0.6 },
+  { x: "55%", y: "75%", r: 4, delay: 0.9 },
+  { x: "68%", y: "18%", r: 7, delay: 1.1 },
+  { x: "78%", y: "55%", r: 4, delay: 1.4 },
+  { x: "88%", y: "80%", r: 6, delay: 1.7 },
+  { x: "20%", y: "88%", r: 3, delay: 0.5 },
+  { x: "90%", y: "30%", r: 4, delay: 1.2 },
+  { x: "50%", y: "52%", r: 8, delay: 0.8 },
+];
+
+const NETWORK_EDGES = [
+  { x1: "12%", y1: "20%", x2: "28%", y2: "65%", delay: 0.2 },
+  { x1: "28%", y1: "65%", x2: "42%", y2: "30%", delay: 0.5 },
+  { x1: "42%", y1: "30%", x2: "55%", y2: "75%", delay: 0.8 },
+  { x1: "55%", y1: "75%", x2: "68%", y2: "18%", delay: 1.0 },
+  { x1: "68%", y1: "18%", x2: "78%", y2: "55%", delay: 1.3 },
+  { x1: "78%", y1: "55%", x2: "88%", y2: "80%", delay: 1.5 },
+  { x1: "12%", y1: "20%", x2: "42%", y2: "30%", delay: 0.4 },
+  { x1: "42%", y1: "30%", x2: "68%", y2: "18%", delay: 0.9 },
+  { x1: "20%", y1: "88%", x2: "55%", y2: "75%", delay: 1.0 },
+  { x1: "50%", y1: "52%", x2: "78%", y2: "55%", delay: 1.2 },
+  { x1: "50%", y1: "52%", x2: "42%", y2: "30%", delay: 0.7 },
+  { x1: "90%", y1: "30%", x2: "68%", y2: "18%", delay: 1.1 },
+];
+
 function OutroLockup() {
   return (
     <motion.div
-      className="absolute inset-0 bg-[#1e1b4b] flex flex-col items-center justify-center z-10"
+      className="absolute inset-0 bg-[#0d0d1a] flex flex-col items-center justify-center z-10 overflow-hidden"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 1.2, ease: "easeOut" }}
     >
+      {/* Animated network backdrop */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.18 }}>
+        {NETWORK_EDGES.map((e, i) => (
+          <motion.line
+            key={i}
+            x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
+            stroke="#6366f1"
+            strokeWidth="1.5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.2, delay: e.delay, ease: "easeOut" }}
+          />
+        ))}
+        {NETWORK_NODES.map((n, i) => (
+          <motion.circle
+            key={i}
+            cx={n.x} cy={n.y} r={n.r}
+            fill="#818cf8"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.3, 1], opacity: [0, 1, 0.7] }}
+            transition={{ duration: 0.6, delay: n.delay }}
+          />
+        ))}
+      </svg>
+
+      {/* Center glow */}
+      <div
+        className="absolute rounded-full pointer-events-none"
+        style={{
+          width: "50vw", height: "50vw",
+          background: "radial-gradient(circle, rgba(99,102,241,0.22) 0%, transparent 70%)",
+          top: "50%", left: "50%", transform: "translate(-50%,-50%)",
+        }}
+      />
+
+      {/* Content */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="mb-[3vh]"
       >
-        <PathwaysLogo size={150} className="mb-[4vh]" />
+        <PathwaysLogo size={120} />
       </motion.div>
       <motion.h1
         className="text-[6vw] font-black text-white tracking-tighter"
@@ -48,7 +113,7 @@ function OutroLockup() {
         Pathways
       </motion.h1>
       <motion.p
-        className="text-[2.5vw] text-indigo-300 font-medium mt-[1vh]"
+        className="text-[2.5vw] text-indigo-300 font-medium mt-[0.5vh]"
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, delay: 0.5 }}
@@ -56,7 +121,8 @@ function OutroLockup() {
         Map your impact.
       </motion.p>
       <motion.div
-        className="mt-[8vh] px-[3vw] py-[1.5vh] bg-indigo-600 rounded-full text-white text-[1.5vw] font-bold shadow-lg shadow-indigo-500/20"
+        className="mt-[6vh] px-[3vw] py-[1.5vh] bg-indigo-600 rounded-full text-white text-[1.5vw] font-bold"
+        style={{ boxShadow: "0 0 32px rgba(99,102,241,0.45)" }}
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, delay: 0.7 }}
@@ -64,7 +130,7 @@ function OutroLockup() {
         Start Mapping Today
       </motion.div>
       <motion.button
-        className="mt-[3vh] flex items-center gap-[0.6vw] text-[1.1vw] text-indigo-300/70 hover:text-white transition-colors"
+        className="mt-[2.5vh] flex items-center gap-[0.6vw] text-[1.1vw] text-indigo-300/60 hover:text-white transition-colors"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 1.2 }}
