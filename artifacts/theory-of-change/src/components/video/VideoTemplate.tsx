@@ -151,6 +151,9 @@ export default function VideoTemplate() {
   const [started, setStarted] = useState(false);
   const [completed, setCompleted] = useState(false);
   const prevSceneRef = useRef<number>(0);
+  // Ref-based flag so voice-sync effect sees the completed state synchronously
+  // (React state updates are async, causing Scene 1 audio to fire on loop-back)
+  const completedRef = useRef(false);
 
   const sceneRef0 = useRef<HTMLAudioElement>(null);
   const sceneRef1 = useRef<HTMLAudioElement>(null);
@@ -184,6 +187,7 @@ export default function VideoTemplate() {
   // Detect loop: hook resets currentScene to 0 after the last scene
   useEffect(() => {
     if (started && prevSceneRef.current === 4 && currentScene === 0) {
+      completedRef.current = true; // set synchronously before state update
       setCompleted(true);
 
       // Stop all voiceover clips
@@ -211,7 +215,7 @@ export default function VideoTemplate() {
 
   // Per-scene voice sync
   useEffect(() => {
-    if (!started || completed) return;
+    if (!started || completedRef.current) return;
 
     sceneRefs.forEach((ref, i) => {
       const el = ref.current;
