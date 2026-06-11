@@ -9,7 +9,7 @@ export function Scene2() {
     const timers = [
       setTimeout(() => setPhase(1), 400),
       setTimeout(() => setPhase(2), 1600),
-      setTimeout(() => setPhase(3), 4000),
+      setTimeout(() => setPhase(3), 5500),
     ];
     return () => timers.forEach((t) => clearTimeout(t));
   }, []);
@@ -42,22 +42,48 @@ export function Scene2() {
 
       {/* Name */}
       <motion.h1
-        className="relative z-10 text-[5.5vw] font-black mt-[3vh] tracking-tighter text-white"
+        className="relative z-10 text-[6vw] font-black mt-[3vh] tracking-tighter text-white"
         initial={{ opacity: 0, y: 24 }}
         animate={phase >= 2 ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
         transition={{ duration: 0.8 }}
       >
-        Introducing Pathways.
+        Pathways.
       </motion.h1>
 
-      {/* Tagline */}
       <motion.p
-        className="relative z-10 text-[1.9vw] text-indigo-200 mt-[2vh] max-w-[56vw] text-center font-medium leading-snug"
+        className="relative z-10 text-[2.2vw] text-white/80 mt-[1.5vh] font-semibold tracking-wide"
         initial={{ opacity: 0 }}
         animate={phase >= 2 ? { opacity: 1 } : { opacity: 0 }}
-        transition={{ duration: 0.8, delay: 0.25 }}
+        transition={{ duration: 0.7, delay: 0.3 }}
       >
-        Programme design. Indicator measurement. GIS mapping. Systems change — all in one place.
+        One platform. Built for the full complexity of change.
+      </motion.p>
+
+      {/* Feature pills */}
+      <motion.div
+        className="relative z-10 flex flex-wrap gap-[1vw] justify-center mt-[3vh] max-w-[60vw]"
+        initial={{ opacity: 0, y: 16 }}
+        animate={phase >= 3 ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
+        transition={{ duration: 0.7, delay: 0.2 }}
+      >
+        {["Programme Design", "Indicator Tracking", "GIS Mapping", "Systems Analysis"].map((label) => (
+          <span
+            key={label}
+            className="text-[1.3vw] font-bold px-[1.4vw] py-[0.8vh] rounded-full"
+            style={{ background: "rgba(99,102,241,0.28)", border: "1px solid rgba(129,140,248,0.45)", color: "#c7d2fe" }}
+          >
+            {label}
+          </span>
+        ))}
+      </motion.div>
+
+      <motion.p
+        className="relative z-10 text-[1.8vw] text-indigo-300 mt-[2.5vh] font-semibold tracking-wide"
+        initial={{ opacity: 0 }}
+        animate={phase >= 3 ? { opacity: 1 } : { opacity: 0 }}
+        transition={{ duration: 0.7, delay: 0.6 }}
+      >
+        Connected, finally.
       </motion.p>
     </motion.div>
   );

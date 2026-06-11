@@ -2,10 +2,9 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 const roles = [
-  { title: "Programme Manager", desc: "Design logic, assign tasks, track progress." },
-  { title: "Field Officer", desc: "Update indicators and geo-tag interventions." },
-  { title: "Donor", desc: "Tailored results view — only what matters to them." },
-  { title: "M&E Specialist", desc: "Deep-dive into indicators and system analysis." },
+  { title: "Manager — in the capital", desc: "Oversees the full programme. Assigns components. Sees everything." },
+  { title: "Field Officer — on the ground", desc: "Updates indicators and maps interventions in real time." },
+  { title: "Donor — three time zones away", desc: "Their language. Their role. Their view of what matters." },
 ];
 
 export function Scene5() {
@@ -51,13 +50,22 @@ export function Scene5() {
         </motion.p>
 
         <motion.h2
-          className="text-[3.2vw] font-black text-white leading-tight mb-[3vh]"
+          className="text-[2.9vw] font-black text-white leading-tight mb-[2vh]"
           initial={{ opacity: 0, x: 24 }}
           animate={phase >= 1 ? { opacity: 1, x: 0 } : { opacity: 0, x: 24 }}
           transition={{ duration: 0.7, delay: 0.2 }}
         >
           Everyone at the<br />same table.
         </motion.h2>
+
+        <motion.p
+          className="text-[1.6vw] text-white/65 mb-[2vh] leading-snug"
+          initial={{ opacity: 0 }}
+          animate={phase >= 2 ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          No more translating between versions of the truth.
+        </motion.p>
 
         {/* Role cards */}
         <div className="flex flex-col gap-[1.2vh]">

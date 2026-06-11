@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
 
 const lines = [
-  { text: "Juggling spreadsheets.", size: "3.4vw" },
-  { text: "A separate GIS tool.", size: "3.4vw" },
-  { text: "A reporting platform.", size: "3.4vw" },
-  { text: "Three email threads —", size: "3.0vw" },
-  { text: "all to answer one donor question.", size: "2.8vw" },
+  { text: "Four tabs open.", size: "3.4vw" },
+  { text: "Three email threads.", size: "3.4vw" },
+  { text: "Two tools that don't talk to each other.", size: "2.8vw" },
+  { text: "One donor waiting on an answer", size: "2.6vw" },
+  { text: "you already know — somewhere.", size: "2.6vw" },
 ];
 
 export function Scene1() {
@@ -43,13 +43,21 @@ export function Scene1() {
         ))}
 
         <motion.p
-          className="text-[2.2vw] font-semibold mt-[3vh]"
+          className="text-[2.0vw] font-medium mt-[2.5vh] text-white/75 max-w-[46vw]"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 4.5 }}
+        >
+          You're not disorganized. You're just working with systems that were never built for this work.
+        </motion.p>
+        <motion.p
+          className="text-[2.2vw] font-bold mt-[2vh]"
           style={{ color: "#a5b4fc" }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 4.0 }}
+          transition={{ duration: 0.8, delay: 6.5 }}
         >
-          You deserve something better.
+          There's a better way.
         </motion.p>
       </div>
     </motion.div>

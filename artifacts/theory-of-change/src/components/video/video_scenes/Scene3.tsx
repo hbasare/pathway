@@ -2,10 +2,10 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
 const bullets = [
-  "Build your Theory of Change as a living canvas.",
-  "Connect every activity to its outputs.",
-  "Track outcomes in real time.",
-  "Your entire programme logic — clear, connected, always up to date.",
+  "A theory of change shouldn't live in a PDF.",
+  "Build it as a living canvas.",
+  "Connect activities to outputs. Track outcomes as they happen.",
+  "Visible, linked, and always up to date.",
 ];
 
 export function Scene3() {

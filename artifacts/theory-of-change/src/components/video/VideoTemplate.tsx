@@ -9,19 +9,19 @@ import { Scene4 } from "./video_scenes/Scene4";
 import { Scene5 } from "./video_scenes/Scene5";
 
 const SCENE_DURATIONS = {
-  pain:    11000,
-  brand:    9000,
-  design:  13000,
-  measure: 13000,
-  collab:  12000,
+  pain:    19000,
+  brand:   20000,
+  design:  17000,
+  measure: 18000,
+  collab:  19000,
 };
 
 const SCENE_CLIPS = [
-  "pathways-scene1-v3.mp3",
-  "pathways-scene2-v3.mp3",
-  "pathways-scene3-v3.mp3",
-  "pathways-scene4-v3.mp3",
-  "pathways-scene5-v3.mp3",
+  "pathways-scene1-v4.mp3",
+  "pathways-scene2-v4.mp3",
+  "pathways-scene3-v4.mp3",
+  "pathways-scene4-v4.mp3",
+  "pathways-scene5-v4.mp3",
 ];
 
 const NETWORK_NODES = [

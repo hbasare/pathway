@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 const points = [
   { label: "Indicator Tracking", body: "Monitor programme KPIs in real time." },
   { label: "GIS Mapping", body: "Visualise interventions geographically." },
-  { label: "M4P Framework", body: "Analyse core markets, functions & rules." },
-  { label: "Smarter Decisions", body: "Integrated data — one unified view." },
+  { label: "M4P Systems Analysis", body: "Analyse core markets, functions & rules." },
+  { label: "When asked what's working —", body: "You don't guess. You show them." },
 ];
 
 export function Scene4() {
@@ -52,13 +52,22 @@ export function Scene4() {
 
         {/* Headline */}
         <motion.h2
-          className="text-[3.2vw] font-black text-white leading-tight mb-[3vh]"
+          className="text-[3.0vw] font-black text-white leading-tight mb-[1.5vh]"
           initial={{ opacity: 0, x: -24 }}
           animate={phase >= 1 ? { opacity: 1, x: 0 } : { opacity: 0, x: -24 }}
           transition={{ duration: 0.7, delay: 0.2 }}
         >
-          Turn your data<br />into decisions.
+          Numbers without context<br />are just numbers.
         </motion.h2>
+
+        <motion.p
+          className="text-[1.7vw] text-white/70 mb-[2.5vh] leading-snug max-w-[44vw]"
+          initial={{ opacity: 0 }}
+          animate={phase >= 2 ? { opacity: 1 } : { opacity: 0 }}
+          transition={{ duration: 0.7, delay: 0.1 }}
+        >
+          Pathways connects your indicators to your geography — and your geography to your market system analysis.
+        </motion.p>
 
         {/* Bullet cards */}
         <div className="grid grid-cols-2 gap-[1.5vw]">

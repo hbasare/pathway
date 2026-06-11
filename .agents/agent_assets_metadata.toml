@@ -131,3 +131,21 @@ id = "-b73g5GByUO715rqCN7CP"
 uri = "file://attached_assets/generated_audio/pathways-scene5-v3.mp3"
 type = "audio"
 title = "pathways-scene5-v3"
+
+[[outputs]]
+id = "UkJqIl_hN6zMnpYBKzqgZ"
+uri = "file://attached_assets/generated_audio/pathways-scene2-v4.mp3"
+type = "audio"
+title = "pathways-scene2-v4"
+
+[[outputs]]
+id = "gMLGLltlyOjKL9xp9vBSP"
+uri = "file://attached_assets/generated_audio/pathways-scene4-v4.mp3"
+type = "audio"
+title = "pathways-scene4-v4"
+
+[[outputs]]
+id = "oX5QAz6TJngnZVmPB1fOa"
+uri = "file://attached_assets/generated_audio/pathways-scene5-v4.mp3"
+type = "audio"
+title = "pathways-scene5-v4"
