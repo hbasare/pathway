@@ -60,14 +60,12 @@ function OutroLockup() {
       animate={{ opacity: 1 }}
       transition={{ duration: 1.2, ease: "easeOut" }}
     >
-      {/* Animated network backdrop */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.18 }}>
         {NETWORK_EDGES.map((e, i) => (
           <motion.line
             key={i}
             x1={e.x1} y1={e.y1} x2={e.x2} y2={e.y2}
-            stroke="#6366f1"
-            strokeWidth="1.5"
+            stroke="#6366f1" strokeWidth="1.5"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 1.2, delay: e.delay, ease: "easeOut" }}
@@ -84,8 +82,6 @@ function OutroLockup() {
           />
         ))}
       </svg>
-
-      {/* Center glow */}
       <div
         className="absolute rounded-full pointer-events-none"
         style={{
@@ -94,8 +90,6 @@ function OutroLockup() {
           top: "50%", left: "50%", transform: "translate(-50%,-50%)",
         }}
       />
-
-      {/* Content */}
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -145,16 +139,14 @@ function OutroLockup() {
   );
 }
 
-export default function VideoTemplate() {
+// Inner component — only mounts when the user clicks play.
+// This ensures useVideoPlayer's timer starts at exactly t=0 of Scene 1,
+// not on page load (which would eat into Scene 1's duration before play).
+function VideoPlayer({ onComplete }: { onComplete: () => void }) {
   const { currentScene } = useVideoPlayer({ durations: SCENE_DURATIONS });
-  const musicRef = useRef<HTMLAudioElement>(null);
-  const [started, setStarted] = useState(false);
-  const [completed, setCompleted] = useState(false);
-  const prevSceneRef = useRef<number>(0);
-  // Ref-based flag so voice-sync effect sees the completed state synchronously
-  // (React state updates are async, causing Scene 1 audio to fire on loop-back)
-  const completedRef = useRef(false);
+  const BASE = import.meta.env.BASE_URL;
 
+  const musicRef  = useRef<HTMLAudioElement>(null);
   const sceneRef0 = useRef<HTMLAudioElement>(null);
   const sceneRef1 = useRef<HTMLAudioElement>(null);
   const sceneRef2 = useRef<HTMLAudioElement>(null);
@@ -162,40 +154,25 @@ export default function VideoTemplate() {
   const sceneRef4 = useRef<HTMLAudioElement>(null);
   const sceneRefs = [sceneRef0, sceneRef1, sceneRef2, sceneRef3, sceneRef4];
 
-  const handleStart = () => {
+  const prevSceneRef = useRef<number>(0);
+  const completedRef = useRef(false);
+
+  // Start music immediately on mount (user already clicked play)
+  useEffect(() => {
     const music = musicRef.current;
     if (music) {
-      music.pause();
-      music.currentTime = 0;
       music.volume = 0.18;
-      music.load();
       music.play().catch((e) => console.error("Music play failed:", e));
     }
+  }, []);
 
-    const voice = sceneRefs[0].current;
-    if (voice) {
-      voice.pause();
-      voice.currentTime = 0;
-      voice.volume = 1.0;
-      voice.load();
-      voice.play().catch((e) => console.error("Scene 1 voice failed:", e));
-    }
-
-    setStarted(true);
-  };
-
-  // Detect loop: hook resets currentScene to 0 after the last scene
+  // Detect loop-back (hook resets to 0 after last scene = video complete)
   useEffect(() => {
-    if (started && prevSceneRef.current === 4 && currentScene === 0) {
-      completedRef.current = true; // set synchronously before state update
-      setCompleted(true);
-
-      // Stop all voiceover clips
+    if (prevSceneRef.current === 4 && currentScene === 0) {
+      completedRef.current = true;
       sceneRefs.forEach((ref) => {
         if (ref.current) { ref.current.pause(); ref.current.currentTime = 0; }
       });
-
-      // Fade music out over ~2.5 seconds then stop
       const music = musicRef.current;
       if (music) {
         const step = music.volume / 25;
@@ -209,14 +186,14 @@ export default function VideoTemplate() {
           }
         }, 100);
       }
+      onComplete();
     }
     prevSceneRef.current = currentScene;
-  }, [currentScene, started]);
+  }, [currentScene]);
 
-  // Per-scene voice sync
+  // Per-scene voice sync — fires on mount (scene 0) and every scene change
   useEffect(() => {
-    if (!started || completedRef.current) return;
-
+    if (completedRef.current) return;
     sceneRefs.forEach((ref, i) => {
       const el = ref.current;
       if (!el) return;
@@ -230,13 +207,33 @@ export default function VideoTemplate() {
         el.currentTime = 0;
       }
     });
-  }, [currentScene, started, completed]);
+  }, [currentScene]);
 
-  const BASE = import.meta.env.BASE_URL;
+  return (
+    <>
+      <AnimatePresence mode="sync">
+        {currentScene === 0 && <Scene1 key="scene1" />}
+        {currentScene === 1 && <Scene2 key="scene2" />}
+        {currentScene === 2 && <Scene3 key="scene3" />}
+        {currentScene === 3 && <Scene4 key="scene4" />}
+        {currentScene === 4 && <Scene5 key="scene5" />}
+      </AnimatePresence>
+
+      {SCENE_CLIPS.map((clip, i) => (
+        <audio key={clip} ref={sceneRefs[i]} src={`${BASE}audio/${clip}`} preload="auto" />
+      ))}
+      <audio ref={musicRef} src={`${BASE}audio/pathways-music-upbeat.mp3`} preload="auto" loop />
+    </>
+  );
+}
+
+export default function VideoTemplate() {
+  const [started, setStarted] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
   return (
     <div className="relative w-full h-screen overflow-hidden bg-[#0a0a0a] text-white font-sans flex items-center justify-center">
-      {/* Persistent Background */}
+      {/* Persistent animated background */}
       <div className="absolute inset-0 z-0">
         <motion.div
           className="absolute w-[80vw] h-[80vw] rounded-full blur-[100px] opacity-20"
@@ -253,27 +250,11 @@ export default function VideoTemplate() {
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PHBhdGggZD0iTTAgMGg0MHY0MEgwem0zOSAzOVYwaC0xdjM5SDB2MXozOSAzOVYwaC0xdjM5SDB2MXoiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyIvPjwvc3ZnPg==')] opacity-30" />
       </div>
 
-      {/* Scenes — hidden once video completes */}
-      {!completed && (
-        <AnimatePresence mode="sync">
-          {currentScene === 0 && <Scene1 key="scene1" />}
-          {currentScene === 1 && <Scene2 key="scene2" />}
-          {currentScene === 2 && <Scene3 key="scene3" />}
-          {currentScene === 3 && <Scene4 key="scene4" />}
-          {currentScene === 4 && <Scene5 key="scene5" />}
-        </AnimatePresence>
-      )}
+      {/* Video player — only mounts after play is clicked so timer starts at t=0 */}
+      {started && !completed && <VideoPlayer onComplete={() => setCompleted(true)} />}
 
-      {/* Final outro — replaces scenes when video completes */}
+      {/* Outro lockup — shown after all scenes finish */}
       {completed && <OutroLockup />}
-
-      {/* Per-scene voice tracks */}
-      {SCENE_CLIPS.map((clip, i) => (
-        <audio key={clip} ref={sceneRefs[i]} src={`${BASE}audio/${clip}`} preload="auto" />
-      ))}
-
-      {/* Background music */}
-      <audio ref={musicRef} src={`${BASE}audio/pathways-music-upbeat.mp3`} preload="auto" loop />
 
       {/* Click-to-play overlay */}
       <AnimatePresence>
@@ -285,7 +266,7 @@ export default function VideoTemplate() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            onClick={handleStart}
+            onClick={() => setStarted(true)}
           >
             <motion.div
               className="w-[7vw] h-[7vw] rounded-full border-2 border-white/60 flex items-center justify-center mb-[2vh]"
