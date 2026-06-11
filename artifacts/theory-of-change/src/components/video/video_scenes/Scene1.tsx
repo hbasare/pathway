@@ -1,67 +1,55 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+
+const lines = [
+  { text: "Juggling spreadsheets.", size: "3.4vw" },
+  { text: "A separate GIS tool.", size: "3.4vw" },
+  { text: "A reporting platform.", size: "3.4vw" },
+  { text: "Three email threads —", size: "3.0vw" },
+  { text: "all to answer one donor question.", size: "2.8vw" },
+];
 
 export function Scene1() {
-  const [phase, setPhase] = useState(0);
-
-  useEffect(() => {
-    const timers = [
-      setTimeout(() => setPhase(1), 500),
-      setTimeout(() => setPhase(2), 3500),
-      setTimeout(() => setPhase(3), 5000),
-      setTimeout(() => setPhase(4), 8500),
-    ];
-    return () => timers.forEach((t) => clearTimeout(t));
-  }, []);
-
   return (
     <motion.div
-      className="absolute inset-0 flex items-center justify-center"
-      initial={{ opacity: 0, scale: 1.1 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, filter: "blur(20px)" }}
-      transition={{ duration: 1.2 }}
+      className="absolute inset-0 flex items-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, filter: "blur(12px)" }}
+      transition={{ duration: 1 }}
     >
-      <div className="absolute inset-0 flex items-center justify-center">
-        {/* Rigid nodes */}
-        {Array.from({ length: 6 }).map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute w-[15vw] h-[8vh] border border-white/20 bg-white/5 rounded-md flex items-center justify-center backdrop-blur-md"
-            initial={{ opacity: 0, y: 50 }}
-            animate={
-              phase >= 1
-                ? {
-                    opacity: phase >= 2 ? 0.2 : 0.8,
-                    y: (i % 2 === 0 ? -1 : 1) * (15 + i * 5) + "vh",
-                    x: (i % 3 === 0 ? -1 : 1) * (20 + i * 2) + "vw",
-                  }
-                : { opacity: 0, y: 50 }
-            }
-            transition={{ duration: 0.8, delay: i * 0.1, type: "spring" }}
-          >
-            <div className="w-3/4 h-[2px] bg-white/20 rounded-full" />
-          </motion.div>
-        ))}
-      </div>
+      {/* Background image */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{ backgroundImage: "url(/images/pathways-scene1.png)" }}
+      />
+      {/* Left-weighted gradient for text legibility */}
+      <div
+        className="absolute inset-0"
+        style={{ background: "linear-gradient(95deg, rgba(4,3,18,0.93) 38%, rgba(4,3,18,0.50) 100%)" }}
+      />
 
-      <div className="z-10 text-center max-w-[60vw]">
-        <motion.h2
-          className="text-[4vw] font-bold tracking-tight text-white drop-shadow-xl"
-          initial={{ opacity: 0, y: 20 }}
-          animate={phase >= 1 ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          transition={{ duration: 0.8 }}
-        >
-          Every programme starts with a theory of change...
-        </motion.h2>
-        
+      <div className="relative z-10 ml-[6vw] max-w-[52vw]">
+        {lines.map((line, i) => (
+          <motion.p
+            key={i}
+            className="font-black text-white leading-snug"
+            style={{ fontSize: line.size, marginBottom: "0.6vh" }}
+            initial={{ opacity: 0, x: -28 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 + i * 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {line.text}
+          </motion.p>
+        ))}
+
         <motion.p
-          className="text-[2.5vw] text-[#a5b4fc] mt-[4vh] font-medium"
+          className="text-[2.2vw] font-semibold mt-[3vh]"
+          style={{ color: "#a5b4fc" }}
           initial={{ opacity: 0 }}
-          animate={phase >= 2 ? { opacity: 1 } : { opacity: 0 }}
-          transition={{ duration: 0.8 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8, delay: 4.0 }}
         >
-          ...but too often, our market system analyses get locked in static PDFs.
+          You deserve something better.
         </motion.p>
       </div>
     </motion.div>

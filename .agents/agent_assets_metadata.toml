@@ -1,5 +1,34 @@
 uploads = []
-generated = []
+
+[[generated]]
+id = "x3b35acsHfYBPK93eWC0l"
+uri = "file://attached_assets/generated_images/pathways-scene1.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "S4koYdf2jPFMCeIpjpak8"
+uri = "file://attached_assets/generated_images/pathways-scene2.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "6UKFJPl8RS1_Id4jYoPUm"
+uri = "file://attached_assets/generated_images/pathways-scene3.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "MofkSO-9Ltw9sHU430Vdm"
+uri = "file://attached_assets/generated_images/pathways-scene4.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "nMKvdIqaMiW6gDDMykMVm"
+uri = "file://attached_assets/generated_images/pathways-scene5.png"
+type = "image"
+title = "generated_image"
 
 [[outputs]]
 id = "g4-ALUwpFhwAsU5kkS_Zh"
@@ -78,3 +107,27 @@ id = "N732YOHUbN2EKeoV1LUsu"
 uri = "file://attached_assets/generated_audio/pathways-music-upbeat.mp3"
 type = "audio"
 title = "generated_music"
+
+[[outputs]]
+id = "tkUEphwkZrd1icabt6Lsj"
+uri = "file://attached_assets/generated_audio/pathways-scene2-v3.mp3"
+type = "audio"
+title = "pathways-scene2-v3"
+
+[[outputs]]
+id = "OKL39a494KGSBHZ0n6DYs"
+uri = "file://attached_assets/generated_audio/pathways-scene3-v3.mp3"
+type = "audio"
+title = "pathways-scene3-v3"
+
+[[outputs]]
+id = "RLyYm-QB_uQmaK-MGpSf2"
+uri = "file://attached_assets/generated_audio/pathways-scene1-v3.mp3"
+type = "audio"
+title = "pathways-scene1-v3"
+
+[[outputs]]
+id = "-b73g5GByUO715rqCN7CP"
+uri = "file://attached_assets/generated_audio/pathways-scene5-v3.mp3"
+type = "audio"
+title = "pathways-scene5-v3"
