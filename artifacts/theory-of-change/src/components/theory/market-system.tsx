@@ -73,8 +73,8 @@ function lighten(hex: string, factor = 1.25): string {
   return `rgb(${r},${g},${b})`;
 }
 
-// ── 3D Doughnut ───────────────────────────────────────────────────────────────
-const CX = 250, CY = 250, DEPTH = 18;
+// ── 2D Doughnut ───────────────────────────────────────────────────────────────
+const CX = 250, CY = 250;
 const R = {
   centerR: 52,
   coreI: 56,   coreO: 116,
@@ -121,12 +121,9 @@ function DoughnutSVG({
   ) => {
     const sel = isSelected(ring, cat);
     const hov = isHov(ring, cat);
-    const fill = sel ? lighten(color, 1.15) : hov ? lighten(color, 1.08) : color;
-    const side = darken(color, sel ? 0.5 : 0.42);
     const gid = gradId(ring, cat);
     const p = slicePath(CX, CY, ro, ri, a1, a2);
-    const dp = depthPath(CX, CY, ro, ri, a1, a2, DEPTH);
-    const stroke = sel ? "#fff" : "rgba(255,255,255,0.6)";
+    const stroke = sel ? "#fff" : "rgba(255,255,255,0.55)";
     const sw = sel ? 2.5 : 1;
     return (
       <g key={gid} style={{ cursor: "pointer" }}
@@ -135,16 +132,13 @@ function DoughnutSVG({
         onMouseLeave={() => setHovered(null)}
       >
         <defs>
-          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={lighten(color, 1.1)} />
-            <stop offset="100%" stopColor={darken(color, 0.85)} />
-          </linearGradient>
+          <radialGradient id={gid} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor={lighten(color, sel ? 1.25 : hov ? 1.15 : 1.08)} />
+            <stop offset="100%" stopColor={darken(color, sel ? 0.75 : hov ? 0.7 : 0.65)} />
+          </radialGradient>
         </defs>
-        {/* Depth / side wall */}
-        <path d={dp} fill={side} opacity="0.85" />
-        {/* Top face */}
         <path d={p} fill={`url(#${gid})`} stroke={stroke} strokeWidth={sw} />
-        {sel && <path d={p} fill="rgba(255,255,255,0.18)" />}
+        {sel && <path d={p} fill="rgba(255,255,255,0.12)" />}
       </g>
     );
   };
@@ -163,58 +157,43 @@ function DoughnutSVG({
   const line2 = words.slice(Math.ceil(words.length / 2)).join(" ");
 
   return (
-    <div className="relative select-none" style={{ width: 500, height: 520 }}>
-      {/* 3D transform wrapper */}
-      <div style={{
-        transform: "perspective(700px) rotateX(44deg) scaleY(0.95)",
-        transformOrigin: "50% 52%",
-        filter: "drop-shadow(0px 28px 22px rgba(0,0,0,0.38))",
-        position: "absolute", top: 0, left: 0, width: 500, height: 500,
-      }}>
-        <svg viewBox="0 0 500 500" width={500} height={500}>
-          {/* ── Rules ring ── */}
-          {rulesSegs.map(s => renderSeg("rules", s.cat, s.color, s.label, R.rulesO, R.rulesI, s.a1, s.a2))}
-          {/* White gap ring */}
-          <circle cx={CX} cy={CY} r={R.rulesI - 1} fill="white" />
-          {/* ── Supporting ring ── */}
-          {suppCats.map((s, i) => {
-            const a1 = -90 + i * suppAngle + GAP / 2;
-            const a2 = -90 + (i + 1) * suppAngle - GAP / 2;
-            return renderSeg("supporting", s.cat, s.color, s.cat, R.suppO, R.suppI, a1, a2);
-          })}
-          {/* White gap ring */}
-          <circle cx={CX} cy={CY} r={R.suppI - 1} fill="white" />
-          {/* ── Core ring ── */}
-          {coreSegs.map(s => renderSeg("core", s.cat, s.color, s.label, R.coreO, R.coreI, s.a1, s.a2))}
-          {/* White gap ring */}
-          <circle cx={CX} cy={CY} r={R.coreI - 1} fill="white" />
-          {/* ── Centre disc ── */}
-          <defs>
-            <radialGradient id="cg" cx="40%" cy="35%" r="65%">
-              <stop offset="0%" stopColor="#818cf8"/>
-              <stop offset="100%" stopColor="#4338ca"/>
-            </radialGradient>
-          </defs>
-          <circle cx={CX} cy={CY} r={R.centerR} fill="url(#cg)" />
-          <text x={CX} y={CY - 6} textAnchor="middle" fill="white" fontSize={line2 ? 9 : 10}
-            fontWeight="700" fontFamily="system-ui, sans-serif">{line1}</text>
-          {line2 && <text x={CX} y={CY + 8} textAnchor="middle" fill="white" fontSize={9}
-            fontWeight="700" fontFamily="system-ui, sans-serif">{line2}</text>}
-          <text x={CX} y={CY + 20} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize={7.5}
-            fontFamily="system-ui, sans-serif">Market Exchange</text>
-          {/* ── Ring dividers ── */}
-          <circle cx={CX} cy={CY} r={R.rulesO} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth={1} />
-          <circle cx={CX} cy={CY} r={R.suppO} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth={1} />
-          <circle cx={CX} cy={CY} r={R.coreO} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth={1} />
-        </svg>
-      </div>
-      {/* Ground shadow */}
-      <div style={{
-        position: "absolute", bottom: 0, left: "50%", transform: "translateX(-50%)",
-        width: 400, height: 22,
-        background: "radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.22) 0%, transparent 70%)",
-        filter: "blur(6px)",
-      }} />
+    <div className="relative select-none" style={{ width: 500, height: 500 }}>
+      <svg viewBox="0 0 500 500" width={500} height={500}>
+        {/* ── Rules ring ── */}
+        {rulesSegs.map(s => renderSeg("rules", s.cat, s.color, s.label, R.rulesO, R.rulesI, s.a1, s.a2))}
+        {/* Gap ring */}
+        <circle cx={CX} cy={CY} r={R.rulesI - 1} fill="white" />
+        {/* ── Supporting ring ── */}
+        {suppCats.map((s, i) => {
+          const a1 = -90 + i * suppAngle + GAP / 2;
+          const a2 = -90 + (i + 1) * suppAngle - GAP / 2;
+          return renderSeg("supporting", s.cat, s.color, s.cat, R.suppO, R.suppI, a1, a2);
+        })}
+        {/* Gap ring */}
+        <circle cx={CX} cy={CY} r={R.suppI - 1} fill="white" />
+        {/* ── Core ring ── */}
+        {coreSegs.map(s => renderSeg("core", s.cat, s.color, s.label, R.coreO, R.coreI, s.a1, s.a2))}
+        {/* Gap ring */}
+        <circle cx={CX} cy={CY} r={R.coreI - 1} fill="white" />
+        {/* ── Centre disc ── */}
+        <defs>
+          <radialGradient id="cg" cx="40%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#818cf8"/>
+            <stop offset="100%" stopColor="#4338ca"/>
+          </radialGradient>
+        </defs>
+        <circle cx={CX} cy={CY} r={R.centerR} fill="url(#cg)" />
+        <text x={CX} y={CY - 6} textAnchor="middle" fill="white" fontSize={line2 ? 9 : 10}
+          fontWeight="700" fontFamily="system-ui, sans-serif">{line1}</text>
+        {line2 && <text x={CX} y={CY + 8} textAnchor="middle" fill="white" fontSize={9}
+          fontWeight="700" fontFamily="system-ui, sans-serif">{line2}</text>}
+        <text x={CX} y={CY + 20} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize={7.5}
+          fontFamily="system-ui, sans-serif">Market Exchange</text>
+        {/* ── Ring dividers ── */}
+        <circle cx={CX} cy={CY} r={R.rulesO} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
+        <circle cx={CX} cy={CY} r={R.suppO} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
+        <circle cx={CX} cy={CY} r={R.coreO} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
+      </svg>
     </div>
   );
 }
