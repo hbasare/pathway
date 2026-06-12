@@ -229,6 +229,80 @@ function mergeUnique(lists: NominatimResult[][]): NominatimResult[] {
   return out;
 }
 
+// ── Overpass API helpers ──────────────────────────────────────────────────────
+// Overpass filters by OSM admin_level tag, which is the reliable way to find
+// all first-level subdivisions regardless of whether they're called "state",
+// "county", "province", "department", "governorate", "wilaya", etc.
+interface OverpassElement {
+  id: number; type: string;
+  tags: Record<string, string>;
+  center?: { lat: number; lon: number };
+}
+async function overpassFetch(query: string): Promise<OverpassElement[]> {
+  try {
+    const res = await fetch("https://overpass-api.de/api/interpreter", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: `data=${encodeURIComponent(query)}`,
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return (data.elements ?? []) as OverpassElement[];
+  } catch { return []; }
+}
+function overpassToNominatim(el: OverpassElement, lang: string, addrKey: "state" | "county" = "state"): NominatimResult {
+  const lc = lang.split(",")[0];
+  const name = el.tags[`name:${lc}`] || el.tags["name:en"] || el.tags.name || "";
+  return {
+    place_id: el.id,
+    display_name: name,
+    lat: el.center ? String(el.center.lat) : "0",
+    lon: el.center ? String(el.center.lon) : "0",
+    type: "administrative", class: "boundary",
+    address: { [addrKey]: name, region: name } as NominatimResult["address"],
+  };
+}
+// First-level subdivisions: try admin_level 4 (covers ~90% of countries in
+// international development work), then fall back to 3, 5, 6.
+async function fetchRegionsOverpass(countryCode: string, lang: string): Promise<NominatimResult[]> {
+  const code = countryCode.toUpperCase();
+  for (const level of ["4", "3", "5", "6"]) {
+    const q = `[out:json][timeout:20];area["ISO3166-1"="${code}"]->.c;relation(area.c)["boundary"="administrative"]["admin_level"="${level}"];out tags center;`;
+    const els = await overpassFetch(q);
+    if (els.length >= 2) {
+      return els.map(el => overpassToNominatim(el, lang, "state")).filter(r => r.display_name.trim());
+    }
+  }
+  return [];
+}
+// Second-level subdivisions within a given region relation ID.
+async function fetchDistrictsOverpass(regionOsmId: number, lang: string): Promise<NominatimResult[]> {
+  const areaId = 3600000000 + regionOsmId;
+  for (const level of ["5", "6", "7", "8"]) {
+    const q = `[out:json][timeout:20];area(id:${areaId})->.r;relation(area.r)["boundary"="administrative"]["admin_level"="${level}"];out tags center;`;
+    const els = await overpassFetch(q);
+    if (els.length >= 2) {
+      return els.map(el => overpassToNominatim(el, lang, "county")).filter(r => r.display_name.trim());
+    }
+  }
+  return [];
+}
+// Batch-fetch GeoJSON polygons from Nominatim for up to 50 OSM relation IDs.
+// Used to attach boundary overlays after Overpass gives us the list.
+async function batchFetchGeoJson(osmRelIds: number[]): Promise<Map<number, object>> {
+  if (!osmRelIds.length) return new Map();
+  try {
+    const ids = osmRelIds.slice(0, 50).map(id => `R${id}`).join(",");
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/lookup?osm_ids=${ids}&format=json&polygon_geojson=1`,
+      { headers: { "Accept-Language": "en" } },
+    );
+    if (!res.ok) return new Map();
+    const data = (await res.json()) as Array<{ osm_id: string; geojson?: object }>;
+    return new Map(data.filter(d => d.geojson).map(d => [parseInt(d.osm_id), d.geojson!]));
+  } catch { return new Map(); }
+}
+
 // ── UI helpers ────────────────────────────────────────────────────────────────
 function LevelBadge({ level }: { level: string }) {
   const map: Record<string, { label: string; cls: string }> = {
@@ -498,14 +572,33 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
     setAllDistricts([]); setSelDistricts([]); setDistrictFilter("");
     if (!country) return;
     setRegionsLoading(true);
-    const base = { format: "json", polygon_geojson: "1", addressdetails: "1", limit: "50", countrycodes: country.code };
-    Promise.all(["state", "province", "region"].map(q =>
-      nomFetch({ ...base, q }, acceptLang)
-        .then(data => data.filter(r => ["state","province","region","administrative"].includes(r.type) || r.class === "boundary"))
-    )).then(lists => {
-      setAllRegions(mergeUnique(lists).sort((a, b) => regionDisplayName(a).localeCompare(regionDisplayName(b))));
+
+    (async () => {
+      // Primary: Overpass API — queries by admin_level, works regardless of
+      // whether subdivisions are called state/county/province/department/etc.
+      let regions = await fetchRegionsOverpass(country.code, acceptLang);
+
+      if (regions.length >= 2) {
+        // Batch-fetch GeoJSON from Nominatim for map boundary overlays
+        const geoMap = await batchFetchGeoJson(regions.map(r => r.place_id));
+        regions = regions.map(r => ({ ...r, geojson: geoMap.get(r.place_id) ?? r.geojson }));
+      } else {
+        // Fallback: Nominatim text search with an expanded set of admin-unit terms
+        const base = { format: "json", polygon_geojson: "1", addressdetails: "1", limit: "50", countrycodes: country.code };
+        const lists = await Promise.all(
+          ["state", "province", "region", "county", "department", "governorate",
+           "division", "territory", "wilaya", "prefecture", "oblast", "zone"].map(q =>
+            nomFetch({ ...base, q }, acceptLang)
+              .then(data => data.filter(r => r.class === "boundary" ||
+                ["state","province","region","administrative","county","department"].includes(r.type)))
+          )
+        );
+        regions = mergeUnique(lists);
+      }
+
+      setAllRegions(regions.sort((a, b) => regionDisplayName(a).localeCompare(regionDisplayName(b))));
       setRegionsLoading(false);
-    });
+    })().catch(() => setRegionsLoading(false));
   }, [country, acceptLang]);
 
   // Auto-load districts whenever selected regions change
@@ -513,16 +606,34 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
     setAllDistricts([]); setSelDistricts([]); setDistrictFilter("");
     if (!selRegions.length || !country) return;
     setDistrictsLoading(true);
-    const base = { format: "json", polygon_geojson: "1", addressdetails: "1", limit: "50", countrycodes: country.code };
-    Promise.all(selRegions.map(reg =>
-      Promise.all(["county", "district", "municipality"].map(q =>
-        nomFetch({ ...base, q: `${q} ${regionDisplayName(reg)}` }, acceptLang)
-          .then(data => data.filter(r => ["county","district","municipality","administrative","city"].includes(r.type) || r.class === "boundary"))
-      )).then(lists => lists.flat())
-    )).then(results => {
-      setAllDistricts(mergeUnique(results).sort((a, b) => districtDisplayName(a).localeCompare(districtDisplayName(b))));
+
+    (async () => {
+      const allDists: NominatimResult[] = [];
+
+      for (const reg of selRegions) {
+        // Primary: Overpass, using the region's OSM relation ID
+        const overpassDists = await fetchDistrictsOverpass(reg.place_id, acceptLang);
+        if (overpassDists.length >= 2) {
+          allDists.push(...overpassDists);
+        } else {
+          // Fallback: Nominatim text search with expanded district-type terms
+          const base = { format: "json", polygon_geojson: "1", addressdetails: "1", limit: "50", countrycodes: country.code };
+          const lists = await Promise.all(
+            ["county", "district", "municipality", "lga", "sub-county",
+             "division", "zone", "woreda", "cercle", "tehsil", "upazila",
+             "arrondissement", "local government"].map(q =>
+              nomFetch({ ...base, q: `${q} ${regionDisplayName(reg)}` }, acceptLang)
+                .then(data => data.filter(r => r.class === "boundary" ||
+                  ["county","district","municipality","administrative","city","quarter"].includes(r.type)))
+            )
+          );
+          allDists.push(...lists.flat());
+        }
+      }
+
+      setAllDistricts(mergeUnique(allDists).sort((a, b) => districtDisplayName(a).localeCompare(districtDisplayName(b))));
       setDistrictsLoading(false);
-    });
+    })().catch(() => setDistrictsLoading(false));
   }, [selRegions, country, acceptLang]);
 
   const toggleRegion = (r: NominatimResult) =>
