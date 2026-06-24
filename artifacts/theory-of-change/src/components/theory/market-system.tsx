@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Plus, Trash2, Pencil, Check, X, Loader2, ChevronDown,
   Link2, ArrowRight, LayoutList, Eye, Info, Globe,
+  Users, AlertTriangle, Lightbulb,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
@@ -115,6 +116,7 @@ function DoughnutSVG({
 
   const gradId = (ring: string, cat: string) => `g-${ring.replace(" ","")}-${cat.replace(/[^a-z0-9]/gi,"")}`;
 
+  const hasSelection = selected !== null;
   const renderSeg = (
     ring: string, cat: string, color: string, label: string,
     ro: number, ri: number, a1: number, a2: number,
@@ -123,22 +125,25 @@ function DoughnutSVG({
     const hov = isHov(ring, cat);
     const gid = gradId(ring, cat);
     const p = slicePath(CX, CY, ro, ri, a1, a2);
-    const stroke = sel ? "#fff" : "rgba(255,255,255,0.55)";
-    const sw = sel ? 2.5 : 1;
+    const stroke = sel ? "rgba(255,255,255,0.95)" : hov ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.25)";
+    const sw = sel ? 2 : hov ? 1.5 : 0.75;
+    const dimmed = hasSelection && !sel && !hov;
     return (
-      <g key={gid} style={{ cursor: "pointer" }}
+      <g key={gid} style={{ cursor: "pointer", transition: "opacity 0.2s" }}
+        opacity={dimmed ? 0.45 : 1}
         onClick={() => onSelect({ ring, category: cat, label, color })}
         onMouseEnter={() => setHovered(key(ring, cat))}
         onMouseLeave={() => setHovered(null)}
       >
         <defs>
-          <radialGradient id={gid} cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor={lighten(color, sel ? 1.25 : hov ? 1.15 : 1.08)} />
-            <stop offset="100%" stopColor={darken(color, sel ? 0.75 : hov ? 0.7 : 0.65)} />
+          <radialGradient id={gid} cx="45%" cy="40%" r="60%">
+            <stop offset="0%" stopColor={lighten(color, sel ? 1.45 : hov ? 1.25 : 1.15)} />
+            <stop offset="100%" stopColor={darken(color, sel ? 0.85 : hov ? 0.78 : 0.72)} />
           </radialGradient>
         </defs>
+        {sel && <path d={p} fill={color} opacity={0.45} filter="url(#seg-glow)" />}
         <path d={p} fill={`url(#${gid})`} stroke={stroke} strokeWidth={sw} />
-        {sel && <path d={p} fill="rgba(255,255,255,0.12)" />}
+        {sel && <path d={p} fill="rgba(255,255,255,0.08)" />}
       </g>
     );
   };
@@ -156,43 +161,74 @@ function DoughnutSVG({
   const line1 = words.slice(0, Math.ceil(words.length / 2)).join(" ");
   const line2 = words.slice(Math.ceil(words.length / 2)).join(" ");
 
+  const BG = "#0f172a";
   return (
     <div className="relative select-none" style={{ width: 500, height: 500 }}>
       <svg viewBox="0 0 500 500" width={500} height={500}>
+        <defs>
+          {/* Glow filter for selected segments */}
+          <filter id="seg-glow" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="9" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          {/* Center disc gradient */}
+          <radialGradient id="cg" cx="38%" cy="32%" r="68%">
+            <stop offset="0%" stopColor="#c4b5fd"/>
+            <stop offset="45%" stopColor="#4f46e5"/>
+            <stop offset="100%" stopColor="#1e1b4b"/>
+          </radialGradient>
+          {/* Ambient glow behind entire doughnut */}
+          <radialGradient id="ambient" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="rgba(99,102,241,0.18)"/>
+            <stop offset="100%" stopColor="rgba(99,102,241,0)"/>
+          </radialGradient>
+        </defs>
+
+        {/* Ambient background glow */}
+        <circle cx={CX} cy={CY} r={270} fill="url(#ambient)" />
+
+        {/* Outer decorative orbital ring */}
+        <circle cx={CX} cy={CY} r={R.rulesO + 16} fill="none"
+          stroke="rgba(255,255,255,0.05)" strokeWidth={1} strokeDasharray="4 8" />
+        {/* Cardinal dots on outer ring */}
+        {[0, 90, 180, 270].map(deg => {
+          const pt = polar(CX, CY, R.rulesO + 24, deg);
+          return <circle key={deg} cx={pt.x} cy={pt.y} r={3} fill="rgba(255,255,255,0.18)" />;
+        })}
+
         {/* ── Rules ring ── */}
         {rulesSegs.map(s => renderSeg("rules", s.cat, s.color, s.label, R.rulesO, R.rulesI, s.a1, s.a2))}
-        {/* Gap ring */}
-        <circle cx={CX} cy={CY} r={R.rulesI - 1} fill="white" />
+        {/* Gap */}
+        <circle cx={CX} cy={CY} r={R.rulesI - 1} fill={BG} />
         {/* ── Supporting ring ── */}
         {suppCats.map((s, i) => {
           const a1 = -90 + i * suppAngle + GAP / 2;
           const a2 = -90 + (i + 1) * suppAngle - GAP / 2;
           return renderSeg("supporting", s.cat, s.color, s.cat, R.suppO, R.suppI, a1, a2);
         })}
-        {/* Gap ring */}
-        <circle cx={CX} cy={CY} r={R.suppI - 1} fill="white" />
+        {/* Gap */}
+        <circle cx={CX} cy={CY} r={R.suppI - 1} fill={BG} />
         {/* ── Core ring ── */}
         {coreSegs.map(s => renderSeg("core", s.cat, s.color, s.label, R.coreO, R.coreI, s.a1, s.a2))}
-        {/* Gap ring */}
-        <circle cx={CX} cy={CY} r={R.coreI - 1} fill="white" />
+        {/* Gap */}
+        <circle cx={CX} cy={CY} r={R.coreI - 1} fill={BG} />
+
         {/* ── Centre disc ── */}
-        <defs>
-          <radialGradient id="cg" cx="40%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#818cf8"/>
-            <stop offset="100%" stopColor="#4338ca"/>
-          </radialGradient>
-        </defs>
+        <circle cx={CX} cy={CY} r={R.centerR + 2} fill={BG} />
         <circle cx={CX} cy={CY} r={R.centerR} fill="url(#cg)" />
+        {/* Specular highlight */}
+        <ellipse cx={CX - 9} cy={CY - 15} rx={16} ry={10} fill="rgba(255,255,255,0.14)" />
         <text x={CX} y={CY - 6} textAnchor="middle" fill="white" fontSize={line2 ? 9 : 10}
           fontWeight="700" fontFamily="system-ui, sans-serif">{line1}</text>
         {line2 && <text x={CX} y={CY + 8} textAnchor="middle" fill="white" fontSize={9}
           fontWeight="700" fontFamily="system-ui, sans-serif">{line2}</text>}
-        <text x={CX} y={CY + 20} textAnchor="middle" fill="rgba(255,255,255,0.7)" fontSize={7.5}
-          fontFamily="system-ui, sans-serif">Market Exchange</text>
-        {/* ── Ring dividers ── */}
-        <circle cx={CX} cy={CY} r={R.rulesO} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
-        <circle cx={CX} cy={CY} r={R.suppO} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
-        <circle cx={CX} cy={CY} r={R.coreO} fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth={1} />
+        <text x={CX} y={CY + 21} textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize={7}
+          fontFamily="system-ui, sans-serif" letterSpacing="0.5">MARKET EXCHANGE</text>
+
+        {/* ── Ring boundary lines ── */}
+        <circle cx={CX} cy={CY} r={R.rulesO} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
+        <circle cx={CX} cy={CY} r={R.suppO} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
+        <circle cx={CX} cy={CY} r={R.coreO} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth={1} />
       </svg>
     </div>
   );
@@ -205,25 +241,25 @@ function DoughnutLegend({ elements }: { elements: MarketElement[] }) {
     : [...new Set(suppElements.map(e => e.category))].map((cat, i) => ({
         cat, color: suppElements.find(e => e.category === cat)?.color || SUPPORT_COLORS[i % SUPPORT_COLORS.length],
       }));
-  const fixed = [
-    { cat: "Demand Side",    color: "#f97316", ring: "Core Market" },
-    { cat: "Supply Side",    color: "#22c55e", ring: "Core Market" },
-    { cat: "Formal Rules",   color: "#64748b", ring: "Rules" },
-    { cat: "Informal Norms", color: "#7c3aed", ring: "Rules" },
+  const groups = [
+    { label: "Core", items: [{ cat: "Demand Side", color: "#f97316" }, { cat: "Supply Side", color: "#22c55e" }] },
+    { label: "Rules", items: [{ cat: "Formal Rules", color: "#64748b" }, { cat: "Informal Norms", color: "#7c3aed" }] },
+    { label: "Supporting", items: cats.map(c => ({ cat: c.cat, color: c.color })) },
   ];
   return (
-    <div className="flex flex-wrap gap-x-4 gap-y-1.5 mt-2 px-1">
-      {fixed.map(f => (
-        <span key={f.cat} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span className="w-3 h-3 rounded-sm flex-none" style={{ background: f.color }} />
-          {f.cat}
-        </span>
-      ))}
-      {cats.map(c => (
-        <span key={c.cat} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span className="w-3 h-3 rounded-sm flex-none" style={{ background: c.color }} />
-          {c.cat}
-        </span>
+    <div className="flex flex-col gap-2 mt-3 px-2 pb-2 w-full max-w-[500px]">
+      {groups.map(g => (
+        <div key={g.label} className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-white/30 w-[52px] flex-none">{g.label}</span>
+          {g.items.map(it => (
+            <span key={it.cat}
+              className="flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-0.5 rounded-full"
+              style={{ background: it.color + "22", color: it.color, border: `1px solid ${it.color}44` }}>
+              <span className="w-1.5 h-1.5 rounded-full flex-none" style={{ background: it.color }} />
+              {it.cat}
+            </span>
+          ))}
+        </div>
       ))}
     </div>
   );
@@ -314,20 +350,21 @@ function ElementPanel({
         <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
           <Globe className="w-6 h-6 text-primary" />
         </div>
-        <p className="text-sm font-semibold text-foreground">Click any ring segment</p>
+        <p className="text-sm font-semibold text-foreground">Click any segment</p>
         <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">
-          Select a segment in the doughnut to add actors, constraints, and opportunities for that part of the market system.
+          Select a ring segment to explore actors, constraints, and opportunities — and add entries to drive decisions.
         </p>
-        <div className="mt-3 space-y-2 text-left w-full max-w-xs">
+        <div className="mt-2 w-full max-w-xs space-y-1.5">
           {[
             { color: "#f97316", label: "Core Market", desc: "Demand & supply side actors" },
             { color: "#3b82f6", label: "Supporting Functions", desc: "Finance, inputs, extension…" },
             { color: "#64748b", label: "Rules & Regulations", desc: "Formal laws & informal norms" },
           ].map(g => (
-            <div key={g.label} className="flex items-start gap-2.5">
-              <span className="w-3 h-3 rounded-sm mt-0.5 flex-none" style={{ background: g.color }} />
-              <div>
-                <p className="text-xs font-medium text-foreground">{g.label}</p>
+            <div key={g.label} className="flex items-center gap-2.5 px-3 py-2 rounded-lg"
+              style={{ background: g.color + "10", border: `1px solid ${g.color}25` }}>
+              <span className="w-2 h-2 rounded-full flex-none" style={{ background: g.color }} />
+              <div className="text-left">
+                <p className="text-xs font-semibold" style={{ color: g.color }}>{g.label}</p>
                 <p className="text-[11px] text-muted-foreground">{g.desc}</p>
               </div>
             </div>
@@ -337,17 +374,23 @@ function ElementPanel({
     );
   }
 
+  const accentBg = selected.color + "18";
+  const accentBorder = selected.color + "40";
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-none px-5 pt-4 pb-3 border-b">
-        <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-sm flex-none" style={{ background: selected.color }} />
-          <span className="text-sm font-semibold">{selected.label}</span>
-          <span className="text-[11px] text-muted-foreground capitalize">· {selected.ring} ring</span>
-        </div>
+      {/* Colored segment header */}
+      <div className="flex-none px-4 py-3 flex items-center gap-2.5 border-b"
+        style={{ background: accentBg, borderBottomColor: accentBorder }}>
+        <span className="w-2.5 h-2.5 rounded-full flex-none" style={{ background: selected.color }} />
+        <span className="text-sm font-bold flex-1 min-w-0 truncate">{selected.label}</span>
+        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full flex-none"
+          style={{ background: selected.color + "25", color: selected.color }}>
+          {selected.ring}
+        </span>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {showForm ? (
           <div className="space-y-3">
             <div className="flex items-center gap-2 mb-1">
@@ -408,35 +451,65 @@ function ElementPanel({
           </div>
         ) : (
           <>
-            <Button size="sm" variant="outline" className="w-full gap-1.5 border-dashed" onClick={openNew}>
+            <Button size="sm" variant="outline" className="w-full gap-1.5 border-dashed" onClick={openNew}
+              style={{ borderColor: selected.color + "60", color: selected.color }}>
               <Plus className="w-3.5 h-3.5" /> Add Entry
             </Button>
             {ringElements.length === 0 ? (
-              <div className="text-center py-6">
-                <p className="text-xs text-muted-foreground">No entries yet for this segment.</p>
+              <div className="text-center py-8 px-4">
+                <div className="w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center"
+                  style={{ background: selected.color + "18" }}>
+                  <Plus className="w-4 h-4" style={{ color: selected.color }} />
+                </div>
+                <p className="text-xs text-muted-foreground">No entries yet — add actors, constraints and opportunities to this segment.</p>
               </div>
             ) : ringElements.map(e => (
-              <div key={e.id} className="rounded-lg border bg-card p-3 space-y-2 group">
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold leading-tight">{e.title}</p>
-                  <div className="flex gap-1 flex-none opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openEdit(e)} className="p-1 rounded hover:bg-muted text-muted-foreground">
+              <div key={e.id} className="rounded-xl border bg-card overflow-hidden group"
+                style={{ borderLeftColor: selected.color, borderLeftWidth: 3 }}>
+                <div className="px-3 pt-3 pb-2 flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold leading-tight">{e.title}</p>
+                    {e.description && <p className="text-[11px] text-muted-foreground mt-0.5 italic leading-snug">{e.description}</p>}
+                  </div>
+                  <div className="flex gap-0.5 flex-none opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onClick={() => openEdit(e)} className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground">
                       <Pencil className="w-3 h-3" />
                     </button>
                     <button onClick={() => handleDelete(e.id)} disabled={deletingId === e.id}
-                      className="p-1 rounded hover:bg-red-50 text-muted-foreground hover:text-red-600">
+                      className="p-1.5 rounded hover:bg-red-50 text-muted-foreground hover:text-red-500">
                       {deletingId === e.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
                     </button>
                   </div>
                 </div>
-                {e.actors && <p className="text-[11px] text-muted-foreground"><span className="font-medium text-foreground">Actors:</span> {e.actors}</p>}
-                {e.constraints && <p className="text-[11px] text-muted-foreground"><span className="font-medium text-foreground">Constraints:</span> {e.constraints}</p>}
-                {e.opportunities && <p className="text-[11px] text-muted-foreground"><span className="font-medium text-foreground">Opportunities:</span> {e.opportunities}</p>}
-                {e.description && <p className="text-[11px] text-muted-foreground italic">{e.description}</p>}
-                {e.linkedMarketSystemId && (
-                  <div className="flex items-center gap-1 pt-1 border-t">
-                    <Link2 className="w-3 h-3 text-primary flex-none" />
-                    <span className="text-[11px] text-primary font-medium">Linked market system</span>
+                {(e.actors || e.constraints || e.opportunities || e.linkedMarketSystemId) && (
+                  <div className="border-t divide-y text-[11px]">
+                    {e.actors && (
+                      <div className="flex gap-2 px-3 py-2">
+                        <Users className="w-3 h-3 flex-none mt-0.5 text-sky-500" />
+                        <div><span className="font-semibold text-sky-600">Actors &nbsp;</span>
+                          <span className="text-muted-foreground">{e.actors}</span></div>
+                      </div>
+                    )}
+                    {e.constraints && (
+                      <div className="flex gap-2 px-3 py-2 bg-red-50/50">
+                        <AlertTriangle className="w-3 h-3 flex-none mt-0.5 text-red-500" />
+                        <div><span className="font-semibold text-red-600">Barriers &nbsp;</span>
+                          <span className="text-muted-foreground">{e.constraints}</span></div>
+                      </div>
+                    )}
+                    {e.opportunities && (
+                      <div className="flex gap-2 px-3 py-2 bg-emerald-50/50">
+                        <Lightbulb className="w-3 h-3 flex-none mt-0.5 text-emerald-500" />
+                        <div><span className="font-semibold text-emerald-600">Opportunities &nbsp;</span>
+                          <span className="text-muted-foreground">{e.opportunities}</span></div>
+                      </div>
+                    )}
+                    {e.linkedMarketSystemId && (
+                      <div className="flex items-center gap-2 px-3 py-2 bg-primary/5">
+                        <Link2 className="w-3 h-3 flex-none text-primary" />
+                        <span className="font-semibold text-primary">Linked market system</span>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -752,10 +825,13 @@ export function MarketSystemAnalysis({ theory }: { theory: { id: number; title: 
         <TableView elements={elements} markets={markets} />
       ) : (
         <div className="flex-1 flex overflow-hidden">
-          {/* Left: doughnut */}
-          <div className="flex-1 overflow-y-auto flex flex-col items-center justify-start pt-6 pb-4 px-4">
+          {/* Left: doughnut on dark background */}
+          <div className="flex-1 overflow-y-auto flex flex-col items-center justify-center bg-[#0f172a] relative pb-4">
+            {/* Subtle grid texture */}
+            <div className="absolute inset-0 pointer-events-none opacity-[0.025]"
+              style={{ backgroundImage: "radial-gradient(circle, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
             {activeMarket && (
-              <>
+              <div className="relative flex flex-col items-center">
                 <DoughnutSVG
                   elements={elements}
                   selected={selected}
@@ -763,7 +839,7 @@ export function MarketSystemAnalysis({ theory }: { theory: { id: number; title: 
                   marketTitle={activeMarket.title}
                 />
                 <DoughnutLegend elements={elements} />
-              </>
+              </div>
             )}
           </div>
           {/* Right: panel */}
