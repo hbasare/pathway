@@ -12,6 +12,7 @@ import {
   MapPin, Plus, Trash2, Loader2, Search, Globe,
   Check, Navigation, Target, TrendingUp, Pencil, X, Printer,
   Users, Briefcase, Building2, ChevronDown,
+  Upload, FileText, AlertCircle, Download, Table2,
 } from "lucide-react";
 import type { Theory } from "@workspace/api-client-react";
 
@@ -302,6 +303,92 @@ async function batchFetchGeoJson(osmRelIds: number[]): Promise<Map<number, objec
     return new Map(data.filter(d => d.geojson).map(d => [parseInt(d.osm_id), d.geojson!]));
   } catch { return new Map(); }
 }
+
+// ── CSV / GPS upload helpers ──────────────────────────────────────────────────
+interface GpsRow {
+  lat: number; lon: number;
+  name: string; country: string; region: string; district: string; community: string;
+  sector: string; activityType: string; notes: string;
+  implementingPartner: string; fundingSource: string;
+  targetFigure: string; actualFigure: string; numBeneficiaries: string;
+  _rowNum: number;
+}
+function parseCSVLine(line: string): string[] {
+  const cells: string[] = [];
+  let i = 0;
+  while (i <= line.length) {
+    if (line[i] === '"') {
+      let val = ""; i++;
+      while (i < line.length) {
+        if (line[i] === '"' && line[i + 1] === '"') { val += '"'; i += 2; }
+        else if (line[i] === '"') { i++; break; }
+        else val += line[i++];
+      }
+      cells.push(val);
+      if (line[i] === ",") i++;
+    } else {
+      const start = i;
+      while (i < line.length && line[i] !== ",") i++;
+      cells.push(line.slice(start, i).trim());
+      if (line[i] === ",") i++;
+    }
+  }
+  return cells;
+}
+function parseGpsCSV(text: string): { rows: GpsRow[]; skipped: number; colErrors: string[] } {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return { rows: [], skipped: 0, colErrors: ["File is empty or has no data rows"] };
+  const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""));
+  const find = (...names: string[]) => { for (const n of names) { const i = headers.indexOf(n); if (i >= 0) return i; } return -1; };
+  const latIdx = find("lat","latitude","y");
+  const lonIdx = find("lon","lng","longitude","long","x");
+  if (latIdx < 0 || lonIdx < 0) {
+    return { rows: [], skipped: 0, colErrors: [`Could not detect lat/lon columns. Columns found: ${headers.join(", ")}`] };
+  }
+  const col = {
+    name:      find("name","label","display_name","location","site","place"),
+    country:   find("country","country_name"),
+    region:    find("region","state","province","admin1","admin_level1"),
+    district:  find("district","county","lga","admin2","sub_county","local_government"),
+    community: find("community","village","ward","community_name"),
+    sector:    find("sector"),
+    activity:  find("activity_type","activitytype","activity"),
+    notes:     find("notes","note","comments"),
+    partner:   find("implementing_partner","implementingpartner","partner","ip"),
+    funder:    find("funding_source","fundingsource","funder","donor"),
+    target:    find("target","target_figure","targetfigure"),
+    actual:    find("actual","actual_figure","actualfigure"),
+    bene:      find("beneficiaries","num_beneficiaries","numbeneficiaries","total_beneficiaries","total"),
+  };
+  const g = (cells: string[], idx: number) => idx >= 0 ? (cells[idx] ?? "").trim() : "";
+  const rows: GpsRow[] = []; let skipped = 0; const colErrors: string[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const cells = parseCSVLine(lines[i]);
+    const latStr = g(cells, latIdx); const lonStr = g(cells, lonIdx);
+    const lat = parseFloat(latStr); const lon = parseFloat(lonStr);
+    if (!latStr || !lonStr || isNaN(lat) || isNaN(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      skipped++;
+      if (colErrors.length < 4) colErrors.push(`Row ${i + 1}: invalid coordinates (${latStr || "—"}, ${lonStr || "—"})`);
+      continue;
+    }
+    rows.push({
+      lat, lon,
+      name: g(cells, col.name), country: g(cells, col.country), region: g(cells, col.region),
+      district: g(cells, col.district), community: g(cells, col.community),
+      sector: g(cells, col.sector), activityType: g(cells, col.activity), notes: g(cells, col.notes),
+      implementingPartner: g(cells, col.partner), fundingSource: g(cells, col.funder),
+      targetFigure: g(cells, col.target), actualFigure: g(cells, col.actual),
+      numBeneficiaries: g(cells, col.bene), _rowNum: i + 1,
+    });
+  }
+  return { rows, skipped, colErrors };
+}
+const CSV_TEMPLATE = [
+  "lat,lon,name,country,region,district,community,sector,activity_type,notes,implementing_partner,funding_source,target,actual,beneficiaries",
+  "5.6037,-0.1870,Accra Pilot,Ghana,Greater Accra,Accra Metro,Osu,Agriculture,Training,Farmer training site,CARE Ghana,USAID,5000,4200,500",
+  "-1.2921,36.8219,Nairobi Hub,Kenya,Nairobi County,Westlands,Kangemi,Livelihoods,Market Linkage,,Kenya Red Cross,FCDO,2000,1750,320",
+].join("\n");
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
 function LevelBadge({ level }: { level: string }) {
@@ -956,6 +1043,233 @@ function PrintDialog({ open, onClose, locations, theoryName }: {
   );
 }
 
+// ── GPS Upload dialog ─────────────────────────────────────────────────────────
+function GpsUploadDialog({ open, onClose, theory, onSaved }: {
+  open: boolean; onClose: () => void; theory: Theory;
+  onSaved: (locs: LocationRecord[]) => void;
+}) {
+  const { toast } = useToast();
+  const [rows, setRows]           = useState<GpsRow[]>([]);
+  const [skipped, setSkipped]     = useState(0);
+  const [colErrors, setColErrors] = useState<string[]>([]);
+  const [dragging, setDragging]   = useState(false);
+  const [fileName, setFileName]   = useState("");
+  const [saving, setSaving]       = useState(false);
+
+  const reset = () => { setRows([]); setSkipped(0); setColErrors([]); setFileName(""); };
+  const handleClose = () => { reset(); onClose(); };
+
+  const processFile = (file: File) => {
+    if (!file.name.match(/\.(csv|txt)$/i)) {
+      toast({ title: "Unsupported file type", description: "Please upload a .csv or .txt file.", variant: "destructive" });
+      return;
+    }
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target?.result as string;
+      const result = parseGpsCSV(text);
+      setRows(result.rows); setSkipped(result.skipped); setColErrors(result.colErrors);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault(); setDragging(false);
+    const file = e.dataTransfer.files[0];
+    if (file) processFile(file);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processFile(file);
+    e.target.value = "";
+  };
+
+  const downloadTemplate = () => {
+    const blob = new Blob([CSV_TEMPLATE], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "gps_locations_template.csv"; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleSave = async () => {
+    if (!rows.length) return;
+    setSaving(true);
+    const created: LocationRecord[] = [];
+    try {
+      for (const row of rows) {
+        const level: LocationRecord["level"] = row.district ? "admin2" : row.region ? "admin1" : row.country ? "country" : "admin2";
+        const displayName = row.name ||
+          [row.district || row.region || row.country, row.country].filter(Boolean).join(", ") ||
+          `GPS (${row.lat.toFixed(4)}, ${row.lon.toFixed(4)})`;
+        const body = {
+          displayName, country: row.country || "Unknown", countryCode: "",
+          adminLevel1: row.region, adminLevel2: row.district,
+          lat: row.lat, lng: row.lon, boundaryGeoJson: "",
+          level, nominatimId: "",
+          icon: "general", figureLabel: "",
+          targetFigure: row.targetFigure, actualFigure: row.actualFigure,
+          community: row.community, sector: row.sector, activityType: row.activityType,
+          activityDate: "", activityOther: "", activityCommodity: "",
+          beneficiaryType: "",
+          numBeneficiaries: row.numBeneficiaries ? Number(row.numBeneficiaries) : null,
+          numMale: null, numFemale: null, gender: "",
+          youthFocused: false,
+          implementingPartner: row.implementingPartner,
+          fundingSource: row.fundingSource, notes: row.notes,
+        };
+        const res = await fetch(`${API_BASE}/theories/${theory.id}/locations`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          credentials: "include", body: JSON.stringify(body),
+        });
+        if (!res.ok) throw new Error(await res.text());
+        created.push(await res.json() as LocationRecord);
+      }
+      onSaved(created);
+      toast({ title: `${created.length} location${created.length !== 1 ? "s" : ""} imported from CSV` });
+      handleClose();
+    } catch (err) {
+      toast({ title: "Import failed", description: String(err), variant: "destructive" });
+    } finally { setSaving(false); }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={v => { if (!v) handleClose(); }}>
+      <DialogContent className="max-w-[660px] p-0 flex flex-col gap-0 max-h-[90vh]">
+        <DialogHeader className="px-5 pt-4 pb-3 border-b flex-none">
+          <DialogTitle className="flex items-center gap-2 text-sm font-semibold">
+            <Upload className="w-4 h-4 text-primary flex-none" /> Upload GPS Coordinates
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Import locations from a CSV file. Required columns: <span className="font-mono bg-muted px-1 rounded">lat</span> and <span className="font-mono bg-muted px-1 rounded">lon</span>. All other columns are optional.
+          </p>
+        </DialogHeader>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4 min-h-0">
+
+          {/* ── Drop zone ── */}
+          {!rows.length && !colErrors.length && (
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={handleDrop}
+              className={`relative border-2 border-dashed rounded-xl flex flex-col items-center gap-3 py-10 px-6 text-center transition-colors cursor-pointer
+                ${dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/30"}`}
+              onClick={() => { const inp = document.getElementById("gps-file-input") as HTMLInputElement; inp?.click(); }}
+            >
+              <input id="gps-file-input" type="file" accept=".csv,.txt" className="sr-only" onChange={handleFileChange} />
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${dragging ? "bg-primary/10" : "bg-muted"}`}>
+                <FileText className={`w-6 h-6 ${dragging ? "text-primary" : "text-muted-foreground"}`} />
+              </div>
+              <div>
+                <p className="font-medium text-sm">{dragging ? "Drop to import" : "Drop a CSV file here"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">or click to browse — .csv or .txt</p>
+              </div>
+            </div>
+          )}
+
+          {/* ── Column error ── */}
+          {colErrors.length > 0 && (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-destructive flex-none" />
+                <p className="text-sm font-medium text-destructive">Could not parse file</p>
+              </div>
+              {colErrors.map((e, i) => <p key={i} className="text-xs text-destructive/80 pl-6">{e}</p>)}
+              <button onClick={reset} className="text-xs text-muted-foreground underline pl-6 mt-1">Try another file</button>
+            </div>
+          )}
+
+          {/* ── File loaded: preview ── */}
+          {rows.length > 0 && (
+            <>
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg border bg-emerald-50 border-emerald-200 text-emerald-800">
+                <Check className="w-4 h-4 flex-none" />
+                <span className="text-sm font-medium flex-1">{fileName}</span>
+                <span className="text-xs">{rows.length} row{rows.length !== 1 ? "s" : ""} ready</span>
+                <button onClick={reset} className="ml-1 text-emerald-600 hover:text-destructive"><X className="w-3.5 h-3.5" /></button>
+              </div>
+
+              {skipped > 0 && (
+                <div className="flex items-start gap-2 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800">
+                  <AlertCircle className="w-4 h-4 flex-none mt-0.5" />
+                  <div>
+                    <p className="text-xs font-medium">{skipped} row{skipped !== 1 ? "s" : ""} skipped — missing or invalid coordinates</p>
+                    {colErrors.map((e, i) => <p key={i} className="text-[11px] text-amber-700 mt-0.5">{e}</p>)}
+                  </div>
+                </div>
+              )}
+
+              {/* Preview table */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="flex items-center gap-2 px-3 py-2 border-b bg-muted/30">
+                  <Table2 className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Preview — first {Math.min(rows.length, 8)} of {rows.length} rows</span>
+                </div>
+                <div className="overflow-x-auto max-h-52 overflow-y-auto">
+                  <table className="w-full text-xs">
+                    <thead className="bg-muted/50 sticky top-0">
+                      <tr>
+                        {["Lat","Lon","Name","Country","Region","District","Community","Sector"].map(h => (
+                          <th key={h} className="px-3 py-1.5 text-left font-semibold text-muted-foreground whitespace-nowrap">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {rows.slice(0, 8).map((row, i) => (
+                        <tr key={i} className="hover:bg-muted/20">
+                          <td className="px-3 py-1.5 font-mono text-[11px] text-muted-foreground whitespace-nowrap">{row.lat.toFixed(4)}</td>
+                          <td className="px-3 py-1.5 font-mono text-[11px] text-muted-foreground whitespace-nowrap">{row.lon.toFixed(4)}</td>
+                          <td className="px-3 py-1.5 max-w-[120px] truncate">{row.name || <span className="text-muted-foreground">—</span>}</td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">{row.country || <span className="text-muted-foreground">—</span>}</td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">{row.region || <span className="text-muted-foreground">—</span>}</td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">{row.district || <span className="text-muted-foreground">—</span>}</td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">{row.community || <span className="text-muted-foreground">—</span>}</td>
+                          <td className="px-3 py-1.5 whitespace-nowrap">{row.sector || <span className="text-muted-foreground">—</span>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {rows.length > 8 && (
+                    <p className="px-3 py-2 text-[11px] text-muted-foreground text-center border-t">… and {rows.length - 8} more rows</p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* ── Template download ── */}
+          <div className="flex items-center gap-2 pt-1">
+            <button onClick={downloadTemplate}
+              className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+              <Download className="w-3.5 h-3.5" /> Download CSV template
+            </button>
+            <span className="text-muted-foreground/50">·</span>
+            <span className="text-xs text-muted-foreground">Supports lat, lon, name, country, region, district, sector, activity_type, notes, partner, funder, target, actual, beneficiaries</span>
+          </div>
+        </div>
+
+        <div className="flex-none border-t px-5 py-3 flex items-center justify-between gap-4 bg-card">
+          <p className="text-xs text-muted-foreground flex-1 min-w-0 truncate">
+            {rows.length > 0
+              ? <span className="font-medium text-foreground">{rows.length} location{rows.length !== 1 ? "s" : ""} ready to import{skipped > 0 ? ` · ${skipped} skipped` : ""}</span>
+              : "No file loaded"}
+          </p>
+          <div className="flex gap-2 flex-none">
+            <Button variant="outline" size="sm" onClick={handleClose}>Cancel</Button>
+            <Button size="sm" disabled={rows.length === 0 || saving} onClick={handleSave} className="gap-1.5 min-w-[140px]">
+              {saving
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" />Importing…</>
+                : <><Upload className="w-3.5 h-3.5" />Import {rows.length > 0 ? rows.length : ""} Location{rows.length !== 1 ? "s" : ""}</>}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Add location dialog ───────────────────────────────────────────────────────
 function AddLocationDialog({ open, onClose, theory, onSaved, lang }: {
   open: boolean; onClose: () => void; theory: Theory;
@@ -1260,9 +1574,10 @@ export function LocationsMap({ theory }: { theory: Theory }) {
   const { toast } = useToast();
   const [locations, setLocations]     = useState<LocationRecord[]>([]);
   const [loadingLocs, setLoadingLocs] = useState(true);
-  const [showAdd, setShowAdd]     = useState(false);
-  const [editing, setEditing]     = useState<LocationRecord | null>(null);
-  const [showPrint, setShowPrint] = useState(false);
+  const [showAdd, setShowAdd]       = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [editing, setEditing]       = useState<LocationRecord | null>(null);
+  const [showPrint, setShowPrint]   = useState(false);
 
   const tile = TILE_LAYERS[i18n.language] ?? TILE_LAYERS.default;
 
@@ -1299,6 +1614,9 @@ export function LocationsMap({ theory }: { theory: Theory }) {
                 <Printer className="w-3.5 h-3.5" /> Print
               </Button>
             )}
+            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setShowUpload(true)}>
+              <Upload className="w-3.5 h-3.5" /> Upload
+            </Button>
             <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowAdd(true)}>
               <Plus className="w-3.5 h-3.5" /> Add
             </Button>
@@ -1496,6 +1814,9 @@ export function LocationsMap({ theory }: { theory: Theory }) {
       </div>
 
       {/* ── Dialogs ── */}
+      <GpsUploadDialog open={showUpload} onClose={() => setShowUpload(false)} theory={theory}
+        onSaved={locs => setLocations(prev => [...prev, ...locs])} />
+
       <AddLocationDialog open={showAdd} onClose={() => setShowAdd(false)} theory={theory}
         onSaved={locs => setLocations(prev => [...prev, ...locs])} lang={i18n.language} />
 
