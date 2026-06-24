@@ -1242,11 +1242,10 @@ function GpsUploadDialog({ open, onClose, theory, onSaved }: {
           {/* ── Template download ── */}
           <div className="flex items-center gap-2 pt-1">
             <button onClick={downloadTemplate}
-              className="flex items-center gap-1.5 text-xs text-primary hover:underline">
+              className="flex items-center gap-1.5 text-xs text-primary hover:underline font-medium">
               <Download className="w-3.5 h-3.5" /> Download CSV template
             </button>
-            <span className="text-muted-foreground/50">·</span>
-            <span className="text-xs text-muted-foreground">Supports lat, lon, name, country, region, district, sector, activity_type, notes, partner, funder, target, actual, beneficiaries</span>
+            <span className="text-xs text-muted-foreground">— includes all supported columns</span>
           </div>
         </div>
 
@@ -1608,16 +1607,18 @@ export function LocationsMap({ theory }: { theory: Theory }) {
             <span className="font-semibold text-sm">Locations</span>
             {locations.length > 0 && <Badge variant="secondary" className="text-xs h-5 px-1.5">{locations.length}</Badge>}
           </div>
-          <div className="flex items-center gap-1.5 flex-none">
+          <div className="flex items-center gap-1 flex-none">
+            <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowUpload(true)} title="Upload GPS CSV">
+              <Upload className="w-3.5 h-3.5" />
+            </Button>
             {locations.length > 0 && (
-              <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setShowPrint(true)}>
-                <Printer className="w-3.5 h-3.5" /> Print
+              <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
+                onClick={() => setShowPrint(true)} title="Print locations">
+                <Printer className="w-3.5 h-3.5" />
               </Button>
             )}
-            <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={() => setShowUpload(true)}>
-              <Upload className="w-3.5 h-3.5" /> Upload
-            </Button>
-            <Button size="sm" className="h-7 gap-1 text-xs" onClick={() => setShowAdd(true)}>
+            <Button size="sm" className="h-7 gap-1 text-xs px-2.5" onClick={() => setShowAdd(true)}>
               <Plus className="w-3.5 h-3.5" /> Add
             </Button>
           </div>
