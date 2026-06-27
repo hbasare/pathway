@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/layout/app-sidebar";
+import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { AuthProvider, useAuth } from "@/contexts/auth-context";
 import { ColorSettingsProvider } from "@/contexts/color-settings";
 import { ThemeProvider } from "@/contexts/theme-context";
@@ -104,6 +105,7 @@ function AppShell() {
           </main>
         </div>
       </div>
+      <ChatWidget />
     </SidebarProvider>
   );
 }

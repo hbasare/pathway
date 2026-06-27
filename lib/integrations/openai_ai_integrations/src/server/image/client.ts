@@ -2,23 +2,15 @@ import fs from "node:fs";
 import OpenAI, { toFile } from "openai";
 import { Buffer } from "node:buffer";
 
-if (!process.env.AI_INTEGRATIONS_OPENAI_BASE_URL) {
-  throw new Error(
-    "AI_INTEGRATIONS_OPENAI_BASE_URL must be set. Did you forget to provision the OpenAI AI integration?",
-  );
-}
-
-if (!process.env.AI_INTEGRATIONS_OPENAI_API_KEY) {
-  throw new Error(
-    "AI_INTEGRATIONS_OPENAI_API_KEY must be set. Did you forget to provision the OpenAI AI integration?",
-  );
-}
-
 export const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+/**
+ * Generate an image and return as Buffer.
+ * Uses gpt-image-1 model via Replit AI Integrations.
+ */
 export async function generateImageBuffer(
   prompt: string,
   size: "1024x1024" | "512x512" | "256x256" = "1024x1024"
@@ -32,6 +24,10 @@ export async function generateImageBuffer(
   return Buffer.from(base64, "base64");
 }
 
+/**
+ * Edit/combine multiple images into a composite.
+ * Uses gpt-image-1 model via Replit AI Integrations.
+ */
 export async function editImages(
   imageFiles: string[],
   prompt: string,

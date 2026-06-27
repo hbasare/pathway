@@ -14,6 +14,7 @@ import locationsRouter from "./locations";
 import marketSystemsRouter from "./market-systems";
 import storageRouter from "./storage";
 import theoryDocumentsRouter from "./theory-documents";
+import chatRouter from "./chat";
 
 const router: IRouter = Router();
 
@@ -31,6 +32,7 @@ router.use(requireAuth);
 router.use(async (req, res, next) => {
   if (!["POST", "PATCH", "DELETE", "PUT"].includes(req.method)) return next();
   if (req.path.startsWith("/users")) return next();
+  if (req.path.startsWith("/chat")) return next();
 
   const role = req.session.role ?? "";
   if (!["manager", "member"].includes(role)) {
@@ -70,5 +72,6 @@ router.use(systemicChangeRouter);
 router.use(locationsRouter);
 router.use(marketSystemsRouter);
 router.use(theoryDocumentsRouter);
+router.use(chatRouter);
 
 export default router;
