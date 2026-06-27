@@ -77,11 +77,17 @@ export function ChatWidget() {
     setLoading(true);
 
     const userMsg: Message = { role: "user", content: trimmed };
-    const history = [...messages.filter(m => !m.streaming), userMsg];
-    setMessages([...history, { role: "assistant", content: "", streaming: true }]);
+    const allHistory = [...messages.filter(m => !m.streaming), userMsg];
+    setMessages([...allHistory, { role: "assistant", content: "", streaming: true }]);
 
     abortRef.current?.abort();
     abortRef.current = new AbortController();
+
+    // Strip any leading assistant messages (e.g. the welcome card) — OpenAI
+    // requires the conversation to start with a user turn after the system prompt.
+    const firstUserIdx = allHistory.findIndex(m => m.role === "user");
+    const apiMessages = (firstUserIdx >= 0 ? allHistory.slice(firstUserIdx) : allHistory)
+      .map(m => ({ role: m.role, content: m.content }));
 
     try {
       const res = await fetch(`${API_BASE}/chat`, {
@@ -89,12 +95,14 @@ export function ChatWidget() {
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         signal: abortRef.current.signal,
-        body: JSON.stringify({
-          messages: history.map(m => ({ role: m.role, content: m.content })),
-        }),
+        body: JSON.stringify({ messages: apiMessages }),
       });
 
-      if (!res.ok || !res.body) throw new Error("Request failed");
+      if (!res.ok) {
+        const errText = await res.text().catch(() => `HTTP ${res.status}`);
+        throw new Error(errText || `HTTP ${res.status}`);
+      }
+      if (!res.body) throw new Error("No response body");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
