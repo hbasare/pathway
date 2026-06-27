@@ -5,6 +5,7 @@ import {
   useListTheories,
   useListPortfolios,
   useDeletePortfolio,
+  useDeleteTheory,
   getListPortfoliosQueryKey,
   getListTheoriesQueryKey,
   Portfolio,
@@ -50,9 +51,25 @@ export default function Dashboard() {
     },
   });
 
+  const deleteTheoryMutation = useDeleteTheory({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListTheoriesQueryKey() });
+        toast({ title: t("theory.deleted") });
+      },
+      onError: () => toast({ title: t("theory.deleteFailed"), variant: "destructive" }),
+    },
+  });
+
   const handleDeletePortfolio = (portfolio: Portfolio) => {
     if (window.confirm(t("dashboard.portfolioDeleteConfirm", { name: portfolio.name }))) {
       deletePortfolioMutation.mutate({ id: portfolio.id });
+    }
+  };
+
+  const handleDeleteTheory = (theory: { id: number; title: string }) => {
+    if (window.confirm(t("theory.deleteConfirm", { title: theory.title }))) {
+      deleteTheoryMutation.mutate({ id: theory.id });
     }
   };
 
@@ -176,7 +193,7 @@ export default function Dashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {groupTheories.map(theory => (
-                    <TheoryCard key={theory.id} theory={theory} isAssigned={user?.role === "member" ? (user.assignedTheoryIds ?? []).includes(theory.id) : undefined} />
+                    <TheoryCard key={theory.id} theory={theory} isAssigned={user?.role === "member" ? (user.assignedTheoryIds ?? []).includes(theory.id) : undefined} canEdit={permissions.canEdit} onDelete={() => handleDeleteTheory(theory)} />
                   ))}
                 </div>
               )}
@@ -197,7 +214,7 @@ export default function Dashboard() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {ungrouped.map(theory => (
-                  <TheoryCard key={theory.id} theory={theory} isAssigned={user?.role === "member" ? (user.assignedTheoryIds ?? []).includes(theory.id) : undefined} />
+                  <TheoryCard key={theory.id} theory={theory} isAssigned={user?.role === "member" ? (user.assignedTheoryIds ?? []).includes(theory.id) : undefined} canEdit={permissions.canEdit} onDelete={() => handleDeleteTheory(theory)} />
                 ))}
               </div>
             </div>
@@ -250,35 +267,71 @@ export default function Dashboard() {
   );
 }
 
-function TheoryCard({ theory, isAssigned }: { theory: { id: number; title: string; description: string }; isAssigned?: boolean }) {
+function TheoryCard({
+  theory,
+  isAssigned,
+  canEdit,
+  onDelete,
+}: {
+  theory: { id: number; title: string; description: string };
+  isAssigned?: boolean;
+  canEdit?: boolean;
+  onDelete?: () => void;
+}) {
   const { t } = useTranslation();
   return (
-    <Link href={`/theory/${theory.id}`}>
-      <div className="group bg-card rounded-2xl p-6 border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 transition-all duration-300 cursor-pointer h-full flex flex-col">
-        <div className="flex items-start justify-between mb-4">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
-            <Layers className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+    <div className="relative group">
+      <Link href={`/theory/${theory.id}`}>
+        <div className="bg-card rounded-2xl p-6 border border-border shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-primary/50 transition-all duration-300 cursor-pointer h-full flex flex-col">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors shrink-0">
+              <Layers className="w-5 h-5 text-primary group-hover:text-primary-foreground transition-colors" />
+            </div>
+            {isAssigned !== undefined && (
+              <span className={`text-xs font-medium rounded-full px-2 py-0.5 shrink-0 ${
+                isAssigned
+                  ? "text-blue-700 bg-blue-100"
+                  : "text-muted-foreground bg-muted"
+              }`}>
+                {isAssigned ? "Assigned" : "View only"}
+              </span>
+            )}
           </div>
-          {isAssigned !== undefined && (
-            <span className={`text-xs font-medium rounded-full px-2 py-0.5 shrink-0 ${
-              isAssigned
-                ? "text-blue-700 bg-blue-100"
-                : "text-muted-foreground bg-muted"
-            }`}>
-              {isAssigned ? "Assigned" : "View only"}
-            </span>
-          )}
+          <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
+            {theory.title}
+          </h3>
+          <p className="text-muted-foreground text-sm line-clamp-3 mb-6 flex-1">
+            {theory.description}
+          </p>
+          <div className="flex items-center text-sm font-medium text-primary mt-auto">
+            {t("dashboard.viewDiagram")} <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+          </div>
         </div>
-        <h3 className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors">
-          {theory.title}
-        </h3>
-        <p className="text-muted-foreground text-sm line-clamp-3 mb-6 flex-1">
-          {theory.description}
-        </p>
-        <div className="flex items-center text-sm font-medium text-primary mt-auto">
-          {t("dashboard.viewDiagram")} <ArrowRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+      </Link>
+
+      {canEdit && onDelete && (
+        <div className="absolute top-3 right-3" onClick={e => e.preventDefault()}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity bg-card/80 hover:bg-card border border-border/50"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={e => { e.stopPropagation(); onDelete(); }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> {t("theory.deleteTheory")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </div>
-    </Link>
+      )}
+    </div>
   );
 }
