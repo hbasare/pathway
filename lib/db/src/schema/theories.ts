@@ -345,3 +345,21 @@ export const theoryAssignmentsTable = pgTable("theory_assignments", {
 }, (t) => [unique().on(t.theoryId, t.userId)]);
 
 export type TheoryAssignment = typeof theoryAssignmentsTable.$inferSelect;
+
+// ─── Change Log ────────────────────────────────────────────────────────────
+// Records create/update/delete actions performed by any user against a
+// theory's data, so teams can audit "who changed what" per intervention.
+export const changeLogTable = pgTable("change_log", {
+  id: serial("id").primaryKey(),
+  theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
+  userId: integer("user_id").references(() => usersTable.id, { onDelete: "set null" }),
+  username: text("username").notNull().default(""),
+  displayName: text("display_name").notNull().default(""),
+  action: text("action").notNull(), // 'create' | 'update' | 'delete'
+  entityType: text("entity_type").notNull(), // 'theory' | 'component' | 'connection' | 'indicator' | 'note' | 'risk' | 'location' | 'market_system' | 'market_system_element' | 'business_model_actor' | 'systemic_change' | 'document' | 'assignment'
+  entityLabel: text("entity_label").notNull().default(""),
+  summary: text("summary").notNull().default(""),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export type ChangeLogEntry = typeof changeLogTable.$inferSelect;

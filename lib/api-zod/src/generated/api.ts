@@ -1298,6 +1298,29 @@ export const DeleteTheoryNoteUpdateParams = zod.object({
 });
 
 /**
+ * @summary List change log entries for a theory
+ */
+export const ListTheoryChangeLogParams = zod.object({
+  theoryId: zod.coerce.number(),
+});
+
+export const ListTheoryChangeLogResponseItem = zod.object({
+  id: zod.number(),
+  theoryId: zod.number(),
+  userId: zod.number().nullish(),
+  username: zod.string(),
+  displayName: zod.string(),
+  action: zod.string(),
+  entityType: zod.string(),
+  entityLabel: zod.string(),
+  summary: zod.string(),
+  createdAt: zod.date(),
+});
+export const ListTheoryChangeLogResponse = zod.array(
+  ListTheoryChangeLogResponseItem,
+);
+
+/**
  * @summary Generate AI analysis of systemic change progress
  */
 export const AnalyzeSystemicChangeParams = zod.object({
@@ -1314,6 +1337,7 @@ export const AnalyzeSystemicChangeResponse = zod.object({
     headline: zod.string(),
     findings: zod.array(zod.string()),
     recommendations: zod.array(zod.string()),
+    partners: zod.array(zod.string()),
   }),
   adapt: zod.object({
     score: zod.number(),
@@ -1321,6 +1345,7 @@ export const AnalyzeSystemicChangeResponse = zod.object({
     headline: zod.string(),
     findings: zod.array(zod.string()),
     recommendations: zod.array(zod.string()),
+    partners: zod.array(zod.string()),
   }),
   expand: zod.object({
     score: zod.number(),
@@ -1328,6 +1353,7 @@ export const AnalyzeSystemicChangeResponse = zod.object({
     headline: zod.string(),
     findings: zod.array(zod.string()),
     recommendations: zod.array(zod.string()),
+    partners: zod.array(zod.string()),
   }),
   respond: zod.object({
     score: zod.number(),
@@ -1335,6 +1361,7 @@ export const AnalyzeSystemicChangeResponse = zod.object({
     headline: zod.string(),
     findings: zod.array(zod.string()),
     recommendations: zod.array(zod.string()),
+    partners: zod.array(zod.string()),
   }),
   nextPriorityActions: zod.array(zod.string()),
 });

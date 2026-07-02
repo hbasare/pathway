@@ -363,6 +363,19 @@ export interface UpdateTheoryNoteUpdate {
   position?: number;
 }
 
+export interface ChangeLogEntry {
+  id: number;
+  theoryId: number;
+  userId?: number | null;
+  username: string;
+  displayName: string;
+  action: string;
+  entityType: string;
+  entityLabel: string;
+  summary: string;
+  createdAt: string;
+}
+
 export interface TheoryRiskAnalysis {
   id: number;
   theoryId: number;

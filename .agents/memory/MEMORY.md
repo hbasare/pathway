@@ -1,0 +1,1 @@
+- [Drizzle-kit interactive push in sandbox](drizzle-kit-push-sandbox.md) — `drizzle-kit push` prompts (rename vs create table) can't be answered via piped stdin here; use direct SQL for simple new-table adds.

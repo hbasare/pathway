@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { theoryDocumentsTable, insertTheoryDocumentSchema } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { ObjectStorageService } from "../lib/objectStorage";
+import { logChange } from "../lib/changelog";
 
 const router: IRouter = Router();
 const storage = new ObjectStorageService();
@@ -27,6 +28,7 @@ router.post("/theories/:theoryId/documents", async (req, res) => {
     return;
   }
   const [doc] = await db.insert(theoryDocumentsTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "document", entityLabel: doc.name ?? "", summary: `Uploaded document "${doc.name ?? ""}"` });
   res.status(201).json(doc);
 });
 
@@ -34,9 +36,14 @@ router.post("/theories/:theoryId/documents", async (req, res) => {
 router.delete("/theories/:theoryId/documents/:docId", async (req, res) => {
   const theoryId = Number(req.params.theoryId);
   const docId = Number(req.params.docId);
+  const [doc] = await db.select().from(theoryDocumentsTable)
+    .where(and(eq(theoryDocumentsTable.id, docId), eq(theoryDocumentsTable.theoryId, theoryId)));
   await db
     .delete(theoryDocumentsTable)
     .where(and(eq(theoryDocumentsTable.id, docId), eq(theoryDocumentsTable.theoryId, theoryId)));
+  if (doc) {
+    await logChange(req, { theoryId, action: "delete", entityType: "document", entityLabel: doc.name ?? "", summary: `Deleted document "${doc.name ?? ""}"` });
+  }
   res.status(204).send();
 });
 

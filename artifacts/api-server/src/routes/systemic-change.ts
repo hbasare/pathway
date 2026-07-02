@@ -3,6 +3,7 @@ import { db } from "@workspace/db";
 import { systemicChangesTable, insertSystemicChangeSchema } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
+import { logChange } from "../lib/changelog";
 
 const router: IRouter = Router();
 
@@ -285,6 +286,7 @@ router.post("/theories/:theoryId/systemic-changes", async (req, res) => {
     return;
   }
   const [row] = await db.insert(systemicChangesTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "systemic_change", entityLabel: row.dimension ?? "", summary: `Added systemic change entry "${row.dimension ?? ""}"` });
   res.status(201).json(row);
 });
 
@@ -300,15 +302,21 @@ router.put("/theories/:theoryId/systemic-changes/:id", async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
+  await logChange(req, { theoryId, action: "update", entityType: "systemic_change", entityLabel: row.dimension ?? "", summary: `Updated systemic change entry "${row.dimension ?? ""}"` });
   res.json(row);
 });
 
 router.delete("/theories/:theoryId/systemic-changes/:id", async (req, res) => {
   const id = Number(req.params.id);
   const theoryId = Number(req.params.theoryId);
+  const [row] = await db.select().from(systemicChangesTable)
+    .where(and(eq(systemicChangesTable.id, id), eq(systemicChangesTable.theoryId, theoryId)));
   await db
     .delete(systemicChangesTable)
     .where(and(eq(systemicChangesTable.id, id), eq(systemicChangesTable.theoryId, theoryId)));
+  if (row) {
+    await logChange(req, { theoryId, action: "delete", entityType: "systemic_change", entityLabel: row.dimension ?? "", summary: `Deleted systemic change entry "${row.dimension ?? ""}"` });
+  }
   res.status(204).send();
 });
 

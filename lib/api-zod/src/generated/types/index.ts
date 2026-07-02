@@ -7,6 +7,7 @@
  */
 
 export * from "./businessModelActor";
+export * from "./changeLogEntry";
 export * from "./component";
 export * from "./componentIndicator";
 export * from "./componentPathway";

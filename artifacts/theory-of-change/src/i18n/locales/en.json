@@ -117,7 +117,8 @@
       "businessModel": "Business Model",
       "canvas": "Theory of Change",
       "notes": "Notes & Updates",
-      "risk": "Risk Analysis"
+      "risk": "Risk Analysis",
+      "changeLog": "Change Log"
     }
   },
   "userManagement": {
@@ -490,6 +491,31 @@
     "riskPlaceholder": "Describe the risk...",
     "mitigationPlaceholder": "How will this risk be mitigated?",
     "notesPlaceholder": "Additional notes..."
+  },
+  "changeLog": {
+    "title": "Change Log",
+    "subtitle": "A history of edits made to this intervention",
+    "noEntries": "No changes recorded yet.",
+    "loadFailed": "Failed to load change log",
+    "created": "created",
+    "updated": "updated",
+    "deleted": "deleted",
+    "entityTypes": {
+      "theory": "intervention",
+      "component": "component",
+      "connection": "connection",
+      "indicator": "indicator",
+      "note": "note/update",
+      "risk": "risk analysis",
+      "location": "location",
+      "market_system": "market system",
+      "market_system_element": "market system element",
+      "business_model_actor": "business model actor",
+      "systemic_change": "systemic change entry",
+      "document": "document",
+      "assignment": "assignment"
+    },
+    "unknownUser": "Unknown user"
   },
   "colorSettings": {
     "title": "Component Colours",

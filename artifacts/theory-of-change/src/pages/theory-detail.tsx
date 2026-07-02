@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
 import { useGetTheory, useDeleteTheory, getListTheoriesQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, Calculator, LayoutList, Network, Info, Briefcase, StickyNote, ShieldAlert, GitBranch, Eye, MapPin, Globe } from "lucide-react";
+import { Settings, Trash2, ArrowLeft, Loader2, ClipboardList, Calculator, LayoutList, Network, Info, Briefcase, StickyNote, ShieldAlert, GitBranch, Eye, MapPin, Globe, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TheoryCanvas } from "@/components/theory/theory-canvas";
 import { AboutIntervention } from "@/components/theory/about-intervention";
@@ -11,6 +11,7 @@ import { NotesUpdates } from "@/components/theory/notes-updates";
 import { RiskAnalysis } from "@/components/theory/risk-analysis";
 import { LocationsMap } from "@/components/theory/locations-map";
 import { MarketSystemAnalysis } from "@/components/theory/market-system";
+import { ChangeLog } from "@/components/theory/change-log";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
 import { TheoryForm } from "@/components/forms/theory-form";
 import { useToast } from "@/hooks/use-toast";
@@ -25,7 +26,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/contexts/auth-context";
 import { getPermissions } from "@/lib/permissions";
 
-type ActiveTab = "about" | "locations" | "market-system" | "business-model" | "canvas" | "notes" | "risk";
+type ActiveTab = "about" | "locations" | "market-system" | "business-model" | "canvas" | "notes" | "risk" | "change-log";
 
 export default function TheoryDetail() {
   const [, params] = useRoute("/theory/:id");
@@ -211,6 +212,12 @@ export default function TheoryDetail() {
           icon={<ShieldAlert className="w-4 h-4" />}
           label={t("theory.tabs.risk")}
         />
+        <TabButton
+          active={activeTab === "change-log"}
+          onClick={() => setActiveTab("change-log")}
+          icon={<History className="w-4 h-4" />}
+          label={t("theory.tabs.changeLog")}
+        />
       </div>
 
       {/* ── Tab content ── */}
@@ -232,6 +239,11 @@ export default function TheoryDetail() {
         {activeTab === "risk" && (
           <div className="h-full overflow-y-auto">
             <RiskAnalysis theoryId={theory.id} />
+          </div>
+        )}
+        {activeTab === "change-log" && (
+          <div className="h-full overflow-y-auto">
+            <ChangeLog theoryId={theory.id} />
           </div>
         )}
       </main>

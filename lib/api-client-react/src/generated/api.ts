@@ -18,6 +18,7 @@ import type {
 
 import type {
   BusinessModelActor,
+  ChangeLogEntry,
   Component,
   ComponentIndicator,
   Connection,
@@ -3814,6 +3815,95 @@ export const useDeleteTheoryNoteUpdate = <
 > => {
   return useMutation(getDeleteTheoryNoteUpdateMutationOptions(options));
 };
+
+/**
+ * @summary List change log entries for a theory
+ */
+export const getListTheoryChangeLogUrl = (theoryId: number) => {
+  return `/api/theories/${theoryId}/change-log`;
+};
+
+export const listTheoryChangeLog = async (
+  theoryId: number,
+  options?: RequestInit,
+): Promise<ChangeLogEntry[]> => {
+  return customFetch<ChangeLogEntry[]>(getListTheoryChangeLogUrl(theoryId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListTheoryChangeLogQueryKey = (theoryId: number) => {
+  return [`/api/theories/${theoryId}/change-log`] as const;
+};
+
+export const getListTheoryChangeLogQueryOptions = <
+  TData = Awaited<ReturnType<typeof listTheoryChangeLog>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTheoryChangeLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListTheoryChangeLogQueryKey(theoryId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listTheoryChangeLog>>
+  > = ({ signal }) =>
+    listTheoryChangeLog(theoryId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!theoryId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listTheoryChangeLog>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListTheoryChangeLogQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listTheoryChangeLog>>
+>;
+export type ListTheoryChangeLogQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List change log entries for a theory
+ */
+
+export function useListTheoryChangeLog<
+  TData = Awaited<ReturnType<typeof listTheoryChangeLog>>,
+  TError = ErrorType<unknown>,
+>(
+  theoryId: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listTheoryChangeLog>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListTheoryChangeLogQueryOptions(theoryId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Generate AI analysis of systemic change progress

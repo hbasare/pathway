@@ -18,8 +18,10 @@ import {
   insertTheoryRiskAnalysisSchema,
   insertIndicatorScYearSchema,
 } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { requireManager } from "../middleware/auth";
+import { logChange } from "../lib/changelog";
+import { changeLogTable } from "@workspace/db";
 
 const router: IRouter = Router();
 
@@ -35,6 +37,7 @@ router.post("/theories", async (req, res) => {
     return;
   }
   const [theory] = await db.insert(theoriesTable).values(parsed.data).returning();
+  await logChange(req, { theoryId: theory.id, action: "create", entityType: "theory", entityLabel: theory.name ?? "", summary: `Created intervention "${theory.name ?? ""}"` });
   res.status(201).json(theory);
 });
 
@@ -93,12 +96,17 @@ router.put("/theories/:id", async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
+  await logChange(req, { theoryId: updated.id, action: "update", entityType: "theory", entityLabel: updated.name ?? "", summary: `Updated intervention "${updated.name ?? ""}"` });
   res.json(updated);
 });
 
 router.delete("/theories/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const [theory] = await db.select().from(theoriesTable).where(eq(theoriesTable.id, id));
   await db.delete(theoriesTable).where(eq(theoriesTable.id, id));
+  if (theory) {
+    await logChange(req, { theoryId: id, action: "delete", entityType: "theory", entityLabel: theory.name ?? "", summary: `Deleted intervention "${theory.name ?? ""}"` });
+  }
   res.status(204).send();
 });
 
@@ -116,6 +124,7 @@ router.post("/theories/:theoryId/components", async (req, res) => {
     return;
   }
   const [component] = await db.insert(componentsTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "component", entityLabel: component.title ?? "", summary: `Created component "${component.title ?? ""}"` });
   res.status(201).json(component);
 });
 
@@ -135,12 +144,18 @@ router.put("/theories/:theoryId/components/:id", async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
+  await logChange(req, { theoryId, action: "update", entityType: "component", entityLabel: updated.title ?? "", summary: `Updated component "${updated.title ?? ""}"` });
   res.json(updated);
 });
 
 router.delete("/theories/:theoryId/components/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const theoryId = Number(req.params.theoryId);
+  const [component] = await db.select().from(componentsTable).where(eq(componentsTable.id, id));
   await db.delete(componentsTable).where(eq(componentsTable.id, id));
+  if (component) {
+    await logChange(req, { theoryId, action: "delete", entityType: "component", entityLabel: component.title ?? "", summary: `Deleted component "${component.title ?? ""}"` });
+  }
   res.status(204).send();
 });
 
@@ -165,6 +180,7 @@ router.post("/theories/:theoryId/components/:componentId/indicators", async (req
     return;
   }
   const [indicator] = await db.insert(componentIndicatorsTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "indicator", entityLabel: indicator.name ?? "", summary: `Created indicator "${indicator.name ?? ""}"` });
   res.status(201).json(indicator);
 });
 
@@ -185,12 +201,18 @@ router.put("/theories/:theoryId/components/:componentId/indicators/:id", async (
     res.status(404).json({ error: "Not found" });
     return;
   }
+  await logChange(req, { theoryId, action: "update", entityType: "indicator", entityLabel: updated.name ?? "", summary: `Updated indicator "${updated.name ?? ""}"` });
   res.json(updated);
 });
 
 router.delete("/theories/:theoryId/components/:componentId/indicators/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const theoryId = Number(req.params.theoryId);
+  const [indicator] = await db.select().from(componentIndicatorsTable).where(eq(componentIndicatorsTable.id, id));
   await db.delete(componentIndicatorsTable).where(eq(componentIndicatorsTable.id, id));
+  if (indicator) {
+    await logChange(req, { theoryId, action: "delete", entityType: "indicator", entityLabel: indicator.name ?? "", summary: `Deleted indicator "${indicator.name ?? ""}"` });
+  }
   res.status(204).send();
 });
 
@@ -208,6 +230,7 @@ router.post("/theories/:theoryId/connections", async (req, res) => {
     return;
   }
   const [connection] = await db.insert(connectionsTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "connection", summary: "Created a new connection" });
   res.status(201).json(connection);
 });
 
@@ -223,12 +246,15 @@ router.patch("/theories/:theoryId/connections/:id", async (req, res) => {
     .select()
     .from(connectionsTable)
     .where(and(eq(connectionsTable.id, id), eq(connectionsTable.theoryId, theoryId)));
+  await logChange(req, { theoryId, action: "update", entityType: "connection", summary: "Updated a connection" });
   res.json(updated);
 });
 
 router.delete("/theories/:theoryId/connections/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const theoryId = Number(req.params.theoryId);
   await db.delete(connectionsTable).where(eq(connectionsTable.id, id));
+  await logChange(req, { theoryId, action: "delete", entityType: "connection", summary: "Deleted a connection" });
   res.status(204).send();
 });
 
@@ -252,6 +278,7 @@ router.post("/theories/:theoryId/risk-analyses", async (req, res) => {
     return;
   }
   const [row] = await db.insert(theoryRiskAnalysesTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "risk", entityLabel: row.risk ?? "", summary: "Created a risk analysis entry" });
   res.status(201).json(row);
 });
 
@@ -267,12 +294,18 @@ router.patch("/theories/:theoryId/risk-analyses/:id", async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
+  await logChange(req, { theoryId, action: "update", entityType: "risk", entityLabel: row.risk ?? "", summary: "Updated a risk analysis entry" });
   res.json(row);
 });
 
 router.delete("/theories/:theoryId/risk-analyses/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const theoryId = Number(req.params.theoryId);
+  const [row] = await db.select().from(theoryRiskAnalysesTable).where(eq(theoryRiskAnalysesTable.id, id));
   await db.delete(theoryRiskAnalysesTable).where(eq(theoryRiskAnalysesTable.id, id));
+  if (row) {
+    await logChange(req, { theoryId, action: "delete", entityType: "risk", entityLabel: row.risk ?? "", summary: "Deleted a risk analysis entry" });
+  }
   res.status(204).send();
 });
 
@@ -296,6 +329,7 @@ router.post("/theories/:theoryId/notes-updates", async (req, res) => {
     return;
   }
   const [row] = await db.insert(theoryNotesUpdatesTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "note", summary: "Added a note/update" });
   res.status(201).json(row);
 });
 
@@ -311,12 +345,15 @@ router.patch("/theories/:theoryId/notes-updates/:id", async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
+  await logChange(req, { theoryId, action: "update", entityType: "note", summary: "Updated a note/update" });
   res.json(row);
 });
 
 router.delete("/theories/:theoryId/notes-updates/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const theoryId = Number(req.params.theoryId);
   await db.delete(theoryNotesUpdatesTable).where(eq(theoryNotesUpdatesTable.id, id));
+  await logChange(req, { theoryId, action: "delete", entityType: "note", summary: "Deleted a note/update" });
   res.status(204).send();
 });
 
@@ -402,6 +439,18 @@ router.delete("/theories/:id/assignments/:userId", requireManager, async (req, r
       eq(theoryAssignmentsTable.userId, userId)
     ));
   res.status(204).send();
+});
+
+// ─── Change Log ───────────────────────────────────────────────────────────────
+
+router.get("/theories/:theoryId/change-log", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const rows = await db
+    .select()
+    .from(changeLogTable)
+    .where(eq(changeLogTable.theoryId, theoryId))
+    .orderBy(desc(changeLogTable.createdAt));
+  res.json(rows);
 });
 
 export default router;

@@ -5,6 +5,7 @@ import {
   marketSystemElementsTable, insertMarketSystemElementSchema,
 } from "@workspace/db";
 import { eq, and, asc } from "drizzle-orm";
+import { logChange } from "../lib/changelog";
 
 const router: IRouter = Router();
 
@@ -22,6 +23,7 @@ router.post("/theories/:theoryId/market-systems", async (req, res) => {
   const parsed = insertMarketSystemSchema.safeParse({ ...req.body, theoryId });
   if (!parsed.success) { res.status(400).json({ error: parsed.error.issues }); return; }
   const [row] = await db.insert(marketSystemsTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "market_system", entityLabel: row.title ?? "", summary: `Created market system "${row.title ?? ""}"` });
   res.status(201).json(row);
 });
 
@@ -35,14 +37,20 @@ router.patch("/theories/:theoryId/market-systems/:id", async (req, res) => {
     .where(and(eq(marketSystemsTable.id, id), eq(marketSystemsTable.theoryId, theoryId)))
     .returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
+  await logChange(req, { theoryId, action: "update", entityType: "market_system", entityLabel: row.title ?? "", summary: `Updated market system "${row.title ?? ""}"` });
   res.json(row);
 });
 
 router.delete("/theories/:theoryId/market-systems/:id", async (req, res) => {
   const id = Number(req.params.id);
   const theoryId = Number(req.params.theoryId);
+  const [row] = await db.select().from(marketSystemsTable)
+    .where(and(eq(marketSystemsTable.id, id), eq(marketSystemsTable.theoryId, theoryId)));
   await db.delete(marketSystemsTable)
     .where(and(eq(marketSystemsTable.id, id), eq(marketSystemsTable.theoryId, theoryId)));
+  if (row) {
+    await logChange(req, { theoryId, action: "delete", entityType: "market_system", entityLabel: row.title ?? "", summary: `Deleted market system "${row.title ?? ""}"` });
+  }
   res.status(204).send();
 });
 
@@ -65,6 +73,7 @@ router.post("/theories/:theoryId/market-systems/:marketId/elements", async (req,
   const parsed = insertMarketSystemElementSchema.safeParse({ ...req.body, marketSystemId: marketId, theoryId });
   if (!parsed.success) { res.status(400).json({ error: parsed.error.issues }); return; }
   const [row] = await db.insert(marketSystemElementsTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "market_system_element", entityLabel: row.title ?? "", summary: `Added market system element "${row.title ?? ""}"` });
   res.status(201).json(row);
 });
 
@@ -83,6 +92,7 @@ router.patch("/theories/:theoryId/market-systems/:marketId/elements/:id", async 
     ))
     .returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
+  await logChange(req, { theoryId, action: "update", entityType: "market_system_element", entityLabel: row.title ?? "", summary: `Updated market system element "${row.title ?? ""}"` });
   res.json(row);
 });
 
@@ -90,12 +100,21 @@ router.delete("/theories/:theoryId/market-systems/:marketId/elements/:id", async
   const id = Number(req.params.id);
   const marketId = Number(req.params.marketId);
   const theoryId = Number(req.params.theoryId);
+  const [row] = await db.select().from(marketSystemElementsTable)
+    .where(and(
+      eq(marketSystemElementsTable.id, id),
+      eq(marketSystemElementsTable.marketSystemId, marketId),
+      eq(marketSystemElementsTable.theoryId, theoryId),
+    ));
   await db.delete(marketSystemElementsTable)
     .where(and(
       eq(marketSystemElementsTable.id, id),
       eq(marketSystemElementsTable.marketSystemId, marketId),
       eq(marketSystemElementsTable.theoryId, theoryId),
     ));
+  if (row) {
+    await logChange(req, { theoryId, action: "delete", entityType: "market_system_element", entityLabel: row.title ?? "", summary: `Deleted market system element "${row.title ?? ""}"` });
+  }
   res.status(204).send();
 });
 

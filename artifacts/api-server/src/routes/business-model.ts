@@ -6,6 +6,7 @@ import { db } from "@workspace/db";
 import { businessModelActorsTable, insertBusinessModelActorSchema, theoriesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { generateImageBuffer } from "@workspace/integrations-openai-ai-server/image";
+import { logChange } from "../lib/changelog";
 
 const router: IRouter = Router();
 
@@ -108,6 +109,7 @@ router.post("/theories/:theoryId/business-model/actors", async (req, res) => {
     return;
   }
   const [actor] = await db.insert(businessModelActorsTable).values(parsed.data).returning();
+  await logChange(req, { theoryId, action: "create", entityType: "business_model_actor", entityLabel: actor.actorName ?? "", summary: `Added business model actor "${actor.actorName ?? ""}"` });
   res.status(201).json(actor);
 });
 
@@ -124,12 +126,18 @@ router.put("/theories/:theoryId/business-model/actors/:id", async (req, res) => 
     .where(eq(businessModelActorsTable.id, id))
     .returning();
   if (!updated) { res.status(404).json({ error: "Not found" }); return; }
+  await logChange(req, { theoryId, action: "update", entityType: "business_model_actor", entityLabel: updated.actorName ?? "", summary: `Updated business model actor "${updated.actorName ?? ""}"` });
   res.json(updated);
 });
 
 router.delete("/theories/:theoryId/business-model/actors/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const theoryId = Number(req.params.theoryId);
+  const [actor] = await db.select().from(businessModelActorsTable).where(eq(businessModelActorsTable.id, id));
   await db.delete(businessModelActorsTable).where(eq(businessModelActorsTable.id, id));
+  if (actor) {
+    await logChange(req, { theoryId, action: "delete", entityType: "business_model_actor", entityLabel: actor.actorName ?? "", summary: `Deleted business model actor "${actor.actorName ?? ""}"` });
+  }
   res.status(204).send();
 });
 

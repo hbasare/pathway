@@ -931,6 +931,27 @@ paths:
         "204":
           description: Deleted
 
+  /theories/{theoryId}/change-log:
+    get:
+      operationId: listTheoryChangeLog
+      tags: [theories]
+      summary: List change log entries for a theory
+      parameters:
+        - name: theoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of change log entries, newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChangeLogEntry"
+
   /theories/{theoryId}/systemic-changes/ai-analysis:
     post:
       operationId: analyzeSystemicChange
@@ -1796,6 +1817,42 @@ components:
           type: string
         position:
           type: integer
+
+    ChangeLogEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        theoryId:
+          type: integer
+        userId:
+          type: integer
+          nullable: true
+        username:
+          type: string
+        displayName:
+          type: string
+        action:
+          type: string
+        entityType:
+          type: string
+        entityLabel:
+          type: string
+        summary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - theoryId
+        - username
+        - displayName
+        - action
+        - entityType
+        - entityLabel
+        - summary
+        - createdAt
 
     TheoryRiskAnalysis:
       type: object
