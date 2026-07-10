@@ -45,7 +45,7 @@ app.use(
   })
 );
 
-// CORS: allow the same origin or Replit preview domains; always require credentials.
+// CORS: allow same-origin, Replit development environments, or Vercel CDN deployment domains; always require credentials.
 const allowedOriginPattern = /\.replit\.dev$|\.repl\.co$|\.vercel\.app$|^http:\/\/localhost/;
 app.use(
   cors({
