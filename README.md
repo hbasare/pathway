@@ -107,3 +107,19 @@ Deploy the root repository to **Vercel** with the root directory set to `artifac
     ]
   }
   ```
+
+---
+
+## 🧪 Testing Suite (Vitest)
+
+Unit tests are written using **Vitest** for both the frontend (`theory-of-change`) and backend (`api-server`) packages.
+
+### Test Commands:
+* **Run all tests once**:
+  ```powershell
+  npx pnpm test
+  ```
+* **Run tests in watch mode (interactive/hot reload)**:
+  ```powershell
+  npx pnpm test:watch
+  ```
