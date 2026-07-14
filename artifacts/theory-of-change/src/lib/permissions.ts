@@ -1,6 +1,6 @@
 import { useAuth } from "@/contexts/auth-context";
 
-export type UserRole = "manager" | "member" | "senior_manager" | "auditor" | "donor";
+export type UserRole = "system_admin" | "manager" | "member" | "senior_manager" | "auditor" | "donor";
 
 export interface Permissions {
   canEdit: boolean;
@@ -13,11 +13,12 @@ export interface Permissions {
 
 export function getPermissions(role: string, assignedTheoryIds: number[] = []): Permissions {
   const canEditTheory = (theoryId: number) => {
-    if (role === "manager") return true;
+    if (role === "system_admin" || role === "manager") return true;
     if (role === "member") return assignedTheoryIds.includes(theoryId);
     return false;
   };
   switch (role) {
+    case "system_admin":
     case "manager":
       return { canEdit: true, canViewDetail: true, canManageUsers: true, isReadOnly: false, canEditTheory };
     case "member":

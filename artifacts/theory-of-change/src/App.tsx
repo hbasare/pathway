@@ -56,7 +56,7 @@ function Router() {
 }
 
 function AppShell() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, refetch } = useAuth();
   const [isSetUp, setIsSetUp] = useState<boolean | null>(null);
   const [location] = useLocation();
 
@@ -97,6 +97,38 @@ function AppShell() {
       <div className="flex h-screen w-full bg-background font-sans overflow-hidden">
         <AppSidebar />
         <div className="flex flex-col flex-1 h-full min-w-0">
+          {user?.role === "system_admin" && (
+            <div className={`px-4 py-2 text-xs font-semibold flex items-center justify-between border-b ${
+              user.orgId ? "bg-amber-500/10 text-amber-600 border-amber-500/20" : "bg-primary/10 text-primary border-primary/20"
+            }`}>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full animate-pulse bg-current" />
+                <span>
+                  {user.orgId 
+                    ? `Switched Context: viewing as tenant "${user.orgName}"` 
+                    : "System Administrator: Master Console (viewing all organizations)"}
+                </span>
+              </div>
+              {user.orgId && (
+                <button 
+                  onClick={async () => {
+                    const res = await fetch("/api/admin/switch-tenant", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ orgId: null }),
+                    });
+                    if (res.ok) {
+                      await refetch();
+                      window.location.href = "/";
+                    }
+                  }}
+                  className="px-2 py-0.5 rounded bg-amber-500 text-white hover:bg-amber-600 transition-colors font-bold text-[10px] uppercase tracking-wide"
+                >
+                  Clear Switched Context
+                </button>
+              )}
+            </div>
+          )}
           <div className="absolute top-4 left-4 z-50 md:hidden">
             <SidebarTrigger className="bg-background shadow-md border" />
           </div>

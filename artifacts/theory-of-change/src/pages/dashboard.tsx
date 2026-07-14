@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Layers, Plus, ArrowRight, FolderOpen, Pencil, Trash2, MoreHorizontal, FolderPlus, TableProperties } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useListTheories,
   useListPortfolios,
@@ -27,7 +27,143 @@ import { useTranslation } from "react-i18next";
 import { usePermissions } from "@/lib/permissions";
 import { useAuth } from "@/contexts/auth-context";
 
+function MasterConsoleDashboard() {
+  const [orgs, setOrgs] = useState<any[]>([]);
+  const [usersList, setUsersList] = useState<any[]>([]);
+  const [portsList, setPortsList] = useState<any[]>([]);
+  const [theoriesList, setTheoriesList] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { refetch } = useAuth();
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [orgsRes, usersRes, portsRes, theoriesRes] = await Promise.all([
+          fetch("/api/admin/organizations"),
+          fetch("/api/users"),
+          fetch("/api/portfolios"),
+          fetch("/api/theories"),
+        ]);
+        if (orgsRes.ok) setOrgs(await orgsRes.json());
+        if (usersRes.ok) setUsersList(await usersRes.json());
+        if (portsRes.ok) setPortsList(await portsRes.json());
+        if (theoriesRes.ok) setTheoriesList(await theoriesRes.json());
+      } catch (err) {
+        console.error("Failed to load admin stats:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const handleSwitchTenant = async (orgId: number) => {
+    try {
+      const res = await fetch("/api/admin/switch-tenant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId }),
+      });
+      if (res.ok) {
+        await refetch();
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error("Failed to switch context:", err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-96 items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-6xl mx-auto p-8 animate-in fade-in duration-500">
+      <div className="mb-10">
+        <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">System Master Console</h1>
+        <p className="text-muted-foreground mt-1">Global administration panel across all system tenants</p>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        {[
+          { label: "Total Organizations", value: orgs.length, color: "text-blue-600 bg-blue-500/10" },
+          { label: "Total Users", value: usersList.length, color: "text-purple-600 bg-purple-500/10" },
+          { label: "Total Portfolios", value: portsList.length, color: "text-emerald-600 bg-emerald-500/10" },
+          { label: "Total Interventions", value: theoriesList.length, color: "text-amber-600 bg-amber-500/10" },
+        ].map((stat, i) => (
+          <div key={i} className="p-6 bg-card border border-border rounded-2xl shadow-sm">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-3xl font-display font-bold text-foreground">{stat.value}</span>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${stat.color}`}>Active</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Orgs list */}
+      <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-border">
+          <h2 className="text-lg font-bold text-foreground">Registered Organizations</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Context switch into any organization to view and manage their data</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-muted/40 border-b border-border text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                <th className="p-4 pl-6">ID</th>
+                <th className="p-4">Name</th>
+                <th className="p-4">Users</th>
+                <th className="p-4">Portfolios</th>
+                <th className="p-4">Interventions</th>
+                <th className="p-4 pr-6 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border text-sm">
+              {orgs.map((org) => {
+                const orgUsers = usersList.filter(u => u.orgId === org.id).length;
+                const orgPorts = portsList.filter(p => p.orgId === org.id).length;
+                const orgTheories = theoriesList.filter(t => t.orgId === org.id).length;
+
+                return (
+                  <tr key={org.id} className="hover:bg-muted/20 transition-colors">
+                    <td className="p-4 pl-6 font-mono text-xs text-muted-foreground">#{org.id}</td>
+                    <td className="p-4 font-semibold text-foreground">{org.name}</td>
+                    <td className="p-4 text-muted-foreground">{orgUsers} users</td>
+                    <td className="p-4 text-muted-foreground">{orgPorts} portfolios</td>
+                    <td className="p-4 text-muted-foreground">{orgTheories} interventions</td>
+                    <td className="p-4 pr-6 text-right">
+                      <Button
+                        size="sm"
+                        onClick={() => handleSwitchTenant(org.id)}
+                        className="shadow-sm gap-1.5 font-semibold"
+                      >
+                        <span>Switch Context</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
+  const { user } = useAuth();
+  if (user?.role === "system_admin" && !user.orgId) {
+    return <MasterConsoleDashboard />;
+  }
+
   const { data: theories, isLoading: theoriesLoading } = useListTheories();
   const { data: portfolios, isLoading: portfoliosLoading } = useListPortfolios();
   const queryClient = useQueryClient();
@@ -35,7 +171,6 @@ export default function Dashboard() {
   const { t } = useTranslation();
 
   const permissions = usePermissions();
-  const { user } = useAuth();
   const [isCreateTheoryOpen, setIsCreateTheoryOpen] = useState(false);
   const [isCreatePortfolioOpen, setIsCreatePortfolioOpen] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
