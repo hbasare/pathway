@@ -22,38 +22,45 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface OrgFormProps {
   onSuccess?: () => void;
+  initialData?: { id: number; name: string };
 }
 
-export function OrgForm({ onSuccess }: OrgFormProps) {
+export function OrgForm({ onSuccess, initialData }: OrgFormProps) {
   const { toast } = useToast();
   const [isPending, setIsPending] = useState(false);
+  const isEditing = !!initialData;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      name: initialData?.name ?? "",
     },
   });
 
   const onSubmit = async (values: FormValues) => {
     setIsPending(true);
     try {
-      const res = await fetch("/api/admin/organizations", {
-        method: "POST",
+      const url = isEditing
+        ? `/api/admin/organizations/${initialData.id}`
+        : "/api/admin/organizations";
+      const method = isEditing ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to create organization");
+        throw new Error(errorData.error || `Failed to ${isEditing ? "update" : "create"} organization`);
       }
 
-      toast({ title: "Organization created successfully" });
+      toast({ title: `Organization ${isEditing ? "updated" : "created"} successfully` });
       onSuccess?.();
     } catch (err: any) {
       toast({
-        title: "Error creating organization",
+        title: `Error ${isEditing ? "updating" : "creating"} organization`,
         description: err.message,
         variant: "destructive",
       });
@@ -80,7 +87,7 @@ export function OrgForm({ onSuccess }: OrgFormProps) {
         />
         <div className="flex justify-end pt-1">
           <Button type="submit" disabled={isPending} className="font-semibold shadow-md">
-            {isPending ? "Creating..." : "Create Organization"}
+            {isPending ? "Saving..." : isEditing ? "Save Changes" : "Create Organization"}
           </Button>
         </div>
       </form>

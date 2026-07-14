@@ -37,6 +37,8 @@ function MasterConsoleDashboard() {
   const [loading, setLoading] = useState(true);
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
+  const [isEditOrgOpen, setIsEditOrgOpen] = useState(false);
+  const [editingOrg, setEditingOrg] = useState<{ id: number; name: string } | null>(null);
   const { refetch } = useAuth();
 
   const loadData = async () => {
@@ -150,7 +152,22 @@ function MasterConsoleDashboard() {
                 return (
                   <tr key={org.id} className="hover:bg-muted/20 transition-colors">
                     <td className="p-4 pl-6 font-mono text-xs text-muted-foreground">#{org.id}</td>
-                    <td className="p-4 font-semibold text-foreground">{org.name}</td>
+                    <td className="p-4 font-semibold text-foreground">
+                      <div className="flex items-center gap-2">
+                        <span>{org.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditingOrg(org);
+                            setIsEditOrgOpen(true);
+                          }}
+                          className="h-6 w-6 text-muted-foreground hover:text-foreground animate-in fade-in duration-200"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </td>
                     <td className="p-4 text-muted-foreground">{orgUsers} users</td>
                     <td className="p-4 text-muted-foreground">{orgPorts} portfolios</td>
                     <td className="p-4 text-muted-foreground">{orgTheories} interventions</td>
@@ -188,6 +205,24 @@ function MasterConsoleDashboard() {
         description="Create a new user account with role and tenant assignment"
       >
         <AdminUserForm onSuccess={() => { setIsCreateUserOpen(false); loadData(); }} />
+      </DialogWrapper>
+
+      <DialogWrapper
+        open={isEditOrgOpen}
+        onOpenChange={setIsEditOrgOpen}
+        title="Edit Organization Name"
+        description="Update the display name of this system tenant organization"
+      >
+        {editingOrg && (
+          <OrgForm
+            initialData={editingOrg}
+            onSuccess={() => {
+              setIsEditOrgOpen(false);
+              setEditingOrg(null);
+              loadData();
+            }}
+          />
+        )}
       </DialogWrapper>
     </div>
   );
