@@ -246,6 +246,24 @@ router.get("/admin/organizations", requireSystemAdmin, async (_req, res) => {
   res.json(orgs);
 });
 
+// ── Admin: Create a new organization ─────────────────────────────────────────
+router.post("/admin/organizations", requireSystemAdmin, async (req, res) => {
+  const { name } = req.body as { name?: string };
+  if (!name?.trim()) {
+    res.status(400).json({ error: "Organization name is required" });
+    return;
+  }
+  try {
+    const [org] = await db
+      .insert(organizationsTable)
+      .values({ name: name.trim() })
+      .returning();
+    res.status(201).json(org);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── Admin: Switch active organization context ────────────────────────────────
 router.post("/admin/switch-tenant", requireSystemAdmin, async (req, res) => {
   const { orgId } = req.body as { orgId?: number | null };

@@ -16,6 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { DialogWrapper } from "@/components/ui/dialog-wrapper";
 import { TheoryForm } from "@/components/forms/theory-form";
 import { PortfolioForm } from "@/components/forms/portfolio-form";
+import { OrgForm } from "@/components/forms/org-form";
+import { AdminUserForm } from "@/components/forms/admin-user-form";
 import { useToast } from "@/hooks/use-toast";
 import {
   DropdownMenu,
@@ -33,27 +35,30 @@ function MasterConsoleDashboard() {
   const [portsList, setPortsList] = useState<any[]>([]);
   const [theoriesList, setTheoriesList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
+  const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const { refetch } = useAuth();
 
+  const loadData = async () => {
+    try {
+      const [orgsRes, usersRes, portsRes, theoriesRes] = await Promise.all([
+        fetch("/api/admin/organizations"),
+        fetch("/api/users"),
+        fetch("/api/portfolios"),
+        fetch("/api/theories"),
+      ]);
+      if (orgsRes.ok) setOrgs(await orgsRes.json());
+      if (usersRes.ok) setUsersList(await usersRes.json());
+      if (portsRes.ok) setPortsList(await portsRes.json());
+      if (theoriesRes.ok) setTheoriesList(await theoriesRes.json());
+    } catch (err) {
+      console.error("Failed to load admin stats:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [orgsRes, usersRes, portsRes, theoriesRes] = await Promise.all([
-          fetch("/api/admin/organizations"),
-          fetch("/api/users"),
-          fetch("/api/portfolios"),
-          fetch("/api/theories"),
-        ]);
-        if (orgsRes.ok) setOrgs(await orgsRes.json());
-        if (usersRes.ok) setUsersList(await usersRes.json());
-        if (portsRes.ok) setPortsList(await portsRes.json());
-        if (theoriesRes.ok) setTheoriesList(await theoriesRes.json());
-      } catch (err) {
-        console.error("Failed to load admin stats:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadData();
   }, []);
 
@@ -83,9 +88,21 @@ function MasterConsoleDashboard() {
 
   return (
     <div className="w-full max-w-6xl mx-auto p-8 animate-in fade-in duration-500">
-      <div className="mb-10">
-        <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">System Master Console</h1>
-        <p className="text-muted-foreground mt-1">Global administration panel across all system tenants</p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">System Master Console</h1>
+          <p className="text-muted-foreground mt-1">Global administration panel across all system tenants</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsCreateOrgOpen(true)} className="font-semibold">
+            <Plus className="w-4 h-4 mr-2" />
+            New Organization
+          </Button>
+          <Button onClick={() => setIsCreateUserOpen(true)} className="shadow-md font-semibold">
+            <Plus className="w-4 h-4 mr-2" />
+            Register User
+          </Button>
+        </div>
       </div>
 
       {/* Stats grid */}
@@ -154,6 +171,24 @@ function MasterConsoleDashboard() {
           </table>
         </div>
       </div>
+
+      <DialogWrapper
+        open={isCreateOrgOpen}
+        onOpenChange={setIsCreateOrgOpen}
+        title="Create New Organization"
+        description="Register a new system tenant organization"
+      >
+        <OrgForm onSuccess={() => { setIsCreateOrgOpen(false); loadData(); }} />
+      </DialogWrapper>
+
+      <DialogWrapper
+        open={isCreateUserOpen}
+        onOpenChange={setIsCreateUserOpen}
+        title="Register New User"
+        description="Create a new user account with role and tenant assignment"
+      >
+        <AdminUserForm onSuccess={() => { setIsCreateUserOpen(false); loadData(); }} />
+      </DialogWrapper>
     </div>
   );
 }
