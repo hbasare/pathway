@@ -1,8 +1,8 @@
 import { Link, useLocation } from "wouter";
-import { FolderGit2, Plus, Home, Layers, LayoutGrid, Users, LogOut, Shield, User, Eye, Search, Heart, Sun, Moon, Monitor } from "lucide-react";
+import { FolderGit2, Plus, Home, Layers, LayoutGrid, Users, LogOut, Shield, Globe, User, Eye, Search, Heart, Sun, Moon, Monitor } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useListTheories } from "@workspace/api-client-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -73,9 +73,37 @@ export function AppSidebar() {
   const [location] = useLocation();
   const { data: theories, isLoading } = useListTheories();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, refetch } = useAuth();
   const { t } = useTranslation();
   const permissions = getPermissions(user?.role ?? "");
+
+  const [organizations, setOrganizations] = useState<{ id: number; name: string }[]>([]);
+  useEffect(() => {
+    if (user?.role === "system_admin") {
+      fetch("/api/admin/organizations")
+        .then(r => r.json())
+        .then(data => {
+          if (Array.isArray(data)) setOrganizations(data);
+        })
+        .catch(err => console.error("Failed to load organizations:", err));
+    }
+  }, [user]);
+
+  const handleSwitchTenant = async (orgId: number | null) => {
+    try {
+      const res = await fetch("/api/admin/switch-tenant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgId }),
+      });
+      if (res.ok) {
+        await refetch();
+        window.location.href = "/";
+      }
+    } catch (err) {
+      console.error("Failed to switch tenant:", err);
+    }
+  };
 
   return (
     <Sidebar>
@@ -186,6 +214,30 @@ export function AppSidebar() {
             <ColorSettingsTrigger />
           </div>
         </div>
+
+        {user?.role === "system_admin" && (
+          <div className="px-1 py-1.5 border-t border-border mt-2 space-y-1">
+            <label className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block px-1">
+              Organization Context
+            </label>
+            <select
+              value={user.orgId ?? "0"}
+              onChange={(e) => {
+                const val = e.target.value;
+                handleSwitchTenant(val === "0" ? null : Number(val));
+              }}
+              className="w-full bg-background border border-input rounded-md px-2 py-1 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-shadow cursor-pointer"
+            >
+              <option value="0">Master Console (All Tenants)</option>
+              {organizations.map((org) => (
+                <option key={org.id} value={org.id}>
+                  {org.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <span className="text-sm font-bold text-primary">
@@ -197,12 +249,13 @@ export function AppSidebar() {
               {user?.displayName || user?.username}
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              {user?.role === "system_admin" && <Globe className="w-3 h-3 text-primary" />}
               {user?.role === "manager" && <Shield className="w-3 h-3 text-amber-500" />}
               {user?.role === "member" && <User className="w-3 h-3 text-blue-500" />}
               {user?.role === "senior_manager" && <Eye className="w-3 h-3 text-indigo-500" />}
               {user?.role === "auditor" && <Search className="w-3 h-3 text-purple-500" />}
               {user?.role === "donor" && <Heart className="w-3 h-3 text-emerald-500" />}
-              <span className="truncate">{user?.orgName}</span>
+              <span className="truncate">{user?.orgName || "Master Console"}</span>
             </div>
           </div>
           <Button

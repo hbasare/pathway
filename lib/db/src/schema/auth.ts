@@ -14,7 +14,7 @@ export type Organization = typeof organizationsTable.$inferSelect;
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
-  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
+  orgId: integer("org_id").references(() => organizationsTable.id, { onDelete: "cascade" }),
   username: text("username").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   displayName: text("display_name").notNull().default(""),

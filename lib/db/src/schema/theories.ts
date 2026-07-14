@@ -18,6 +18,7 @@ export type Portfolio = typeof portfoliosTable.$inferSelect;
 
 export const theoriesTable = pgTable("theories", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   portfolioId: integer("portfolio_id").references(() => portfoliosTable.id, { onDelete: "set null" }),
   title: text("title").notNull(),
   description: text("description").notNull().default(""),
@@ -61,6 +62,7 @@ export type Theory = typeof theoriesTable.$inferSelect;
 
 export const componentsTable = pgTable("components", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   type: text("type").notNull(), // input | activity | output | outcome | impact
   title: text("title").notNull(),
@@ -91,6 +93,7 @@ export type Component = typeof componentsTable.$inferSelect;
 
 export const connectionsTable = pgTable("connections", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   fromComponentId: integer("from_component_id").notNull().references(() => componentsTable.id, { onDelete: "cascade" }),
   toComponentId: integer("to_component_id").notNull().references(() => componentsTable.id, { onDelete: "cascade" }),
@@ -106,6 +109,7 @@ export type Connection = typeof connectionsTable.$inferSelect;
 
 export const componentIndicatorsTable = pgTable("component_indicators", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   componentId: integer("component_id").notNull().references(() => componentsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   name: text("name").notNull().default(""),
@@ -155,6 +159,7 @@ export type ComponentIndicator = typeof componentIndicatorsTable.$inferSelect;
 
 export const theoryNotesUpdatesTable = pgTable("theory_notes_updates", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   activityChange: text("activity_change").notNull().default(""),
   date: text("date").notNull().default(""),
@@ -169,6 +174,7 @@ export type TheoryNoteUpdate = typeof theoryNotesUpdatesTable.$inferSelect;
 
 export const theoryRiskAnalysesTable = pgTable("theory_risk_analyses", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   risk: text("risk").notNull().default(""),
   likelihood: text("likelihood").notNull().default(""),
@@ -185,6 +191,7 @@ export type TheoryRiskAnalysis = typeof theoryRiskAnalysesTable.$inferSelect;
 
 export const theoryDocumentsTable = pgTable("theory_documents", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   objectPath: text("object_path").notNull(),
@@ -200,6 +207,7 @@ export type TheoryDocument = typeof theoryDocumentsTable.$inferSelect;
 // ── Support Calculation Year Rows ─────────────────────────────────────────────
 export const indicatorScYearsTable = pgTable("indicator_sc_years", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   indicatorId: integer("indicator_id").notNull().references(() => componentIndicatorsTable.id, { onDelete: "cascade" }),
   year: text("year").notNull().default(""),
   target: text("target").notNull().default(""),
@@ -219,6 +227,7 @@ export type IndicatorScYear = typeof indicatorScYearsTable.$inferSelect;
 
 export const businessModelActorsTable = pgTable("business_model_actors", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   position: integer("position").notNull().default(0),
   actorName: text("actor_name").notNull().default(""),
@@ -234,6 +243,7 @@ export type InsertBusinessModelActor = z.infer<typeof insertBusinessModelActorSc
 // ── Systemic Change Entries ───────────────────────────────────────────────────
 export const systemicChangesTable = pgTable("systemic_changes", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   framework: text("framework").notNull().default(""), // 'aaer' | 'msr' | 'oh' | 'msc'
   dimension: text("dimension").notNull().default(""),
@@ -257,6 +267,7 @@ export type BusinessModelActor = typeof businessModelActorsTable.$inferSelect;
 // ─── Theory Locations ─────────────────────────────────────────────────────────
 export const theoryLocationsTable = pgTable("theory_locations", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   displayName: text("display_name").notNull().default(""),
   country: text("country").notNull().default(""),
@@ -299,6 +310,7 @@ export type TheoryLocation = typeof theoryLocationsTable.$inferSelect;
 // ─── Market System Analysis (M4P Doughnut) ────────────────────────────────────
 export const marketSystemsTable = pgTable("market_systems", {
   id:          serial("id").primaryKey(),
+  orgId:       integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId:    integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   title:       text("title").notNull().default(""),
   description: text("description").notNull().default(""),
@@ -314,6 +326,7 @@ export type MarketSystem = typeof marketSystemsTable.$inferSelect;
 
 export const marketSystemElementsTable = pgTable("market_system_elements", {
   id:                    serial("id").primaryKey(),
+  orgId:                 integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   marketSystemId:        integer("market_system_id").notNull().references(() => marketSystemsTable.id, { onDelete: "cascade" }),
   theoryId:              integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   ring:                  text("ring").notNull().default("supporting"),   // 'core' | 'supporting' | 'rules'
@@ -351,6 +364,7 @@ export type TheoryAssignment = typeof theoryAssignmentsTable.$inferSelect;
 // theory's data, so teams can audit "who changed what" per intervention.
 export const changeLogTable = pgTable("change_log", {
   id: serial("id").primaryKey(),
+  orgId: integer("org_id").notNull().references(() => organizationsTable.id, { onDelete: "cascade" }),
   theoryId: integer("theory_id").notNull().references(() => theoriesTable.id, { onDelete: "cascade" }),
   userId: integer("user_id").references(() => usersTable.id, { onDelete: "set null" }),
   username: text("username").notNull().default(""),

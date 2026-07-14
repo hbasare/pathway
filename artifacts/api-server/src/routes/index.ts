@@ -35,7 +35,7 @@ router.use(async (req, res, next) => {
   if (req.path.startsWith("/chat")) return next();
 
   const role = req.session.role ?? "";
-  if (!["manager", "member"].includes(role)) {
+  if (!["manager", "member", "system_admin"].includes(role)) {
     res.status(403).json({ error: "You have read-only access and cannot edit content" });
     return;
   }

@@ -5,6 +5,7 @@ import { usersTable, organizationsTable, theoryAssignmentsTable } from "@workspa
 import { eq } from "drizzle-orm";
 import { loginLimiter, registerLimiter, passwordResetLimiter } from "../middleware/rate-limit";
 import { validatePasswordStrength } from "../lib/password";
+import { requireSystemAdmin } from "../middleware/auth";
 
 const router = Router();
 
@@ -32,10 +33,9 @@ router.post("/auth/login", loginLimiter, async (req, res) => {
     return;
   }
 
-  const [org] = await db
-    .select()
-    .from(organizationsTable)
-    .where(eq(organizationsTable.id, user.orgId));
+  const org = user.orgId
+    ? (await db.select().from(organizationsTable).where(eq(organizationsTable.id, user.orgId)))[0]
+    : null;
 
   // Regenerate session ID on login to prevent session fixation attacks.
   await new Promise<void>((resolve, reject) =>
@@ -43,7 +43,7 @@ router.post("/auth/login", loginLimiter, async (req, res) => {
   );
 
   req.session.userId = user.id;
-  req.session.orgId = user.orgId;
+  req.session.orgId = user.orgId as any;
   req.session.role = user.role;
   req.session.username = user.username;
   req.session.displayName = user.displayName;
@@ -238,6 +238,40 @@ router.post("/setup", registerLimiter, async (req, res) => {
     orgId: org.id,
     orgName: org.name,
   });
+});
+
+// ── Admin: List all organizations (for tenant-switching) ───────────────────
+router.get("/admin/organizations", requireSystemAdmin, async (_req, res) => {
+  const orgs = await db.select().from(organizationsTable).orderBy(organizationsTable.name);
+  res.json(orgs);
+});
+
+// ── Admin: Switch active organization context ────────────────────────────────
+router.post("/admin/switch-tenant", requireSystemAdmin, async (req, res) => {
+  const { orgId } = req.body as { orgId?: number | null };
+
+  if (orgId === null || orgId === undefined || orgId === 0) {
+    // Reset back to system-wide master view
+    req.session.orgId = null as any;
+    req.session.orgName = "";
+    res.json({ orgId: null, orgName: "" });
+    return;
+  }
+
+  const [org] = await db
+    .select()
+    .from(organizationsTable)
+    .where(eq(organizationsTable.id, orgId));
+
+  if (!org) {
+    res.status(404).json({ error: "Organization not found" });
+    return;
+  }
+
+  req.session.orgId = org.id;
+  req.session.orgName = org.name;
+
+  res.json({ orgId: org.id, orgName: org.name });
 });
 
 export default router;

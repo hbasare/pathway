@@ -1,18 +1,31 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { systemicChangesTable, insertSystemicChangeSchema } from "@workspace/db";
+import { theoriesTable, systemicChangesTable, insertSystemicChangeSchema } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { openai } from "@workspace/integrations-openai-ai-server";
 import { logChange } from "../lib/changelog";
 
 const router: IRouter = Router();
 
+async function getAuthorizedTheory(req: any, id: number) {
+  const orgId = req.session.orgId;
+  const isGlobalAdmin = req.session.role === "system_admin" && !orgId;
+  const query = db.select().from(theoriesTable);
+  const [theory] = isGlobalAdmin
+    ? await query.where(eq(theoriesTable.id, id))
+    : await query.where(and(eq(theoriesTable.id, id), eq(theoriesTable.orgId, orgId!)));
+  return theory || null;
+}
+
 router.post("/theories/:theoryId/systemic-changes/ai-analysis", async (req, res) => {
   const theoryId = Number(req.params.theoryId);
+  const theory = await getAuthorizedTheory(req, theoryId);
+  if (!theory) { res.status(404).json({ error: "Not found" }); return; }
+
   const entries = await db
     .select()
     .from(systemicChangesTable)
-    .where(eq(systemicChangesTable.theoryId, theoryId))
+    .where(and(eq(systemicChangesTable.theoryId, theoryId), eq(systemicChangesTable.orgId, theory.orgId)))
     .orderBy(systemicChangesTable.position, systemicChangesTable.createdAt);
 
   const entrySummaries = entries.map(e => {
@@ -99,8 +112,12 @@ If a stage has no data entries at all, set status to "no-data", score to 0, head
 });
 
 router.post("/theories/:theoryId/msr-ai-analysis", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const theory = await getAuthorizedTheory(req, theoryId);
+  if (!theory) { res.status(404).json({ error: "Not found" }); return; }
+
   const { actorSummaries, interventionTitle } = req.body as {
-    actorSummaries: { actorId: string; actorName: string; scoreSummary: ScoreSummaryEntry[] }[];
+    actorSummaries: { actorId: string; actorName: string; scoreSummary: any[] }[];
     interventionTitle?: string;
   };
 
@@ -173,8 +190,11 @@ If a domain has no scores (all null), set status to "no-data", score to 0, headl
   }
 });
 
-
 router.post("/theories/:theoryId/oh-msc-ai-analysis", async (req, res) => {
+  const theoryId = Number(req.params.theoryId);
+  const theory = await getAuthorizedTheory(req, theoryId);
+  if (!theory) { res.status(404).json({ error: "Not found" }); return; }
+
   const { frameworkKey, entries } = req.body as {
     frameworkKey: "oh" | "msc";
     entries: Array<Record<string, string | null>>;
@@ -265,14 +285,17 @@ Return ONLY valid JSON (no markdown, no extra text):
 
 router.get("/theories/:theoryId/systemic-changes", async (req, res) => {
   const theoryId = Number(req.params.theoryId);
+  const theory = await getAuthorizedTheory(req, theoryId);
+  if (!theory) { res.status(404).json({ error: "Not found" }); return; }
+
   const framework = req.query.framework as string | undefined;
   const rows = await db
     .select()
     .from(systemicChangesTable)
     .where(
       framework
-        ? and(eq(systemicChangesTable.theoryId, theoryId), eq(systemicChangesTable.framework, framework))
-        : eq(systemicChangesTable.theoryId, theoryId)
+        ? and(eq(systemicChangesTable.theoryId, theoryId), eq(systemicChangesTable.framework, framework), eq(systemicChangesTable.orgId, theory.orgId))
+        : and(eq(systemicChangesTable.theoryId, theoryId), eq(systemicChangesTable.orgId, theory.orgId))
     )
     .orderBy(systemicChangesTable.position, systemicChangesTable.createdAt);
   res.json(rows);
@@ -280,42 +303,51 @@ router.get("/theories/:theoryId/systemic-changes", async (req, res) => {
 
 router.post("/theories/:theoryId/systemic-changes", async (req, res) => {
   const theoryId = Number(req.params.theoryId);
-  const parsed = insertSystemicChangeSchema.safeParse({ ...req.body, theoryId });
+  const theory = await getAuthorizedTheory(req, theoryId);
+  if (!theory) { res.status(404).json({ error: "Not found" }); return; }
+
+  const parsed = insertSystemicChangeSchema.safeParse({ ...req.body, theoryId, orgId: theory.orgId });
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues });
     return;
   }
   const [row] = await db.insert(systemicChangesTable).values(parsed.data).returning();
-  await logChange(req, { theoryId, action: "create", entityType: "systemic_change", entityLabel: row.dimension ?? "", summary: `Added systemic change entry "${row.dimension ?? ""}"` });
+  await logChange(req, { theoryId, orgId: theory.orgId, action: "create", entityType: "systemic_change", entityLabel: row.dimension ?? "", summary: `Added systemic change entry "${row.dimension ?? ""}"` });
   res.status(201).json(row);
 });
 
 router.put("/theories/:theoryId/systemic-changes/:id", async (req, res) => {
   const id = Number(req.params.id);
   const theoryId = Number(req.params.theoryId);
+  const theory = await getAuthorizedTheory(req, theoryId);
+  if (!theory) { res.status(404).json({ error: "Not found" }); return; }
+
   const [row] = await db
     .update(systemicChangesTable)
     .set({ ...req.body, updatedAt: new Date() })
-    .where(and(eq(systemicChangesTable.id, id), eq(systemicChangesTable.theoryId, theoryId)))
+    .where(and(eq(systemicChangesTable.id, id), eq(systemicChangesTable.theoryId, theoryId), eq(systemicChangesTable.orgId, theory.orgId)))
     .returning();
   if (!row) {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  await logChange(req, { theoryId, action: "update", entityType: "systemic_change", entityLabel: row.dimension ?? "", summary: `Updated systemic change entry "${row.dimension ?? ""}"` });
+  await logChange(req, { theoryId, orgId: theory.orgId, action: "update", entityType: "systemic_change", entityLabel: row.dimension ?? "", summary: `Updated systemic change entry "${row.dimension ?? ""}"` });
   res.json(row);
 });
 
 router.delete("/theories/:theoryId/systemic-changes/:id", async (req, res) => {
   const id = Number(req.params.id);
   const theoryId = Number(req.params.theoryId);
+  const theory = await getAuthorizedTheory(req, theoryId);
+  if (!theory) { res.status(404).json({ error: "Not found" }); return; }
+
   const [row] = await db.select().from(systemicChangesTable)
-    .where(and(eq(systemicChangesTable.id, id), eq(systemicChangesTable.theoryId, theoryId)));
+    .where(and(eq(systemicChangesTable.id, id), eq(systemicChangesTable.theoryId, theoryId), eq(systemicChangesTable.orgId, theory.orgId)));
   await db
     .delete(systemicChangesTable)
-    .where(and(eq(systemicChangesTable.id, id), eq(systemicChangesTable.theoryId, theoryId)));
+    .where(and(eq(systemicChangesTable.id, id), eq(systemicChangesTable.theoryId, theoryId), eq(systemicChangesTable.orgId, theory.orgId)));
   if (row) {
-    await logChange(req, { theoryId, action: "delete", entityType: "systemic_change", entityLabel: row.dimension ?? "", summary: `Deleted systemic change entry "${row.dimension ?? ""}"` });
+    await logChange(req, { theoryId, orgId: theory.orgId, action: "delete", entityType: "systemic_change", entityLabel: row.dimension ?? "", summary: `Deleted systemic change entry "${row.dimension ?? ""}"` });
   }
   res.status(204).send();
 });
