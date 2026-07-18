@@ -38,8 +38,36 @@ router.post("/storage/uploads/request-url", async (req: Request, res: Response) 
       }),
     );
   } catch (error) {
-    req.log.error({ err: error }, "Error generating upload URL");
+    (req as any).log?.error({ err: error }, "Error generating upload URL");
     res.status(500).json({ error: "Failed to generate upload URL" });
+  }
+});
+
+// PUT /storage/uploads/local — Fallback endpoint to write file upload stream to disk when not running on Replit
+router.put("/storage/uploads/local", async (req: Request, res: Response) => {
+  const objectId = req.query.objectId as string;
+  if (!objectId) {
+    res.status(400).json({ error: "objectId is required" });
+    return;
+  }
+  try {
+    const fs = await import("fs");
+    const path = await import("path");
+    const dir = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const filePath = path.join(dir, objectId);
+    const writeStream = fs.createWriteStream(filePath);
+    req.pipe(writeStream);
+    req.on("end", () => {
+      res.status(200).send("Uploaded successfully");
+    });
+    req.on("error", (err) => {
+      res.status(500).json({ error: err.message });
+    });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -72,7 +100,7 @@ router.get("/storage/public-objects/*filePath", async (req: Request, res: Respon
       res.end();
     }
   } catch (error) {
-    req.log.error({ err: error }, "Error serving public object");
+    (req as any).log?.error({ err: error }, "Error serving public object");
     res.status(500).json({ error: "Failed to serve public object" });
   }
 });
@@ -119,11 +147,11 @@ router.get("/storage/objects/*path", async (req: Request, res: Response) => {
     }
   } catch (error) {
     if (error instanceof ObjectNotFoundError) {
-      req.log.warn({ err: error }, "Object not found");
+      (req as any).log?.warn({ err: error }, "Object not found");
       res.status(404).json({ error: "Object not found" });
       return;
     }
-    req.log.error({ err: error }, "Error serving object");
+    (req as any).log?.error({ err: error }, "Error serving object");
     res.status(500).json({ error: "Failed to serve object" });
   }
 });

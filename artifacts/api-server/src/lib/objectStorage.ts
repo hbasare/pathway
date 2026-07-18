@@ -10,6 +10,7 @@ import {
 } from "./objectAcl";
 
 const REPLIT_SIDECAR_ENDPOINT = "http://127.0.0.1:1106";
+const useLocalFS = !process.env.REPL_ID;
 
 export const objectStorageClient = new Storage({
   credentials: {
@@ -41,6 +42,9 @@ export class ObjectStorageService {
   constructor() {}
 
   getPublicObjectSearchPaths(): Array<string> {
+    if (useLocalFS) {
+      return ["uploads"];
+    }
     const pathsStr = process.env.PUBLIC_OBJECT_SEARCH_PATHS || "";
     const paths = Array.from(
       new Set(
@@ -60,6 +64,9 @@ export class ObjectStorageService {
   }
 
   getPrivateObjectDir(): string {
+    if (useLocalFS) {
+      return "uploads";
+    }
     const dir = process.env.PRIVATE_OBJECT_DIR || "";
     if (!dir) {
       throw new Error(
@@ -70,7 +77,20 @@ export class ObjectStorageService {
     return dir;
   }
 
-  async searchPublicObject(filePath: string): Promise<File | null> {
+  async searchPublicObject(filePath: string): Promise<any> {
+    if (useLocalFS) {
+      const path = await import("path");
+      const fs = await import("fs");
+      const localPath = path.join(process.cwd(), "public", "uploads", filePath);
+      if (fs.existsSync(localPath)) {
+        return {
+          localFilePath: localPath,
+          name: filePath,
+        };
+      }
+      return null;
+    }
+
     for (const searchPath of this.getPublicObjectSearchPaths()) {
       const fullPath = `${searchPath}/${filePath}`;
 
@@ -87,7 +107,35 @@ export class ObjectStorageService {
     return null;
   }
 
-  async downloadObject(file: File, cacheTtlSec: number = 3600): Promise<Response> {
+  async downloadObject(file: any, cacheTtlSec: number = 3600): Promise<Response> {
+    if (useLocalFS && file.localFilePath) {
+      const fs = await import("fs");
+      const stats = fs.statSync(file.localFilePath);
+      const nodeStream = fs.createReadStream(file.localFilePath);
+      const webStream = Readable.toWeb(nodeStream) as ReadableStream;
+
+      const ext = file.localFilePath.split(".").pop()?.toLowerCase();
+      let contentType = "application/octet-stream";
+      if (ext === "pdf") contentType = "application/pdf";
+      else if (ext === "png") contentType = "image/png";
+      else if (ext === "jpg" || ext === "jpeg") contentType = "image/jpeg";
+      else if (ext === "gif") contentType = "image/gif";
+      else if (ext === "svg") contentType = "image/svg+xml";
+      else if (ext === "xlsx") contentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      else if (ext === "xls") contentType = "application/vnd.ms-excel";
+      else if (ext === "docx") contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      else if (ext === "doc") contentType = "application/msword";
+      else if (ext === "txt") contentType = "text/plain";
+      else if (ext === "csv") contentType = "text/csv";
+
+      const headers: Record<string, string> = {
+        "Content-Type": contentType,
+        "Cache-Control": `private, max-age=${cacheTtlSec}`,
+        "Content-Length": String(stats.size),
+      };
+      return new Response(webStream, { headers });
+    }
+
     const [metadata] = await file.getMetadata();
     const aclPolicy = await getObjectAclPolicy(file);
     const isPublic = aclPolicy?.visibility === "public";
@@ -107,6 +155,11 @@ export class ObjectStorageService {
   }
 
   async getObjectEntityUploadURL(): Promise<string> {
+    const objectId = randomUUID();
+    if (useLocalFS) {
+      return `/api/storage/uploads/local?objectId=${objectId}`;
+    }
+
     const privateObjectDir = this.getPrivateObjectDir();
     if (!privateObjectDir) {
       throw new Error(
@@ -115,7 +168,6 @@ export class ObjectStorageService {
       );
     }
 
-    const objectId = randomUUID();
     const fullPath = `${privateObjectDir}/uploads/${objectId}`;
 
     const { bucketName, objectName } = parseObjectPath(fullPath);
@@ -128,9 +180,23 @@ export class ObjectStorageService {
     });
   }
 
-  async getObjectEntityFile(objectPath: string): Promise<File> {
+  async getObjectEntityFile(objectPath: string): Promise<any> {
     if (!objectPath.startsWith("/objects/")) {
       throw new ObjectNotFoundError();
+    }
+
+    if (useLocalFS) {
+      const path = await import("path");
+      const fs = await import("fs");
+      const entityId = objectPath.slice("/objects/".length);
+      const filePath = path.join(process.cwd(), "public", "uploads", entityId);
+      if (!fs.existsSync(filePath)) {
+        throw new ObjectNotFoundError();
+      }
+      return {
+        localFilePath: filePath,
+        name: entityId,
+      };
     }
 
     const parts = objectPath.slice(1).split("/");
@@ -155,6 +221,15 @@ export class ObjectStorageService {
   }
 
   normalizeObjectEntityPath(rawPath: string): string {
+    if (useLocalFS) {
+      if (rawPath.includes("objectId=")) {
+        const url = new URL(rawPath, "http://localhost");
+        const objectId = url.searchParams.get("objectId");
+        return `/objects/uploads/${objectId}`;
+      }
+      return rawPath;
+    }
+
     if (!rawPath.startsWith("https://storage.googleapis.com/")) {
       return rawPath;
     }
@@ -172,7 +247,7 @@ export class ObjectStorageService {
     }
 
     const entityId = rawObjectPath.slice(objectEntityDir.length);
-    return `/objects/${entityId}`;
+    return `/objects/uploads/${entityId}`;
   }
 
   async trySetObjectEntityAclPolicy(
@@ -181,6 +256,10 @@ export class ObjectStorageService {
   ): Promise<string> {
     const normalizedPath = this.normalizeObjectEntityPath(rawPath);
     if (!normalizedPath.startsWith("/")) {
+      return normalizedPath;
+    }
+
+    if (useLocalFS) {
       return normalizedPath;
     }
 
@@ -198,6 +277,9 @@ export class ObjectStorageService {
     objectFile: File;
     requestedPermission?: ObjectPermission;
   }): Promise<boolean> {
+    if (useLocalFS) {
+      return true;
+    }
     return canAccessObject({
       userId,
       objectFile,
@@ -262,6 +344,6 @@ async function signObjectURL({
     );
   }
 
-  const { signed_url: signedURL } = await response.json();
+  const { signed_url: signedURL } = (await response.json()) as any;
   return signedURL;
 }
