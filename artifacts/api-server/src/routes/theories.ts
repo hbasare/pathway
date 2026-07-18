@@ -110,7 +110,7 @@ router.put("/theories/:id", async (req, res) => {
     res.status(404).json({ error: "Not found" });
     return;
   }
-  const parsed = insertTheorySchema.safeParse(req.body);
+  const parsed = insertTheorySchema.safeParse({ ...req.body, orgId: theory.orgId });
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues });
     return;
