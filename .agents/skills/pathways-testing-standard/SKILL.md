@@ -29,3 +29,11 @@ When verifying frontend user experience and context-switching:
    * Switch Context navigation to update session profile.
    * Scoped data verification on dashboard.
    * Context clearing and logout flow check.
+
+### 3. Branching & Deployment Flow
+All changes, updates, or enhancements must be implemented in the `feature/multi-tenancy` branch for review and approval before being merged to `main` and deployed to production:
+1. Implement and test features entirely on the `feature/multi-tenancy` branch.
+2. Verify all tests pass locally.
+3. Submit changes to the user for review and explicit approval.
+4. Only merge changes into `main` and push to remote `origin` after receiving approval.
+
