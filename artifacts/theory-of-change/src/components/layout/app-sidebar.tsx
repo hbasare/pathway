@@ -1,8 +1,11 @@
 import { Link, useLocation } from "wouter";
-import { FolderGit2, Plus, Home, Layers, LayoutGrid, Users, LogOut, Shield, Globe, User, Eye, Search, Heart, Sun, Moon, Monitor } from "lucide-react";
+import { FolderGit2, Plus, Home, Layers, LayoutGrid, Users, LogOut, Shield, Globe, User, Eye, EyeOff, Search, Heart, Sun, Moon, Monitor, KeyRound } from "lucide-react";
 import { useTheme } from "@/contexts/theme-context";
 import { useListTheories } from "@workspace/api-client-react";
 import { useState, useEffect } from "react";
+import { PasswordStrength } from "@/components/PasswordStrength";
+import { isPasswordValid } from "@/lib/password";
+import { Input } from "@/components/ui/input";
 import {
   Sidebar,
   SidebarContent,
@@ -76,6 +79,53 @@ export function AppSidebar() {
   const { user, logout, refetch } = useAuth();
   const { t } = useTranslation();
   const permissions = getPermissions(user?.role ?? "");
+
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showOldPassword, setShowOldPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [changeError, setChangeError] = useState("");
+  const [changeSuccess, setChangeSuccess] = useState("");
+  const [changeLoading, setChangeLoading] = useState(false);
+
+  const handleChangePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!oldPassword || !newPassword || !confirmPassword) return;
+    if (newPassword !== confirmPassword) {
+      setChangeError("Passwords do not match");
+      return;
+    }
+    setChangeError("");
+    setChangeSuccess("");
+    setChangeLoading(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldPassword, newPassword }),
+      });
+      if (!res.ok) {
+        const err = await res.json() as { error: string };
+        throw new Error(err.error || "Failed to change password");
+      }
+      setChangeSuccess("Password changed successfully!");
+      setOldPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => {
+        setChangePasswordOpen(false);
+        setChangeSuccess("");
+      }, 1500);
+    } catch (err: any) {
+      setChangeError(err.message);
+    } finally {
+      setChangeLoading(false);
+    }
+  };
 
   const [organizations, setOrganizations] = useState<{ id: number; name: string }[]>([]);
   useEffect(() => {
@@ -262,6 +312,15 @@ export function AppSidebar() {
             size="icon"
             variant="ghost"
             className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+            title="Change Password"
+            onClick={() => setChangePasswordOpen(true)}
+          >
+            <KeyRound className="w-4 h-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
             title={t("common.signOut")}
             onClick={() => logout()}
           >
@@ -269,6 +328,122 @@ export function AppSidebar() {
           </Button>
         </div>
       </SidebarFooter>
+
+      <DialogWrapper
+        open={changePasswordOpen}
+        onOpenChange={(val) => {
+          setChangePasswordOpen(val);
+          if (!val) {
+            setOldPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+            setChangeError("");
+            setChangeSuccess("");
+          }
+        }}
+        title="Change Password"
+        description="Update your account password. You will need to verify your current password."
+      >
+        <form onSubmit={handleChangePasswordSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Current Password</label>
+            <div className="relative">
+              <Input
+                type={showOldPassword ? "text" : "password"}
+                value={oldPassword}
+                onChange={e => setOldPassword(e.target.value)}
+                placeholder="••••••••"
+                disabled={changeLoading}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowOldPassword(!showOldPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                tabIndex={-1}
+                disabled={changeLoading}
+              >
+                {showOldPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">New Password</label>
+            <div className="relative">
+              <Input
+                type={showNewPassword ? "text" : "password"}
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                disabled={changeLoading}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                tabIndex={-1}
+                disabled={changeLoading}
+              >
+                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <PasswordStrength password={newPassword} />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-foreground">Confirm New Password</label>
+            <div className="relative">
+              <Input
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                disabled={changeLoading}
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                tabIndex={-1}
+                disabled={changeLoading}
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            {confirmPassword && newPassword !== confirmPassword && (
+              <p className="text-xs text-destructive">Passwords do not match</p>
+            )}
+          </div>
+
+          {changeError && (
+            <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{changeError}</p>
+          )}
+
+          {changeSuccess && (
+            <p className="text-sm text-green-600 bg-green-50 rounded-lg px-3 py-2">{changeSuccess}</p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setChangePasswordOpen(false)}
+              disabled={changeLoading}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={changeLoading || !oldPassword || !isPasswordValid(newPassword) || newPassword !== confirmPassword}
+            >
+              {changeLoading ? "Updating..." : "Update Password"}
+            </Button>
+          </div>
+        </form>
+      </DialogWrapper>
     </Sidebar>
   );
 }

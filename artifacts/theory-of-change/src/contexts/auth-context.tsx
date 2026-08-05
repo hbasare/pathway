@@ -8,6 +8,8 @@ export interface AuthUser {
   orgId: number | null;
   orgName: string;
   assignedTheoryIds: number[];
+  mustChangePassword?: boolean;
+  email?: string | null;
 }
 
 interface AuthContextValue {

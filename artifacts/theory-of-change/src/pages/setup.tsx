@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Building2, UserCircle2, KeyRound } from "lucide-react";
+import { Loader2, Building2, UserCircle2, KeyRound, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { PathwaysLogo } from "@/components/PathwaysLogo";
@@ -17,6 +17,8 @@ export default function SetupPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +35,7 @@ export default function SetupPage() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orgName: orgName.trim(), username: username.trim(), password, displayName: displayName.trim() }),
+        body: JSON.stringify({ orgName: orgName.trim(), username: username.trim().toLowerCase(), password, displayName: displayName.trim() }),
       });
       if (!res.ok) {
         const err = await res.json() as { error: string };
@@ -128,28 +130,60 @@ export default function SetupPage() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="password">{t("auth.password")}</label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder={t("auth.passwordPlaceholder")}
-                  autoComplete="new-password"
-                  disabled={loading}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder={t("auth.passwordPlaceholder")}
+                    autoComplete="new-password"
+                    className="pr-10"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                    disabled={loading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
                 <PasswordStrength password={password} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground" htmlFor="confirm">{t("auth.confirmPassword")}</label>
-                <Input
-                  id="confirm"
-                  type="password"
-                  value={confirm}
-                  onChange={e => setConfirm(e.target.value)}
-                  placeholder={t("auth.confirmPasswordPlaceholder")}
-                  autoComplete="new-password"
-                  disabled={loading}
-                />
+                <div className="relative">
+                  <Input
+                    id="confirm"
+                    type={showConfirm ? "text" : "password"}
+                    value={confirm}
+                    onChange={e => setConfirm(e.target.value)}
+                    placeholder={t("auth.confirmPasswordPlaceholder")}
+                    autoComplete="new-password"
+                    className="pr-10"
+                    disabled={loading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                    disabled={loading}
+                  >
+                    {showConfirm ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
                 {confirm && password !== confirm && (
                   <p className="text-xs text-destructive mt-1">Passwords do not match</p>
                 )}

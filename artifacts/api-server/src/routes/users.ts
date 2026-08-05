@@ -6,6 +6,8 @@ import { eq, and } from "drizzle-orm";
 import { requireAuth, requireManager } from "../middleware/auth";
 import { passwordResetLimiter } from "../middleware/rate-limit";
 import { validatePasswordStrength } from "../lib/password";
+import { sendWelcomeEmail } from "../lib/email";
+import { randomBytes } from "crypto";
 
 const router = Router();
 
@@ -21,6 +23,8 @@ router.get("/users", requireAuth, async (req, res) => {
       displayName: usersTable.displayName,
       role: usersTable.role,
       orgId: usersTable.orgId,
+      email: usersTable.email,
+      mustChangePassword: usersTable.mustChangePassword,
       createdAt: usersTable.createdAt,
     })
     .from(usersTable);
@@ -37,21 +41,47 @@ router.post("/users", requireManager, async (req, res) => {
   const orgId = req.session.orgId;
   const isGlobalAdmin = req.session.role === "system_admin" && !orgId;
 
-  const { username, password, displayName, role } = req.body as {
+  const { username, password, displayName, role, email } = req.body as {
     username?: string;
     password?: string;
     displayName?: string;
     role?: string;
+    email?: string;
   };
 
-  if (!username?.trim() || !password) {
-    res.status(400).json({ error: "Username and password are required" });
+  if (!username?.trim()) {
+    res.status(400).json({ error: "Username is required" });
     return;
   }
-  const pwError = validatePasswordStrength(password);
-  if (pwError) {
-    res.status(400).json({ error: pwError });
+
+  // If no password is provided, we must require email so we can send the temporary password
+  if (!password && !email?.trim()) {
+    res.status(400).json({ error: "Password or email is required to register a user" });
     return;
+  }
+
+  if (email?.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    res.status(400).json({ error: "Invalid email address format" });
+    return;
+  }
+
+  let tempPassword = "";
+  let isTemp = false;
+  let actualPassword = password;
+
+  if (!actualPassword) {
+    // Generate a temporary password that satisfies our strength verification (at least 8 chars, mixed case, digit, special char)
+    const rand = randomBytes(4).toString("hex");
+    tempPassword = `Tmp-${rand}!`;
+    actualPassword = tempPassword;
+    isTemp = true;
+  } else {
+    // Validate strength of provided password
+    const pwError = validatePasswordStrength(actualPassword);
+    if (pwError) {
+      res.status(400).json({ error: pwError });
+      return;
+    }
   }
 
   const validRoles = ["system_admin", "manager", "member", "senior_manager", "auditor", "donor"];
@@ -63,7 +93,7 @@ router.post("/users", requireManager, async (req, res) => {
   }
 
   const targetOrgId = isGlobalAdmin ? (req.body.orgId ? Number(req.body.orgId) : null) : orgId!;
-  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordHash = await bcrypt.hash(actualPassword, 12);
 
   try {
     const [user] = await db
@@ -74,6 +104,8 @@ router.post("/users", requireManager, async (req, res) => {
         passwordHash,
         displayName: (displayName?.trim() || username.trim()),
         role: userRole,
+        email: email?.trim() || null,
+        mustChangePassword: isTemp,
       })
       .returning({
         id: usersTable.id,
@@ -81,8 +113,20 @@ router.post("/users", requireManager, async (req, res) => {
         displayName: usersTable.displayName,
         role: usersTable.role,
         orgId: usersTable.orgId,
+        email: usersTable.email,
+        mustChangePassword: usersTable.mustChangePassword,
         createdAt: usersTable.createdAt,
       });
+
+    // Send welcome email if temporary password was generated and email is provided
+    if (isTemp && email?.trim()) {
+      try {
+        await sendWelcomeEmail(email.trim(), username.trim(), tempPassword);
+      } catch (mailErr) {
+        console.error("Failed to send welcome email:", mailErr);
+      }
+    }
+
     res.status(201).json(user);
   } catch (err) {
     res.status(409).json({ error: "Username already taken" });

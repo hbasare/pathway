@@ -20,13 +20,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Eye, EyeOff } from "lucide-react";
 
 const formSchema = z.object({
   username: z.string().min(1, "Username is required").max(50),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().optional().or(z.literal("")),
+  email: z.string().optional().or(z.literal("")),
   displayName: z.string().max(100).optional(),
   role: z.string().min(1, "Role is required"),
   orgId: z.coerce.number().nullable().optional(),
+})
+.refine((data) => data.password || data.email, {
+  message: "Either password or email is required",
+  path: ["password"],
+})
+.refine((data) => !data.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email), {
+  message: "Invalid email format",
+  path: ["email"],
+})
+.refine((data) => !data.password || data.password.length >= 8, {
+  message: "Password must be at least 8 characters",
+  path: ["password"],
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -37,7 +51,7 @@ interface AdminUserFormProps {
 
 export function AdminUserForm({ onSuccess }: AdminUserFormProps) {
   const { toast } = useToast();
-  const [isPending, setIsPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [organizations, setOrganizations] = useState<any[]>([]);
 
   // Fetch list of organizations on mount for the selection dropdown
@@ -53,12 +67,14 @@ export function AdminUserForm({ onSuccess }: AdminUserFormProps) {
     defaultValues: {
       username: "",
       password: "",
+      email: "",
       displayName: "",
       role: "member",
       orgId: null,
     },
   });
 
+  const [isPending, setIsPending] = useState(false);
   const selectedRole = form.watch("role");
 
   // If role is system_admin, reset and disable organization selection
@@ -72,8 +88,9 @@ export function AdminUserForm({ onSuccess }: AdminUserFormProps) {
     setIsPending(true);
     try {
       const payload = {
-        username: values.username,
-        password: values.password,
+        username: values.username.trim().toLowerCase(),
+        password: values.password || undefined,
+        email: values.email || undefined,
         displayName: values.displayName || undefined,
         role: values.role,
         orgId: values.role === "system_admin" ? null : values.orgId || undefined,
@@ -122,12 +139,36 @@ export function AdminUserForm({ onSuccess }: AdminUserFormProps) {
 
         <FormField
           control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email <span className="text-muted-foreground font-normal">(required for temporary password email)</span></FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="e.g. jsmith@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Password <span className="text-muted-foreground font-normal">(leave blank to email a temporary password)</span></FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <div className="relative">
+                  <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="pr-10" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

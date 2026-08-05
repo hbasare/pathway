@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Plus, Trash2, KeyRound, Shield, User, Loader2, X, Check, ChevronDown,
-  Eye, Search, Heart, Layers, ChevronRight,
+  Eye, EyeOff, Search, Heart, Layers, ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -64,6 +64,8 @@ export default function UserManagementPage() {
   const [resetUserId, setResetUserId] = useState<number | null>(null);
   const [resetPassword, setResetPassword] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
 
   // Theory assignment state
   const [theories, setTheories] = useState<Theory[]>([]);
@@ -72,23 +74,27 @@ export default function UserManagementPage() {
   const [assignmentLoading, setAssignmentLoading] = useState(false);
   const [togglingTheory, setTogglingTheory] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetch("/api/theories", { credentials: "include" })
-      .then(r => r.ok ? r.json() : [])
-      .then((data: Theory[]) => setTheories(data));
-  }, []);
-
-  if (currentUser && currentUser.role !== "manager") {
-    navigate("/");
-    return null;
-  }
-
   const loadUsers = async () => {
     const res = await fetch("/api/users", { credentials: "include" });
     if (res.ok) { setUsers(await res.json() as OrgUser[]); setLoaded(true); }
   };
 
-  if (!loaded) { loadUsers(); }
+  useEffect(() => {
+    fetch("/api/theories", { credentials: "include" })
+      .then(r => r.ok ? r.json() : [])
+      .then((data: Theory[]) => setTheories(data));
+    loadUsers();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser && currentUser.role !== "manager") {
+      navigate("/");
+    }
+  }, [currentUser, navigate]);
+
+  if (!currentUser || currentUser.role !== "manager") {
+    return null;
+  }
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +106,7 @@ export default function UserManagementPage() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          username: newUsername.trim(),
+          username: newUsername.trim().toLowerCase(),
           displayName: newDisplayName.trim() || newUsername.trim(),
           password: newPassword,
           role: newRole,
@@ -260,7 +266,30 @@ export default function UserManagementPage() {
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground">{t("auth.password")} *</label>
-                <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="••••••••" disabled={addLoading} autoComplete="new-password" />
+                <div className="relative">
+                  <Input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    disabled={addLoading}
+                    autoComplete="new-password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                    disabled={addLoading}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
                 <PasswordStrength password={newPassword} />
               </div>
               <div className="space-y-2">
@@ -318,17 +347,32 @@ export default function UserManagementPage() {
               </button>
             </div>
             <form onSubmit={handleResetPassword} className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  type="password"
-                  value={resetPassword}
-                  onChange={e => setResetPassword(e.target.value)}
-                  placeholder={t("userManagement.newPassword")}
-                  autoFocus
-                  disabled={resetLoading}
-                  autoComplete="new-password"
-                  className="flex-1"
-                />
+              <div className="flex gap-2 items-center">
+                <div className="relative flex-1">
+                  <Input
+                    type={showResetPassword ? "text" : "password"}
+                    value={resetPassword}
+                    onChange={e => setResetPassword(e.target.value)}
+                    placeholder={t("userManagement.newPassword")}
+                    autoFocus
+                    disabled={resetLoading}
+                    autoComplete="new-password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowResetPassword(!showResetPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                    tabIndex={-1}
+                    disabled={resetLoading}
+                  >
+                    {showResetPassword ? (
+                      <EyeOff className="w-4 h-4" />
+                    ) : (
+                      <Eye className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
                 <Button type="submit" size="sm" disabled={resetLoading || !isPasswordValid(resetPassword)} className="gap-1.5 shrink-0">
                   {resetLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                   {t("userManagement.setPassword")}

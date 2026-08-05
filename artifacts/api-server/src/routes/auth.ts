@@ -56,6 +56,8 @@ router.post("/auth/login", loginLimiter, async (req, res) => {
     role: user.role,
     orgId: user.orgId,
     orgName: org?.name ?? "",
+    email: user.email,
+    mustChangePassword: user.mustChangePassword,
   });
 });
 
@@ -74,23 +76,94 @@ router.get("/auth/me", async (req, res) => {
     res.status(401).json({ error: "Not authenticated" });
     return;
   }
+
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      orgId: usersTable.orgId,
+      username: usersTable.username,
+      displayName: usersTable.displayName,
+      role: usersTable.role,
+      email: usersTable.email,
+      mustChangePassword: usersTable.mustChangePassword,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.session.userId));
+
+  if (!user) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+
+  const org = user.orgId
+    ? (await db.select().from(organizationsTable).where(eq(organizationsTable.id, user.orgId)))[0]
+    : null;
+
   let assignedTheoryIds: number[] = [];
-  if (req.session.role === "member") {
+  if (user.role === "member") {
     const rows = await db
       .select({ theoryId: theoryAssignmentsTable.theoryId })
       .from(theoryAssignmentsTable)
-      .where(eq(theoryAssignmentsTable.userId, req.session.userId));
+      .where(eq(theoryAssignmentsTable.userId, user.id));
     assignedTheoryIds = rows.map(r => r.theoryId);
   }
   res.json({
-    id: req.session.userId,
-    username: req.session.username,
-    displayName: req.session.displayName,
-    role: req.session.role,
-    orgId: req.session.orgId,
-    orgName: req.session.orgName,
+    id: user.id,
+    username: user.username,
+    displayName: user.displayName,
+    role: user.role,
+    orgId: user.orgId,
+    orgName: org?.name ?? "",
+    email: user.email,
+    mustChangePassword: user.mustChangePassword,
     assignedTheoryIds,
   });
+});
+
+// ── Change Own Password (authenticated users) ─────────────────────────────────
+router.post("/auth/change-password", async (req, res) => {
+  if (!req.session?.userId) {
+    res.status(401).json({ error: "Not authenticated" });
+    return;
+  }
+  const { oldPassword, newPassword } = req.body as { oldPassword?: string; newPassword?: string };
+  if (!oldPassword || !newPassword) {
+    res.status(400).json({ error: "Current password and new password are required" });
+    return;
+  }
+
+  const [user] = await db
+    .select()
+    .from(usersTable)
+    .where(eq(usersTable.id, req.session.userId));
+
+  if (!user) {
+    res.status(401).json({ error: "User not found" });
+    return;
+  }
+
+  const valid = await bcrypt.compare(oldPassword, user.passwordHash);
+  if (!valid) {
+    res.status(401).json({ error: "Invalid current password" });
+    return;
+  }
+
+  const pwError = validatePasswordStrength(newPassword);
+  if (pwError) {
+    res.status(400).json({ error: pwError });
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+  await db
+    .update(usersTable)
+    .set({
+      passwordHash,
+      mustChangePassword: false,
+    })
+    .where(eq(usersTable.id, req.session.userId));
+
+  res.json({ ok: true });
 });
 
 // ── Register new organization (open to anyone) ────────────────────────────────

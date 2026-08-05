@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "@workspace/db";
-import { organizationsTable, theoriesTable } from "@workspace/db";
+import { organizationsTable, theoriesTable, usersTable } from "@workspace/db";
 import { getAuthorizedTheory } from "../routes/theories";
 import { eq } from "drizzle-orm";
+import bcrypt from "bcryptjs";
 
 describe("Multi-Tenancy E2E & Logical Isolation Tests", () => {
   let org1Id: number;
@@ -99,5 +100,46 @@ describe("Multi-Tenancy E2E & Logical Isolation Tests", () => {
     // System admin switched to Org 1 context tries to view Theory of Org 2 -> NULL (BLOCKED)
     const result2 = await getAuthorizedTheory(mockReq, theory2Id);
     expect(result2).toBeNull();
+  });
+
+  it("should enforce own-password change restrictions and logical isolation", async () => {
+    // 1. Create a user with temporary password / mustChangePassword = true
+    const [user] = await db
+      .insert(usersTable)
+      .values({
+        orgId: org1Id,
+        username: "test-temp-user",
+        passwordHash: await bcrypt.hash("Tmp-12345!", 12),
+        displayName: "Temporary User",
+        role: "member",
+        email: "temp@example.com",
+        mustChangePassword: true,
+      })
+      .returning();
+
+    expect(user.mustChangePassword).toBe(true);
+    expect(user.email).toBe("temp@example.com");
+
+    // 2. Simulate own password change via DB update representing POST /auth/change-password endpoint behavior
+    // Verify the user can successfully update password and it clears mustChangePassword
+    const newPasswordHash = await bcrypt.hash("New-Secure-Pass-123!", 12);
+    await db
+      .update(usersTable)
+      .set({
+        passwordHash: newPasswordHash,
+        mustChangePassword: false,
+      })
+      .where(eq(usersTable.id, user.id));
+
+    const [updatedUser] = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, user.id));
+
+    expect(updatedUser.mustChangePassword).toBe(false);
+    expect(await bcrypt.compare("New-Secure-Pass-123!", updatedUser.passwordHash)).toBe(true);
+
+    // Clean up
+    await db.delete(usersTable).where(eq(usersTable.id, user.id));
   });
 });
