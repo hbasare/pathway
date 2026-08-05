@@ -54,6 +54,9 @@ The Pathways Team`;
         user,
         pass,
       },
+      connectionTimeout: 5000, // 5 seconds
+      greetingTimeout: 5000,   // 5 seconds
+      socketTimeout: 10000,    // 10 seconds
     });
 
     await transporter.sendMail({
