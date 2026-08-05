@@ -95,8 +95,10 @@ router.get("/auth/me", async (req, res) => {
     return;
   }
 
-  const org = user.orgId
-    ? (await db.select().from(organizationsTable).where(eq(organizationsTable.id, user.orgId)))[0]
+  const activeOrgId = user.role === "system_admin" ? (req.session.orgId ?? null) : user.orgId;
+
+  const org = activeOrgId
+    ? (await db.select().from(organizationsTable).where(eq(organizationsTable.id, activeOrgId)))[0]
     : null;
 
   let assignedTheoryIds: number[] = [];
@@ -112,7 +114,7 @@ router.get("/auth/me", async (req, res) => {
     username: user.username,
     displayName: user.displayName,
     role: user.role,
-    orgId: user.orgId,
+    orgId: activeOrgId,
     orgName: org?.name ?? "",
     email: user.email,
     mustChangePassword: user.mustChangePassword,
