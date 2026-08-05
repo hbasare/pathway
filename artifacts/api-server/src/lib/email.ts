@@ -45,7 +45,11 @@ The Pathways Team`;
   `;
 
   if (host && user && pass) {
-    if (host === "smtp-relay.brevo.com" && pass.startsWith("xsmtpsib-")) {
+    if (
+      host === "smtp-relay.brevo.com" ||
+      pass.startsWith("xsmtpsib-") ||
+      pass.startsWith("xkeysib-")
+    ) {
       // Send via Brevo transactional HTTP API to bypass Render outbound SMTP port blocking
       const response = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
