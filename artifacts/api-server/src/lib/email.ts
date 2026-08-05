@@ -45,7 +45,41 @@ The Pathways Team`;
   `;
 
   if (host && user && pass) {
-    // Real SMTP configuration (e.g. Brevo)
+    if (host === "smtp-relay.brevo.com" && pass.startsWith("xsmtpsib-")) {
+      // Send via Brevo transactional HTTP API to bypass Render outbound SMTP port blocking
+      const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "accept": "application/json",
+          "api-key": pass,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          sender: {
+            name: "Pathways Admin",
+            email: from,
+          },
+          to: [
+            {
+              email: email,
+            }
+          ],
+          subject: subject,
+          htmlContent: html,
+          textContent: text,
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Brevo HTTP API error: ${response.status} - ${errText}`);
+      }
+
+      console.log(`[EMAIL] Welcome email sent to ${email} via Brevo HTTP API.`);
+      return;
+    }
+
+    // Real SMTP configuration (e.g. non-Brevo SMTP providers)
     const transporter = nodemailer.createTransport({
       host,
       port,
