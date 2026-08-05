@@ -32,6 +32,7 @@ The platform organizes data into high-level groupings and details them down to i
 * **Validation**: Zod + `drizzle-zod`
 * **API Code Generation**: Orval (generates React Query hooks and client types from `openapi.yaml`)
 * **Build Engine**: `esbuild` (API server bundle), Vite (Frontend static compilation)
+* **Email Delivery**: Nodemailer + Brevo Transactional REST HTTP API (for local/production delivery)
 
 ---
 
@@ -89,6 +90,12 @@ Deploy the root repository as a **Node Web Service** in the **Frankfurt (EU)** r
   * `SESSION_SECRET`: A secure cryptographically random string.
   * `AI_INTEGRATIONS_OPENAI_BASE_URL`: `https://api.openai.com/v1`
   * `AI_INTEGRATIONS_OPENAI_API_KEY`: OpenAI API Key.
+  * `SMTP_HOST`: Brevo SMTP server address (`smtp-relay.brevo.com`).
+  * `SMTP_PORT`: SMTP port (`587` or `465`).
+  * `SMTP_USER`: SMTP account username.
+  * `SMTP_PASS`: Brevo API Key (starts with `xkeysib-`) or SMTP Master Password.
+  * `SMTP_FROM`: Authorized sending email address (verified domain/sender).
+  * `APP_URL`: The base frontend domain (used for generated login links).
 
 ### 3. Frontend App (Vercel)
 Deploy the root repository to **Vercel** with the root directory set to `artifacts/theory-of-change`:
