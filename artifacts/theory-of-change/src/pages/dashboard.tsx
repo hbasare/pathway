@@ -230,10 +230,6 @@ function MasterConsoleDashboard() {
 
 export default function Dashboard() {
   const { user } = useAuth();
-  if (user?.role === "system_admin" && !user.orgId) {
-    return <MasterConsoleDashboard />;
-  }
-
   const { data: theories, isLoading: theoriesLoading } = useListTheories();
   const { data: portfolios, isLoading: portfoliosLoading } = useListPortfolios();
   const queryClient = useQueryClient();
@@ -244,6 +240,10 @@ export default function Dashboard() {
   const [isCreateTheoryOpen, setIsCreateTheoryOpen] = useState(false);
   const [isCreatePortfolioOpen, setIsCreatePortfolioOpen] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
+
+  if (user?.role === "system_admin" && !user.orgId) {
+    return <MasterConsoleDashboard />;
+  }
 
   const deletePortfolioMutation = useDeletePortfolio({
     mutation: {
