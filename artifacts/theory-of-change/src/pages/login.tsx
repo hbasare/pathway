@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, LogIn, Eye, EyeOff } from "lucide-react";
+import { Loader2, LogIn, Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -22,6 +22,8 @@ export default function LoginPage() {
   // Recovery States
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isForgotUsernameOpen, setIsForgotUsernameOpen] = useState(false);
+  const [forgotPasswordSubmitted, setForgotPasswordSubmitted] = useState(false);
+  const [forgotUsernameSubmitted, setForgotUsernameSubmitted] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [recoveryLoading, setRecoveryLoading] = useState(false);
   const { toast } = useToast();
@@ -42,7 +44,7 @@ export default function LoginPage() {
       }
       const data = await res.json();
       toast({ title: "Success", description: data.message });
-      setIsForgotPasswordOpen(false);
+      setForgotPasswordSubmitted(true);
       setRecoveryEmail("");
     } catch (err) {
       toast({
@@ -71,7 +73,7 @@ export default function LoginPage() {
       }
       const data = await res.json();
       toast({ title: "Success", description: data.message });
-      setIsForgotUsernameOpen(false);
+      setForgotUsernameSubmitted(true);
       setRecoveryEmail("");
     } catch (err) {
       toast({
@@ -185,6 +187,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setRecoveryEmail("");
+                  setForgotUsernameSubmitted(false);
                   setIsForgotUsernameOpen(true);
                 }}
                 className="text-muted-foreground hover:text-primary hover:underline transition-colors"
@@ -196,6 +199,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => {
                   setRecoveryEmail("");
+                  setForgotPasswordSubmitted(false);
                   setIsForgotPasswordOpen(true);
                 }}
                 className="text-muted-foreground hover:text-primary hover:underline transition-colors"
@@ -221,84 +225,152 @@ export default function LoginPage() {
       </div>
 
       {/* Forgot Password Dialog */}
-      <Dialog open={isForgotPasswordOpen} onOpenChange={setIsForgotPasswordOpen}>
+      <Dialog 
+        open={isForgotPasswordOpen} 
+        onOpenChange={(open) => {
+          setIsForgotPasswordOpen(open);
+          if (!open) {
+            setForgotPasswordSubmitted(false);
+            setRecoveryEmail("");
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Forgot Password</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleForgotPassword} className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Enter your email address and we'll send you a link to reset your password.
-            </p>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground" htmlFor="recovery-email-pw">
-                Email Address
-              </label>
-              <Input
-                id="recovery-email-pw"
-                type="email"
-                value={recoveryEmail}
-                onChange={e => setRecoveryEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                disabled={recoveryLoading}
-              />
-            </div>
-            <div className="flex justify-end gap-3 mt-4">
+          {forgotPasswordSubmitted ? (
+            <div className="flex flex-col items-center text-center space-y-4 py-6">
+              <div className="w-12 h-12 rounded-full bg-green-500/10 text-green-600 flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-semibold text-lg text-foreground">Reset Link Sent</h3>
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                  If a matching account exists, a password reset link has been sent to your email address.
+                </p>
+              </div>
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsForgotPasswordOpen(false)}
-                disabled={recoveryLoading}
+                onClick={() => {
+                  setIsForgotPasswordOpen(false);
+                  setForgotPasswordSubmitted(false);
+                }}
+                className="w-full mt-2"
               >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={recoveryLoading || !recoveryEmail.trim()}>
-                {recoveryLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sending...</> : "Send Reset Link"}
+                Close
               </Button>
             </div>
-          </form>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Forgot Password</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Enter your email address and we'll send you a link to reset your password.
+                </p>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground" htmlFor="recovery-email-pw">
+                    Email Address
+                  </label>
+                  <Input
+                    id="recovery-email-pw"
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={e => setRecoveryEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    disabled={recoveryLoading}
+                  />
+                </div>
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsForgotPasswordOpen(false)}
+                    disabled={recoveryLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={recoveryLoading || !recoveryEmail.trim()}>
+                    {recoveryLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sending...</> : "Send Reset Link"}
+                  </Button>
+                </div>
+              </form>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Forgot Username Dialog */}
-      <Dialog open={isForgotUsernameOpen} onOpenChange={setIsForgotUsernameOpen}>
+      <Dialog 
+        open={isForgotUsernameOpen} 
+        onOpenChange={(open) => {
+          setIsForgotUsernameOpen(open);
+          if (!open) {
+            setForgotUsernameSubmitted(false);
+            setRecoveryEmail("");
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Forgot Username</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleForgotUsername} className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Enter your email address and we'll send you the usernames associated with your account.
-            </p>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground" htmlFor="recovery-email-un">
-                Email Address
-              </label>
-              <Input
-                id="recovery-email-un"
-                type="email"
-                value={recoveryEmail}
-                onChange={e => setRecoveryEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                disabled={recoveryLoading}
-              />
-            </div>
-            <div className="flex justify-end gap-3 mt-4">
+          {forgotUsernameSubmitted ? (
+            <div className="flex flex-col items-center text-center space-y-4 py-6">
+              <div className="w-12 h-12 rounded-full bg-green-500/10 text-green-600 flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-semibold text-lg text-foreground">Recovery Sent</h3>
+                <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                  If a matching account exists, your usernames have been sent to your email address.
+                </p>
+              </div>
               <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsForgotUsernameOpen(false)}
-                disabled={recoveryLoading}
+                onClick={() => {
+                  setIsForgotUsernameOpen(false);
+                  setForgotUsernameSubmitted(false);
+                }}
+                className="w-full mt-2"
               >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={recoveryLoading || !recoveryEmail.trim()}>
-                {recoveryLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sending...</> : "Recover Usernames"}
+                Close
               </Button>
             </div>
-          </form>
+          ) : (
+            <>
+              <DialogHeader>
+                <DialogTitle>Forgot Username</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleForgotUsername} className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Enter your email address and we'll send you the usernames associated with your account.
+                </p>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-foreground" htmlFor="recovery-email-un">
+                    Email Address
+                  </label>
+                  <Input
+                    id="recovery-email-un"
+                    type="email"
+                    value={recoveryEmail}
+                    onChange={e => setRecoveryEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    required
+                    disabled={recoveryLoading}
+                  />
+                </div>
+                <div className="flex justify-end gap-3 mt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsForgotUsernameOpen(false)}
+                    disabled={recoveryLoading}
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={recoveryLoading || !recoveryEmail.trim()}>
+                    {recoveryLoading ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Sending...</> : "Recover Usernames"}
+                  </Button>
+                </div>
+              </form>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>
