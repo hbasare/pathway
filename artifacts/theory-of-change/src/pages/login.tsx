@@ -7,6 +7,8 @@ import { Link } from "wouter";
 import { useTranslation } from "react-i18next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { PathwaysLogo } from "@/components/PathwaysLogo";
+import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -16,6 +18,71 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Recovery States
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [isForgotUsernameOpen, setIsForgotUsernameOpen] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail.trim()) return;
+    setRecoveryLoading(true);
+    try {
+      const res = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: recoveryEmail.trim() }),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to send reset link");
+      }
+      const data = await res.json();
+      toast({ title: "Success", description: data.message });
+      setIsForgotPasswordOpen(false);
+      setRecoveryEmail("");
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to process request",
+        variant: "destructive",
+      });
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
+
+  const handleForgotUsername = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!recoveryEmail.trim()) return;
+    setRecoveryLoading(true);
+    try {
+      const res = await fetch("/api/auth/forgot-username", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: recoveryEmail.trim() }),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.error || "Failed to send username recovery email");
+      }
+      const data = await res.json();
+      toast({ title: "Success", description: data.message });
+      setIsForgotUsernameOpen(false);
+      setRecoveryEmail("");
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: err instanceof Error ? err.message : "Failed to process request",
+        variant: "destructive",
+      });
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

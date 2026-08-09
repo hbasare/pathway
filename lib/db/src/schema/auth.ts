@@ -21,6 +21,8 @@ export const usersTable = pgTable("users", {
   role: text("role").notNull().default("member"), // "manager" | "member" | "senior_manager" | "auditor" | "donor"
   email: text("email"),
   mustChangePassword: boolean("must_change_password").default(false).notNull(),
+  resetToken: text("reset_token"),
+  resetTokenExpires: timestamp("reset_token_expires"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

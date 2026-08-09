@@ -6,6 +6,8 @@ import { eq } from "drizzle-orm";
 import { loginLimiter, registerLimiter, passwordResetLimiter } from "../middleware/rate-limit";
 import { validatePasswordStrength } from "../lib/password";
 import { requireSystemAdmin } from "../middleware/auth";
+import crypto from "crypto";
+import { sendPasswordResetEmail, sendUsernameRecoveryEmail } from "../lib/email";
 
 const router = Router();
 
@@ -389,6 +391,136 @@ router.post("/admin/switch-tenant", requireSystemAdmin, async (req, res) => {
   req.session.orgName = org.name;
 
   res.json({ orgId: org.id, orgName: org.name });
+});
+
+// ── Password Recovery: Forgot Password ────────────────────────────────────────
+router.post("/auth/forgot-password", passwordResetLimiter, async (req, res) => {
+  const { email } = req.body as { email?: string };
+
+  if (!email || !email.trim()) {
+    res.status(400).json({ error: "Email is required" });
+    return;
+  }
+
+  // To prevent user enumeration, we always return success
+  res.json({ message: "If a matching account exists, a password reset link has been sent." });
+
+  try {
+    const users = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email.trim()));
+
+    if (users.length === 0) {
+      return;
+    }
+
+    // Generate token
+    const token = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour from now
+
+    // Update all matching users with this email just in case
+    for (const u of users) {
+      await db
+        .update(usersTable)
+        .set({ resetToken: hashedToken, resetTokenExpires: expires })
+        .where(eq(usersTable.id, u.id));
+    }
+
+    // Send reset email
+    await sendPasswordResetEmail(email.trim(), token);
+  } catch (err) {
+    console.error("Forgot password request failed:", err);
+  }
+});
+
+// ── Password Recovery: Reset Password ─────────────────────────────────────────
+router.post("/auth/reset-password", passwordResetLimiter, async (req, res) => {
+  const { token, newPassword } = req.body as { token?: string; newPassword?: string };
+
+  if (!token || !token.trim()) {
+    res.status(400).json({ error: "Token is required" });
+    return;
+  }
+
+  if (!newPassword) {
+    res.status(400).json({ error: "Password is required" });
+    return;
+  }
+
+  const pwError = validatePasswordStrength(newPassword);
+  if (pwError) {
+    res.status(400).json({ error: pwError });
+    return;
+  }
+
+  try {
+    const hashedToken = crypto.createHash("sha256").update(token.trim()).digest("hex");
+
+    // Find user with this token
+    const users = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.resetToken, hashedToken));
+
+    if (users.length === 0) {
+      res.status(400).json({ error: "Invalid or expired reset token" });
+      return;
+    }
+
+    const user = users[0];
+    if (!user.resetTokenExpires || user.resetTokenExpires < new Date()) {
+      res.status(400).json({ error: "Invalid or expired reset token" });
+      return;
+    }
+
+    // Hash new password and clear token
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    await db
+      .update(usersTable)
+      .set({
+        passwordHash,
+        mustChangePassword: false,
+        resetToken: null,
+        resetTokenExpires: null,
+      })
+      .where(eq(usersTable.id, user.id));
+
+    res.json({ message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Reset password failed:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── Username Recovery: Forgot Username ────────────────────────────────────────
+router.post("/auth/forgot-username", passwordResetLimiter, async (req, res) => {
+  const { email } = req.body as { email?: string };
+
+  if (!email || !email.trim()) {
+    res.status(400).json({ error: "Email is required" });
+    return;
+  }
+
+  // To prevent user enumeration, we always return success
+  res.json({ message: "If a matching account exists, your username recovery email has been sent." });
+
+  try {
+    const users = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email.trim()));
+
+    if (users.length === 0) {
+      return;
+    }
+
+    const usernames = users.map(u => u.username);
+    await sendUsernameRecoveryEmail(email.trim(), usernames);
+  } catch (err) {
+    console.error("Forgot username request failed:", err);
+  }
 });
 
 export default router;

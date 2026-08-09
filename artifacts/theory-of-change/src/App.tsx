@@ -33,6 +33,7 @@ import SignupPage from "@/pages/signup";
 import SetupPage from "@/pages/setup";
 import NotFound from "@/pages/not-found";
 import VideoPage from "@/pages/video";
+import ResetPasswordPage from "@/pages/reset-password";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -47,6 +48,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/video" component={VideoPage} />
+      <Route path="/reset-password" component={ResetPasswordPage} />
       <Route path="/" component={Dashboard} />
       <Route path="/program-logframe" component={ProgramLogframe} />
       <Route path="/portfolio/:id/logframe" component={PortfolioLogframe} />
@@ -90,6 +92,7 @@ function AppShell() {
   if (!user) {
     if (location === "/signup") return <SignupPage />;
     if (location === "/video") return <VideoPage />;
+    if (location.startsWith("/reset-password")) return <ResetPasswordPage />;
     return <LoginPage />;
   }
 
