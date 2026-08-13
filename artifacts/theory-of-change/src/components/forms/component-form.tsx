@@ -720,112 +720,116 @@ export function ComponentForm({ theoryId, onSuccess, initialData, defaultType = 
           />
         )}
 
-        <Separator />
+        {selectedType !== "input" && (
+          <>
+            <Separator />
 
-        {/* Multi-indicator manager */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
+            {/* Multi-indicator manager */}
             <div>
-              <p className="text-sm font-semibold text-foreground">Indicators</p>
-              <p className="text-xs text-muted-foreground">Track target, actual and baseline data for each indicator</p>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="gap-1.5 text-xs"
-              onClick={addIndicator}
-            >
-              <Plus className="w-3.5 h-3.5" />
-              Add Indicator
-            </Button>
-          </div>
-
-          {indicators.length === 0 && (
-            <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-5 text-center text-xs text-muted-foreground">
-              No indicators yet. Click "Add Indicator" to track targets, actuals and baselines.
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {indicators.map((ind, idx) => (
-              <div key={ind.localKey} className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Indicator {idx + 1}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => removeIndicator(ind.localKey, ind.id)}
-                    className="text-muted-foreground hover:text-destructive transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
+              <div className="flex items-center justify-between mb-3">
                 <div>
-                  <label className="text-xs font-medium text-foreground mb-1 block">Indicator name / description</label>
-                  <Input
-                    value={ind.name}
-                    onChange={e => updateIndicatorField(ind.localKey, "name", e.target.value)}
-                    placeholder="e.g. Number of educators trained"
-                    className="text-sm"
-                  />
+                  <p className="text-sm font-semibold text-foreground">Indicators</p>
+                  <p className="text-xs text-muted-foreground">Track target, actual and baseline data for each indicator</p>
                 </div>
-
-                {/* TARGET group */}
-                <MeasurementGroup
-                  ind={ind}
-                  prefix="target"
-                  label="Target"
-                  color={{ border: "border-amber-200", header: "bg-amber-50", label: "text-amber-700" }}
-                  update={updateIndicatorField}
-                  scValues={ind.scYears?.map(y => y.target)}
-                  onClear={() => {
-                    const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
-                      "targetDate", "targetFigure", "targetExplanation", "targetSourceOfInformation",
-                      "targetDateLastReviewed", "targetNotes", "targetQualitativeQuestion", "targetQuantitativeQuestion",
-                    ];
-                    fields.forEach(f => updateIndicatorField(ind.localKey, f, ""));
-                  }}
-                />
-
-                {/* ACTUAL group */}
-                <MeasurementGroup
-                  ind={ind}
-                  prefix="actual"
-                  label="Actual"
-                  color={{ border: "border-emerald-200", header: "bg-emerald-50", label: "text-emerald-700" }}
-                  update={updateIndicatorField}
-                  scValues={ind.scYears?.map(y => y.actual)}
-                  onClear={() => {
-                    const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
-                      "actualDate", "actualFigure", "actualExplanation", "actualSourceOfInformation",
-                      "actualDateLastReviewed", "actualNotes", "actualQualitativeQuestion", "actualQuantitativeQuestion",
-                    ];
-                    fields.forEach(f => updateIndicatorField(ind.localKey, f, ""));
-                  }}
-                />
-
-                {/* BASELINE group */}
-                <MeasurementGroup
-                  ind={ind}
-                  prefix="baseline"
-                  label="Baseline"
-                  color={{ border: "border-blue-200", header: "bg-blue-50", label: "text-blue-700" }}
-                  update={updateIndicatorField}
-                  onClear={() => {
-                    const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
-                      "baselineDate", "baselineFigure", "baselineExplanation", "baselineSourceOfInformation",
-                      "baselineDateLastReviewed", "baselineNotes", "baselineQualitativeQuestion", "baselineQuantitativeQuestion",
-                    ];
-                    fields.forEach(f => updateIndicatorField(ind.localKey, f, ""));
-                  }}
-                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  onClick={addIndicator}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Add Indicator
+                </Button>
               </div>
-            ))}
-          </div>
-        </div>
+
+              {indicators.length === 0 && (
+                <div className="rounded-lg border border-dashed border-border bg-muted/20 px-4 py-5 text-center text-xs text-muted-foreground">
+                  No indicators yet. Click "Add Indicator" to track targets, actuals and baselines.
+                </div>
+              )}
+
+              <div className="space-y-4">
+                {indicators.map((ind, idx) => (
+                  <div key={ind.localKey} className="rounded-lg border border-border bg-muted/20 p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Indicator {idx + 1}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeIndicator(ind.localKey, ind.id)}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-foreground mb-1 block">Indicator name / description</label>
+                      <Input
+                        value={ind.name}
+                        onChange={e => updateIndicatorField(ind.localKey, "name", e.target.value)}
+                        placeholder="e.g. Number of educators trained"
+                        className="text-sm"
+                      />
+                    </div>
+
+                        {/* TARGET group */}
+                        <MeasurementGroup
+                          ind={ind}
+                          prefix="target"
+                          label="Target"
+                          color={{ border: "border-amber-200", header: "bg-amber-50", label: "text-amber-700" }}
+                          update={updateIndicatorField}
+                          scValues={ind.scYears?.map(y => y.target)}
+                          onClear={() => {
+                            const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
+                              "targetDate", "targetFigure", "targetExplanation", "targetSourceOfInformation",
+                              "targetDateLastReviewed", "targetNotes", "targetQualitativeQuestion", "targetQuantitativeQuestion",
+                            ];
+                            fields.forEach(f => updateIndicatorField(ind.localKey, f, ""));
+                          }}
+                        />
+
+                        {/* ACTUAL group */}
+                        <MeasurementGroup
+                          ind={ind}
+                          prefix="actual"
+                          label="Actual"
+                          color={{ border: "border-emerald-200", header: "bg-emerald-50", label: "text-emerald-700" }}
+                          update={updateIndicatorField}
+                          scValues={ind.scYears?.map(y => y.actual)}
+                          onClear={() => {
+                            const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
+                              "actualDate", "actualFigure", "actualExplanation", "actualSourceOfInformation",
+                              "actualDateLastReviewed", "actualNotes", "actualQualitativeQuestion", "actualQuantitativeQuestion",
+                            ];
+                            fields.forEach(f => updateIndicatorField(ind.localKey, f, ""));
+                          }}
+                        />
+
+                        {/* BASELINE group */}
+                        <MeasurementGroup
+                          ind={ind}
+                          prefix="baseline"
+                          label="Baseline"
+                          color={{ border: "border-blue-200", header: "bg-blue-50", label: "text-blue-700" }}
+                          update={updateIndicatorField}
+                          onClear={() => {
+                            const fields: Array<keyof Omit<IndicatorRow, "localKey" | "id">> = [
+                              "baselineDate", "baselineFigure", "baselineExplanation", "baselineSourceOfInformation",
+                              "baselineDateLastReviewed", "baselineNotes", "baselineQualitativeQuestion", "baselineQuantitativeQuestion",
+                            ];
+                            fields.forEach(f => updateIndicatorField(ind.localKey, f, ""));
+                          }}
+                        />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
 
         <Separator />
 

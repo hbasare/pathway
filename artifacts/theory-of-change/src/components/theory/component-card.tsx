@@ -315,7 +315,7 @@ export function ComponentCard({
 
 
           {/* Per-indicator rows */}
-          {indicators.length > 0 && (
+          {component.type !== "input" && indicators.length > 0 && (
             <div className="mt-3 pt-3 border-t border-border/60 space-y-2.5">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <BarChart3 className="w-3 h-3 text-muted-foreground" />
@@ -339,75 +339,77 @@ export function ComponentCard({
                     <p className="text-[11px] font-semibold text-foreground leading-snug mb-2 line-clamp-2">
                       {idx + 1}. {ind.name || <span className="italic text-muted-foreground">Unnamed indicator</span>}
                     </p>
-                    <div className="space-y-1.5">
-                      {/* Target */}
-                      <div className="rounded border px-2 py-1 bg-amber-50 border-amber-200">
-                        <div className="flex items-center gap-1 mb-1">
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-amber-400" />
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Target</span>
-                        </div>
-                        <div className="pl-3 space-y-0.5">
-                          <InlineFigure
-                            value={ind.targetFigure}
-                            placeholder="Click to set target…"
-                            scValue={scTargetSum}
-                            onSave={v => ind.id != null && saveIndicatorField(ind.id, "targetFigure", v)}
-                            valueCls="text-amber-900"
-                            accentCls="bg-amber-100 border-amber-300 text-amber-800"
-                          />
-                          {(latestScTargetDate ?? ind.targetDate) && (
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              {formatDate(latestScTargetDate ?? ind.targetDate)}
-                              {latestScTargetDate && (
-                                <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-muted border border-border/60 text-muted-foreground uppercase tracking-wide leading-none">SC</span>
-                              )}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Actual */}
-                      <div className="rounded border px-2 py-1 bg-emerald-50 border-emerald-200">
-                        <div className="flex items-center gap-1 mb-1">
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-400" />
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700">Actual</span>
-                        </div>
-                        <div className="pl-3 space-y-0.5">
-                          <InlineFigure
-                            value={ind.actualFigure}
-                            placeholder="Click to set actual…"
-                            scValue={scActualSum}
-                            onSave={v => ind.id != null && saveIndicatorField(ind.id, "actualFigure", v)}
-                            valueCls="text-emerald-900"
-                            accentCls="bg-emerald-100 border-emerald-300 text-emerald-800"
-                          />
-                          {(latestScActualDate ?? ind.actualDate) && (
-                            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                              {formatDate(latestScActualDate ?? ind.actualDate)}
-                              {latestScActualDate && (
-                                <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-muted border border-border/60 text-muted-foreground uppercase tracking-wide leading-none">SC</span>
-                              )}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Baseline — read-only (set via Edit Component) */}
-                      <div className="rounded border px-2 py-1 bg-blue-50 border-blue-200">
-                        <div className="flex items-center gap-1 mb-0.5">
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-blue-400" />
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-blue-700">Baseline</span>
-                        </div>
-                        {(ind.baselineFigure || ind.baselineDate) ? (
-                          <div className="pl-3 space-y-0.5">
-                            {ind.baselineFigure && <p className="text-[10px] text-blue-900 font-semibold">{ind.baselineFigure}</p>}
-                            {ind.baselineDate && <p className="text-[10px] text-muted-foreground">{formatDate(ind.baselineDate)}</p>}
+                    {component.type !== "input" && (
+                      <div className="space-y-1.5">
+                        {/* Target */}
+                        <div className="rounded border px-2 py-1 bg-amber-50 border-amber-200">
+                          <div className="flex items-center gap-1 mb-1">
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-amber-400" />
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Target</span>
                           </div>
-                        ) : (
-                          <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
-                        )}
+                          <div className="pl-3 space-y-0.5">
+                            <InlineFigure
+                              value={ind.targetFigure}
+                              placeholder="Click to set target…"
+                              scValue={scTargetSum}
+                              onSave={v => ind.id != null && saveIndicatorField(ind.id, "targetFigure", v)}
+                              valueCls="text-amber-900"
+                              accentCls="bg-amber-100 border-amber-300 text-amber-800"
+                            />
+                            {(latestScTargetDate ?? ind.targetDate) && (
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                {formatDate(latestScTargetDate ?? ind.targetDate)}
+                                {latestScTargetDate && (
+                                  <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-muted border border-border/60 text-muted-foreground uppercase tracking-wide leading-none">SC</span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Actual */}
+                        <div className="rounded border px-2 py-1 bg-emerald-50 border-emerald-200">
+                          <div className="flex items-center gap-1 mb-1">
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-emerald-400" />
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-emerald-700">Actual</span>
+                          </div>
+                          <div className="pl-3 space-y-0.5">
+                            <InlineFigure
+                              value={ind.actualFigure}
+                              placeholder="Click to set actual…"
+                              scValue={scActualSum}
+                              onSave={v => ind.id != null && saveIndicatorField(ind.id, "actualFigure", v)}
+                              valueCls="text-emerald-900"
+                              accentCls="bg-emerald-100 border-emerald-300 text-emerald-800"
+                            />
+                            {(latestScActualDate ?? ind.actualDate) && (
+                              <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                {formatDate(latestScActualDate ?? ind.actualDate)}
+                                {latestScActualDate && (
+                                  <span className="inline-flex items-center px-1 py-px rounded text-[8px] font-semibold bg-muted border border-border/60 text-muted-foreground uppercase tracking-wide leading-none">SC</span>
+                                )}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Baseline — read-only (set via Edit Component) */}
+                        <div className="rounded border px-2 py-1 bg-blue-50 border-blue-200">
+                          <div className="flex items-center gap-1 mb-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-blue-400" />
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-blue-700">Baseline</span>
+                          </div>
+                          {(ind.baselineFigure || ind.baselineDate) ? (
+                            <div className="pl-3 space-y-0.5">
+                              {ind.baselineFigure && <p className="text-[10px] text-blue-900 font-semibold">{ind.baselineFigure}</p>}
+                              {ind.baselineDate && <p className="text-[10px] text-muted-foreground">{formatDate(ind.baselineDate)}</p>}
+                            </div>
+                          ) : (
+                            <p className="text-[10px] text-muted-foreground/50 italic pl-3">Not set</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 );
               })}
