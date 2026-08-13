@@ -5,7 +5,7 @@ import { usersTable, organizationsTable, theoryAssignmentsTable } from "@workspa
 import { eq } from "drizzle-orm";
 import { loginLimiter, registerLimiter, passwordResetLimiter } from "../middleware/rate-limit";
 import { validatePasswordStrength } from "../lib/password";
-import { requireSystemAdmin } from "../middleware/auth";
+import { requireSystemAdmin, requireManager } from "../middleware/auth";
 import crypto from "crypto";
 import { sendPasswordResetEmail, sendUsernameRecoveryEmail } from "../lib/email";
 
@@ -118,6 +118,7 @@ router.get("/auth/me", async (req, res) => {
     role: user.role,
     orgId: activeOrgId,
     orgName: org?.name ?? "",
+    orgLogoData: org?.logoData ?? null,
     email: user.email,
     mustChangePassword: user.mustChangePassword,
     assignedTheoryIds,
@@ -520,6 +521,32 @@ router.post("/auth/forgot-username", passwordResetLimiter, async (req, res) => {
     await sendUsernameRecoveryEmail(email.trim(), usernames);
   } catch (err) {
     console.error("Forgot username request failed:", err);
+  }
+});
+
+// ── Patch Organization Logo (Manager only) ───────────────────────────────────
+router.patch("/organizations/logo", requireManager, async (req, res) => {
+  const orgId = req.session.orgId;
+  if (!orgId) {
+    res.status(400).json({ error: "No organization associated with this session" });
+    return;
+  }
+  const { logoData } = req.body as { logoData?: string | null };
+  if (logoData !== null && typeof logoData !== "string") {
+    res.status(400).json({ error: "Invalid logoData" });
+    return;
+  }
+
+  try {
+    await db
+      .update(organizationsTable)
+      .set({ logoData })
+      .where(eq(organizationsTable.id, orgId));
+
+    res.json({ success: true, logoData });
+  } catch (error: any) {
+    console.error("Failed to update organization logo:", error);
+    res.status(500).json({ error: "Failed to update organization logo" });
   }
 });
 

@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Loader2, KeyRound, Eye, EyeOff, Check, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PathwaysLogo } from "@/components/PathwaysLogo";
-import { validatePasswordStrength } from "@/lib/password";
 
 export default function ResetPasswordPage() {
   const [, setLocation] = useLocation();

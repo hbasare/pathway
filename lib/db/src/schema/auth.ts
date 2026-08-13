@@ -5,6 +5,7 @@ import { z } from "zod/v4";
 export const organizationsTable = pgTable("organizations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
+  logoData: text("logo_data"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

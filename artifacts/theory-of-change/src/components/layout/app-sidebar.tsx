@@ -159,7 +159,15 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="p-4 border-b">
         <div className="flex items-center gap-3">
-          <PathwaysLogo className="w-8 h-8 rounded-lg shadow-sm" />
+          {user?.orgLogoData ? (
+            <img
+              src={user.orgLogoData}
+              alt={`${user.orgName} logo`}
+              className="w-8 h-8 object-contain rounded-lg shadow-sm"
+            />
+          ) : (
+            <PathwaysLogo className="w-8 h-8 rounded-lg shadow-sm" />
+          )}
           <div>
             <h2 className="font-display font-bold text-lg leading-tight tracking-tight">{t("app.name")}</h2>
             <p className="text-xs text-muted-foreground font-medium">{t("app.taglineShort")}</p>

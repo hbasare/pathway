@@ -7,6 +7,7 @@ export interface AuthUser {
   role: "system_admin" | "manager" | "member" | "senior_manager" | "auditor" | "donor";
   orgId: number | null;
   orgName: string;
+  orgLogoData?: string | null;
   assignedTheoryIds: number[];
   mustChangePassword?: boolean;
   email?: string | null;

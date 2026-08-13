@@ -47,7 +47,7 @@ function RoleBadge({ role }: { role: string }) {
 }
 
 export default function UserManagementPage() {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, refetch } = useAuth();
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { t } = useTranslation();
@@ -523,6 +523,107 @@ export default function UserManagementPage() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Organization Settings */}
+        <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+          <h3 className="text-sm font-semibold text-foreground">Organization Settings</h3>
+          <p className="text-xs text-muted-foreground">
+            Upload your organization's custom logo to be displayed in the application sidebar header.
+          </p>
+          <div className="flex items-center gap-5">
+            <div className="flex items-center justify-center border border-dashed border-border rounded-xl w-24 h-24 bg-muted/20 overflow-hidden shrink-0">
+              {currentUser?.orgLogoData ? (
+                <img
+                  src={currentUser.orgLogoData}
+                  alt="Org logo preview"
+                  className="w-full h-full object-contain p-2"
+                />
+              ) : (
+                <span className="text-2xl font-bold text-muted-foreground/40">
+                  {currentUser?.orgName?.charAt(0)?.toUpperCase() || "O"}
+                </span>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/svg+xml"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+
+                    if (file.size > 2 * 1024 * 1024) {
+                      toast({
+                        title: "Image size must be less than 2MB",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onloadend = async () => {
+                      const base64Data = reader.result as string;
+                      try {
+                        const patchRes = await fetch("/api/organizations/logo", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ logoData: base64Data }),
+                        });
+                        if (!patchRes.ok) throw new Error("Failed to save logo");
+
+                        toast({ title: "Organization logo updated successfully!" });
+                        refetch();
+                      } catch (err: any) {
+                        toast({
+                          title: err.message || "Failed to update logo",
+                          variant: "destructive",
+                        });
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                  id="logo-upload"
+                  className="hidden"
+                />
+                <Button asChild variant="outline" size="sm">
+                  <label htmlFor="logo-upload" className="cursor-pointer">
+                    Upload Logo
+                  </label>
+                </Button>
+                {currentUser?.orgLogoData && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10"
+                    onClick={async () => {
+                      try {
+                        const patchRes = await fetch("/api/organizations/logo", {
+                          method: "PATCH",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ logoData: null }),
+                        });
+                        if (!patchRes.ok) throw new Error("Failed to delete logo");
+                        toast({ title: "Organization logo removed." });
+                        refetch();
+                      } catch (err: any) {
+                        toast({
+                          title: err.message || "Failed to remove logo",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
+                    Remove Logo
+                  </Button>
+                )}
+              </div>
+              <p className="text-[10px] text-muted-foreground">
+                Supported formats: PNG, JPEG, SVG. Max size: 2MB.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Role reference */}
