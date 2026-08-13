@@ -683,7 +683,15 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
         regions = mergeUnique(lists);
       }
 
-      setAllRegions(regions.sort((a, b) => regionDisplayName(a).localeCompare(regionDisplayName(b))));
+      const seenNames = new Set<string>();
+      const deDuplicatedRegions = regions.filter(r => {
+        const name = regionDisplayName(r).toLowerCase().trim();
+        if (seenNames.has(name)) return false;
+        seenNames.add(name);
+        return true;
+      });
+
+      setAllRegions(deDuplicatedRegions.sort((a, b) => regionDisplayName(a).localeCompare(regionDisplayName(b))));
       setRegionsLoading(false);
     })().catch(() => setRegionsLoading(false));
   }, [country, acceptLang]);
@@ -718,7 +726,19 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
         }
       }
 
-      setAllDistricts(mergeUnique(allDists).sort((a, b) => districtDisplayName(a).localeCompare(districtDisplayName(b))));
+      const seenDistIds = new Set<number>();
+      const seenDistNames = new Set<string>();
+      const deDuplicatedDists = allDists.filter(d => {
+        if (seenDistIds.has(d.place_id)) return false;
+        seenDistIds.add(d.place_id);
+
+        const name = districtDisplayName(d).toLowerCase().trim();
+        if (seenDistNames.has(name)) return false;
+        seenDistNames.add(name);
+        return true;
+      });
+
+      setAllDistricts(deDuplicatedDists.sort((a, b) => districtDisplayName(a).localeCompare(districtDisplayName(b))));
       setDistrictsLoading(false);
     })().catch(() => setDistrictsLoading(false));
   }, [selRegions, country, acceptLang]);
