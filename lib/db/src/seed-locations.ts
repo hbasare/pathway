@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
 import { Country, State, City } from "country-state-city";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "./index.js";
 import { seededRegionsTable, seededDistrictsTable } from "./schema/locations.js";
 
@@ -91,6 +91,11 @@ export async function seedLocations() {
       for (let i = 0; i < districtsBatch.length; i += 2000) {
         await db.insert(seededDistrictsTable).values(districtsBatch.slice(i, i + 2000));
       }
+      
+      console.log("Resetting primary key sequences...");
+      await db.execute(sql`SELECT setval('seeded_regions_id_seq', (SELECT COALESCE(MAX(id), 1) FROM seeded_regions))`);
+      await db.execute(sql`SELECT setval('seeded_districts_id_seq', (SELECT COALESCE(MAX(id), 1) FROM seeded_districts))`);
+      
       console.log("Global location seeding complete.");
     }
 

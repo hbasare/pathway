@@ -108,7 +108,18 @@ router.get("/locations/regions", async (req, res) => {
       .from(seededRegionsTable)
       .where(eq(seededRegionsTable.countryCode, countryCode))
       .orderBy(seededRegionsTable.name);
-    res.json(rows);
+    
+    const mapped = rows.map(r => ({
+      place_id: r.placeId,
+      display_name: r.name,
+      lat: r.lat,
+      lon: r.lon,
+      type: "administrative",
+      class: "boundary",
+      address: { state: r.name, region: r.name },
+      geojson: r.geojson ?? undefined,
+    }));
+    res.json(mapped);
   } catch (err) {
     console.error("Error fetching regions from DB:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -127,7 +138,18 @@ router.get("/locations/districts", async (req, res) => {
       .from(seededDistrictsTable)
       .where(eq(seededDistrictsTable.regionId, regionId))
       .orderBy(seededDistrictsTable.name);
-    res.json(rows);
+    
+    const mapped = rows.map(d => ({
+      place_id: d.placeId,
+      display_name: d.name,
+      lat: d.lat,
+      lon: d.lon,
+      type: "administrative",
+      class: "boundary",
+      address: { county: d.name },
+      geojson: d.geojson ?? undefined,
+    }));
+    res.json(mapped);
   } catch (err) {
     console.error("Error fetching districts from DB:", err);
     res.status(500).json({ error: "Internal server error" });
