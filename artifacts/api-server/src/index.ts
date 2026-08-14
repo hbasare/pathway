@@ -1,4 +1,9 @@
 import app from "./app";
+import { seedLocations } from "@workspace/db";
+
+seedLocations().catch(err => {
+  console.error("Failed to run location seeding on startup:", err);
+});
 
 const rawPort = process.env["PORT"];
 

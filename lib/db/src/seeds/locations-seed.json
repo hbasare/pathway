@@ -1,0 +1,40 @@
+[
+  {
+    "countryCode": "KE",
+    "regions": [
+      {
+        "name": "Baringo",
+        "placeId": 3495537,
+        "lat": "0.4851",
+        "lon": "35.9333",
+        "districts": [
+          { "name": "Baringo Central", "placeId": 99901, "lat": "0.4851", "lon": "35.9333" },
+          { "name": "Baringo North", "placeId": 99902, "lat": "0.6223", "lon": "35.8112" },
+          { "name": "Koibatek", "placeId": 99903, "lat": "-0.0123", "lon": "35.7333" }
+        ]
+      },
+      {
+        "name": "Mombasa",
+        "placeId": 3486319,
+        "lat": "-4.0544",
+        "lon": "39.6725",
+        "districts": [
+          { "name": "Changamwe", "placeId": 99904, "lat": "-4.0223", "lon": "39.6333" },
+          { "name": "Kisauni", "placeId": 99905, "lat": "-4.0012", "lon": "39.7112" },
+          { "name": "Mvita", "placeId": 99906, "lat": "-4.0544", "lon": "39.6725" }
+        ]
+      },
+      {
+        "name": "Nairobi",
+        "placeId": 3486320,
+        "lat": "-1.2921",
+        "lon": "36.8219",
+        "districts": [
+          { "name": "Kibra", "placeId": 99907, "lat": "-1.3123", "lon": "36.7812" },
+          { "name": "Westlands", "placeId": 99908, "lat": "-1.2623", "lon": "36.8012" },
+          { "name": "Dagoretti", "placeId": 99909, "lat": "-1.3023", "lon": "36.7412" }
+        ]
+      }
+    ]
+  }
+]

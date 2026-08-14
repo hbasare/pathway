@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { theoriesTable, theoryLocationsTable, insertTheoryLocationSchema } from "@workspace/db";
+import { theoriesTable, theoryLocationsTable, insertTheoryLocationSchema, seededRegionsTable, seededDistrictsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import { logChange } from "../lib/changelog";
 
@@ -94,6 +94,44 @@ router.delete("/theories/:theoryId/locations/:id", async (req, res) => {
     await logChange(req, { theoryId, orgId: theory.orgId, action: "delete", entityType: "location", entityLabel: row.displayName ?? "", summary: `Deleted location "${row.displayName ?? ""}"` });
   }
   res.status(204).send();
+});
+
+router.get("/locations/regions", async (req, res) => {
+  const countryCode = (req.query.countryCode as string || "").toUpperCase();
+  if (!countryCode) {
+    res.status(400).json({ error: "countryCode query parameter is required" });
+    return;
+  }
+  try {
+    const rows = await db
+      .select()
+      .from(seededRegionsTable)
+      .where(eq(seededRegionsTable.countryCode, countryCode))
+      .orderBy(seededRegionsTable.name);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching regions from DB:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/locations/districts", async (req, res) => {
+  const regionId = Number(req.query.regionId);
+  if (isNaN(regionId)) {
+    res.status(400).json({ error: "regionId query parameter must be a number" });
+    return;
+  }
+  try {
+    const rows = await db
+      .select()
+      .from(seededDistrictsTable)
+      .where(eq(seededDistrictsTable.regionId, regionId))
+      .orderBy(seededDistrictsTable.name);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching districts from DB:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

@@ -688,7 +688,22 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
     setRegionsLoading(true);
 
     (async () => {
-      // Primary: Overpass API — queries by admin_level, works regardless of
+      // First attempt: fetch preseeded subdivisions from our database API
+      try {
+        const res = await fetch(`/api/locations/regions?countryCode=${country.code}`);
+        if (res.ok) {
+          const data = await res.json() as NominatimResult[];
+          if (data && data.length > 0) {
+            setAllRegions(data);
+            setRegionsLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Local regions lookup failed, falling back to OSM...", err);
+      }
+
+      // Fallback: Primary: Overpass API — queries by admin_level, works regardless of
       // whether subdivisions are called state/county/province/department/etc.
       let regions = await fetchRegionsOverpass(country.code, acceptLang);
 
@@ -730,6 +745,32 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
     setDistrictsLoading(true);
 
     (async () => {
+      // First attempt: fetch preseeded districts from our database API
+      try {
+        const preseededDists: NominatimResult[] = [];
+        for (const reg of selRegions) {
+          const regId = (reg as any).id;
+          if (regId !== undefined) {
+            const res = await fetch(`/api/locations/districts?regionId=${regId}`);
+            if (res.ok) {
+              const data = await res.json() as NominatimResult[];
+              if (data && data.length > 0) {
+                preseededDists.push(...data);
+              }
+            }
+          }
+        }
+
+        if (preseededDists.length > 0) {
+          setAllDistricts(preseededDists);
+          setDistrictsLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Local districts lookup failed, falling back to OSM...", err);
+      }
+
+      // Fallback: Query live OSM Overpass/Nominatim APIs
       const allDists: NominatimResult[] = [];
 
       for (const reg of selRegions) {

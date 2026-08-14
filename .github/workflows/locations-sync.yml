@@ -1,0 +1,45 @@
+name: Scheduled Locations Synchronization
+
+on:
+  schedule:
+    - cron: '0 0 1 * *' # Run on the first day of every month at midnight
+  workflow_dispatch: # Enable manual triggers from GitHub Actions tab
+
+permissions:
+  contents: write # Required for committing changes back to the repository
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install Dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Execute Locations Sync Script
+        run: npx tsx scripts/sync-locations.ts
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/db/src/seeds/locations-seed.json
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(locations): auto-update static subdivision seeds"
+            git push origin HEAD
+          else
+            echo "No subdivisions update found."
+          fi
