@@ -110,6 +110,7 @@ router.get("/locations/regions", async (req, res) => {
       .orderBy(seededRegionsTable.name);
     
     const mapped = rows.map(r => ({
+      id: r.id,
       place_id: r.placeId,
       display_name: r.name,
       lat: r.lat,
@@ -140,6 +141,7 @@ router.get("/locations/districts", async (req, res) => {
       .orderBy(seededDistrictsTable.name);
     
     const mapped = rows.map(d => ({
+      id: d.id,
       place_id: d.placeId,
       display_name: d.name,
       lat: d.lat,
