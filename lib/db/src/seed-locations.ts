@@ -32,6 +32,15 @@ interface SeedCountry {
   regions: SeedRegion[];
 }
 
+// Clean names for matching (remove region, county, state, province, etc. and trim/lowercase)
+function cleanName(n: string): string {
+  return n
+    .toLowerCase()
+    .replace(/\b(region|county|state|province|governorate|wilaya|oblast|district|municipal|lga)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export async function seedLocations() {
   try {
     // 1. Initial global seed using country-state-city library
@@ -107,19 +116,24 @@ export async function seedLocations() {
 
       for (const country of seedData) {
         console.log(`Enriching subdivisions with OSM IDs for country: ${country.countryCode}...`);
+        
+        // Fetch all current regions in the database for this country
+        const dbRegions = await db
+          .select()
+          .from(seededRegionsTable)
+          .where(eq(seededRegionsTable.countryCode, country.countryCode));
+
         for (const region of country.regions) {
-          const [existingRegion] = await db
-            .select()
-            .from(seededRegionsTable)
-            .where(and(eq(seededRegionsTable.countryCode, country.countryCode), eq(seededRegionsTable.name, region.name)))
-            .limit(1);
+          const cleanInputRegion = cleanName(region.name);
+          const existingRegion = dbRegions.find(r => cleanName(r.name) === cleanInputRegion);
 
           let regionId = existingRegion?.id;
           if (existingRegion) {
-            // Update OSM details
+            // Update OSM details and promote to OSM region name (high-fidelity name)
             await db
               .update(seededRegionsTable)
               .set({
+                name: region.name, // Promote to OSM name (e.g. "Upper West Region")
                 placeId: region.placeId,
                 lat: region.lat,
                 lon: region.lon,
@@ -127,7 +141,7 @@ export async function seedLocations() {
               })
               .where(eq(seededRegionsTable.id, existingRegion.id));
           } else {
-            // Insert new region if not found
+            // Insert new region if not found at all
             const [newRegion] = await db
               .insert(seededRegionsTable)
               .values({
@@ -143,17 +157,21 @@ export async function seedLocations() {
           }
 
           if (region.districts && region.districts.length > 0) {
+            // Fetch all current districts for this region
+            const dbDistricts = await db
+              .select()
+              .from(seededDistrictsTable)
+              .where(eq(seededDistrictsTable.regionId, regionId));
+
             for (const d of region.districts) {
-              const [existingDistrict] = await db
-                .select()
-                .from(seededDistrictsTable)
-                .where(and(eq(seededDistrictsTable.regionId, regionId), eq(seededDistrictsTable.name, d.name)))
-                .limit(1);
+              const cleanInputDistrict = cleanName(d.name);
+              const existingDistrict = dbDistricts.find(x => cleanName(x.name) === cleanInputDistrict);
 
               if (existingDistrict) {
                 await db
                   .update(seededDistrictsTable)
                   .set({
+                    name: d.name, // Promote to OSM name (e.g. "Jirapa Municipal District")
                     placeId: d.placeId,
                     lat: d.lat,
                     lon: d.lon,
