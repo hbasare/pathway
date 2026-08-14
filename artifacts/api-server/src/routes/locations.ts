@@ -96,6 +96,59 @@ router.delete("/theories/:theoryId/locations/:id", async (req, res) => {
   res.status(204).send();
 });
 
+async function fetchOsmRelationId(regionName: string, countryCode: string): Promise<number | null> {
+  try {
+    const cleanNameStr = regionName.replace(/\b(region|county|state|province|governorate|wilaya|oblast|district)\b/gi, "").trim();
+    const q = `${cleanNameStr}, ${countryCode}`;
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&featuretype=administrative`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "PathwaysTheoryOfChange/1.0" }
+    });
+    if (!res.ok) return null;
+    const data = await res.json() as any[];
+    if (data.length > 0 && data[0].osm_type === "relation") {
+      return Number(data[0].osm_id);
+    }
+    return null;
+  } catch (err) {
+    console.error(`Failed to fetch OSM relation ID for ${regionName}:`, err);
+    return null;
+  }
+}
+
+async function fetchOsmDistricts(regionOsmId: number): Promise<Array<{ name: string; placeId: number; lat: string; lon: string }> | null> {
+  const areaId = 3600000000 + regionOsmId;
+  const url = "https://overpass-api.de/api/interpreter";
+  
+  for (const level of ["5", "6"]) {
+    const q = `[out:json][timeout:30];area(id:${areaId})->.r;relation(area.r)["boundary"="administrative"]["admin_level"="${level}"];out tags center;`;
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": "PathwaysTheoryOfChange/1.0"
+        },
+        body: `data=${encodeURIComponent(q)}`,
+      });
+      if (!res.ok) continue;
+      const data = await res.json() as any;
+      const elements = data.elements ?? [];
+      if (elements.length >= 2) {
+        return elements.map((el: any) => ({
+          name: el.tags?.["name:en"] || el.tags?.name || "",
+          placeId: el.id,
+          lat: el.center ? String(el.center.lat) : "0",
+          lon: el.center ? String(el.center.lon) : "0",
+        })).filter((x: any) => x.name !== "");
+      }
+    } catch (err) {
+      console.error(`Failed to fetch OSM districts for relation ${regionOsmId} at level ${level}:`, err);
+    }
+  }
+  return null;
+}
+
 router.get("/locations/regions", async (req, res) => {
   const countryCode = (req.query.countryCode as string || "").toUpperCase();
   if (!countryCode) {
@@ -134,13 +187,67 @@ router.get("/locations/districts", async (req, res) => {
     return;
   }
   try {
-    const rows = await db
+    const [region] = await db
+      .select()
+      .from(seededRegionsTable)
+      .where(eq(seededRegionsTable.id, regionId))
+      .limit(1);
+
+    if (!region) {
+      res.status(404).json({ error: "Region not found" });
+      return;
+    }
+
+    let districts = await db
       .select()
       .from(seededDistrictsTable)
       .where(eq(seededDistrictsTable.regionId, regionId))
       .orderBy(seededDistrictsTable.name);
-    
-    const mapped = rows.map(d => ({
+
+    // If districts are empty or are placeholder library records (placeId >= 50000000), query OSM to self-heal/sync
+    const isPlaceholder = districts.length === 0 || districts.some(d => d.placeId >= 50000000);
+
+    if (isPlaceholder) {
+      console.log(`Region "${region.name}" has placeholder or empty districts. Attempting lazy OSM sync...`);
+      let osmRelationId: number | null = null;
+
+      if (region.placeId <= 20000000) {
+        osmRelationId = await fetchOsmRelationId(region.name, region.countryCode);
+        if (osmRelationId) {
+          await db
+            .update(seededRegionsTable)
+            .set({ placeId: osmRelationId })
+            .where(eq(seededRegionsTable.id, regionId));
+        }
+      } else {
+        osmRelationId = region.placeId;
+      }
+
+      if (osmRelationId) {
+        const osmDistricts = await fetchOsmDistricts(osmRelationId);
+        if (osmDistricts && osmDistricts.length > 0) {
+          await db.delete(seededDistrictsTable).where(eq(seededDistrictsTable.regionId, regionId));
+          const insertBatch = osmDistricts.map(d => ({
+            regionId,
+            name: d.name,
+            placeId: d.placeId,
+            lat: d.lat,
+            lon: d.lon,
+            geojson: null,
+          }));
+          await db.insert(seededDistrictsTable).values(insertBatch);
+          
+          districts = await db
+            .select()
+            .from(seededDistrictsTable)
+            .where(eq(seededDistrictsTable.regionId, regionId))
+            .orderBy(seededDistrictsTable.name);
+          console.log(`Successfully completed lazy OSM sync for "${region.name}". Cached ${districts.length} districts.`);
+        }
+      }
+    }
+
+    const mapped = districts.map(d => ({
       id: d.id,
       place_id: d.placeId,
       display_name: d.name,

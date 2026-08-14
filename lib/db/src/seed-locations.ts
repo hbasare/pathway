@@ -127,7 +127,7 @@ export async function seedLocations() {
           const cleanInputRegion = cleanName(region.name);
           const existingRegion = dbRegions.find(r => cleanName(r.name) === cleanInputRegion);
 
-          let regionId = existingRegion?.id;
+          let regionId: number;
           if (existingRegion) {
             // Update OSM details and promote to OSM region name (high-fidelity name)
             await db
@@ -140,6 +140,7 @@ export async function seedLocations() {
                 geojson: region.geojson ?? null,
               })
               .where(eq(seededRegionsTable.id, existingRegion.id));
+            regionId = existingRegion.id;
           } else {
             // Insert new region if not found at all
             const [newRegion] = await db
@@ -155,6 +156,8 @@ export async function seedLocations() {
               .returning();
             regionId = newRegion.id;
           }
+
+          if (!regionId) continue;
 
           if (region.districts && region.districts.length > 0) {
             // Fetch all current districts for this region
