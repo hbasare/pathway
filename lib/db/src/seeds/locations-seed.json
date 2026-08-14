@@ -1,0 +1,2003 @@
+[
+  {
+    "countryCode": "KE",
+    "regions": [
+      {
+        "name": "Baringo",
+        "placeId": 3495537,
+        "lat": "0.4851",
+        "lon": "35.9333",
+        "districts": [
+          {
+            "name": "Baringo Central",
+            "placeId": 99901,
+            "lat": "0.4851",
+            "lon": "35.9333"
+          },
+          {
+            "name": "Baringo North",
+            "placeId": 99902,
+            "lat": "0.6223",
+            "lon": "35.8112"
+          },
+          {
+            "name": "Koibatek",
+            "placeId": 99903,
+            "lat": "-0.0123",
+            "lon": "35.7333"
+          }
+        ]
+      },
+      {
+        "name": "Mombasa",
+        "placeId": 3486319,
+        "lat": "-4.0544",
+        "lon": "39.6725",
+        "districts": [
+          {
+            "name": "Changamwe",
+            "placeId": 99904,
+            "lat": "-4.0223",
+            "lon": "39.6333"
+          },
+          {
+            "name": "Kisauni",
+            "placeId": 99905,
+            "lat": "-4.0012",
+            "lon": "39.7112"
+          },
+          {
+            "name": "Mvita",
+            "placeId": 99906,
+            "lat": "-4.0544",
+            "lon": "39.6725"
+          }
+        ]
+      },
+      {
+        "name": "Nairobi",
+        "placeId": 3486320,
+        "lat": "-1.2921",
+        "lon": "36.8219",
+        "districts": [
+          {
+            "name": "Kibra",
+            "placeId": 99907,
+            "lat": "-1.3123",
+            "lon": "36.7812"
+          },
+          {
+            "name": "Westlands",
+            "placeId": 99908,
+            "lat": "-1.2623",
+            "lon": "36.8012"
+          },
+          {
+            "name": "Dagoretti",
+            "placeId": 99909,
+            "lat": "-1.3023",
+            "lon": "36.7412"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "countryCode": "EG",
+    "regions": [
+      {
+        "name": "Alexandria",
+        "placeId": 2529711,
+        "lat": "31.2001",
+        "lon": "29.9187",
+        "districts": []
+      },
+      {
+        "name": "Aswan",
+        "placeId": 2529712,
+        "lat": "24.0889",
+        "lon": "32.8998",
+        "districts": []
+      },
+      {
+        "name": "Asyut",
+        "placeId": 2529713,
+        "lat": "27.1783",
+        "lon": "31.1859",
+        "districts": []
+      },
+      {
+        "name": "Beheira",
+        "placeId": 2529714,
+        "lat": "30.8481",
+        "lon": "30.3436",
+        "districts": []
+      },
+      {
+        "name": "Beni Suef",
+        "placeId": 2529715,
+        "lat": "29.0744",
+        "lon": "31.0978",
+        "districts": []
+      },
+      {
+        "name": "Cairo",
+        "placeId": 2529716,
+        "lat": "30.0444",
+        "lon": "31.2357",
+        "districts": []
+      },
+      {
+        "name": "Dakahlia",
+        "placeId": 2529717,
+        "lat": "31.0379",
+        "lon": "31.3785",
+        "districts": []
+      },
+      {
+        "name": "Damietta",
+        "placeId": 2529719,
+        "lat": "31.4175",
+        "lon": "31.8144",
+        "districts": []
+      },
+      {
+        "name": "Faiyum",
+        "placeId": 2529720,
+        "lat": "29.3084",
+        "lon": "30.8428",
+        "districts": []
+      },
+      {
+        "name": "Gharbia",
+        "placeId": 2529721,
+        "lat": "30.8754",
+        "lon": "31.0335",
+        "districts": []
+      },
+      {
+        "name": "Giza",
+        "placeId": 2529722,
+        "lat": "30.0131",
+        "lon": "31.2089",
+        "districts": []
+      },
+      {
+        "name": "Ismailia",
+        "placeId": 2529723,
+        "lat": "30.6043",
+        "lon": "32.2723",
+        "districts": []
+      },
+      {
+        "name": "Kafr El Sheikh",
+        "placeId": 2529724,
+        "lat": "31.1107",
+        "lon": "30.9388",
+        "districts": []
+      },
+      {
+        "name": "Luxor",
+        "placeId": 2529718,
+        "lat": "25.6872",
+        "lon": "32.6396",
+        "districts": [
+          {
+            "name": "Al-Qarnah",
+            "placeId": 99910,
+            "lat": "25.7194",
+            "lon": "32.5978"
+          },
+          {
+            "name": "Armant",
+            "placeId": 99911,
+            "lat": "25.6194",
+            "lon": "32.5478"
+          },
+          {
+            "name": "Isna",
+            "placeId": 99912,
+            "lat": "25.2933",
+            "lon": "32.5564"
+          },
+          {
+            "name": "Tiba",
+            "placeId": 99913,
+            "lat": "25.8123",
+            "lon": "32.7123"
+          }
+        ]
+      },
+      {
+        "name": "Matrouh",
+        "placeId": 2529725,
+        "lat": "31.3543",
+        "lon": "27.2373",
+        "districts": []
+      },
+      {
+        "name": "Minya",
+        "placeId": 2529726,
+        "lat": "28.0871",
+        "lon": "30.7618",
+        "districts": []
+      },
+      {
+        "name": "Monufia",
+        "placeId": 2529727,
+        "lat": "30.5205",
+        "lon": "30.9876",
+        "districts": []
+      },
+      {
+        "name": "New Valley",
+        "placeId": 2529728,
+        "lat": "25.4513",
+        "lon": "30.5489",
+        "districts": []
+      },
+      {
+        "name": "North Sinai",
+        "placeId": 2529729,
+        "lat": "30.7327",
+        "lon": "33.6226",
+        "districts": []
+      },
+      {
+        "name": "Port Said",
+        "placeId": 2529730,
+        "lat": "31.2653",
+        "lon": "32.3019",
+        "districts": []
+      },
+      {
+        "name": "Qalyubia",
+        "placeId": 2529731,
+        "lat": "30.4101",
+        "lon": "31.2108",
+        "districts": []
+      },
+      {
+        "name": "Qena",
+        "placeId": 2529732,
+        "lat": "26.1551",
+        "lon": "32.7160",
+        "districts": []
+      },
+      {
+        "name": "Red Sea",
+        "placeId": 2529733,
+        "lat": "25.5991",
+        "lon": "34.1482",
+        "districts": []
+      },
+      {
+        "name": "Sharqia",
+        "placeId": 2529734,
+        "lat": "30.7327",
+        "lon": "31.7108",
+        "districts": []
+      },
+      {
+        "name": "Sohag",
+        "placeId": 2529735,
+        "lat": "26.5570",
+        "lon": "31.6948",
+        "districts": []
+      },
+      {
+        "name": "South Sinai",
+        "placeId": 2529736,
+        "lat": "28.5372",
+        "lon": "33.9876",
+        "districts": []
+      },
+      {
+        "name": "Suez",
+        "placeId": 2529737,
+        "lat": "29.9668",
+        "lon": "32.5498",
+        "districts": []
+      }
+    ]
+  },
+  {
+    "countryCode": "GH",
+    "regions": [
+      {
+        "name": "Ahafo Region",
+        "placeId": 10212840,
+        "lat": "6.8751453",
+        "lon": "-2.3519933",
+        "districts": [
+          {
+            "name": "Asunafo North Municipal District",
+            "placeId": 12982259,
+            "lat": "6.8150922",
+            "lon": "-2.6846686"
+          },
+          {
+            "name": "Asunafo South District",
+            "placeId": 12982258,
+            "lat": "6.5619349",
+            "lon": "-2.6015743"
+          },
+          {
+            "name": "Asutifi North District",
+            "placeId": 12982262,
+            "lat": "7.0763321",
+            "lon": "-2.5289263"
+          },
+          {
+            "name": "Asutifi South District",
+            "placeId": 12982260,
+            "lat": "6.8492916",
+            "lon": "-2.3807797"
+          },
+          {
+            "name": "Tano North Municipal District",
+            "placeId": 12982261,
+            "lat": "7.1948019",
+            "lon": "-2.1995192"
+          },
+          {
+            "name": "Tano South Municipal District",
+            "placeId": 12982263,
+            "lat": "7.1608167",
+            "lon": "-1.9811136"
+          }
+        ]
+      },
+      {
+        "name": "Ashanti Region",
+        "placeId": 3330249,
+        "lat": "6.7388699",
+        "lon": "-1.3445985",
+        "districts": [
+          {
+            "name": "Adansi Asokwa District",
+            "placeId": 13038242,
+            "lat": "6.1673845",
+            "lon": "-1.4048281"
+          },
+          {
+            "name": "Adansi North District",
+            "placeId": 13038241,
+            "lat": "6.3006573",
+            "lon": "-1.5854102"
+          },
+          {
+            "name": "Adansi South District",
+            "placeId": 13038240,
+            "lat": "6.0047321",
+            "lon": "-1.3696111"
+          },
+          {
+            "name": "Afigya-Kwabre North District",
+            "placeId": 13038239,
+            "lat": "7.0397025",
+            "lon": "-1.6183368"
+          },
+          {
+            "name": "Afigya-Kwabre South District",
+            "placeId": 13038238,
+            "lat": "6.8399767",
+            "lon": "-1.6110226"
+          },
+          {
+            "name": "Ahafo-Ano North Municipal District",
+            "placeId": 13038237,
+            "lat": "6.9097599",
+            "lon": "-2.2241443"
+          },
+          {
+            "name": "Ahafo-Ano South East District",
+            "placeId": 13038236,
+            "lat": "6.9462642",
+            "lon": "-1.9303735"
+          },
+          {
+            "name": "Ahafo-Ano South West District",
+            "placeId": 13038235,
+            "lat": "6.8291757",
+            "lon": "-2.0537488"
+          },
+          {
+            "name": "Akrofuom District",
+            "placeId": 13038234,
+            "lat": "6.0321798",
+            "lon": "-1.6750721"
+          },
+          {
+            "name": "Amansie Central District",
+            "placeId": 13038233,
+            "lat": "6.2073603",
+            "lon": "-1.7762909"
+          },
+          {
+            "name": "Amansie South District",
+            "placeId": 13038231,
+            "lat": "6.3083454",
+            "lon": "-2.0279713"
+          },
+          {
+            "name": "Amansie West District",
+            "placeId": 13038232,
+            "lat": "6.4396839",
+            "lon": "-1.8180326"
+          },
+          {
+            "name": "Asante-Akim Central Municipal District",
+            "placeId": 13038230,
+            "lat": "6.5648872",
+            "lon": "-1.2178489"
+          },
+          {
+            "name": "Asante-Akim North District",
+            "placeId": 13038229,
+            "lat": "6.8410105",
+            "lon": "-1.0121836"
+          },
+          {
+            "name": "Asante-Akim South Municipal District",
+            "placeId": 13038228,
+            "lat": "6.4614315",
+            "lon": "-1.1039526"
+          },
+          {
+            "name": "Asokore-Mampong Municipal District",
+            "placeId": 13038227,
+            "lat": "6.7125475",
+            "lon": "-1.5748435"
+          },
+          {
+            "name": "Asokwa Municipal District",
+            "placeId": 13038226,
+            "lat": "6.6471481",
+            "lon": "-1.5866061"
+          },
+          {
+            "name": "Atwima-Kwanwoma District",
+            "placeId": 13038225,
+            "lat": "6.5898982",
+            "lon": "-1.7051188"
+          },
+          {
+            "name": "Atwima-Mponua District",
+            "placeId": 13038224,
+            "lat": "6.5557891",
+            "lon": "-2.1410186"
+          },
+          {
+            "name": "Atwima-Nwabiagya Municipal District",
+            "placeId": 13038223,
+            "lat": "6.6889528",
+            "lon": "-1.7850161"
+          },
+          {
+            "name": "Atwima-Nwabiagya North District",
+            "placeId": 13038222,
+            "lat": "6.8773922",
+            "lon": "-1.7451205"
+          },
+          {
+            "name": "Bekwai Municipal District",
+            "placeId": 13038221,
+            "lat": "6.4362434",
+            "lon": "-1.6045452"
+          },
+          {
+            "name": "Bosome Freho District",
+            "placeId": 13038220,
+            "lat": "6.3065315",
+            "lon": "-1.331938"
+          },
+          {
+            "name": "Bosomtwe District",
+            "placeId": 13038219,
+            "lat": "6.561412",
+            "lon": "-1.4607002"
+          },
+          {
+            "name": "Ejisu Municipal District",
+            "placeId": 13038218,
+            "lat": "6.6828797",
+            "lon": "-1.4470526"
+          },
+          {
+            "name": "Ejura/Sekyedumase Municipal District",
+            "placeId": 13038217,
+            "lat": "7.3852418",
+            "lon": "-1.401932"
+          },
+          {
+            "name": "Juaben Municipal District",
+            "placeId": 13038216,
+            "lat": "6.6524399",
+            "lon": "-1.3802461"
+          },
+          {
+            "name": "Kumasi Metropolitan District",
+            "placeId": 13038215,
+            "lat": "6.6919705",
+            "lon": "-1.6419008"
+          },
+          {
+            "name": "Kwabre East Municipal District",
+            "placeId": 13038214,
+            "lat": "6.789541",
+            "lon": "-1.5376323"
+          },
+          {
+            "name": "Kwadaso Municipal District",
+            "placeId": 13038213,
+            "lat": "6.6808381",
+            "lon": "-1.6725695"
+          },
+          {
+            "name": "Mampong Municipal District",
+            "placeId": 13038212,
+            "lat": "7.1206084",
+            "lon": "-1.4215869"
+          },
+          {
+            "name": "Obuasi East Municipal District",
+            "placeId": 13038211,
+            "lat": "6.1794361",
+            "lon": "-1.6064518"
+          },
+          {
+            "name": "Obuasi Municipal District",
+            "placeId": 13038210,
+            "lat": "6.1911378",
+            "lon": "-1.6911314"
+          },
+          {
+            "name": "Offinso Municipal District",
+            "placeId": 13038209,
+            "lat": "7.0577712",
+            "lon": "-1.7544864"
+          },
+          {
+            "name": "Offinso North District",
+            "placeId": 13038208,
+            "lat": "7.2791956",
+            "lon": "-1.8882337"
+          },
+          {
+            "name": "Oforikrom Municipal District",
+            "placeId": 13038207,
+            "lat": "6.6732956",
+            "lon": "-1.5521508"
+          },
+          {
+            "name": "Old Tafo Municipal District",
+            "placeId": 13038206,
+            "lat": "6.7410201",
+            "lon": "-1.6075649"
+          },
+          {
+            "name": "Sekyere Afram Plains District",
+            "placeId": 13038205,
+            "lat": "7.2030568",
+            "lon": "-0.7295641"
+          },
+          {
+            "name": "Sekyere Central District",
+            "placeId": 13038204,
+            "lat": "7.2164484",
+            "lon": "-1.1608799"
+          },
+          {
+            "name": "Sekyere East District",
+            "placeId": 13038203,
+            "lat": "6.7798352",
+            "lon": "-1.3430817"
+          },
+          {
+            "name": "Sekyere Kumawu District",
+            "placeId": 13038202,
+            "lat": "6.9097485",
+            "lon": "-1.2326455"
+          },
+          {
+            "name": "Sekyere South District",
+            "placeId": 13038201,
+            "lat": "6.9953636",
+            "lon": "-1.5133414"
+          },
+          {
+            "name": "Suame Municipal District",
+            "placeId": 13038200,
+            "lat": "6.7387323",
+            "lon": "-1.6246057"
+          }
+        ]
+      },
+      {
+        "name": "Bono East Region",
+        "placeId": 10212839,
+        "lat": "7.9734456",
+        "lon": "-0.9650169",
+        "districts": [
+          {
+            "name": "Atebubu-Amantin Municipal District",
+            "placeId": 12999006,
+            "lat": "7.7278036",
+            "lon": "-1.0868908"
+          },
+          {
+            "name": "Kintampo North Municipal District",
+            "placeId": 12999003,
+            "lat": "8.3891932",
+            "lon": "-1.5817326"
+          },
+          {
+            "name": "Kintampo South District",
+            "placeId": 12999002,
+            "lat": "7.9434226",
+            "lon": "-1.8066853"
+          },
+          {
+            "name": "Nkoranza North District",
+            "placeId": 12998999,
+            "lat": "7.7184848",
+            "lon": "-1.5957379"
+          },
+          {
+            "name": "Nkoranza South Municipal District",
+            "placeId": 12998998,
+            "lat": "7.4538354",
+            "lon": "-1.6490295"
+          },
+          {
+            "name": "Pru East District",
+            "placeId": 12999004,
+            "lat": "8.1362279",
+            "lon": "-0.8056065"
+          },
+          {
+            "name": "Pru West District",
+            "placeId": 12999005,
+            "lat": "8.0348105",
+            "lon": "-1.2002322"
+          },
+          {
+            "name": "Sene East District",
+            "placeId": 10215995,
+            "lat": "7.665294",
+            "lon": "-0.1269476"
+          },
+          {
+            "name": "Sene West District",
+            "placeId": 12999007,
+            "lat": "7.7494306",
+            "lon": "-0.5730681"
+          },
+          {
+            "name": "Techiman Municipal District",
+            "placeId": 12999000,
+            "lat": "7.528386",
+            "lon": "-1.9560407"
+          },
+          {
+            "name": "Techiman North District",
+            "placeId": 12999001,
+            "lat": "7.7038339",
+            "lon": "-1.9560507"
+          }
+        ]
+      },
+      {
+        "name": "Bono Region",
+        "placeId": 3329833,
+        "lat": "7.8196015",
+        "lon": "-2.5098385",
+        "districts": [
+          {
+            "name": "Banda District",
+            "placeId": 12988359,
+            "lat": "8.3531829",
+            "lon": "-2.3505724"
+          },
+          {
+            "name": "Berekum East Municipal District",
+            "placeId": 12988363,
+            "lat": "7.4849679",
+            "lon": "-2.5700113"
+          },
+          {
+            "name": "Berekum West District",
+            "placeId": 12988364,
+            "lat": "7.4723211",
+            "lon": "-2.6670614"
+          },
+          {
+            "name": "Dormaa Central Municipal District",
+            "placeId": 12988368,
+            "lat": "7.2380655",
+            "lon": "-2.8592395"
+          },
+          {
+            "name": "Dormaa East District",
+            "placeId": 12988367,
+            "lat": "7.2642836",
+            "lon": "-2.6448199"
+          },
+          {
+            "name": "Dormaa West District",
+            "placeId": 12988369,
+            "lat": "6.975403",
+            "lon": "-2.9470978"
+          },
+          {
+            "name": "Jaman North District",
+            "placeId": 12988362,
+            "lat": "7.9133674",
+            "lon": "-2.6710492"
+          },
+          {
+            "name": "Jaman South Municipal District",
+            "placeId": 12988365,
+            "lat": "7.621135",
+            "lon": "-2.7959311"
+          },
+          {
+            "name": "Sunyani Municipal District",
+            "placeId": 12988366,
+            "lat": "7.2282742",
+            "lon": "-2.3515484"
+          },
+          {
+            "name": "Sunyani West District",
+            "placeId": 12988361,
+            "lat": "7.4241093",
+            "lon": "-2.3254255"
+          },
+          {
+            "name": "Tain District",
+            "placeId": 12988360,
+            "lat": "7.7912214",
+            "lon": "-2.372337"
+          },
+          {
+            "name": "Wenchi Municipal District",
+            "placeId": 12988358,
+            "lat": "7.8028667",
+            "lon": "-2.0851404"
+          }
+        ]
+      },
+      {
+        "name": "Central Region",
+        "placeId": 3330281,
+        "lat": "5.6663492",
+        "lon": "-1.3027884",
+        "districts": [
+          {
+            "name": "Abura/Asebu/Kwamankese District",
+            "placeId": 12979600,
+            "lat": "5.2698333",
+            "lon": "-1.1810704"
+          },
+          {
+            "name": "Agona East District",
+            "placeId": 12969843,
+            "lat": "5.6354432",
+            "lon": "-0.6610465"
+          },
+          {
+            "name": "Agona West Municipal District",
+            "placeId": 12969836,
+            "lat": "5.6287927",
+            "lon": "-0.7795587"
+          },
+          {
+            "name": "Ajumako/Enyan/Essiam District",
+            "placeId": 12969833,
+            "lat": "5.4124267",
+            "lon": "-0.9471827"
+          },
+          {
+            "name": "Asikuma/Odoben/Brakwa District",
+            "placeId": 12969834,
+            "lat": "5.6264734",
+            "lon": "-1.0151958"
+          },
+          {
+            "name": "Assin Central Municipal District",
+            "placeId": 12979604,
+            "lat": "5.7224484",
+            "lon": "-1.3128061"
+          },
+          {
+            "name": "Assin North District",
+            "placeId": 12979607,
+            "lat": "5.8253171",
+            "lon": "-1.3775666"
+          },
+          {
+            "name": "Assin South District",
+            "placeId": 12979598,
+            "lat": "5.5289062",
+            "lon": "-1.2540167"
+          },
+          {
+            "name": "Awutu Senya East Municipal District",
+            "placeId": 12969847,
+            "lat": "5.4955268",
+            "lon": "-0.4868655"
+          },
+          {
+            "name": "Awutu Senya West District",
+            "placeId": 12969845,
+            "lat": "5.6202223",
+            "lon": "-0.5299107"
+          },
+          {
+            "name": "Cape Coast Metropolitan District",
+            "placeId": 12979601,
+            "lat": "5.1757194",
+            "lon": "-1.2871465"
+          },
+          {
+            "name": "Effutu Municipal District",
+            "placeId": 12969844,
+            "lat": "5.3833839",
+            "lon": "-0.6115046"
+          },
+          {
+            "name": "Ekumfi District",
+            "placeId": 12969835,
+            "lat": "5.2887842",
+            "lon": "-0.908982"
+          },
+          {
+            "name": "Gomoa Central District",
+            "placeId": 12969842,
+            "lat": "5.3914318",
+            "lon": "-0.7122393"
+          },
+          {
+            "name": "Gomoa East District",
+            "placeId": 12969846,
+            "lat": "5.4765477",
+            "lon": "-0.5901201"
+          },
+          {
+            "name": "Gomoa West District",
+            "placeId": 12969841,
+            "lat": "5.3866538",
+            "lon": "-0.8284418"
+          },
+          {
+            "name": "Komenda/Edina/Eguafo/Abirem Municipal District",
+            "placeId": 12979602,
+            "lat": "5.1301516",
+            "lon": "-1.438461"
+          },
+          {
+            "name": "Mfantsiman Municipal District",
+            "placeId": 12979603,
+            "lat": "5.2766622",
+            "lon": "-1.1190297"
+          },
+          {
+            "name": "Twifo Atti Morkwa District",
+            "placeId": 12979605,
+            "lat": "5.6804831",
+            "lon": "-1.6271012"
+          },
+          {
+            "name": "Twifo/Hemang/Lower Denkyira District",
+            "placeId": 12979599,
+            "lat": "5.3777955",
+            "lon": "-1.4573745"
+          },
+          {
+            "name": "Upper Denkyira East Municipal District",
+            "placeId": 12979606,
+            "lat": "5.8356173",
+            "lon": "-1.7269281"
+          },
+          {
+            "name": "Upper Denkyira West District",
+            "placeId": 12979608,
+            "lat": "6.1081797",
+            "lon": "-1.9986382"
+          }
+        ]
+      },
+      {
+        "name": "Eastern Region",
+        "placeId": 3498733,
+        "lat": "6.4568405",
+        "lon": "-0.515247",
+        "districts": [
+          {
+            "name": "Abuakwa North Municipal District",
+            "placeId": 13024980,
+            "lat": "6.235566",
+            "lon": "-0.3933249"
+          },
+          {
+            "name": "Abuakwa South Municipal District",
+            "placeId": 13024983,
+            "lat": "6.1727374",
+            "lon": "-0.4742883"
+          },
+          {
+            "name": "Achiase District",
+            "placeId": 13025005,
+            "lat": "5.7943582",
+            "lon": "-1.0092241"
+          },
+          {
+            "name": "Akuapim North Municipal District",
+            "placeId": 13024979,
+            "lat": "5.9494955",
+            "lon": "-0.1532447"
+          },
+          {
+            "name": "Akuapim South District",
+            "placeId": 13024985,
+            "lat": "5.841581",
+            "lon": "-0.2421284"
+          },
+          {
+            "name": "Akyemansa District",
+            "placeId": 13025007,
+            "lat": "6.0814728",
+            "lon": "-1.0994594"
+          },
+          {
+            "name": "Asene Manso Akroso District",
+            "placeId": 13025003,
+            "lat": "5.855173",
+            "lon": "-0.8215061"
+          },
+          {
+            "name": "Asuogyaman District",
+            "placeId": 13024991,
+            "lat": "6.3625279",
+            "lon": "0.0997455"
+          },
+          {
+            "name": "Atiwa East District",
+            "placeId": 13024995,
+            "lat": "6.3955651",
+            "lon": "-0.6737448"
+          },
+          {
+            "name": "Atiwa West District",
+            "placeId": 13024993,
+            "lat": "6.2087129",
+            "lon": "-0.6487117"
+          },
+          {
+            "name": "Ayensuano District",
+            "placeId": 13024987,
+            "lat": "5.9447356",
+            "lon": "-0.4708678"
+          },
+          {
+            "name": "Birim Central Municipal District",
+            "placeId": 13025004,
+            "lat": "5.974072",
+            "lon": "-1.0089023"
+          },
+          {
+            "name": "Birim North District",
+            "placeId": 13025008,
+            "lat": "6.3681348",
+            "lon": "-0.9789077"
+          },
+          {
+            "name": "Birim South District",
+            "placeId": 13025006,
+            "lat": "5.9006137",
+            "lon": "-1.0488962"
+          },
+          {
+            "name": "Denkyembour District",
+            "placeId": 13024990,
+            "lat": "6.056181",
+            "lon": "-0.8146292"
+          },
+          {
+            "name": "Fanteakwa North District",
+            "placeId": 13024997,
+            "lat": "6.4975832",
+            "lon": "-0.3512061"
+          },
+          {
+            "name": "Fanteakwa South District",
+            "placeId": 13024994,
+            "lat": "6.3711157",
+            "lon": "-0.3761205"
+          },
+          {
+            "name": "Kwaebibirem Municipal District",
+            "placeId": 13024992,
+            "lat": "6.2334974",
+            "lon": "-0.825018"
+          },
+          {
+            "name": "Kwahu Afram Plains North District",
+            "placeId": 13025001,
+            "lat": "6.8754413",
+            "lon": "0.0207341"
+          },
+          {
+            "name": "Kwahu Afram Plains South District",
+            "placeId": 13025002,
+            "lat": "6.8850516",
+            "lon": "-0.4141628"
+          },
+          {
+            "name": "Kwahu East District",
+            "placeId": 13025000,
+            "lat": "6.7336577",
+            "lon": "-0.8042636"
+          },
+          {
+            "name": "Kwahu South District",
+            "placeId": 13024999,
+            "lat": "6.6278041",
+            "lon": "-0.5771209"
+          },
+          {
+            "name": "Kwahu West Municipal District",
+            "placeId": 13024998,
+            "lat": "6.4912902",
+            "lon": "-0.779473"
+          },
+          {
+            "name": "Lower Manya Krobo Municipal District",
+            "placeId": 13024976,
+            "lat": "6.2125416",
+            "lon": "0.027276"
+          },
+          {
+            "name": "New Juaben North Municipal District",
+            "placeId": 13024982,
+            "lat": "6.1360227",
+            "lon": "-0.3100407"
+          },
+          {
+            "name": "New Juaben South Municipal District",
+            "placeId": 13024981,
+            "lat": "6.0721697",
+            "lon": "-0.2545194"
+          },
+          {
+            "name": "Nsawam Adoagyire Municipal District",
+            "placeId": 13024986,
+            "lat": "5.8291116",
+            "lon": "-0.3457967"
+          },
+          {
+            "name": "Okere District",
+            "placeId": 13024978,
+            "lat": "6.0395285",
+            "lon": "-0.1232239"
+          },
+          {
+            "name": "Suhum Municipal District",
+            "placeId": 13024984,
+            "lat": "6.0427211",
+            "lon": "-0.4090404"
+          },
+          {
+            "name": "Upper Manya Krobo District",
+            "placeId": 13024996,
+            "lat": "6.4019156",
+            "lon": "-0.1139933"
+          },
+          {
+            "name": "Upper West Akim District",
+            "placeId": 13024988,
+            "lat": "5.8068427",
+            "lon": "-0.5617501"
+          },
+          {
+            "name": "West Akim Municipal District",
+            "placeId": 13024989,
+            "lat": "5.9069815",
+            "lon": "-0.6871263"
+          },
+          {
+            "name": "Yilo-Krobo Municipal District",
+            "placeId": 13024977,
+            "lat": "6.1567989",
+            "lon": "-0.1054259"
+          }
+        ]
+      },
+      {
+        "name": "Greater Accra Region",
+        "placeId": 1991849,
+        "lat": "5.7891332",
+        "lon": "0.0762772",
+        "districts": [
+          {
+            "name": "Ablekuma Central Municipal District",
+            "placeId": 12759090,
+            "lat": "5.5552353",
+            "lon": "-0.2431222"
+          },
+          {
+            "name": "Ablekuma North Municipal District",
+            "placeId": 12759091,
+            "lat": "5.5807896",
+            "lon": "-0.2637618"
+          },
+          {
+            "name": "Ablekuma West Municipal District",
+            "placeId": 12759092,
+            "lat": "5.5378221",
+            "lon": "-0.267781"
+          },
+          {
+            "name": "Accra Metropolitan District",
+            "placeId": 1991850,
+            "lat": "5.5611029",
+            "lon": "-0.2281809"
+          },
+          {
+            "name": "Ada East District",
+            "placeId": 1991853,
+            "lat": "5.8761274",
+            "lon": "0.567615"
+          },
+          {
+            "name": "Ada West District",
+            "placeId": 12757781,
+            "lat": "5.8960405",
+            "lon": "0.4136999"
+          },
+          {
+            "name": "Adenta Municipal District",
+            "placeId": 1991851,
+            "lat": "5.7108639",
+            "lon": "-0.1183096"
+          },
+          {
+            "name": "Ashaiman Municipal District",
+            "placeId": 1991852,
+            "lat": "5.6996308",
+            "lon": "-0.0354584"
+          },
+          {
+            "name": "Ayawaso Central Municipal District",
+            "placeId": 12759089,
+            "lat": "5.5880796",
+            "lon": "-0.2108837"
+          },
+          {
+            "name": "Ayawaso East Municipal District",
+            "placeId": 12759083,
+            "lat": "5.5837087",
+            "lon": "-0.1934328"
+          },
+          {
+            "name": "Ayawaso North Municipal District",
+            "placeId": 12759087,
+            "lat": "5.5900147",
+            "lon": "-0.1988827"
+          },
+          {
+            "name": "Ayawaso West Municipal District",
+            "placeId": 12759086,
+            "lat": "5.6281045",
+            "lon": "-0.1856384"
+          },
+          {
+            "name": "Ga Central Municipal District",
+            "placeId": 12758448,
+            "lat": "5.6176743",
+            "lon": "-0.3066022"
+          },
+          {
+            "name": "Ga East Municipal District",
+            "placeId": 1991855,
+            "lat": "5.7103905",
+            "lon": "-0.2194101"
+          },
+          {
+            "name": "Ga North Municipal District",
+            "placeId": 12758444,
+            "lat": "5.6691963",
+            "lon": "-0.278379"
+          },
+          {
+            "name": "Ga South Municipal District",
+            "placeId": 12758445,
+            "lat": "5.6097776",
+            "lon": "-0.4164077"
+          },
+          {
+            "name": "Ga West Municipal District",
+            "placeId": 1991856,
+            "lat": "5.7073296",
+            "lon": "-0.3631885"
+          },
+          {
+            "name": "Korle-Klottey Municipal District",
+            "placeId": 12759085,
+            "lat": "5.5581756",
+            "lon": "-0.1978344"
+          },
+          {
+            "name": "Kpone-Katamanso Municipal District",
+            "placeId": 12758450,
+            "lat": "5.7716933",
+            "lon": "-0.0458229"
+          },
+          {
+            "name": "Krowor Municipal District",
+            "placeId": 12758447,
+            "lat": "5.6091987",
+            "lon": "-0.0848973"
+          },
+          {
+            "name": "La-Dade-Kotopon Municipal District",
+            "placeId": 12759084,
+            "lat": "5.5896162",
+            "lon": "-0.1604206"
+          },
+          {
+            "name": "La-Nkwantanang-Madina Municipal District",
+            "placeId": 12758449,
+            "lat": "5.7411907",
+            "lon": "-0.1640869"
+          },
+          {
+            "name": "Ledzokuku Municipal District",
+            "placeId": 1991857,
+            "lat": "5.6045009",
+            "lon": "-0.1240844"
+          },
+          {
+            "name": "Ningo-Prampram District",
+            "placeId": 12757780,
+            "lat": "5.8146598",
+            "lon": "0.1439059"
+          },
+          {
+            "name": "Okaikwei North Municipal District",
+            "placeId": 12759088,
+            "lat": "5.6252481",
+            "lon": "-0.2256626"
+          },
+          {
+            "name": "Shai-Osudoku District",
+            "placeId": 1991854,
+            "lat": "5.9613358",
+            "lon": "0.1157641"
+          },
+          {
+            "name": "Tema Metropolitan District",
+            "placeId": 1991858,
+            "lat": "5.6476386",
+            "lon": "0.0008266"
+          },
+          {
+            "name": "Tema West Municipal District",
+            "placeId": 12758446,
+            "lat": "5.6524675",
+            "lon": "-0.0711591"
+          },
+          {
+            "name": "Weija-Gbawe Municipal District",
+            "placeId": 1991809,
+            "lat": "5.5541079",
+            "lon": "-0.3177989"
+          }
+        ]
+      },
+      {
+        "name": "North East Region",
+        "placeId": 10212837,
+        "lat": "10.3225371",
+        "lon": "-0.6226809",
+        "districts": [
+          {
+            "name": "Bunkpurugu-Nakpanduri District",
+            "placeId": 12865967,
+            "lat": "10.5584879",
+            "lon": "-0.0265358"
+          },
+          {
+            "name": "Chereponi District",
+            "placeId": 12865965,
+            "lat": "10.1792283",
+            "lon": "0.2368972"
+          },
+          {
+            "name": "East Mamprusi Municipal District",
+            "placeId": 12865969,
+            "lat": "10.4528315",
+            "lon": "-0.3370477"
+          },
+          {
+            "name": "Mamprugu Moagduri District",
+            "placeId": 12865966,
+            "lat": "10.2572873",
+            "lon": "-1.3337194"
+          },
+          {
+            "name": "West Mamprusi Municipal District",
+            "placeId": 12865970,
+            "lat": "10.2974387",
+            "lon": "-0.7953254"
+          },
+          {
+            "name": "Yunyoo-Nasuan District",
+            "placeId": 12865968,
+            "lat": "10.4415314",
+            "lon": "0.0062827"
+          }
+        ]
+      },
+      {
+        "name": "Northern Region",
+        "placeId": 3498732,
+        "lat": "9.2937487",
+        "lon": "-0.4033155",
+        "districts": [
+          {
+            "name": "Gushiegu Municipal District",
+            "placeId": 12834033,
+            "lat": "9.9313894",
+            "lon": "-0.1918847"
+          },
+          {
+            "name": "Karaga District",
+            "placeId": 12834040,
+            "lat": "9.9181511",
+            "lon": "-0.4658429"
+          },
+          {
+            "name": "Kpandai District",
+            "placeId": 10215999,
+            "lat": "8.3938043",
+            "lon": "-0.038082"
+          },
+          {
+            "name": "Kumbungu District",
+            "placeId": 12834035,
+            "lat": "9.7978573",
+            "lon": "-1.0622483"
+          },
+          {
+            "name": "Mion District",
+            "placeId": 12834041,
+            "lat": "9.4510193",
+            "lon": "-0.218628"
+          },
+          {
+            "name": "Nanton District",
+            "placeId": 12834038,
+            "lat": "9.5585418",
+            "lon": "-0.696127"
+          },
+          {
+            "name": "Nanumba North Municipal District",
+            "placeId": 12834032,
+            "lat": "8.9220159",
+            "lon": "-0.0947919"
+          },
+          {
+            "name": "Nanumba South District",
+            "placeId": 10215996,
+            "lat": "8.7663651",
+            "lon": "0.0186521"
+          },
+          {
+            "name": "Saboba District",
+            "placeId": 12834031,
+            "lat": "9.7087114",
+            "lon": "0.1776497"
+          },
+          {
+            "name": "Sagnarigu Municipal District",
+            "placeId": 12834036,
+            "lat": "9.4860152",
+            "lon": "-0.8722912"
+          },
+          {
+            "name": "Savelugu Municipal District",
+            "placeId": 12834039,
+            "lat": "9.8673935",
+            "lon": "-0.8381155"
+          },
+          {
+            "name": "Tamale Metropolitan District",
+            "placeId": 12834037,
+            "lat": "9.3827775",
+            "lon": "-0.744156"
+          },
+          {
+            "name": "Tatale Sangule District",
+            "placeId": 10215998,
+            "lat": "9.139909",
+            "lon": "0.3875736"
+          },
+          {
+            "name": "Tolon District",
+            "placeId": 12834034,
+            "lat": "9.5572403",
+            "lon": "-1.1592796"
+          },
+          {
+            "name": "Yendi Municipal District",
+            "placeId": 12834030,
+            "lat": "9.4736317",
+            "lon": "0.0424711"
+          },
+          {
+            "name": "Zabzugu District",
+            "placeId": 12834029,
+            "lat": "9.0906152",
+            "lon": "0.3191429"
+          }
+        ]
+      },
+      {
+        "name": "Oti Region",
+        "placeId": 10211892,
+        "lat": "7.9322582",
+        "lon": "0.1703469",
+        "districts": [
+          {
+            "name": "Biakoye District",
+            "placeId": 10215258,
+            "lat": "7.3921327",
+            "lon": "0.3260126"
+          },
+          {
+            "name": "Guan District",
+            "placeId": 13804589,
+            "lat": "7.2104606",
+            "lon": "0.5174632"
+          },
+          {
+            "name": "Jasikan District",
+            "placeId": 10215259,
+            "lat": "7.37534",
+            "lon": "0.4917889"
+          },
+          {
+            "name": "Kadjebi District",
+            "placeId": 10215257,
+            "lat": "7.7213004",
+            "lon": "0.5254395"
+          },
+          {
+            "name": "Krachi East District",
+            "placeId": 10213437,
+            "lat": "7.803077",
+            "lon": "0.2855158"
+          },
+          {
+            "name": "Krachi Nchumuru District",
+            "placeId": 10213439,
+            "lat": "8.1885952",
+            "lon": "-0.0966638"
+          },
+          {
+            "name": "Krachi West District",
+            "placeId": 10213438,
+            "lat": "7.8581211",
+            "lon": "0.0232215"
+          },
+          {
+            "name": "Nkwanta North District",
+            "placeId": 10215255,
+            "lat": "8.551786",
+            "lon": "0.2748609"
+          },
+          {
+            "name": "Nkwanta South District",
+            "placeId": 10215256,
+            "lat": "8.2500098",
+            "lon": "0.4279218"
+          }
+        ]
+      },
+      {
+        "name": "Savannah Region",
+        "placeId": 10212838,
+        "lat": "9.0482849",
+        "lon": "-1.4611941",
+        "districts": [
+          {
+            "name": "Bole District",
+            "placeId": 12860798,
+            "lat": "8.6915144",
+            "lon": "-2.2631942"
+          },
+          {
+            "name": "Central Gonja District",
+            "placeId": 12860797,
+            "lat": "8.9371859",
+            "lon": "-1.4291077"
+          },
+          {
+            "name": "East Gonja Municipal District",
+            "placeId": 10215997,
+            "lat": "8.3474869",
+            "lon": "-0.7108965"
+          },
+          {
+            "name": "North East Gonja District",
+            "placeId": 12860795,
+            "lat": "8.9878627",
+            "lon": "-0.5657862"
+          },
+          {
+            "name": "North Gonja District",
+            "placeId": 12860796,
+            "lat": "9.6899304",
+            "lon": "-1.5474657"
+          },
+          {
+            "name": "Sawla-Tuna-Kalba District",
+            "placeId": 12860794,
+            "lat": "9.4809675",
+            "lon": "-2.3289412"
+          },
+          {
+            "name": "West Gonja Municipal District",
+            "placeId": 12860793,
+            "lat": "9.2228913",
+            "lon": "-1.7641133"
+          }
+        ]
+      },
+      {
+        "name": "Upper East Region",
+        "placeId": 3327998,
+        "lat": "10.7246357",
+        "lon": "-0.7693176",
+        "districts": [
+          {
+            "name": "Bawku Municipal District",
+            "placeId": 10440111,
+            "lat": "11.0419881",
+            "lon": "-0.2422556"
+          },
+          {
+            "name": "Bawku West District",
+            "placeId": 10429466,
+            "lat": "10.8427914",
+            "lon": "-0.4742197"
+          },
+          {
+            "name": "Binduri District",
+            "placeId": 10429636,
+            "lat": "10.9457101",
+            "lon": "-0.3038246"
+          },
+          {
+            "name": "Bolgatanga East District",
+            "placeId": 10452548,
+            "lat": "10.8019611",
+            "lon": "-0.7997784"
+          },
+          {
+            "name": "Bolgatanga Municipal District",
+            "placeId": 10090857,
+            "lat": "10.7471395",
+            "lon": "-0.9105397"
+          },
+          {
+            "name": "Bongo District",
+            "placeId": 10442769,
+            "lat": "10.9170539",
+            "lon": "-0.7894227"
+          },
+          {
+            "name": "Builsa North District",
+            "placeId": 10429612,
+            "lat": "10.7102711",
+            "lon": "-1.2440541"
+          },
+          {
+            "name": "Builsa South District",
+            "placeId": 10416816,
+            "lat": "10.5302808",
+            "lon": "-1.3193476"
+          },
+          {
+            "name": "Garu District",
+            "placeId": 10429637,
+            "lat": "10.771465",
+            "lon": "-0.2220055"
+          },
+          {
+            "name": "Kassena-Nankana Municipal District",
+            "placeId": 10104677,
+            "lat": "10.7454841",
+            "lon": "-1.0569887"
+          },
+          {
+            "name": "Kassena-Nankana West District",
+            "placeId": 10442771,
+            "lat": "10.8737423",
+            "lon": "-1.2169837"
+          },
+          {
+            "name": "Nabdam District",
+            "placeId": 10429493,
+            "lat": "10.8465806",
+            "lon": "-0.6601051"
+          },
+          {
+            "name": "Pusiga District",
+            "placeId": 10442770,
+            "lat": "11.0763189",
+            "lon": "-0.1001927"
+          },
+          {
+            "name": "Talensi District",
+            "placeId": 10103192,
+            "lat": "10.6450685",
+            "lon": "-0.7372427"
+          },
+          {
+            "name": "Tempane District",
+            "placeId": 10452547,
+            "lat": "10.9031131",
+            "lon": "-0.0721814"
+          }
+        ]
+      },
+      {
+        "name": "Upper West Region",
+        "placeId": 3328013,
+        "lat": "10.3255106",
+        "lon": "-2.1826633",
+        "districts": [
+          {
+            "name": "Daffiama Bussie Issa District",
+            "placeId": 12754461,
+            "lat": "10.367767",
+            "lon": "-2.3322559"
+          },
+          {
+            "name": "Jirapa Municipal District",
+            "placeId": 12752690,
+            "lat": "10.5885214",
+            "lon": "-2.5826052"
+          },
+          {
+            "name": "Lambussie Karni District",
+            "placeId": 12754462,
+            "lat": "10.829129",
+            "lon": "-2.5941522"
+          },
+          {
+            "name": "Lawra Municipal District",
+            "placeId": 5149239,
+            "lat": "10.6134976",
+            "lon": "-2.7971992"
+          },
+          {
+            "name": "Nadowli-Kaleo District",
+            "placeId": 12752691,
+            "lat": "10.2859079",
+            "lon": "-2.6532646"
+          },
+          {
+            "name": "Nandom Municipal District",
+            "placeId": 12754463,
+            "lat": "10.8680855",
+            "lon": "-2.7925081"
+          },
+          {
+            "name": "Sissala East Municipal District",
+            "placeId": 12754457,
+            "lat": "10.5969433",
+            "lon": "-1.8048771"
+          },
+          {
+            "name": "Sissala West District",
+            "placeId": 12754456,
+            "lat": "10.7458822",
+            "lon": "-2.298055"
+          },
+          {
+            "name": "Wa East District",
+            "placeId": 12754458,
+            "lat": "10.0841085",
+            "lon": "-2.0410641"
+          },
+          {
+            "name": "Wa Municipal District",
+            "placeId": 12754459,
+            "lat": "10.0388145",
+            "lon": "-2.4654751"
+          },
+          {
+            "name": "Wa West District",
+            "placeId": 12754460,
+            "lat": "9.9172601",
+            "lon": "-2.6239614"
+          }
+        ]
+      },
+      {
+        "name": "Volta Region",
+        "placeId": 3328699,
+        "lat": "6.4988162",
+        "lon": "0.6405561",
+        "districts": [
+          {
+            "name": "Adaklu District",
+            "placeId": 12904686,
+            "lat": "6.4413927",
+            "lon": "0.5587102"
+          },
+          {
+            "name": "Afadzato South District",
+            "placeId": 12904684,
+            "lat": "6.8772012",
+            "lon": "0.4394974"
+          },
+          {
+            "name": "Agotime Ziope District",
+            "placeId": 12904677,
+            "lat": "6.4729275",
+            "lon": "0.687112"
+          },
+          {
+            "name": "Akatsi North District",
+            "placeId": 12904676,
+            "lat": "6.3109574",
+            "lon": "0.8555951"
+          },
+          {
+            "name": "Akatsi South District",
+            "placeId": 12904675,
+            "lat": "6.1540981",
+            "lon": "0.7926195"
+          },
+          {
+            "name": "Anloga District",
+            "placeId": 12904674,
+            "lat": "5.8348417",
+            "lon": "0.814957"
+          },
+          {
+            "name": "Central Tongu District",
+            "placeId": 12904678,
+            "lat": "6.1685242",
+            "lon": "0.5716009"
+          },
+          {
+            "name": "Ho Municipal District",
+            "placeId": 12904683,
+            "lat": "6.6769684",
+            "lon": "0.4943722"
+          },
+          {
+            "name": "Ho West District",
+            "placeId": 12904682,
+            "lat": "6.6019661",
+            "lon": "0.3693095"
+          },
+          {
+            "name": "Hohoe Municipal District",
+            "placeId": 12904687,
+            "lat": "7.1147499",
+            "lon": "0.4712125"
+          },
+          {
+            "name": "Keta Municipal District",
+            "placeId": 12904673,
+            "lat": "5.9383237",
+            "lon": "0.8925697"
+          },
+          {
+            "name": "Ketu North Municipal District",
+            "placeId": 12904672,
+            "lat": "6.1910424",
+            "lon": "0.9729794"
+          },
+          {
+            "name": "Ketu South Municipal District",
+            "placeId": 12904671,
+            "lat": "6.0774196",
+            "lon": "1.0882455"
+          },
+          {
+            "name": "Kpando Municipal District",
+            "placeId": 12904685,
+            "lat": "7.0002199",
+            "lon": "0.3050529"
+          },
+          {
+            "name": "North Dayi District",
+            "placeId": 12904681,
+            "lat": "6.9137544",
+            "lon": "0.2562009"
+          },
+          {
+            "name": "North Tongu District",
+            "placeId": 12904679,
+            "lat": "6.1443264",
+            "lon": "0.2990796"
+          },
+          {
+            "name": "South Dayi District",
+            "placeId": 12904670,
+            "lat": "6.5454671",
+            "lon": "0.2172729"
+          },
+          {
+            "name": "South Tongu District",
+            "placeId": 12904680,
+            "lat": "5.964579",
+            "lon": "0.6378801"
+          }
+        ]
+      },
+      {
+        "name": "Western North Region",
+        "placeId": 10212841,
+        "lat": "6.173378",
+        "lon": "-2.6677856",
+        "districts": [
+          {
+            "name": "Aowin Municipal District",
+            "placeId": 13004774,
+            "lat": "5.6941409",
+            "lon": "-2.7779931"
+          },
+          {
+            "name": "Bia East District",
+            "placeId": 13004768,
+            "lat": "6.8168154",
+            "lon": "-3.0321342"
+          },
+          {
+            "name": "Bia West District",
+            "placeId": 13004767,
+            "lat": "6.568392",
+            "lon": "-3.067011"
+          },
+          {
+            "name": "Bibiani Anhwiaso Bekwai Municipal District",
+            "placeId": 13004769,
+            "lat": "6.2964888",
+            "lon": "-2.2386294"
+          },
+          {
+            "name": "Bodi District",
+            "placeId": 13004771,
+            "lat": "6.2399979",
+            "lon": "-2.8280793"
+          },
+          {
+            "name": "Juaboso District",
+            "placeId": 13004773,
+            "lat": "6.4308689",
+            "lon": "-2.9238907"
+          },
+          {
+            "name": "Sefwi Akontombra District",
+            "placeId": 13004770,
+            "lat": "6.0940552",
+            "lon": "-2.697445"
+          },
+          {
+            "name": "Sefwi-Wiawso Municipal District",
+            "placeId": 13004766,
+            "lat": "6.3059129",
+            "lon": "-2.5403403"
+          },
+          {
+            "name": "Suaman District",
+            "placeId": 13004772,
+            "lat": "6.1081734",
+            "lon": "-3.0199147"
+          }
+        ]
+      },
+      {
+        "name": "Western Region",
+        "placeId": 3498734,
+        "lat": "5.4448878",
+        "lon": "-2.255375",
+        "districts": [
+          {
+            "name": "Ahanta West Municipal District",
+            "placeId": 13012944,
+            "lat": "4.8514274",
+            "lon": "-1.9745546"
+          },
+          {
+            "name": "Amenfi Central District",
+            "placeId": 13012947,
+            "lat": "5.7384274",
+            "lon": "-2.2955252"
+          },
+          {
+            "name": "Amenfi West Municipal District",
+            "placeId": 13012948,
+            "lat": "5.746018",
+            "lon": "-2.4629929"
+          },
+          {
+            "name": "Effia Kwesimintsim Municipal District",
+            "placeId": 13012939,
+            "lat": "4.9675797",
+            "lon": "-1.7924431"
+          },
+          {
+            "name": "Ellembelle District",
+            "placeId": 13012950,
+            "lat": "5.1495332",
+            "lon": "-2.3894844"
+          },
+          {
+            "name": "Jomoro Municipal District",
+            "placeId": 13012949,
+            "lat": "5.1986796",
+            "lon": "-2.7945261"
+          },
+          {
+            "name": "Mpohor District",
+            "placeId": 13012938,
+            "lat": "5.0585909",
+            "lon": "-1.8350042"
+          },
+          {
+            "name": "Nzema East Municipal District",
+            "placeId": 13012951,
+            "lat": "5.0857389",
+            "lon": "-2.2141387"
+          },
+          {
+            "name": "Prestea-Huni Valley Municipal District",
+            "placeId": 13012946,
+            "lat": "5.4447129",
+            "lon": "-2.0119882"
+          },
+          {
+            "name": "Sekondi Takoradi Metropolitan District",
+            "placeId": 13012940,
+            "lat": "4.9614308",
+            "lon": "-1.7285863"
+          },
+          {
+            "name": "Shama District",
+            "placeId": 13012942,
+            "lat": "5.0615606",
+            "lon": "-1.6486379"
+          },
+          {
+            "name": "Tarkwa-Nsuaem Municipal District",
+            "placeId": 13012943,
+            "lat": "5.1366882",
+            "lon": "-2.0023422"
+          },
+          {
+            "name": "Wassa Amenfi East Municipal District",
+            "placeId": 13012945,
+            "lat": "5.8764408",
+            "lon": "-1.9990222"
+          },
+          {
+            "name": "Wassa East District",
+            "placeId": 13012941,
+            "lat": "5.3683227",
+            "lon": "-1.6274822"
+          }
+        ]
+      }
+    ]
+  }
+]

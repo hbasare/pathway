@@ -210,23 +210,50 @@ function FitBounds({ locations }: { locations: LocationRecord[] }) {
   return null;
 }
 
+// ── Timeout & API Helpers ─────────────────────────────────────────────────────
+async function fetchWithTimeout(url: string, options: RequestInit & { timeout?: number } = {}): Promise<Response> {
+  const { timeout = 8000 } = options;
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 // ── Nominatim helpers ─────────────────────────────────────────────────────────
 function regionDisplayName(r: NominatimResult): string {
-  return r.address?.state ?? r.address?.region ?? r.display_name.split(",")[0].trim();
+  if (!r) return "";
+  if (r.address?.state) return r.address.state;
+  if (r.address?.region) return r.address.region;
+  if (typeof r.display_name === "string") {
+    return r.display_name.split(",")[0].trim();
+  }
+  return "";
 }
 function districtDisplayName(r: NominatimResult): string {
-  return r.address?.county ?? r.address?.district ?? r.address?.municipality ?? r.address?.city ?? r.display_name.split(",")[0].trim();
+  if (!r) return "";
+  if (r.address?.county) return r.address.county;
+  if (r.address?.district) return r.address.district;
+  if (r.address?.municipality) return r.address.municipality;
+  if (r.address?.city) return r.address.city;
+  if (typeof r.display_name === "string") {
+    return r.display_name.split(",")[0].trim();
+  }
+  return "";
 }
 async function nomFetch(params: Record<string, string>, acceptLang: string): Promise<NominatimResult[]> {
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?${new URLSearchParams(params)}`, { headers: { "Accept-Language": acceptLang } });
+    const res = await fetchWithTimeout(`https://nominatim.openstreetmap.org/search?${new URLSearchParams(params)}`, { headers: { "Accept-Language": acceptLang } });
     return res.ok ? (await res.json() as NominatimResult[]) : [];
   } catch { return []; }
 }
 function mergeUnique(lists: NominatimResult[][]): NominatimResult[] {
   const seen = new Set<number>();
   const out: NominatimResult[] = [];
-  for (const r of lists.flat()) { if (!seen.has(r.place_id)) { seen.add(r.place_id); out.push(r); } }
+  for (const r of lists.flat()) { if (r && !seen.has(r.place_id)) { seen.add(r.place_id); out.push(r); } }
   return out;
 }
 
@@ -241,7 +268,7 @@ interface OverpassElement {
 }
 async function overpassFetch(query: string): Promise<OverpassElement[]> {
   try {
-    const res = await fetch("https://overpass-api.de/api/interpreter", {
+    const res = await fetchWithTimeout("https://overpass-api.de/api/interpreter", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: `data=${encodeURIComponent(query)}`,
@@ -251,9 +278,9 @@ async function overpassFetch(query: string): Promise<OverpassElement[]> {
     return (data.elements ?? []) as OverpassElement[];
   } catch { return []; }
 }
-function overpassToNominatim(el: OverpassElement, lang: string, addrKey: "state" | "county" = "state"): NominatimResult {
-  const lc = lang.split(",")[0];
-  const name = el.tags[`name:${lc}`] || el.tags["name:en"] || el.tags.name || "";
+function overpassToNominatim(el: OverpassElement, lang: string = "en", addrKey: "state" | "county" = "state"): NominatimResult {
+  const lc = (lang || "en").split(",")[0];
+  const name = el.tags ? (el.tags[`name:${lc}`] || el.tags["name:en"] || el.tags.name || "") : "";
   return {
     place_id: el.id,
     display_name: name,
@@ -265,25 +292,25 @@ function overpassToNominatim(el: OverpassElement, lang: string, addrKey: "state"
 }
 // First-level subdivisions: try admin_level 4 (covers ~90% of countries in
 // international development work), then fall back to 3, 5, 6.
-async function fetchRegionsOverpass(countryCode: string, lang: string): Promise<NominatimResult[]> {
+async function fetchRegionsOverpass(countryCode: string, lang: string = "en"): Promise<NominatimResult[]> {
   const code = countryCode.toUpperCase();
   for (const level of ["4", "3", "5", "6"]) {
     const q = `[out:json][timeout:20];area["ISO3166-1"="${code}"]->.c;relation(area.c)["boundary"="administrative"]["admin_level"="${level}"];out tags center;`;
     const els = await overpassFetch(q);
     if (els.length >= 2) {
-      return els.map(el => overpassToNominatim(el, lang, "state")).filter(r => r.display_name.trim());
+      return els.map(el => overpassToNominatim(el, lang, "state")).filter(r => (r.display_name || "").trim());
     }
   }
   return [];
 }
 // Second-level subdivisions within a given region relation ID.
-async function fetchDistrictsOverpass(regionOsmId: number, lang: string): Promise<NominatimResult[]> {
+async function fetchDistrictsOverpass(regionOsmId: number, lang: string = "en"): Promise<NominatimResult[]> {
   const areaId = 3600000000 + regionOsmId;
   for (const level of ["5", "6", "7", "8"]) {
     const q = `[out:json][timeout:20];area(id:${areaId})->.r;relation(area.r)["boundary"="administrative"]["admin_level"="${level}"];out tags center;`;
     const els = await overpassFetch(q);
     if (els.length >= 2) {
-      return els.map(el => overpassToNominatim(el, lang, "county")).filter(r => r.display_name.trim());
+      return els.map(el => overpassToNominatim(el, lang, "county")).filter(r => (r.display_name || "").trim());
     }
   }
   return [];
@@ -294,7 +321,7 @@ async function batchFetchGeoJson(osmRelIds: number[]): Promise<Map<number, objec
   if (!osmRelIds.length) return new Map();
   try {
     const ids = osmRelIds.slice(0, 50).map(id => `R${id}`).join(",");
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://nominatim.openstreetmap.org/lookup?osm_ids=${ids}&format=json&polygon_geojson=1`,
       { headers: { "Accept-Language": "en" } },
     );
@@ -661,7 +688,22 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
     setRegionsLoading(true);
 
     (async () => {
-      // Primary: Overpass API — queries by admin_level, works regardless of
+      // First attempt: fetch preseeded subdivisions from our database API
+      try {
+        const res = await fetch(`/api/locations/regions?countryCode=${country.code}`);
+        if (res.ok) {
+          const data = await res.json() as NominatimResult[];
+          if (data && data.length > 0) {
+            setAllRegions(data);
+            setRegionsLoading(false);
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn("Local regions lookup failed, falling back to OSM...", err);
+      }
+
+      // Fallback: Primary: Overpass API — queries by admin_level, works regardless of
       // whether subdivisions are called state/county/province/department/etc.
       let regions = await fetchRegionsOverpass(country.code, acceptLang);
 
@@ -703,6 +745,32 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
     setDistrictsLoading(true);
 
     (async () => {
+      // First attempt: fetch preseeded districts from our database API
+      try {
+        const preseededDists: NominatimResult[] = [];
+        for (const reg of selRegions) {
+          const regId = (reg as any).id;
+          if (regId !== undefined) {
+            const res = await fetch(`/api/locations/districts?regionId=${regId}`);
+            if (res.ok) {
+              const data = await res.json() as NominatimResult[];
+              if (data && data.length > 0) {
+                preseededDists.push(...data);
+              }
+            }
+          }
+        }
+
+        if (preseededDists.length > 0) {
+          setAllDistricts(preseededDists);
+          setDistrictsLoading(false);
+          return;
+        }
+      } catch (err) {
+        console.warn("Local districts lookup failed, falling back to OSM...", err);
+      }
+
+      // Fallback: Query live OSM Overpass/Nominatim APIs
       const allDists: NominatimResult[] = [];
 
       for (const reg of selRegions) {
@@ -758,7 +826,11 @@ function LocationPicker({ confirmed, onAdd, onRemove, lang }: {
     if (!country) return;
     if (selDistricts.length > 0) {
       selDistricts.forEach(dist => {
-        const parentRegion = selRegions.find(r => dist.display_name.toLowerCase().includes(regionDisplayName(r).toLowerCase())) ?? selRegions[0] ?? null;
+        const parentRegion = selRegions.find(r => {
+          const rName = regionDisplayName(r).toLowerCase();
+          const dName = (dist.display_name || "").toLowerCase();
+          return rName && dName.includes(rName);
+        }) ?? selRegions[0] ?? null;
         onAdd(makeConfirmedLoc(country, parentRegion, dist));
       });
     } else if (selRegions.length > 0) {
