@@ -36,5 +36,48 @@
         ]
       }
     ]
+  },
+  {
+    "countryCode": "EG",
+    "regions": [
+      { "name": "Alexandria", "placeId": 2529711, "lat": "31.2001", "lon": "29.9187", "districts": [] },
+      { "name": "Aswan", "placeId": 2529712, "lat": "24.0889", "lon": "32.8998", "districts": [] },
+      { "name": "Asyut", "placeId": 2529713, "lat": "27.1783", "lon": "31.1859", "districts": [] },
+      { "name": "Beheira", "placeId": 2529714, "lat": "30.8481", "lon": "30.3436", "districts": [] },
+      { "name": "Beni Suef", "placeId": 2529715, "lat": "29.0744", "lon": "31.0978", "districts": [] },
+      { "name": "Cairo", "placeId": 2529716, "lat": "30.0444", "lon": "31.2357", "districts": [] },
+      { "name": "Dakahlia", "placeId": 2529717, "lat": "31.0379", "lon": "31.3785", "districts": [] },
+      { "name": "Damietta", "placeId": 2529719, "lat": "31.4175", "lon": "31.8144", "districts": [] },
+      { "name": "Faiyum", "placeId": 2529720, "lat": "29.3084", "lon": "30.8428", "districts": [] },
+      { "name": "Gharbia", "placeId": 2529721, "lat": "30.8754", "lon": "31.0335", "districts": [] },
+      { "name": "Giza", "placeId": 2529722, "lat": "30.0131", "lon": "31.2089", "districts": [] },
+      { "name": "Ismailia", "placeId": 2529723, "lat": "30.6043", "lon": "32.2723", "districts": [] },
+      { "name": "Kafr El Sheikh", "placeId": 2529724, "lat": "31.1107", "lon": "30.9388", "districts": [] },
+      {
+        "name": "Luxor",
+        "placeId": 2529718,
+        "lat": "25.6872",
+        "lon": "32.6396",
+        "districts": [
+          { "name": "Al-Qarnah", "placeId": 99910, "lat": "25.7194", "lon": "32.5978" },
+          { "name": "Armant", "placeId": 99911, "lat": "25.6194", "lon": "32.5478" },
+          { "name": "Isna", "placeId": 99912, "lat": "25.2933", "lon": "32.5564" },
+          { "name": "Tiba", "placeId": 99913, "lat": "25.8123", "lon": "32.7123" }
+        ]
+      },
+      { "name": "Matrouh", "placeId": 2529725, "lat": "31.3543", "lon": "27.2373", "districts": [] },
+      { "name": "Minya", "placeId": 2529726, "lat": "28.0871", "lon": "30.7618", "districts": [] },
+      { "name": "Monufia", "placeId": 2529727, "lat": "30.5205", "lon": "30.9876", "districts": [] },
+      { "name": "New Valley", "placeId": 2529728, "lat": "25.4513", "lon": "30.5489", "districts": [] },
+      { "name": "North Sinai", "placeId": 2529729, "lat": "30.7327", "lon": "33.6226", "districts": [] },
+      { "name": "Port Said", "placeId": 2529730, "lat": "31.2653", "lon": "32.3019", "districts": [] },
+      { "name": "Qalyubia", "placeId": 2529731, "lat": "30.4101", "lon": "31.2108", "districts": [] },
+      { "name": "Qena", "placeId": 2529732, "lat": "26.1551", "lon": "32.7160", "districts": [] },
+      { "name": "Red Sea", "placeId": 2529733, "lat": "25.5991", "lon": "34.1482", "districts": [] },
+      { "name": "Sharqia", "placeId": 2529734, "lat": "30.7327", "lon": "31.7108", "districts": [] },
+      { "name": "Sohag", "placeId": 2529735, "lat": "26.5570", "lon": "31.6948", "districts": [] },
+      { "name": "South Sinai", "placeId": 2529736, "lat": "28.5372", "lon": "33.9876", "districts": [] },
+      { "name": "Suez", "placeId": 2529737, "lat": "29.9668", "lon": "32.5498", "districts": [] }
+    ]
   }
 ]

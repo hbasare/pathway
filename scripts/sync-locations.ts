@@ -114,7 +114,7 @@ async function fetchDistricts(regionOsmId: number): Promise<SeedDistrict[]> {
 }
 
 async function main() {
-  const targetCountries = ["KE"]; // Focus on KE first
+  const targetCountries = ["KE", "EG"];
   
   let seedData: SeedCountry[] = [];
   if (fs.existsSync(SEED_FILE_PATH)) {
