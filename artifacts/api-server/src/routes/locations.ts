@@ -96,19 +96,99 @@ router.delete("/theories/:theoryId/locations/:id", async (req, res) => {
   res.status(204).send();
 });
 
+const OVERPASS_ENDPOINTS = [
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://lz4.overpass-api.de/api/interpreter",
+  "https://z.overpass-api.de/api/interpreter",
+  "https://overpass.nchc.org.tw/api/interpreter",
+  "https://overpass-api.de/api/interpreter"
+];
+
+let currentEndpointIdx = 0;
+
+async function overpassFetch(query: string, attempt = 1): Promise<any[]> {
+  const activeIdx = (currentEndpointIdx + attempt - 1) % OVERPASS_ENDPOINTS.length;
+  const url = OVERPASS_ENDPOINTS[activeIdx];
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // 20s timeout per endpoint
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": "PathwaysTheoryOfChange/3.0"
+      },
+      body: `data=${encodeURIComponent(query)}`,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    
+    if (res.status === 429) {
+      const delay = Math.min(Math.pow(2, attempt) * 2000, 10000);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return overpassFetch(query, attempt + 1);
+    }
+    
+    if (!res.ok) {
+      if (attempt <= 5) return overpassFetch(query, attempt + 1);
+      return [];
+    }
+    
+    const data = await res.json();
+    currentEndpointIdx = activeIdx;
+    return data.elements ?? [];
+  } catch (err: any) {
+    if (attempt <= 5) {
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return overpassFetch(query, attempt + 1);
+    }
+    return [];
+  }
+}
+
+const COUNTRY_NAMES: Record<string, string> = {
+  KE: "Kenya",
+  EG: "Egypt",
+  GH: "Ghana",
+  UG: "Uganda",
+  TZ: "Tanzania",
+  NG: "Nigeria"
+};
+
 async function fetchOsmRelationId(regionName: string, countryCode: string): Promise<number | null> {
   try {
     const cleanNameStr = regionName.replace(/\b(region|county|state|province|governorate|wilaya|oblast|district)\b/gi, "").trim();
-    const q = `${cleanNameStr}, ${countryCode}`;
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&limit=1&featuretype=administrative`;
-    const res = await fetch(url, {
-      headers: { "User-Agent": "PathwaysTheoryOfChange/1.0" }
-    });
-    if (!res.ok) return null;
-    const data = await res.json() as any[];
-    if (data.length > 0 && data[0].osm_type === "relation") {
-      return Number(data[0].osm_id);
+    const countryName = COUNTRY_NAMES[countryCode.toUpperCase()] || "";
+
+    // Try area search using ISO code, fallback to country name
+    let q = `[out:json][timeout:15];
+area["ISO3166-1"="${countryCode.toUpperCase()}"]->.c;
+relation(area.c)["boundary"="administrative"]["admin_level"="4"]["name"~"${cleanNameStr}",i];
+out tags center;`;
+    let elements = await overpassFetch(q);
+
+    if (elements.length === 0 && countryName) {
+      q = `[out:json][timeout:15];
+area["name:en"="${countryName}"]->.c;
+relation(area.c)["boundary"="administrative"]["admin_level"="4"]["name"~"${cleanNameStr}",i];
+out tags center;`;
+      elements = await overpassFetch(q);
     }
+
+    if (elements.length > 0) {
+      return elements[0].id;
+    }
+
+    // Fallback: search globally for the relation matching the region name and country code
+    q = `[out:json][timeout:15];
+relation["boundary"="administrative"]["admin_level"="4"]["ISO3166-2"~"^${countryCode.toUpperCase()}-",i]["name"~"${cleanNameStr}",i];
+out tags center;`;
+    elements = await overpassFetch(q);
+    if (elements.length > 0) {
+      return elements[0].id;
+    }
+
     return null;
   } catch (err) {
     console.error(`Failed to fetch OSM relation ID for ${regionName}:`, err);
@@ -118,22 +198,12 @@ async function fetchOsmRelationId(regionName: string, countryCode: string): Prom
 
 async function fetchOsmDistricts(regionOsmId: number): Promise<Array<{ name: string; placeId: number; lat: string; lon: string }> | null> {
   const areaId = 3600000000 + regionOsmId;
-  const url = "https://overpass-api.de/api/interpreter";
   
-  for (const level of ["5", "6"]) {
-    const q = `[out:json][timeout:30];area(id:${areaId})->.r;relation(area.r)["boundary"="administrative"]["admin_level"="${level}"];out tags center;`;
+  // Search levels 5, 6, 7, 8 in sequence to support markaz, kisms, subcounties, and villages
+  for (const level of ["5", "6", "7", "8"]) {
+    const q = `[out:json][timeout:15];area(id:${areaId})->.r;relation(area.r)["boundary"="administrative"]["admin_level"="${level}"];out tags center;`;
     try {
-      const res = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "User-Agent": "PathwaysTheoryOfChange/1.0"
-        },
-        body: `data=${encodeURIComponent(q)}`,
-      });
-      if (!res.ok) continue;
-      const data = await res.json() as any;
-      const elements = data.elements ?? [];
+      const elements = await overpassFetch(q);
       if (elements.length >= 2) {
         return elements.map((el: any) => ({
           name: el.tags?.["name:en"] || el.tags?.name || "",
@@ -211,7 +281,7 @@ router.get("/locations/districts", async (req, res) => {
       console.log(`Region "${region.name}" has placeholder or empty districts. Attempting lazy OSM sync...`);
       let osmRelationId: number | null = null;
 
-      if (region.placeId <= 20000000) {
+      if (region.placeId >= 20000000) {
         osmRelationId = await fetchOsmRelationId(region.name, region.countryCode);
         if (osmRelationId) {
           await db
