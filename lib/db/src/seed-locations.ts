@@ -181,39 +181,26 @@ export async function seedLocations() {
           if (!regionId) continue;
 
           if (region.districts && region.districts.length > 0) {
-            // Fetch all current districts for this region
-            const dbDistricts = await db
-              .select()
-              .from(seededDistrictsTable)
+            // Delete existing districts for this region to clean out old placeholders
+            await db
+              .delete(seededDistrictsTable)
               .where(eq(seededDistrictsTable.regionId, regionId));
 
-            for (const d of region.districts) {
-              const cleanInputDistrict = cleanName(d.name);
-              const existingDistrict = dbDistricts.find(x => cleanName(x.name) === cleanInputDistrict);
+            // Insert high-fidelity districts
+            const valuesToInsert = region.districts.map(d => ({
+              regionId,
+              name: d.name,
+              placeId: d.placeId,
+              lat: d.lat,
+              lon: d.lon,
+              geojson: d.geojson ?? null,
+            }));
 
-              if (existingDistrict) {
-                await db
-                  .update(seededDistrictsTable)
-                  .set({
-                    name: d.name, // Promote to OSM name (e.g. "Jirapa Municipal District")
-                    placeId: d.placeId,
-                    lat: d.lat,
-                    lon: d.lon,
-                    geojson: d.geojson ?? null,
-                  })
-                  .where(eq(seededDistrictsTable.id, existingDistrict.id));
-              } else {
-                await db
-                  .insert(seededDistrictsTable)
-                  .values({
-                    regionId,
-                    name: d.name,
-                    placeId: d.placeId,
-                    lat: d.lat,
-                    lon: d.lon,
-                    geojson: d.geojson ?? null,
-                  });
-              }
+            // Batch insert in chunks of 500
+            for (let chunkStart = 0; chunkStart < valuesToInsert.length; chunkStart += 500) {
+              await db
+                .insert(seededDistrictsTable)
+                .values(valuesToInsert.slice(chunkStart, chunkStart + 500));
             }
           }
         }

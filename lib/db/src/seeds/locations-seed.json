@@ -5,78 +5,2121 @@
       {
         "name": "Baringo",
         "placeId": 3495537,
-        "lat": "0.4851",
-        "lon": "35.9333",
+        "lat": "0.7140017",
+        "lon": "36.0065003",
         "districts": [
           {
             "name": "Baringo Central",
-            "placeId": 99901,
-            "lat": "0.4851",
-            "lon": "35.9333"
+            "placeId": 16032480,
+            "lat": "0.4005915",
+            "lon": "35.7233308"
           },
           {
             "name": "Baringo North",
-            "placeId": 99902,
-            "lat": "0.6223",
-            "lon": "35.8112"
+            "placeId": 16032485,
+            "lat": "0.7686816",
+            "lon": "35.8308356"
           },
           {
-            "name": "Koibatek",
-            "placeId": 99903,
-            "lat": "-0.0123",
-            "lon": "35.7333"
+            "name": "Eldama Ravine",
+            "placeId": 16032560,
+            "lat": "-0.0195804",
+            "lon": "35.7007142"
+          },
+          {
+            "name": "Marigat",
+            "placeId": 16032482,
+            "lat": "0.4392134",
+            "lon": "36.0365137"
+          },
+          {
+            "name": "Mogotio",
+            "placeId": 16032481,
+            "lat": "0.1627121",
+            "lon": "35.9554219"
+          },
+          {
+            "name": "Pokot East",
+            "placeId": 16032484,
+            "lat": "1.2477905",
+            "lon": "35.867241"
+          },
+          {
+            "name": "Tiaty",
+            "placeId": 16032483,
+            "lat": "0.8925245",
+            "lon": "36.2224821"
           }
         ]
       },
       {
-        "name": "Mombasa",
-        "placeId": 3486319,
-        "lat": "-4.0544",
-        "lon": "39.6725",
+        "name": "Bomet",
+        "placeId": 14649074,
+        "lat": "-0.7193694",
+        "lon": "35.3004196",
+        "districts": [
+          {
+            "name": "Bomet Central",
+            "placeId": 16050795,
+            "lat": "-0.7332041",
+            "lon": "35.3167327"
+          },
+          {
+            "name": "Bomet East",
+            "placeId": 16050794,
+            "lat": "-0.8494771",
+            "lon": "35.4428621"
+          },
+          {
+            "name": "Chepalungu",
+            "placeId": 16050793,
+            "lat": "-0.8963168",
+            "lon": "35.2443097"
+          },
+          {
+            "name": "Konoin",
+            "placeId": 16050796,
+            "lat": "-0.5400761",
+            "lon": "35.3832379"
+          },
+          {
+            "name": "Sotik",
+            "placeId": 16050792,
+            "lat": "-0.7676522",
+            "lon": "35.1388716"
+          }
+        ]
+      },
+      {
+        "name": "Bungoma County",
+        "placeId": 3495538,
+        "lat": "0.7830535",
+        "lon": "34.7146813",
+        "districts": [
+          {
+            "name": "Bumula",
+            "placeId": 16027810,
+            "lat": "0.5663186",
+            "lon": "34.4681997"
+          },
+          {
+            "name": "Cheptais",
+            "placeId": 16027808,
+            "lat": "0.8353472",
+            "lon": "34.5265677"
+          },
+          {
+            "name": "Kabuchai",
+            "placeId": 16027812,
+            "lat": "0.6929794",
+            "lon": "34.6024595"
+          },
+          {
+            "name": "Kanduyi",
+            "placeId": 16027811,
+            "lat": "0.5618373",
+            "lon": "34.5916385"
+          },
+          {
+            "name": "Kimilili",
+            "placeId": 16027815,
+            "lat": "0.7852939",
+            "lon": "34.7310532"
+          },
+          {
+            "name": "Mt Elgon",
+            "placeId": 16027817,
+            "lat": "0.9712226",
+            "lon": "34.6244979"
+          },
+          {
+            "name": "Sirisia",
+            "placeId": 16027809,
+            "lat": "0.7338164",
+            "lon": "34.4699348"
+          },
+          {
+            "name": "Tongaren",
+            "placeId": 16027816,
+            "lat": "0.7749866",
+            "lon": "34.9347563"
+          },
+          {
+            "name": "Webuye East",
+            "placeId": 16027814,
+            "lat": "0.6478945",
+            "lon": "34.7813206"
+          },
+          {
+            "name": "Webuye West",
+            "placeId": 16027813,
+            "lat": "0.594956",
+            "lon": "34.7062162"
+          }
+        ]
+      },
+      {
+        "name": "Busia County",
+        "placeId": 3486321,
+        "lat": "0.3715674",
+        "lon": "34.1723153",
+        "districts": [
+          {
+            "name": "Bunyala",
+            "placeId": 16054735,
+            "lat": "0.0667038",
+            "lon": "34.003489"
+          },
+          {
+            "name": "Butula",
+            "placeId": 16484988,
+            "lat": "0.3429778",
+            "lon": "34.2910208"
+          },
+          {
+            "name": "Matayos",
+            "placeId": 16054733,
+            "lat": "0.3840675",
+            "lon": "34.1766633"
+          },
+          {
+            "name": "Nambale",
+            "placeId": 16054730,
+            "lat": "0.5028673",
+            "lon": "34.2990396"
+          },
+          {
+            "name": "Samia",
+            "placeId": 16054734,
+            "lat": "0.2425601",
+            "lon": "34.0840001"
+          },
+          {
+            "name": "Teso North",
+            "placeId": 16054731,
+            "lat": "0.6746949",
+            "lon": "34.3257385"
+          },
+          {
+            "name": "Teso South",
+            "placeId": 16054732,
+            "lat": "0.5364326",
+            "lon": "34.2219189"
+          }
+        ]
+      },
+      {
+        "name": "Elgeyo-Marakwet County",
+        "placeId": 11981582,
+        "lat": "0.742344",
+        "lon": "35.4376884",
+        "districts": [
+          {
+            "name": "Keiyo North",
+            "placeId": 16056864,
+            "lat": "0.6909146",
+            "lon": "35.5281169"
+          },
+          {
+            "name": "Keiyo South",
+            "placeId": 16056863,
+            "lat": "0.3762736",
+            "lon": "35.5929008"
+          },
+          {
+            "name": "Marakwet West",
+            "placeId": 16056862,
+            "lat": "1.0806796",
+            "lon": "35.431005"
+          }
+        ]
+      },
+      {
+        "name": "Embu",
+        "placeId": 3495540,
+        "lat": "-0.5351081",
+        "lon": "37.6021979",
+        "districts": [
+          {
+            "name": "Manyatta",
+            "placeId": 16154192,
+            "lat": "-0.3743764",
+            "lon": "37.4545499"
+          },
+          {
+            "name": "Mbeere North",
+            "placeId": 16154194,
+            "lat": "-0.5064755",
+            "lon": "37.7423741"
+          },
+          {
+            "name": "Mbeere South",
+            "placeId": 16154195,
+            "lat": "-0.7296141",
+            "lon": "37.5921881"
+          },
+          {
+            "name": "Runyenjes",
+            "placeId": 16154193,
+            "lat": "-0.438885",
+            "lon": "37.5972256"
+          }
+        ]
+      },
+      {
+        "name": "Garissa",
+        "placeId": 3495541,
+        "lat": "-0.5240293",
+        "lon": "40.1088547",
+        "districts": [
+          {
+            "name": "Balambala",
+            "placeId": 16027733,
+            "lat": "0.1077046",
+            "lon": "39.1124141"
+          },
+          {
+            "name": "Dadaab",
+            "placeId": 16027734,
+            "lat": "0.0978814",
+            "lon": "40.2499289"
+          },
+          {
+            "name": "Fafi",
+            "placeId": 16027736,
+            "lat": "-0.7396701",
+            "lon": "40.4111597"
+          },
+          {
+            "name": "Garissa Township",
+            "placeId": 16027735,
+            "lat": "-0.3239747",
+            "lon": "39.6889761"
+          },
+          {
+            "name": "Hulugho",
+            "placeId": 16027737,
+            "lat": "-1.2541167",
+            "lon": "40.9741488"
+          },
+          {
+            "name": "Ijara",
+            "placeId": 16027738,
+            "lat": "-1.663614",
+            "lon": "40.4694645"
+          },
+          {
+            "name": "Lagdera",
+            "placeId": 16027732,
+            "lat": "0.4983703",
+            "lon": "39.3123216"
+          }
+        ]
+      },
+      {
+        "name": "Homa Bay County",
+        "placeId": 3486017,
+        "lat": "-0.5638583",
+        "lon": "34.4736573",
+        "districts": [
+          {
+            "name": "Homa Bay Town",
+            "placeId": 15954843,
+            "lat": "-0.580272",
+            "lon": "34.4874657"
+          },
+          {
+            "name": "Kabondo Kasipul",
+            "placeId": 15954817,
+            "lat": "-0.4487401",
+            "lon": "34.8848873"
+          },
+          {
+            "name": "Karachuonyo",
+            "placeId": 15954797,
+            "lat": "-0.3936077",
+            "lon": "34.6331611"
+          },
+          {
+            "name": "Kasipul",
+            "placeId": 15954832,
+            "lat": "-0.5083509",
+            "lon": "34.7134243"
+          },
+          {
+            "name": "Mbita",
+            "placeId": 15954860,
+            "lat": "-0.4971667",
+            "lon": "34.1901345"
+          },
+          {
+            "name": "Ndhiwa",
+            "placeId": 15954890,
+            "lat": "-0.7137524",
+            "lon": "34.3786449"
+          },
+          {
+            "name": "Rangwe",
+            "placeId": 15954750,
+            "lat": "-0.5608152",
+            "lon": "34.5808435"
+          },
+          {
+            "name": "Suba",
+            "placeId": 15954873,
+            "lat": "-0.6426552",
+            "lon": "34.1837926"
+          }
+        ]
+      },
+      {
+        "name": "Isiolo",
+        "placeId": 3495542,
+        "lat": "1.0044121",
+        "lon": "38.1640338",
+        "districts": [
+          {
+            "name": "Garbatulla",
+            "placeId": 16027998,
+            "lat": "0.5580838",
+            "lon": "38.772285"
+          },
+          {
+            "name": "Isiolo Central",
+            "placeId": 16027996,
+            "lat": "0.5455192",
+            "lon": "37.5548691"
+          },
+          {
+            "name": "Merti",
+            "placeId": 16027997,
+            "lat": "1.4383473",
+            "lon": "38.7042012"
+          }
+        ]
+      },
+      {
+        "name": "Kajiado County",
+        "placeId": 3486020,
+        "lat": "-2.1214579",
+        "lon": "36.9693351",
+        "districts": [
+          {
+            "name": "Kajiado Central",
+            "placeId": 16053078,
+            "lat": "-2.1759735",
+            "lon": "36.8275547"
+          },
+          {
+            "name": "Kajiado East",
+            "placeId": 16053080,
+            "lat": "-1.8969461",
+            "lon": "37.170591"
+          },
+          {
+            "name": "Kajiado North",
+            "placeId": 16053077,
+            "lat": "-1.3771996",
+            "lon": "36.7206678"
+          },
+          {
+            "name": "Kajiado West",
+            "placeId": 16053076,
+            "lat": "-1.7080435",
+            "lon": "36.4005509"
+          },
+          {
+            "name": "Loitokitok",
+            "placeId": 16053079,
+            "lat": "-2.6918421",
+            "lon": "37.4175131"
+          }
+        ]
+      },
+      {
+        "name": "Kakamega County",
+        "placeId": 3495543,
+        "lat": "0.4947733",
+        "lon": "34.7512112",
+        "districts": [
+          {
+            "name": "Butere",
+            "placeId": 16054363,
+            "lat": "0.2250192",
+            "lon": "34.5223788"
+          },
+          {
+            "name": "Ikolomani",
+            "placeId": 16054365,
+            "lat": "0.1937165",
+            "lon": "34.7249791"
+          },
+          {
+            "name": "Khwisero",
+            "placeId": 16054364,
+            "lat": "0.1461073",
+            "lon": "34.5704299"
+          },
+          {
+            "name": "Likuyani",
+            "placeId": 16054369,
+            "lat": "0.7644524",
+            "lon": "35.0851041"
+          },
+          {
+            "name": "Lugari",
+            "placeId": 16054368,
+            "lat": "0.6180736",
+            "lon": "34.8758585"
+          },
+          {
+            "name": "Lurambi",
+            "placeId": 16054409,
+            "lat": "0.2693717",
+            "lon": "34.7007401"
+          },
+          {
+            "name": "Malava",
+            "placeId": 16054367,
+            "lat": "0.4687213",
+            "lon": "34.8337087"
+          },
+          {
+            "name": "Matungu",
+            "placeId": 16054360,
+            "lat": "0.3813042",
+            "lon": "34.4671954"
+          },
+          {
+            "name": "Mumias East",
+            "placeId": 16054361,
+            "lat": "0.3331457",
+            "lon": "34.5673891"
+          },
+          {
+            "name": "Mumias West",
+            "placeId": 16054362,
+            "lat": "0.2823282",
+            "lon": "34.4770652"
+          },
+          {
+            "name": "Navakholo",
+            "placeId": 16054408,
+            "lat": "0.3870922",
+            "lon": "34.6762851"
+          },
+          {
+            "name": "Shinyalu",
+            "placeId": 16054366,
+            "lat": "0.2851587",
+            "lon": "34.8463272"
+          }
+        ]
+      },
+      {
+        "name": "Kericho County",
+        "placeId": 3486288,
+        "lat": "-0.3200949",
+        "lon": "35.3406119",
+        "districts": [
+          {
+            "name": "Ainamoi",
+            "placeId": 16020669,
+            "lat": "-0.3143322",
+            "lon": "35.2913474"
+          },
+          {
+            "name": "Belgut",
+            "placeId": 16020666,
+            "lat": "-0.4142685",
+            "lon": "35.2793181"
+          },
+          {
+            "name": "Bureti",
+            "placeId": 16020667,
+            "lat": "-0.561575",
+            "lon": "35.1432243"
+          },
+          {
+            "name": "Kipkelion East",
+            "placeId": 16020670,
+            "lat": "-0.1783883",
+            "lon": "35.4970405"
+          },
+          {
+            "name": "Kipkelion West",
+            "placeId": 16020671,
+            "lat": "-0.1448835",
+            "lon": "35.3802088"
+          },
+          {
+            "name": "Sigowet/Soin",
+            "placeId": 16020668,
+            "lat": "-0.3288016",
+            "lon": "35.129779"
+          }
+        ]
+      },
+      {
+        "name": "Kiambu",
+        "placeId": 3495544,
+        "lat": "-1.0364347",
+        "lon": "36.9270844",
+        "districts": [
+          {
+            "name": "Gatundu North",
+            "placeId": 16011351,
+            "lat": "-0.9162656",
+            "lon": "36.818126"
+          },
+          {
+            "name": "Gatundu South",
+            "placeId": 16011386,
+            "lat": "-0.9870799",
+            "lon": "36.841663"
+          },
+          {
+            "name": "Githunguri",
+            "placeId": 16075970,
+            "lat": "-1.0521553",
+            "lon": "36.7853189"
+          },
+          {
+            "name": "Juja",
+            "placeId": 16011737,
+            "lat": "-1.1053371",
+            "lon": "37.0325631"
+          },
+          {
+            "name": "Kabete",
+            "placeId": 16011335,
+            "lat": "-1.2180925",
+            "lon": "36.7155176"
+          },
+          {
+            "name": "Kiambaa",
+            "placeId": 16011330,
+            "lat": "-1.1632644",
+            "lon": "36.7608096"
+          },
+          {
+            "name": "Kiambu Town",
+            "placeId": 16011315,
+            "lat": "-1.1606245",
+            "lon": "36.8349954"
+          },
+          {
+            "name": "Kikuyu",
+            "placeId": 16011339,
+            "lat": "-1.236194",
+            "lon": "36.5991004"
+          },
+          {
+            "name": "Lari",
+            "placeId": 16011347,
+            "lat": "-0.9129418",
+            "lon": "36.6813896"
+          },
+          {
+            "name": "Limuru",
+            "placeId": 16011343,
+            "lat": "-1.1447616",
+            "lon": "36.6277618"
+          },
+          {
+            "name": "Ruiru",
+            "placeId": 16011305,
+            "lat": "-1.1773115",
+            "lon": "37.0141692"
+          },
+          {
+            "name": "Thika Town",
+            "placeId": 16011732,
+            "lat": "-1.0584296",
+            "lon": "37.1689868"
+          }
+        ]
+      },
+      {
+        "name": "Kilifi County",
+        "placeId": 3495545,
+        "lat": "-3.1533027",
+        "lon": "39.664608",
+        "districts": [
+          {
+            "name": "Ganze",
+            "placeId": 16154446,
+            "lat": "-3.5270416",
+            "lon": "39.5044935"
+          },
+          {
+            "name": "Kaloleni",
+            "placeId": 16154447,
+            "lat": "-3.7780985",
+            "lon": "39.5304655"
+          },
+          {
+            "name": "Kilifi North",
+            "placeId": 16154450,
+            "lat": "-3.5128133",
+            "lon": "39.9402487"
+          },
+          {
+            "name": "Kilifi South",
+            "placeId": 16154449,
+            "lat": "-3.819253",
+            "lon": "39.7501824"
+          },
+          {
+            "name": "Magarini",
+            "placeId": 16154452,
+            "lat": "-2.8164981",
+            "lon": "39.6975144"
+          },
+          {
+            "name": "Malindi",
+            "placeId": 16154451,
+            "lat": "-3.2294569",
+            "lon": "39.9114541"
+          },
+          {
+            "name": "Rabai",
+            "placeId": 16154448,
+            "lat": "-3.9147376",
+            "lon": "39.6050141"
+          }
+        ]
+      },
+      {
+        "name": "Kirinyaga County",
+        "placeId": 3495546,
+        "lat": "-0.4697319",
+        "lon": "37.3207325",
+        "districts": [
+          {
+            "name": "Kirinyaga Central",
+            "placeId": 16154190,
+            "lat": "-0.3797426",
+            "lon": "37.3145546"
+          },
+          {
+            "name": "Kirinyaga East",
+            "placeId": 16154191,
+            "lat": "-0.4839207",
+            "lon": "37.3598306"
+          },
+          {
+            "name": "Kirinyaga West",
+            "placeId": 16154187,
+            "lat": "-0.556916",
+            "lon": "37.2046445"
+          },
+          {
+            "name": "Mwea East",
+            "placeId": 16154189,
+            "lat": "-0.6368724",
+            "lon": "37.4041612"
+          },
+          {
+            "name": "Mwea West",
+            "placeId": 16154188,
+            "lat": "-0.6805789",
+            "lon": "37.3501753"
+          }
+        ]
+      },
+      {
+        "name": "Kisii County",
+        "placeId": 3338140,
+        "lat": "-0.7388757",
+        "lon": "34.8110608",
+        "districts": [
+          {
+            "name": "Etago",
+            "placeId": 16271435,
+            "lat": "-0.9046772",
+            "lon": "34.6624886"
+          },
+          {
+            "name": "Gucha",
+            "placeId": 16271437,
+            "lat": "-0.8068862",
+            "lon": "34.718852"
+          },
+          {
+            "name": "Gucha South",
+            "placeId": 16347068,
+            "lat": "-0.779941",
+            "lon": "34.6607949"
+          },
+          {
+            "name": "Kenyenya",
+            "placeId": 16271436,
+            "lat": "-0.9096035",
+            "lon": "34.7586912"
+          },
+          {
+            "name": "Kisii Central",
+            "placeId": 16271433,
+            "lat": "-0.7397586",
+            "lon": "34.8320263"
+          },
+          {
+            "name": "Kisii South",
+            "placeId": 16271434,
+            "lat": "-0.6615761",
+            "lon": "34.6958795"
+          },
+          {
+            "name": "Kitutu Central",
+            "placeId": 13392621,
+            "lat": "-0.6187711",
+            "lon": "34.7546153"
+          },
+          {
+            "name": "Marani",
+            "placeId": 13392622,
+            "lat": "-0.5662157",
+            "lon": "34.8189701"
+          },
+          {
+            "name": "Masaba South",
+            "placeId": 16271439,
+            "lat": "-0.8373416",
+            "lon": "34.9350285"
+          },
+          {
+            "name": "Nyamache",
+            "placeId": 16393009,
+            "lat": "-0.8664182",
+            "lon": "34.8251287"
+          },
+          {
+            "name": "Sameta",
+            "placeId": 16393008,
+            "lat": "-0.7675066",
+            "lon": "34.7753316"
+          }
+        ]
+      },
+      {
+        "name": "Kisumu County",
+        "placeId": 3486289,
+        "lat": "-0.1970979",
+        "lon": "34.8801322",
+        "districts": [
+          {
+            "name": "Kisumu Central",
+            "placeId": 15937221,
+            "lat": "-0.0992378",
+            "lon": "34.7550984"
+          },
+          {
+            "name": "Kisumu East",
+            "placeId": 15937201,
+            "lat": "-0.0762967",
+            "lon": "34.8123081"
+          },
+          {
+            "name": "Kisumu West",
+            "placeId": 15938002,
+            "lat": "-0.0801931",
+            "lon": "34.6715648"
+          },
+          {
+            "name": "Muhoroni",
+            "placeId": 15937892,
+            "lat": "-0.1278289",
+            "lon": "35.0745753"
+          },
+          {
+            "name": "Nyakach",
+            "placeId": 15937744,
+            "lat": "-0.321283",
+            "lon": "34.9052789"
+          },
+          {
+            "name": "Nyando",
+            "placeId": 15937680,
+            "lat": "-0.209573",
+            "lon": "34.9525465"
+          },
+          {
+            "name": "Seme",
+            "placeId": 15970330,
+            "lat": "-0.1172779",
+            "lon": "34.5096966"
+          }
+        ]
+      },
+      {
+        "name": "Kitui County",
+        "placeId": 3495547,
+        "lat": "-1.5630928",
+        "lon": "38.3358207",
+        "districts": [
+          {
+            "name": "Kitui Central",
+            "placeId": 16084952,
+            "lat": "-1.3609123",
+            "lon": "38.0174764"
+          },
+          {
+            "name": "Kitui East",
+            "placeId": 16084964,
+            "lat": "-1.4049654",
+            "lon": "38.4890151"
+          },
+          {
+            "name": "Kitui Rural",
+            "placeId": 16084954,
+            "lat": "-1.4908169",
+            "lon": "37.8775"
+          },
+          {
+            "name": "Kitui South",
+            "placeId": 16084965,
+            "lat": "-2.2661072",
+            "lon": "38.4886018"
+          },
+          {
+            "name": "Kitui West",
+            "placeId": 16084953,
+            "lat": "-1.2374259",
+            "lon": "37.9092318"
+          },
+          {
+            "name": "Mwingi Central",
+            "placeId": 16084963,
+            "lat": "-0.919569",
+            "lon": "38.4763214"
+          },
+          {
+            "name": "Mwingi North",
+            "placeId": 16084962,
+            "lat": "-0.447314",
+            "lon": "38.3708854"
+          },
+          {
+            "name": "Mwingi West",
+            "placeId": 16084955,
+            "lat": "-0.9564672",
+            "lon": "37.9757997"
+          }
+        ]
+      },
+      {
+        "name": "Kwale",
+        "placeId": 3495548,
+        "lat": "-4.1857632",
+        "lon": "39.0940581",
+        "districts": [
+          {
+            "name": "Kinango",
+            "placeId": 16116691,
+            "lat": "-3.9491697",
+            "lon": "39.1643914"
+          },
+          {
+            "name": "Lunga Lunga",
+            "placeId": 16116689,
+            "lat": "-4.3535143",
+            "lon": "38.9270789"
+          },
+          {
+            "name": "Matuga",
+            "placeId": 16116692,
+            "lat": "-4.2399184",
+            "lon": "39.4002512"
+          },
+          {
+            "name": "Msambweni",
+            "placeId": 16116690,
+            "lat": "-4.4209257",
+            "lon": "39.4588017"
+          }
+        ]
+      },
+      {
+        "name": "Laikipia County",
+        "placeId": 3495549,
+        "lat": "0.2867913",
+        "lon": "36.811193",
+        "districts": [
+          {
+            "name": "Laikipia East",
+            "placeId": 16050613,
+            "lat": "0.0285345",
+            "lon": "36.8770569"
+          },
+          {
+            "name": "Laikipia North",
+            "placeId": 16050611,
+            "lat": "0.4131935",
+            "lon": "36.8877257"
+          },
+          {
+            "name": "Laikipia West",
+            "placeId": 16050612,
+            "lat": "0.3478108",
+            "lon": "36.5188484"
+          }
+        ]
+      },
+      {
+        "name": "Lamu",
+        "placeId": 3495550,
+        "lat": "-2.0653206",
+        "lon": "40.8862601",
+        "districts": [
+          {
+            "name": "Lamu East",
+            "placeId": 16025678,
+            "lat": "-1.93086",
+            "lon": "41.1423076"
+          },
+          {
+            "name": "Lamu West",
+            "placeId": 16025679,
+            "lat": "-2.1346007",
+            "lon": "40.6028237"
+          }
+        ]
+      },
+      {
+        "name": "Machakos County",
+        "placeId": 3492707,
+        "lat": "-1.2786079",
+        "lon": "37.3732047",
+        "districts": [
+          {
+            "name": "Kangundo",
+            "placeId": 16013349,
+            "lat": "-1.3395555",
+            "lon": "37.3500997"
+          },
+          {
+            "name": "Kathiani",
+            "placeId": 16013428,
+            "lat": "-1.4241657",
+            "lon": "37.3032468"
+          },
+          {
+            "name": "Machakos Town",
+            "placeId": 16013417,
+            "lat": "-1.5740146",
+            "lon": "37.2213853"
+          },
+          {
+            "name": "Masinga",
+            "placeId": 16013342,
+            "lat": "-0.9513679",
+            "lon": "37.5470023"
+          },
+          {
+            "name": "Matungulu",
+            "placeId": 16013353,
+            "lat": "-1.2078196",
+            "lon": "37.2317151"
+          },
+          {
+            "name": "Mavoko",
+            "placeId": 16013356,
+            "lat": "-1.4535036",
+            "lon": "37.0496334"
+          },
+          {
+            "name": "Mwala",
+            "placeId": 16013344,
+            "lat": "-1.4026843",
+            "lon": "37.5493587"
+          },
+          {
+            "name": "Yatta",
+            "placeId": 16013337,
+            "lat": "-1.2441382",
+            "lon": "37.5818039"
+          }
+        ]
+      },
+      {
+        "name": "Makueni",
+        "placeId": 3492708,
+        "lat": "-2.2561207",
+        "lon": "37.8316085",
+        "districts": [
+          {
+            "name": "Kaiti",
+            "placeId": 16056317,
+            "lat": "-1.7873736",
+            "lon": "37.4588092"
+          },
+          {
+            "name": "Kibwezi East",
+            "placeId": 16056313,
+            "lat": "-2.6424013",
+            "lon": "38.0847296"
+          },
+          {
+            "name": "Kibwezi West",
+            "placeId": 16056314,
+            "lat": "-2.1921358",
+            "lon": "37.7930546"
+          },
+          {
+            "name": "Kilome",
+            "placeId": 16056316,
+            "lat": "-1.8350544",
+            "lon": "37.3115028"
+          },
+          {
+            "name": "Makueni Subcounty",
+            "placeId": 16056315,
+            "lat": "-1.9415199",
+            "lon": "37.6779694"
+          },
+          {
+            "name": "Mbooni",
+            "placeId": 16056318,
+            "lat": "-1.6525708",
+            "lon": "37.5964408"
+          }
+        ]
+      },
+      {
+        "name": "Mandera County",
+        "placeId": 3495551,
+        "lat": "3.2292873",
+        "lon": "40.8430653",
+        "districts": [
+          {
+            "name": "Banissa",
+            "placeId": 16113596,
+            "lat": "3.9973712",
+            "lon": "40.4623306"
+          },
+          {
+            "name": "Kutulo",
+            "placeId": 16113590,
+            "lat": "2.4858244",
+            "lon": "40.7458372"
+          },
+          {
+            "name": "Lafey",
+            "placeId": 16113593,
+            "lat": "3.4971028",
+            "lon": "41.2464849"
+          },
+          {
+            "name": "Mandera East",
+            "placeId": 16113592,
+            "lat": "3.6880401",
+            "lon": "41.6420131"
+          },
+          {
+            "name": "Mandera North",
+            "placeId": 16113594,
+            "lat": "3.5057263",
+            "lon": "40.7842727"
+          },
+          {
+            "name": "Mandera South",
+            "placeId": 16113591,
+            "lat": "2.983342",
+            "lon": "40.7033824"
+          },
+          {
+            "name": "Mandera West",
+            "placeId": 16113595,
+            "lat": "3.4444544",
+            "lon": "40.2403935"
+          }
+        ]
+      },
+      {
+        "name": "Marsabit County",
+        "placeId": 3495552,
+        "lat": "2.8580498",
+        "lon": "37.6979118",
+        "districts": [
+          {
+            "name": "Laisamis",
+            "placeId": 15992634,
+            "lat": "2.3611482",
+            "lon": "37.2975196"
+          },
+          {
+            "name": "Moyale",
+            "placeId": 15992535,
+            "lat": "2.8746889",
+            "lon": "38.738195"
+          },
+          {
+            "name": "North Horr",
+            "placeId": 15992553,
+            "lat": "3.1072564",
+            "lon": "37.5641451"
+          },
+          {
+            "name": "Saku",
+            "placeId": 15992562,
+            "lat": "2.3697064",
+            "lon": "37.9725628"
+          }
+        ]
+      },
+      {
+        "name": "Meru County",
+        "placeId": 3495553,
+        "lat": "0.2265801",
+        "lon": "37.7558004",
+        "districts": [
+          {
+            "name": "Buuri",
+            "placeId": 16153984,
+            "lat": "0.1359193",
+            "lon": "37.3885582"
+          },
+          {
+            "name": "Igembe Central",
+            "placeId": 16153991,
+            "lat": "0.226621",
+            "lon": "38.0607417"
+          },
+          {
+            "name": "Igembe North",
+            "placeId": 16153992,
+            "lat": "0.4795539",
+            "lon": "37.9766678"
+          },
+          {
+            "name": "Igembe South",
+            "placeId": 16153990,
+            "lat": "0.1634423",
+            "lon": "37.9737365"
+          },
+          {
+            "name": "Imenti Central",
+            "placeId": 16153986,
+            "lat": "-0.029901",
+            "lon": "37.6232353"
+          },
+          {
+            "name": "Imenti North",
+            "placeId": 16153987,
+            "lat": "0.0631901",
+            "lon": "37.7371354"
+          },
+          {
+            "name": "Imenti South",
+            "placeId": 16153985,
+            "lat": "-0.0887725",
+            "lon": "37.5179735"
+          },
+          {
+            "name": "Tigania East",
+            "placeId": 16153989,
+            "lat": "0.2626913",
+            "lon": "37.798526"
+          },
+          {
+            "name": "Tigania West",
+            "placeId": 16153988,
+            "lat": "0.2420209",
+            "lon": "37.7299834"
+          }
+        ]
+      },
+      {
+        "name": "Migori County",
+        "placeId": 3486018,
+        "lat": "-1.0200117",
+        "lon": "34.3314639",
+        "districts": [
+          {
+            "name": "Awendo",
+            "placeId": 15957863,
+            "lat": "-0.8746467",
+            "lon": "34.5432817"
+          },
+          {
+            "name": "Kuria East",
+            "placeId": 15957561,
+            "lat": "-1.2770468",
+            "lon": "34.6261988"
+          },
+          {
+            "name": "Kuria West",
+            "placeId": 15957921,
+            "lat": "-1.1861154",
+            "lon": "34.5075591"
+          },
+          {
+            "name": "Nyatike",
+            "placeId": 15957910,
+            "lat": "-0.9339154",
+            "lon": "34.1981911"
+          },
+          {
+            "name": "Rongo",
+            "placeId": 15957640,
+            "lat": "-0.8186601",
+            "lon": "34.5887613"
+          },
+          {
+            "name": "Suna East",
+            "placeId": 15957580,
+            "lat": "-1.0675754",
+            "lon": "34.4831918"
+          },
+          {
+            "name": "Suna West",
+            "placeId": 15957917,
+            "lat": "-1.09358",
+            "lon": "34.381163"
+          },
+          {
+            "name": "Uriri",
+            "placeId": 15957633,
+            "lat": "-0.9453478",
+            "lon": "34.4627741"
+          }
+        ]
+      },
+      {
+        "name": "Mombasa County",
+        "placeId": 3495554,
+        "lat": "-4.0387653",
+        "lon": "39.6637104",
         "districts": [
           {
             "name": "Changamwe",
-            "placeId": 99904,
-            "lat": "-4.0223",
-            "lon": "39.6333"
+            "placeId": 15966466,
+            "lat": "-4.0299875",
+            "lon": "39.6203505"
+          },
+          {
+            "name": "Jomvu",
+            "placeId": 15966459,
+            "lat": "-3.9994129",
+            "lon": "39.6089501"
           },
           {
             "name": "Kisauni",
-            "placeId": 99905,
-            "lat": "-4.0012",
-            "lon": "39.7112"
+            "placeId": 15966442,
+            "lat": "-3.9828092",
+            "lon": "39.6858236"
+          },
+          {
+            "name": "Likoni",
+            "placeId": 15966472,
+            "lat": "-4.1026692",
+            "lon": "39.6255887"
           },
           {
             "name": "Mvita",
-            "placeId": 99906,
-            "lat": "-4.0544",
-            "lon": "39.6725"
+            "placeId": 15966447,
+            "lat": "-4.0550196",
+            "lon": "39.6620044"
+          },
+          {
+            "name": "Nyali",
+            "placeId": 15966421,
+            "lat": "-4.0331172",
+            "lon": "39.7025852"
           }
         ]
       },
       {
-        "name": "Nairobi",
-        "placeId": 3486320,
-        "lat": "-1.2921",
-        "lon": "36.8219",
+        "name": "Murang'a County",
+        "placeId": 3977580,
+        "lat": "-0.8316897",
+        "lon": "37.063909",
         "districts": [
           {
+            "name": "Gatanga",
+            "placeId": 16051882,
+            "lat": "-0.8983267",
+            "lon": "37.0651228"
+          },
+          {
+            "name": "Kandara",
+            "placeId": 16051881,
+            "lat": "-0.8822849",
+            "lon": "36.9907616"
+          },
+          {
+            "name": "Kangema",
+            "placeId": 16051879,
+            "lat": "-0.6845776",
+            "lon": "36.9636699"
+          },
+          {
+            "name": "Kigumo",
+            "placeId": 16051880,
+            "lat": "-0.7773513",
+            "lon": "36.9246524"
+          },
+          {
+            "name": "Kiharu",
+            "placeId": 16051884,
+            "lat": "-0.7003648",
+            "lon": "37.0686427"
+          },
+          {
+            "name": "Mathioya",
+            "placeId": 16051878,
+            "lat": "-0.652323",
+            "lon": "36.9152276"
+          },
+          {
+            "name": "Murang`a South",
+            "placeId": 16051883,
+            "lat": "-0.8812407",
+            "lon": "37.1644759"
+          }
+        ]
+      },
+      {
+        "name": "Nairobi County",
+        "placeId": 3492709,
+        "lat": "-1.3027785",
+        "lon": "36.8847875",
+        "districts": [
+          {
+            "name": "Dagoretti",
+            "placeId": 16362605,
+            "lat": "-1.2835689",
+            "lon": "36.7218488"
+          },
+          {
+            "name": "Embakasi",
+            "placeId": 16248854,
+            "lat": "-1.3076877",
+            "lon": "36.9230247"
+          },
+          {
+            "name": "Kamukunji",
+            "placeId": 16248850,
+            "lat": "-1.2779226",
+            "lon": "36.8591594"
+          },
+          {
+            "name": "Kasarani",
+            "placeId": 16247557,
+            "lat": "-1.2125246",
+            "lon": "36.9194509"
+          },
+          {
             "name": "Kibra",
-            "placeId": 99907,
-            "lat": "-1.3123",
-            "lon": "36.7812"
+            "placeId": 16246699,
+            "lat": "-1.3061336",
+            "lon": "36.7861633"
+          },
+          {
+            "name": "Langata",
+            "placeId": 16246698,
+            "lat": "-1.3708192",
+            "lon": "36.8135241"
+          },
+          {
+            "name": "Makadara subcounty",
+            "placeId": 16248853,
+            "lat": "-1.2965204",
+            "lon": "36.8639143"
+          },
+          {
+            "name": "Mathare",
+            "placeId": 16248851,
+            "lat": "-1.2584036",
+            "lon": "36.8589714"
+          },
+          {
+            "name": "Njiru",
+            "placeId": 16248849,
+            "lat": "-1.2546026",
+            "lon": "36.9921644"
+          },
+          {
+            "name": "Starehe",
+            "placeId": 16248852,
+            "lat": "-1.2973299",
+            "lon": "36.8417149"
           },
           {
             "name": "Westlands",
-            "placeId": 99908,
-            "lat": "-1.2623",
-            "lon": "36.8012"
+            "placeId": 16246696,
+            "lat": "-1.2464438",
+            "lon": "36.7842113"
+          }
+        ]
+      },
+      {
+        "name": "Nakuru",
+        "placeId": 14649082,
+        "lat": "-0.4605315",
+        "lon": "36.006414",
+        "districts": [
+          {
+            "name": "Bahati",
+            "placeId": 15969726,
+            "lat": "-0.2270627",
+            "lon": "36.1501101"
           },
           {
-            "name": "Dagoretti",
-            "placeId": 99909,
-            "lat": "-1.3023",
-            "lon": "36.7412"
+            "name": "Gilgil",
+            "placeId": 15969313,
+            "lat": "-0.541391",
+            "lon": "36.2572046"
+          },
+          {
+            "name": "Kuresoi North",
+            "placeId": 15969674,
+            "lat": "-0.2537745",
+            "lon": "35.5760348"
+          },
+          {
+            "name": "Kuresoi South",
+            "placeId": 15969669,
+            "lat": "-0.543198",
+            "lon": "35.6295195"
+          },
+          {
+            "name": "Molo",
+            "placeId": 15969356,
+            "lat": "-0.3547848",
+            "lon": "35.7996361"
+          },
+          {
+            "name": "Naivasha",
+            "placeId": 15969266,
+            "lat": "-0.8851226",
+            "lon": "36.3487317"
+          },
+          {
+            "name": "Nakuru East",
+            "placeId": 15969777,
+            "lat": "-0.3423941",
+            "lon": "36.1144641"
+          },
+          {
+            "name": "Nakuru West",
+            "placeId": 15970375,
+            "lat": "-0.3723832",
+            "lon": "36.0776199"
+          },
+          {
+            "name": "Njoro",
+            "placeId": 15969326,
+            "lat": "-0.4963201",
+            "lon": "35.9612518"
+          },
+          {
+            "name": "Rongai",
+            "placeId": 15969695,
+            "lat": "-0.0628081",
+            "lon": "36.0136856"
+          },
+          {
+            "name": "Subukia",
+            "placeId": 15969740,
+            "lat": "0.0228629",
+            "lon": "36.153689"
+          }
+        ]
+      },
+      {
+        "name": "Nandi County",
+        "placeId": 3495556,
+        "lat": "0.2252848",
+        "lon": "35.0896049",
+        "districts": [
+          {
+            "name": "Aldai",
+            "placeId": 16020945,
+            "lat": "0.0580488",
+            "lon": "34.9353903"
+          },
+          {
+            "name": "Chesumei",
+            "placeId": 16020947,
+            "lat": "0.2739603",
+            "lon": "35.1076877"
+          },
+          {
+            "name": "Emgwen",
+            "placeId": 16021009,
+            "lat": "0.1862822",
+            "lon": "35.1011063"
+          },
+          {
+            "name": "Mosop",
+            "placeId": 16020948,
+            "lat": "0.413483",
+            "lon": "35.0180931"
+          },
+          {
+            "name": "Nandi Hills",
+            "placeId": 16053353,
+            "lat": "0.1171478",
+            "lon": "35.2379988"
+          },
+          {
+            "name": "Tinderet",
+            "placeId": 16020944,
+            "lat": "-0.0182476",
+            "lon": "35.1885375"
+          }
+        ]
+      },
+      {
+        "name": "Narok",
+        "placeId": 3338145,
+        "lat": "-1.2811103",
+        "lon": "35.4693046",
+        "districts": [
+          {
+            "name": "Narok East",
+            "placeId": 16023967,
+            "lat": "-1.1558206",
+            "lon": "36.116703"
+          },
+          {
+            "name": "Narok North",
+            "placeId": 16023968,
+            "lat": "-0.8431367",
+            "lon": "35.8986142"
+          },
+          {
+            "name": "Narok South",
+            "placeId": 16023969,
+            "lat": "-1.3476922",
+            "lon": "35.74262"
+          },
+          {
+            "name": "Narok West",
+            "placeId": 16023970,
+            "lat": "-1.3341724",
+            "lon": "35.3858972"
+          },
+          {
+            "name": "Transmara East",
+            "placeId": 16023971,
+            "lat": "-1.0057565",
+            "lon": "35.1009885"
+          },
+          {
+            "name": "Transmara West",
+            "placeId": 16023972,
+            "lat": "-1.2239914",
+            "lon": "34.9175319"
+          }
+        ]
+      },
+      {
+        "name": "Nyamira County",
+        "placeId": 3486290,
+        "lat": "-0.6518955",
+        "lon": "34.9354319",
+        "districts": [
+          {
+            "name": "Borabu",
+            "placeId": 16271443,
+            "lat": "-0.6959445",
+            "lon": "35.0174473"
+          },
+          {
+            "name": "Manga",
+            "placeId": 16271441,
+            "lat": "-0.6536684",
+            "lon": "34.8608408"
+          },
+          {
+            "name": "Masaba North",
+            "placeId": 16271440,
+            "lat": "-0.7260673",
+            "lon": "34.9282115"
+          },
+          {
+            "name": "Nyamira North",
+            "placeId": 16271444,
+            "lat": "-0.505783",
+            "lon": "34.9909277"
+          },
+          {
+            "name": "Nyamira South",
+            "placeId": 16271442,
+            "lat": "-0.5756825",
+            "lon": "34.9406047"
+          }
+        ]
+      },
+      {
+        "name": "Nyandarua",
+        "placeId": 3495557,
+        "lat": "-0.3919809",
+        "lon": "36.4689384",
+        "districts": [
+          {
+            "name": "Kinangop",
+            "placeId": 16050555,
+            "lat": "-0.670656",
+            "lon": "36.5894593"
+          },
+          {
+            "name": "Kipipiri",
+            "placeId": 16050556,
+            "lat": "-0.4061637",
+            "lon": "36.5087709"
+          },
+          {
+            "name": "Ndaragwa",
+            "placeId": 16050557,
+            "lat": "-0.1807075",
+            "lon": "36.5403128"
+          },
+          {
+            "name": "Ol Kalou",
+            "placeId": 16050559,
+            "lat": "-0.2890517",
+            "lon": "36.3325312"
+          },
+          {
+            "name": "Oljoro Orok",
+            "placeId": 16050558,
+            "lat": "-0.0973624",
+            "lon": "36.3296969"
+          }
+        ]
+      },
+      {
+        "name": "Nyeri",
+        "placeId": 3495558,
+        "lat": "-0.3202369",
+        "lon": "36.9566398",
+        "districts": [
+          {
+            "name": "Kieni East",
+            "placeId": 16154068,
+            "lat": "-0.1986598",
+            "lon": "37.1143669"
+          },
+          {
+            "name": "Kieni West",
+            "placeId": 16161504,
+            "lat": "-0.2760686",
+            "lon": "36.7991349"
+          },
+          {
+            "name": "Mathira East",
+            "placeId": 16154070,
+            "lat": "-0.317559",
+            "lon": "37.1685638"
+          },
+          {
+            "name": "Mathira West",
+            "placeId": 16154069,
+            "lat": "-0.4699504",
+            "lon": "37.1452614"
+          },
+          {
+            "name": "Mukurweini",
+            "placeId": 16154066,
+            "lat": "-0.580941",
+            "lon": "37.0766631"
+          },
+          {
+            "name": "Nyeri Central",
+            "placeId": 16154067,
+            "lat": "-0.419346",
+            "lon": "36.9667393"
+          },
+          {
+            "name": "Othaya",
+            "placeId": 16154065,
+            "lat": "-0.5198161",
+            "lon": "36.8266026"
+          },
+          {
+            "name": "Tetu",
+            "placeId": 16154064,
+            "lat": "-0.4558826",
+            "lon": "36.9169667"
+          }
+        ]
+      },
+      {
+        "name": "Samburu",
+        "placeId": 3495559,
+        "lat": "1.5389275",
+        "lon": "37.1843925",
+        "districts": [
+          {
+            "name": "Samburu Central",
+            "placeId": 16089379,
+            "lat": "1.0794995",
+            "lon": "36.7264956"
+          },
+          {
+            "name": "Samburu East",
+            "placeId": 16089380,
+            "lat": "1.1071342",
+            "lon": "37.473992"
+          },
+          {
+            "name": "Samburu North",
+            "placeId": 16089378,
+            "lat": "1.9299964",
+            "lon": "36.8497062"
+          }
+        ]
+      },
+      {
+        "name": "Siaya County",
+        "placeId": 3486291,
+        "lat": "-0.060135",
+        "lon": "34.2545322",
+        "districts": [
+          {
+            "name": "Alego Usonga",
+            "placeId": 15955453,
+            "lat": "0.0586721",
+            "lon": "34.2173881"
+          },
+          {
+            "name": "Bondo",
+            "placeId": 15955271,
+            "lat": "-0.1006097",
+            "lon": "34.1832393"
+          },
+          {
+            "name": "Gem",
+            "placeId": 15955289,
+            "lat": "0.0377372",
+            "lon": "34.4546566"
+          },
+          {
+            "name": "Rarieda",
+            "placeId": 15955277,
+            "lat": "-0.2327109",
+            "lon": "34.3442467"
+          },
+          {
+            "name": "Ugenya",
+            "placeId": 15955442,
+            "lat": "0.2109139",
+            "lon": "34.2427005"
+          },
+          {
+            "name": "Ugunja",
+            "placeId": 15955393,
+            "lat": "0.2036278",
+            "lon": "34.3286476"
+          }
+        ]
+      },
+      {
+        "name": "Taita–Taveta",
+        "placeId": 3495560,
+        "lat": "-3.4132479",
+        "lon": "38.4026478",
+        "districts": [
+          {
+            "name": "Mwatate",
+            "placeId": 16020772,
+            "lat": "-3.7072001",
+            "lon": "38.3358139"
+          },
+          {
+            "name": "Taveta",
+            "placeId": 16020773,
+            "lat": "-3.5631559",
+            "lon": "37.9208412"
+          },
+          {
+            "name": "Voi",
+            "placeId": 16020771,
+            "lat": "-3.5589999",
+            "lon": "38.812858"
+          },
+          {
+            "name": "Wundanyi",
+            "placeId": 16020770,
+            "lat": "-3.0618646",
+            "lon": "38.1769151"
+          }
+        ]
+      },
+      {
+        "name": "Tana River County",
+        "placeId": 3495561,
+        "lat": "-1.5366554",
+        "lon": "39.5775486",
+        "districts": [
+          {
+            "name": "Bura",
+            "placeId": 16025732,
+            "lat": "-0.6466604",
+            "lon": "39.2307122"
+          },
+          {
+            "name": "Galole",
+            "placeId": 16025868,
+            "lat": "-1.5319294",
+            "lon": "39.5745292"
+          },
+          {
+            "name": "Garsen",
+            "placeId": 16025730,
+            "lat": "-2.4393608",
+            "lon": "39.6794843"
+          }
+        ]
+      },
+      {
+        "name": "Tharaka-Nithi",
+        "placeId": 3495562,
+        "lat": "-0.1941658",
+        "lon": "37.8088127",
+        "districts": [
+          {
+            "name": "Chuka",
+            "placeId": 16084956,
+            "lat": "-0.2940276",
+            "lon": "37.5217081"
+          },
+          {
+            "name": "Igambang'ombe",
+            "placeId": 16084957,
+            "lat": "-0.3394965",
+            "lon": "37.7864502"
+          },
+          {
+            "name": "Muthambi",
+            "placeId": 16084958,
+            "lat": "-0.2905135",
+            "lon": "37.7119953"
+          },
+          {
+            "name": "Mwimbi",
+            "placeId": 16084959,
+            "lat": "-0.2298385",
+            "lon": "37.5646961"
+          },
+          {
+            "name": "Tharaka North",
+            "placeId": 16084961,
+            "lat": "-0.1083199",
+            "lon": "38.0990958"
+          },
+          {
+            "name": "Tharaka South",
+            "placeId": 16084960,
+            "lat": "-0.212962",
+            "lon": "37.9069162"
+          }
+        ]
+      },
+      {
+        "name": "Trans-Nzoia County",
+        "placeId": 3495563,
+        "lat": "1.044146",
+        "lon": "34.9709692",
+        "districts": [
+          {
+            "name": "Cherangany",
+            "placeId": 16032539,
+            "lat": "1.0437492",
+            "lon": "35.208309"
+          },
+          {
+            "name": "Endebess",
+            "placeId": 16032535,
+            "lat": "1.1457808",
+            "lon": "34.7662552"
+          },
+          {
+            "name": "Kiminini",
+            "placeId": 16032537,
+            "lat": "0.9328924",
+            "lon": "34.9563956"
+          },
+          {
+            "name": "Kwanza",
+            "placeId": 16032538,
+            "lat": "1.1371518",
+            "lon": "34.9872582"
+          },
+          {
+            "name": "Saboti",
+            "placeId": 16032536,
+            "lat": "0.9476759",
+            "lon": "34.8527326"
+          }
+        ]
+      },
+      {
+        "name": "Turkana County",
+        "placeId": 3495564,
+        "lat": "2.7656387",
+        "lon": "35.3565238",
+        "districts": []
+      },
+      {
+        "name": "Uasin Gishu County",
+        "placeId": 3495565,
+        "lat": "0.4749966",
+        "lon": "35.2224032",
+        "districts": [
+          {
+            "name": "Ainabkoi",
+            "placeId": 16032733,
+            "lat": "0.3102101",
+            "lon": "35.4367216"
+          },
+          {
+            "name": "Kapseret",
+            "placeId": 16032713,
+            "lat": "0.418749",
+            "lon": "35.2450567"
+          },
+          {
+            "name": "Kesses",
+            "placeId": 16032712,
+            "lat": "0.259639",
+            "lon": "35.398668"
+          },
+          {
+            "name": "Moiben",
+            "placeId": 16032716,
+            "lat": "0.7216604",
+            "lon": "35.3799991"
+          },
+          {
+            "name": "Soy",
+            "placeId": 16032715,
+            "lat": "0.7599239",
+            "lon": "35.246166"
+          },
+          {
+            "name": "Turbo",
+            "placeId": 16032714,
+            "lat": "0.5975507",
+            "lon": "35.0701781"
+          }
+        ]
+      },
+      {
+        "name": "Vihiga County",
+        "placeId": 3486322,
+        "lat": "0.0816521",
+        "lon": "34.730322",
+        "districts": [
+          {
+            "name": "Emuhaya",
+            "placeId": 16013895,
+            "lat": "0.07728",
+            "lon": "34.6184332"
+          },
+          {
+            "name": "Hamisi",
+            "placeId": 16013957,
+            "lat": "0.0898308",
+            "lon": "34.8189007"
+          },
+          {
+            "name": "Luanda",
+            "placeId": 16013893,
+            "lat": "0.0192146",
+            "lon": "34.6043687"
+          },
+          {
+            "name": "Sabatia",
+            "placeId": 16013877,
+            "lat": "0.1128688",
+            "lon": "34.7504785"
+          },
+          {
+            "name": "Vihiga Subcounty",
+            "placeId": 16013890,
+            "lat": "0.0317272",
+            "lon": "34.6876513"
+          }
+        ]
+      },
+      {
+        "name": "Wajir County",
+        "placeId": 3495566,
+        "lat": "1.939826",
+        "lon": "39.9416991",
+        "districts": [
+          {
+            "name": "Eldas",
+            "placeId": 16154529,
+            "lat": "2.1926023",
+            "lon": "39.4823405"
+          },
+          {
+            "name": "Tarbaj",
+            "placeId": 16154530,
+            "lat": "2.4650412",
+            "lon": "40.1903117"
+          },
+          {
+            "name": "Wajir East",
+            "placeId": 16154528,
+            "lat": "2.0110857",
+            "lon": "40.4988306"
+          },
+          {
+            "name": "Wajir North",
+            "placeId": 16154531,
+            "lat": "3.0719034",
+            "lon": "39.5475507"
+          },
+          {
+            "name": "Wajir South",
+            "placeId": 16154526,
+            "lat": "0.9602901",
+            "lon": "40.2280789"
+          },
+          {
+            "name": "Wajir West",
+            "placeId": 16154527,
+            "lat": "1.6669374",
+            "lon": "39.484558"
+          }
+        ]
+      },
+      {
+        "name": "West Pokot",
+        "placeId": 11981571,
+        "lat": "1.8843824",
+        "lon": "35.2889969",
+        "districts": [
+          {
+            "name": "Pokot Central",
+            "placeId": 16090366,
+            "lat": "1.5768628",
+            "lon": "35.5649623"
+          },
+          {
+            "name": "Pokot North",
+            "placeId": 16090369,
+            "lat": "1.9769526",
+            "lon": "35.0901139"
+          },
+          {
+            "name": "Pokot South",
+            "placeId": 16090367,
+            "lat": "1.3321528",
+            "lon": "35.305218"
+          },
+          {
+            "name": "West Pokot Subcounty",
+            "placeId": 16090368,
+            "lat": "1.5475994",
+            "lon": "35.10511"
           }
         ]
       }
@@ -86,218 +2129,1714 @@
     "countryCode": "EG",
     "regions": [
       {
-        "name": "Alexandria",
-        "placeId": 2529711,
-        "lat": "31.2001",
-        "lon": "29.9187",
-        "districts": []
-      },
-      {
-        "name": "Aswan",
-        "placeId": 2529712,
-        "lat": "24.0889",
-        "lon": "32.8998",
-        "districts": []
-      },
-      {
-        "name": "Asyut",
-        "placeId": 2529713,
-        "lat": "27.1783",
-        "lon": "31.1859",
-        "districts": []
-      },
-      {
-        "name": "Beheira",
-        "placeId": 2529714,
-        "lat": "30.8481",
-        "lon": "30.3436",
-        "districts": []
-      },
-      {
-        "name": "Beni Suef",
-        "placeId": 2529715,
-        "lat": "29.0744",
-        "lon": "31.0978",
-        "districts": []
-      },
-      {
-        "name": "Cairo",
-        "placeId": 2529716,
-        "lat": "30.0444",
-        "lon": "31.2357",
-        "districts": []
-      },
-      {
-        "name": "Dakahlia",
-        "placeId": 2529717,
-        "lat": "31.0379",
-        "lon": "31.3785",
-        "districts": []
-      },
-      {
-        "name": "Damietta",
-        "placeId": 2529719,
-        "lat": "31.4175",
-        "lon": "31.8144",
-        "districts": []
-      },
-      {
-        "name": "Faiyum",
-        "placeId": 2529720,
-        "lat": "29.3084",
-        "lon": "30.8428",
-        "districts": []
-      },
-      {
-        "name": "Gharbia",
-        "placeId": 2529721,
-        "lat": "30.8754",
-        "lon": "31.0335",
-        "districts": []
-      },
-      {
-        "name": "Giza",
-        "placeId": 2529722,
-        "lat": "30.0131",
-        "lon": "31.2089",
-        "districts": []
-      },
-      {
-        "name": "Ismailia",
-        "placeId": 2529723,
-        "lat": "30.6043",
-        "lon": "32.2723",
-        "districts": []
-      },
-      {
-        "name": "Kafr El Sheikh",
-        "placeId": 2529724,
-        "lat": "31.1107",
-        "lon": "30.9388",
-        "districts": []
-      },
-      {
-        "name": "Luxor",
-        "placeId": 2529718,
-        "lat": "25.6872",
-        "lon": "32.6396",
+        "name": "Ad Daqahliyya",
+        "placeId": 4103403,
+        "lat": "31.143263",
+        "lon": "31.7734383",
         "districts": [
           {
-            "name": "Al-Qarnah",
-            "placeId": 99910,
-            "lat": "25.7194",
-            "lon": "32.5978"
+            "name": "Mansoura",
+            "placeId": 80000001,
+            "lat": "31.143263",
+            "lon": "31.7734383"
           },
           {
-            "name": "Armant",
-            "placeId": 99911,
-            "lat": "25.6194",
-            "lon": "32.5478"
+            "name": "Mit Ghamr",
+            "placeId": 80000002,
+            "lat": "31.143263",
+            "lon": "31.7734383"
           },
           {
-            "name": "Isna",
-            "placeId": 99912,
-            "lat": "25.2933",
-            "lon": "32.5564"
+            "name": "Talkha",
+            "placeId": 80000003,
+            "lat": "31.143263",
+            "lon": "31.7734383"
           },
           {
-            "name": "Tiba",
-            "placeId": 99913,
-            "lat": "25.8123",
-            "lon": "32.7123"
+            "name": "Dekernes",
+            "placeId": 80000004,
+            "lat": "31.143263",
+            "lon": "31.7734383"
+          },
+          {
+            "name": "El Senbellawein",
+            "placeId": 80000005,
+            "lat": "31.143263",
+            "lon": "31.7734383"
+          },
+          {
+            "name": "Sherbin",
+            "placeId": 80000006,
+            "lat": "31.143263",
+            "lon": "31.7734383"
+          },
+          {
+            "name": "El Matareya",
+            "placeId": 80000007,
+            "lat": "31.143263",
+            "lon": "31.7734383"
+          },
+          {
+            "name": "Belqas",
+            "placeId": 80000008,
+            "lat": "31.143263",
+            "lon": "31.7734383"
+          },
+          {
+            "name": "Aga",
+            "placeId": 80000009,
+            "lat": "31.143263",
+            "lon": "31.7734383"
+          },
+          {
+            "name": "Minyet El Nasr",
+            "placeId": 80000010,
+            "lat": "31.143263",
+            "lon": "31.7734383"
           }
         ]
       },
       {
-        "name": "Matrouh",
-        "placeId": 2529725,
-        "lat": "31.3543",
-        "lon": "27.2373",
-        "districts": []
+        "name": "Aj Jiza",
+        "placeId": 3824206,
+        "lat": "29.0390671",
+        "lon": "29.6084387",
+        "districts": [
+          {
+            "name": "Giza City",
+            "placeId": 80000011,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Dokki",
+            "placeId": 80000012,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Agouza",
+            "placeId": 80000013,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "Imbaba",
+            "placeId": 80000014,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Haram",
+            "placeId": 80000015,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Omraniya",
+            "placeId": 80000016,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Bulaq El Dakrour",
+            "placeId": 80000017,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "Sheikh Zayed",
+            "placeId": 80000018,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "6th of October",
+            "placeId": 80000019,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Badrashein",
+            "placeId": 80000020,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Ayat",
+            "placeId": 80000021,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "Oseem",
+            "placeId": 80000022,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "Kerdasa",
+            "placeId": 80000023,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "Abu Nomros",
+            "placeId": 80000024,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Atfih",
+            "placeId": 80000025,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Saf",
+            "placeId": 80000026,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          },
+          {
+            "name": "El Wahat El Bahariya",
+            "placeId": 80000027,
+            "lat": "29.0390671",
+            "lon": "29.6084387"
+          }
+        ]
       },
       {
-        "name": "Minya",
-        "placeId": 2529726,
-        "lat": "28.0871",
-        "lon": "30.7618",
-        "districts": []
+        "name": "Al Ismailiya",
+        "placeId": 3062184,
+        "lat": "30.583529",
+        "lon": "32.2638069",
+        "districts": [
+          {
+            "name": "Ismailia City",
+            "placeId": 80000028,
+            "lat": "30.583529",
+            "lon": "32.2638069"
+          },
+          {
+            "name": "El Tal El Kebir",
+            "placeId": 80000029,
+            "lat": "30.583529",
+            "lon": "32.2638069"
+          },
+          {
+            "name": "Fayed",
+            "placeId": 80000030,
+            "lat": "30.583529",
+            "lon": "32.2638069"
+          },
+          {
+            "name": "El Qantara West",
+            "placeId": 80000031,
+            "lat": "30.583529",
+            "lon": "32.2638069"
+          },
+          {
+            "name": "El Qantara East",
+            "placeId": 80000032,
+            "lat": "30.583529",
+            "lon": "32.2638069"
+          },
+          {
+            "name": "Abu Suweir",
+            "placeId": 80000033,
+            "lat": "30.583529",
+            "lon": "32.2638069"
+          },
+          {
+            "name": "El Kassassin",
+            "placeId": 80000034,
+            "lat": "30.583529",
+            "lon": "32.2638069"
+          }
+        ]
       },
       {
-        "name": "Monufia",
-        "placeId": 2529727,
-        "lat": "30.5205",
-        "lon": "30.9876",
-        "districts": []
+        "name": "Al Minya",
+        "placeId": 3726175,
+        "lat": "28.2071465",
+        "lon": "30.6394954",
+        "districts": [
+          {
+            "name": "Minya City",
+            "placeId": 80000035,
+            "lat": "28.2071465",
+            "lon": "30.6394954"
+          },
+          {
+            "name": "Mallawi",
+            "placeId": 80000036,
+            "lat": "28.2071465",
+            "lon": "30.6394954"
+          },
+          {
+            "name": "Bani Mazar",
+            "placeId": 80000037,
+            "lat": "28.2071465",
+            "lon": "30.6394954"
+          },
+          {
+            "name": "Maghagha",
+            "placeId": 80000038,
+            "lat": "28.2071465",
+            "lon": "30.6394954"
+          },
+          {
+            "name": "Samalut",
+            "placeId": 80000039,
+            "lat": "28.2071465",
+            "lon": "30.6394954"
+          },
+          {
+            "name": "Abu Qurqas",
+            "placeId": 80000040,
+            "lat": "28.2071465",
+            "lon": "30.6394954"
+          },
+          {
+            "name": "El Idwa",
+            "placeId": 80000041,
+            "lat": "28.2071465",
+            "lon": "30.6394954"
+          },
+          {
+            "name": "Deir Mawas",
+            "placeId": 80000042,
+            "lat": "28.2071465",
+            "lon": "30.6394954"
+          },
+          {
+            "name": "Matai",
+            "placeId": 80000043,
+            "lat": "28.2071465",
+            "lon": "30.6394954"
+          }
+        ]
+      },
+      {
+        "name": "Al Qalyubiya",
+        "placeId": 4103337,
+        "lat": "30.3338283",
+        "lon": "31.3423593",
+        "districts": [
+          {
+            "name": "Banha",
+            "placeId": 80000044,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          },
+          {
+            "name": "Shubra El Kheima",
+            "placeId": 80000045,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          },
+          {
+            "name": "Qalyoub",
+            "placeId": 80000046,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          },
+          {
+            "name": "El Khanka",
+            "placeId": 80000047,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          },
+          {
+            "name": "Abu Zaabal",
+            "placeId": 80000048,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          },
+          {
+            "name": "Shebin El Qanater",
+            "placeId": 80000049,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          },
+          {
+            "name": "El Qanater El Khayriya",
+            "placeId": 80000050,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          },
+          {
+            "name": "El Obour",
+            "placeId": 80000051,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          },
+          {
+            "name": "Tukh",
+            "placeId": 80000052,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          },
+          {
+            "name": "Qaha",
+            "placeId": 80000053,
+            "lat": "30.3338283",
+            "lon": "31.3423593"
+          }
+        ]
+      },
+      {
+        "name": "Alexandria",
+        "placeId": 3061846,
+        "lat": "30.9749991",
+        "lon": "29.7823643",
+        "districts": [
+          {
+            "name": "El Montaza First",
+            "placeId": 80000054,
+            "lat": "30.9749991",
+            "lon": "29.7823643"
+          },
+          {
+            "name": "El Montaza Second",
+            "placeId": 80000055,
+            "lat": "30.9749991",
+            "lon": "29.7823643"
+          },
+          {
+            "name": "East Alexandria",
+            "placeId": 80000056,
+            "lat": "30.9749991",
+            "lon": "29.7823643"
+          },
+          {
+            "name": "Middle Alexandria",
+            "placeId": 80000057,
+            "lat": "30.9749991",
+            "lon": "29.7823643"
+          },
+          {
+            "name": "West Alexandria",
+            "placeId": 80000058,
+            "lat": "30.9749991",
+            "lon": "29.7823643"
+          },
+          {
+            "name": "El Gumrok",
+            "placeId": 80000059,
+            "lat": "30.9749991",
+            "lon": "29.7823643"
+          },
+          {
+            "name": "El Amreya First",
+            "placeId": 80000060,
+            "lat": "30.9749991",
+            "lon": "29.7823643"
+          },
+          {
+            "name": "El Amreya Second",
+            "placeId": 80000061,
+            "lat": "30.9749991",
+            "lon": "29.7823643"
+          },
+          {
+            "name": "Borg El Arab",
+            "placeId": 80000062,
+            "lat": "30.9749991",
+            "lon": "29.7823643"
+          }
+        ]
+      },
+      {
+        "name": "Aswan",
+        "placeId": 3061757,
+        "lat": "23.6534588",
+        "lon": "32.2839089",
+        "districts": [
+          {
+            "name": "Aswan City",
+            "placeId": 80000063,
+            "lat": "23.6534588",
+            "lon": "32.2839089"
+          },
+          {
+            "name": "Kom Ombo",
+            "placeId": 80000064,
+            "lat": "23.6534588",
+            "lon": "32.2839089"
+          },
+          {
+            "name": "Edfu",
+            "placeId": 80000065,
+            "lat": "23.6534588",
+            "lon": "32.2839089"
+          },
+          {
+            "name": "Nasr Al-Nuba",
+            "placeId": 80000066,
+            "lat": "23.6534588",
+            "lon": "32.2839089"
+          },
+          {
+            "name": "Daraw",
+            "placeId": 80000067,
+            "lat": "23.6534588",
+            "lon": "32.2839089"
+          },
+          {
+            "name": "Abu Simbel",
+            "placeId": 80000068,
+            "lat": "23.6534588",
+            "lon": "32.2839089"
+          }
+        ]
+      },
+      {
+        "name": "Asyut",
+        "placeId": 3726184,
+        "lat": "27.3399994",
+        "lon": "31.6046531",
+        "districts": [
+          {
+            "name": "Asyut City",
+            "placeId": 80000069,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          },
+          {
+            "name": "Dairut",
+            "placeId": 80000070,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          },
+          {
+            "name": "El Qusiya",
+            "placeId": 80000071,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          },
+          {
+            "name": "Manfalut",
+            "placeId": 80000072,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          },
+          {
+            "name": "Aboub",
+            "placeId": 80000073,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          },
+          {
+            "name": "El Badari",
+            "placeId": 80000074,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          },
+          {
+            "name": "El Ghenayem",
+            "placeId": 80000075,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          },
+          {
+            "name": "Sahel Selim",
+            "placeId": 80000076,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          },
+          {
+            "name": "Sedfa",
+            "placeId": 80000077,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          },
+          {
+            "name": "Abuteeg",
+            "placeId": 80000078,
+            "lat": "27.3399994",
+            "lon": "31.6046531"
+          }
+        ]
+      },
+      {
+        "name": "Bani Sweif",
+        "placeId": 3726170,
+        "lat": "28.8526274",
+        "lon": "30.8753815",
+        "districts": [
+          {
+            "name": "Beni Suef City",
+            "placeId": 80000079,
+            "lat": "28.8526274",
+            "lon": "30.8753815"
+          },
+          {
+            "name": "Nasser",
+            "placeId": 80000080,
+            "lat": "28.8526274",
+            "lon": "30.8753815"
+          },
+          {
+            "name": "El Wasty",
+            "placeId": 80000081,
+            "lat": "28.8526274",
+            "lon": "30.8753815"
+          },
+          {
+            "name": "Biba",
+            "placeId": 80000082,
+            "lat": "28.8526274",
+            "lon": "30.8753815"
+          },
+          {
+            "name": "Sumusta",
+            "placeId": 80000083,
+            "lat": "28.8526274",
+            "lon": "30.8753815"
+          },
+          {
+            "name": "El Fashn",
+            "placeId": 80000084,
+            "lat": "28.8526274",
+            "lon": "30.8753815"
+          },
+          {
+            "name": "Ihnasiya",
+            "placeId": 80000085,
+            "lat": "28.8526274",
+            "lon": "30.8753815"
+          }
+        ]
+      },
+      {
+        "name": "Cairo",
+        "placeId": 4103336,
+        "lat": "30.0346115",
+        "lon": "31.5617802",
+        "districts": [
+          {
+            "name": "Nasr City",
+            "placeId": 80000086,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Heliopolis",
+            "placeId": 80000087,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Maadi",
+            "placeId": 80000088,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Zamalek",
+            "placeId": 80000089,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Qasr El Nil",
+            "placeId": 80000090,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Shubra",
+            "placeId": 80000091,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Sayeda Zeinab",
+            "placeId": 80000092,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Helwan",
+            "placeId": 80000093,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Marg",
+            "placeId": 80000094,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Ain Shams",
+            "placeId": 80000095,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Daher",
+            "placeId": 80000096,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Basatin",
+            "placeId": 80000097,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Abaseya",
+            "placeId": 80000098,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "New Cairo",
+            "placeId": 80000099,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Sherouk",
+            "placeId": 80000100,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Badr City",
+            "placeId": 80000101,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Salam",
+            "placeId": 80000102,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Matareya",
+            "placeId": 80000103,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Zeitoun",
+            "placeId": 80000104,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Hada'eq El-Kobba",
+            "placeId": 80000105,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Waili",
+            "placeId": 80000106,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Bab El-Shariya",
+            "placeId": 80000107,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Muski",
+            "placeId": 80000108,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "Abdeen",
+            "placeId": 80000109,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Darb El-Ahmar",
+            "placeId": 80000110,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Khalifa",
+            "placeId": 80000111,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Mokattam",
+            "placeId": 80000112,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Sahel",
+            "placeId": 80000113,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Zawya El-Hamra",
+            "placeId": 80000114,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          },
+          {
+            "name": "El-Sharabiya",
+            "placeId": 80000115,
+            "lat": "30.0346115",
+            "lon": "31.5617802"
+          }
+        ]
+      },
+      {
+        "name": "Damietta",
+        "placeId": 4103404,
+        "lat": "31.420398",
+        "lon": "31.7780443",
+        "districts": [
+          {
+            "name": "Damietta City",
+            "placeId": 80000116,
+            "lat": "31.420398",
+            "lon": "31.7780443"
+          },
+          {
+            "name": "Faraskour",
+            "placeId": 80000117,
+            "lat": "31.420398",
+            "lon": "31.7780443"
+          },
+          {
+            "name": "El Zarqa",
+            "placeId": 80000118,
+            "lat": "31.420398",
+            "lon": "31.7780443"
+          },
+          {
+            "name": "Kafr El Saad",
+            "placeId": 80000119,
+            "lat": "31.420398",
+            "lon": "31.7780443"
+          },
+          {
+            "name": "New Damietta",
+            "placeId": 80000120,
+            "lat": "31.420398",
+            "lon": "31.7780443"
+          }
+        ]
+      },
+      {
+        "name": "Eastern",
+        "placeId": 4103407,
+        "lat": "30.630105",
+        "lon": "31.7522506",
+        "districts": [
+          {
+            "name": "Zagazig",
+            "placeId": 80000121,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "10th of October",
+            "placeId": 80000122,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "Belbeis",
+            "placeId": 80000123,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "Minya El Qamh",
+            "placeId": 80000124,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "Abu Hammad",
+            "placeId": 80000125,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "Faqus",
+            "placeId": 80000126,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "Abu Kebir",
+            "placeId": 80000127,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "El Huseiniya",
+            "placeId": 80000128,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "Kafr Saqr",
+            "placeId": 80000129,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "Awlad Saqr",
+            "placeId": 80000130,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "Diyarb Negm",
+            "placeId": 80000131,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "Mashtool El Souq",
+            "placeId": 80000132,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          },
+          {
+            "name": "El Ibrahimiya",
+            "placeId": 80000133,
+            "lat": "30.630105",
+            "lon": "31.7522506"
+          }
+        ]
+      },
+      {
+        "name": "El Minufiyya",
+        "placeId": 3824207,
+        "lat": "30.4366929",
+        "lon": "30.8059432",
+        "districts": [
+          {
+            "name": "Shibin El Kom",
+            "placeId": 80000134,
+            "lat": "30.4366929",
+            "lon": "30.8059432"
+          },
+          {
+            "name": "Menouf",
+            "placeId": 80000135,
+            "lat": "30.4366929",
+            "lon": "30.8059432"
+          },
+          {
+            "name": "Ashmoun",
+            "placeId": 80000136,
+            "lat": "30.4366929",
+            "lon": "30.8059432"
+          },
+          {
+            "name": "Sadaat City",
+            "placeId": 80000137,
+            "lat": "30.4366929",
+            "lon": "30.8059432"
+          },
+          {
+            "name": "Bagour",
+            "placeId": 80000138,
+            "lat": "30.4366929",
+            "lon": "30.8059432"
+          },
+          {
+            "name": "Quwaysna",
+            "placeId": 80000139,
+            "lat": "30.4366929",
+            "lon": "30.8059432"
+          },
+          {
+            "name": "Tala",
+            "placeId": 80000140,
+            "lat": "30.4366929",
+            "lon": "30.8059432"
+          },
+          {
+            "name": "Ash Shuhada",
+            "placeId": 80000141,
+            "lat": "30.4366929",
+            "lon": "30.8059432"
+          }
+        ]
+      },
+      {
+        "name": "Faiyum",
+        "placeId": 3726124,
+        "lat": "29.3388643",
+        "lon": "30.4867709",
+        "districts": [
+          {
+            "name": "Fayoum City",
+            "placeId": 80000142,
+            "lat": "29.3388643",
+            "lon": "30.4867709"
+          },
+          {
+            "name": "Sinnuris",
+            "placeId": 80000143,
+            "lat": "29.3388643",
+            "lon": "30.4867709"
+          },
+          {
+            "name": "Ibsheway",
+            "placeId": 80000144,
+            "lat": "29.3388643",
+            "lon": "30.4867709"
+          },
+          {
+            "name": "Itsa",
+            "placeId": 80000145,
+            "lat": "29.3388643",
+            "lon": "30.4867709"
+          },
+          {
+            "name": "Tamiya",
+            "placeId": 80000146,
+            "lat": "29.3388643",
+            "lon": "30.4867709"
+          },
+          {
+            "name": "Youssef El Seddik",
+            "placeId": 80000147,
+            "lat": "29.3388643",
+            "lon": "30.4867709"
+          }
+        ]
+      },
+      {
+        "name": "Kafr El Sheikh",
+        "placeId": 4103405,
+        "lat": "31.3816427",
+        "lon": "30.8107615",
+        "districts": [
+          {
+            "name": "Kafr El Sheikh City",
+            "placeId": 80000148,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          },
+          {
+            "name": "Desouq",
+            "placeId": 80000149,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          },
+          {
+            "name": "Fouah",
+            "placeId": 80000150,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          },
+          {
+            "name": "Metoubas",
+            "placeId": 80000151,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          },
+          {
+            "name": "Baltim",
+            "placeId": 80000152,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          },
+          {
+            "name": "El Hamoul",
+            "placeId": 80000153,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          },
+          {
+            "name": "Bila",
+            "placeId": 80000154,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          },
+          {
+            "name": "El Riyadh",
+            "placeId": 80000155,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          },
+          {
+            "name": "Qallin",
+            "placeId": 80000156,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          },
+          {
+            "name": "Sidi Salem",
+            "placeId": 80000157,
+            "lat": "31.3816427",
+            "lon": "30.8107615"
+          }
+        ]
+      },
+      {
+        "name": "Lake",
+        "placeId": 3824513,
+        "lat": "30.7914426",
+        "lon": "30.2340753",
+        "districts": [
+          {
+            "name": "Damanhour",
+            "placeId": 80000158,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Kafr El Dawwar",
+            "placeId": 80000159,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Rashid",
+            "placeId": 80000160,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Abou Homs",
+            "placeId": 80000161,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Itay El Baroud",
+            "placeId": 80000162,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "El Delengat",
+            "placeId": 80000163,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Koum Hamada",
+            "placeId": 80000164,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Badr City",
+            "placeId": 80000165,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Abu El Matamir",
+            "placeId": 80000166,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Shubra Khit",
+            "placeId": 80000167,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Edko",
+            "placeId": 80000168,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Mahmoudiyah",
+            "placeId": 80000169,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          },
+          {
+            "name": "Wadi El Natrun",
+            "placeId": 80000170,
+            "lat": "30.7914426",
+            "lon": "30.2340753"
+          }
+        ]
+      },
+      {
+        "name": "Luxor",
+        "placeId": 3726211,
+        "lat": "25.4928194",
+        "lon": "32.941722",
+        "districts": [
+          {
+            "name": "Luxor City",
+            "placeId": 80000171,
+            "lat": "25.4928194",
+            "lon": "32.941722"
+          },
+          {
+            "name": "Esna",
+            "placeId": 80000172,
+            "lat": "25.4928194",
+            "lon": "32.941722"
+          },
+          {
+            "name": "Armant",
+            "placeId": 80000173,
+            "lat": "25.4928194",
+            "lon": "32.941722"
+          },
+          {
+            "name": "El Bayadeya",
+            "placeId": 80000174,
+            "lat": "25.4928194",
+            "lon": "32.941722"
+          },
+          {
+            "name": "El Ziniah",
+            "placeId": 80000175,
+            "lat": "25.4928194",
+            "lon": "32.941722"
+          },
+          {
+            "name": "Al Tud",
+            "placeId": 80000176,
+            "lat": "25.4928194",
+            "lon": "32.941722"
+          },
+          {
+            "name": "New Luxor",
+            "placeId": 80000177,
+            "lat": "25.4928194",
+            "lon": "32.941722"
+          }
+        ]
+      },
+      {
+        "name": "Matruh",
+        "placeId": 3061826,
+        "lat": "29.7855448",
+        "lon": "27.4805506",
+        "districts": [
+          {
+            "name": "Marsa Matruh",
+            "placeId": 80000178,
+            "lat": "29.7855448",
+            "lon": "27.4805506"
+          },
+          {
+            "name": "El Alamein",
+            "placeId": 80000179,
+            "lat": "29.7855448",
+            "lon": "27.4805506"
+          },
+          {
+            "name": "Siwa Oasis",
+            "placeId": 80000180,
+            "lat": "29.7855448",
+            "lon": "27.4805506"
+          },
+          {
+            "name": "Dabaa",
+            "placeId": 80000181,
+            "lat": "29.7855448",
+            "lon": "27.4805506"
+          },
+          {
+            "name": "Sallum",
+            "placeId": 80000182,
+            "lat": "29.7855448",
+            "lon": "27.4805506"
+          },
+          {
+            "name": "Sidi Barrani",
+            "placeId": 80000183,
+            "lat": "29.7855448",
+            "lon": "27.4805506"
+          },
+          {
+            "name": "Al Hamam",
+            "placeId": 80000184,
+            "lat": "29.7855448",
+            "lon": "27.4805506"
+          }
+        ]
       },
       {
         "name": "New Valley",
-        "placeId": 2529728,
-        "lat": "25.4513",
-        "lon": "30.5489",
-        "districts": []
+        "placeId": 3061827,
+        "lat": "24.8744561",
+        "lon": "28.868568",
+        "districts": [
+          {
+            "name": "Kharga Oasis",
+            "placeId": 80000185,
+            "lat": "24.8744561",
+            "lon": "28.868568"
+          },
+          {
+            "name": "Dakhla Oasis",
+            "placeId": 80000186,
+            "lat": "24.8744561",
+            "lon": "28.868568"
+          },
+          {
+            "name": "Farafra Oasis",
+            "placeId": 80000187,
+            "lat": "24.8744561",
+            "lon": "28.868568"
+          },
+          {
+            "name": "Baris Oasis",
+            "placeId": 80000188,
+            "lat": "24.8744561",
+            "lon": "28.868568"
+          }
+        ]
       },
       {
         "name": "North Sinai",
-        "placeId": 2529729,
-        "lat": "30.7327",
-        "lon": "33.6226",
-        "districts": []
+        "placeId": 3060792,
+        "lat": "30.5006559",
+        "lon": "33.7260615",
+        "districts": [
+          {
+            "name": "Arish",
+            "placeId": 80000189,
+            "lat": "30.5006559",
+            "lon": "33.7260615"
+          },
+          {
+            "name": "Sheikh Zuweid",
+            "placeId": 80000190,
+            "lat": "30.5006559",
+            "lon": "33.7260615"
+          },
+          {
+            "name": "Rafah",
+            "placeId": 80000191,
+            "lat": "30.5006559",
+            "lon": "33.7260615"
+          },
+          {
+            "name": "Bir al-Abed",
+            "placeId": 80000192,
+            "lat": "30.5006559",
+            "lon": "33.7260615"
+          },
+          {
+            "name": "Nekhel",
+            "placeId": 80000193,
+            "lat": "30.5006559",
+            "lon": "33.7260615"
+          },
+          {
+            "name": "Al-Hasana",
+            "placeId": 80000194,
+            "lat": "30.5006559",
+            "lon": "33.7260615"
+          }
+        ]
       },
       {
         "name": "Port Said",
-        "placeId": 2529730,
-        "lat": "31.2653",
-        "lon": "32.3019",
-        "districts": []
-      },
-      {
-        "name": "Qalyubia",
-        "placeId": 2529731,
-        "lat": "30.4101",
-        "lon": "31.2108",
-        "districts": []
+        "placeId": 4103406,
+        "lat": "31.1879335",
+        "lon": "32.3438759",
+        "districts": [
+          {
+            "name": "Port Said City",
+            "placeId": 80000195,
+            "lat": "31.1879335",
+            "lon": "32.3438759"
+          },
+          {
+            "name": "El Sharq",
+            "placeId": 80000196,
+            "lat": "31.1879335",
+            "lon": "32.3438759"
+          },
+          {
+            "name": "El Arab",
+            "placeId": 80000197,
+            "lat": "31.1879335",
+            "lon": "32.3438759"
+          },
+          {
+            "name": "El Manakh",
+            "placeId": 80000198,
+            "lat": "31.1879335",
+            "lon": "32.3438759"
+          },
+          {
+            "name": "El Dawahi",
+            "placeId": 80000199,
+            "lat": "31.1879335",
+            "lon": "32.3438759"
+          },
+          {
+            "name": "El Zohour",
+            "placeId": 80000200,
+            "lat": "31.1879335",
+            "lon": "32.3438759"
+          },
+          {
+            "name": "Port Fouad",
+            "placeId": 80000201,
+            "lat": "31.1879335",
+            "lon": "32.3438759"
+          },
+          {
+            "name": "El Ganoub",
+            "placeId": 80000202,
+            "lat": "31.1879335",
+            "lon": "32.3438759"
+          }
+        ]
       },
       {
         "name": "Qena",
-        "placeId": 2529732,
-        "lat": "26.1551",
-        "lon": "32.7160",
-        "districts": []
+        "placeId": 3726189,
+        "lat": "26.2467239",
+        "lon": "32.7480589",
+        "districts": [
+          {
+            "name": "Qena City",
+            "placeId": 80000203,
+            "lat": "26.2467239",
+            "lon": "32.7480589"
+          },
+          {
+            "name": "Naja Hammadi",
+            "placeId": 80000204,
+            "lat": "26.2467239",
+            "lon": "32.7480589"
+          },
+          {
+            "name": "Abu Tesht",
+            "placeId": 80000205,
+            "lat": "26.2467239",
+            "lon": "32.7480589"
+          },
+          {
+            "name": "Farshoot",
+            "placeId": 80000206,
+            "lat": "26.2467239",
+            "lon": "32.7480589"
+          },
+          {
+            "name": "Dishna",
+            "placeId": 80000207,
+            "lat": "26.2467239",
+            "lon": "32.7480589"
+          },
+          {
+            "name": "Qus",
+            "placeId": 80000208,
+            "lat": "26.2467239",
+            "lon": "32.7480589"
+          },
+          {
+            "name": "Naqada",
+            "placeId": 80000209,
+            "lat": "26.2467239",
+            "lon": "32.7480589"
+          },
+          {
+            "name": "El Waqf",
+            "placeId": 80000210,
+            "lat": "26.2467239",
+            "lon": "32.7480589"
+          }
+        ]
       },
       {
         "name": "Red Sea",
-        "placeId": 2529733,
-        "lat": "25.5991",
-        "lon": "34.1482",
-        "districts": []
-      },
-      {
-        "name": "Sharqia",
-        "placeId": 2529734,
-        "lat": "30.7327",
-        "lon": "31.7108",
-        "districts": []
-      },
-      {
-        "name": "Sohag",
-        "placeId": 2529735,
-        "lat": "26.5570",
-        "lon": "31.6948",
-        "districts": []
+        "placeId": 3061758,
+        "lat": "25.5661673",
+        "lon": "34.451733",
+        "districts": [
+          {
+            "name": "Hurghada",
+            "placeId": 80000211,
+            "lat": "25.5661673",
+            "lon": "34.451733"
+          },
+          {
+            "name": "Safaga",
+            "placeId": 80000212,
+            "lat": "25.5661673",
+            "lon": "34.451733"
+          },
+          {
+            "name": "Quseir",
+            "placeId": 80000213,
+            "lat": "25.5661673",
+            "lon": "34.451733"
+          },
+          {
+            "name": "Marsa Alam",
+            "placeId": 80000214,
+            "lat": "25.5661673",
+            "lon": "34.451733"
+          },
+          {
+            "name": "Ras Gharib",
+            "placeId": 80000215,
+            "lat": "25.5661673",
+            "lon": "34.451733"
+          },
+          {
+            "name": "Shalateen",
+            "placeId": 80000216,
+            "lat": "25.5661673",
+            "lon": "34.451733"
+          },
+          {
+            "name": "Halayeb",
+            "placeId": 80000217,
+            "lat": "25.5661673",
+            "lon": "34.451733"
+          }
+        ]
       },
       {
         "name": "South Sinai",
-        "placeId": 2529736,
-        "lat": "28.5372",
-        "lon": "33.9876",
-        "districts": []
+        "placeId": 3060793,
+        "lat": "28.655778",
+        "lon": "33.7304874",
+        "districts": [
+          {
+            "name": "Sharm El Sheikh",
+            "placeId": 80000218,
+            "lat": "28.655778",
+            "lon": "33.7304874"
+          },
+          {
+            "name": "Dahab",
+            "placeId": 80000219,
+            "lat": "28.655778",
+            "lon": "33.7304874"
+          },
+          {
+            "name": "Nuweiba",
+            "placeId": 80000220,
+            "lat": "28.655778",
+            "lon": "33.7304874"
+          },
+          {
+            "name": "Taba",
+            "placeId": 80000221,
+            "lat": "28.655778",
+            "lon": "33.7304874"
+          },
+          {
+            "name": "Saint Catherine",
+            "placeId": 80000222,
+            "lat": "28.655778",
+            "lon": "33.7304874"
+          },
+          {
+            "name": "El Tor",
+            "placeId": 80000223,
+            "lat": "28.655778",
+            "lon": "33.7304874"
+          },
+          {
+            "name": "Ras Sidr",
+            "placeId": 80000224,
+            "lat": "28.655778",
+            "lon": "33.7304874"
+          },
+          {
+            "name": "Abu Zenima",
+            "placeId": 80000225,
+            "lat": "28.655778",
+            "lon": "33.7304874"
+          },
+          {
+            "name": "Abu Rudeis",
+            "placeId": 80000226,
+            "lat": "28.655778",
+            "lon": "33.7304874"
+          }
+        ]
       },
       {
         "name": "Suez",
-        "placeId": 2529737,
-        "lat": "29.9668",
-        "lon": "32.5498",
-        "districts": []
+        "placeId": 3062185,
+        "lat": "29.6254995",
+        "lon": "32.3387627",
+        "districts": [
+          {
+            "name": "Suez City",
+            "placeId": 80000227,
+            "lat": "29.6254995",
+            "lon": "32.3387627"
+          },
+          {
+            "name": "El Arbaeen",
+            "placeId": 80000228,
+            "lat": "29.6254995",
+            "lon": "32.3387627"
+          },
+          {
+            "name": "El Ganayen",
+            "placeId": 80000229,
+            "lat": "29.6254995",
+            "lon": "32.3387627"
+          },
+          {
+            "name": "El Attaka",
+            "placeId": 80000230,
+            "lat": "29.6254995",
+            "lon": "32.3387627"
+          },
+          {
+            "name": "Faisal",
+            "placeId": 80000231,
+            "lat": "29.6254995",
+            "lon": "32.3387627"
+          }
+        ]
+      },
+      {
+        "name": "Suhaj",
+        "placeId": 3726186,
+        "lat": "26.7830453",
+        "lon": "32.0706895",
+        "districts": [
+          {
+            "name": "Sohag City",
+            "placeId": 80000232,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          },
+          {
+            "name": "Akhmim",
+            "placeId": 80000233,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          },
+          {
+            "name": "Girga",
+            "placeId": 80000234,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          },
+          {
+            "name": "Tahta",
+            "placeId": 80000235,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          },
+          {
+            "name": "Tima",
+            "placeId": 80000236,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          },
+          {
+            "name": "El Balyana",
+            "placeId": 80000237,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          },
+          {
+            "name": "Dar El Salam",
+            "placeId": 80000238,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          },
+          {
+            "name": "Juhayna",
+            "placeId": 80000239,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          },
+          {
+            "name": "Monsha'ah",
+            "placeId": 80000240,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          },
+          {
+            "name": "Sakalta",
+            "placeId": 80000241,
+            "lat": "26.7830453",
+            "lon": "32.0706895"
+          }
+        ]
+      },
+      {
+        "name": "Western",
+        "placeId": 3584607,
+        "lat": "30.8392142",
+        "lon": "31.0240231",
+        "districts": [
+          {
+            "name": "Tanta",
+            "placeId": 80000242,
+            "lat": "30.8392142",
+            "lon": "31.0240231"
+          },
+          {
+            "name": "El Mahalla El Kubra",
+            "placeId": 80000243,
+            "lat": "30.8392142",
+            "lon": "31.0240231"
+          },
+          {
+            "name": "Kafr El Zayat",
+            "placeId": 80000244,
+            "lat": "30.8392142",
+            "lon": "31.0240231"
+          },
+          {
+            "name": "Zefta",
+            "placeId": 80000245,
+            "lat": "30.8392142",
+            "lon": "31.0240231"
+          },
+          {
+            "name": "Samanoud",
+            "placeId": 80000246,
+            "lat": "30.8392142",
+            "lon": "31.0240231"
+          },
+          {
+            "name": "Qutur",
+            "placeId": 80000247,
+            "lat": "30.8392142",
+            "lon": "31.0240231"
+          },
+          {
+            "name": "Basyoun",
+            "placeId": 80000248,
+            "lat": "30.8392142",
+            "lon": "31.0240231"
+          },
+          {
+            "name": "El Santa",
+            "placeId": 80000249,
+            "lat": "30.8392142",
+            "lon": "31.0240231"
+          }
+        ]
       }
     ]
   },
