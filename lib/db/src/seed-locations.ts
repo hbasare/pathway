@@ -6,9 +6,30 @@ import { eq, and, sql } from "drizzle-orm";
 import { db } from "./index.js";
 import { seededRegionsTable, seededDistrictsTable } from "./schema/locations.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const seedFilePath = path.resolve(__dirname, "seeds/locations-seed.json");
+let seedFilePath = "";
+try {
+  const filename = fileURLToPath(import.meta.url);
+  const dirname = path.dirname(filename);
+  seedFilePath = path.resolve(dirname, "seeds/locations-seed.json");
+} catch {
+  // CommonJS fallback (when bundled in api-server)
+  seedFilePath = path.resolve(__dirname, "../../../lib/db/src/seeds/locations-seed.json");
+}
+
+// Fallback search paths if the primary one doesn't exist
+if (seedFilePath === "" || !fs.existsSync(seedFilePath)) {
+  const possiblePaths = [
+    path.resolve(process.cwd(), "lib/db/src/seeds/locations-seed.json"),
+    path.resolve(process.cwd(), "../../lib/db/src/seeds/locations-seed.json"),
+    path.resolve(__dirname, "seeds/locations-seed.json"),
+  ];
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      seedFilePath = p;
+      break;
+    }
+  }
+}
 
 interface SeedDistrict {
   name: string;
