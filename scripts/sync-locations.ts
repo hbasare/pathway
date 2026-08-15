@@ -28,38 +28,59 @@ interface SeedCountry {
   regions: SeedRegion[];
 }
 
-// Query the main official Overpass API with exponential backoff on 429
+const OVERPASS_ENDPOINTS = [
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://lz4.overpass-api.de/api/interpreter",
+  "https://z.overpass-api.de/api/interpreter",
+  "https://overpass.nchc.org.tw/api/interpreter",
+  "https://overpass-api.de/api/interpreter"
+];
+
+let currentEndpointIdx = 0;
+
+// Query the main official Overpass API with endpoint rotation and exponential backoff on 429/timeout
 async function overpassFetch(query: string, attempt = 1): Promise<any[]> {
-  const url = "https://overpass-api.de/api/interpreter";
+  const activeIdx = (currentEndpointIdx + attempt - 1) % OVERPASS_ENDPOINTS.length;
+  const url = OVERPASS_ENDPOINTS[activeIdx];
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25s timeout per endpoint
+
     const res = await fetch(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "PathwaysTheoryOfChange/1.0"
+        "User-Agent": "PathwaysTheoryOfChange/2.0"
       },
       body: `data=${encodeURIComponent(query)}`,
+      signal: controller.signal
     });
+    clearTimeout(timeoutId);
     
     if (res.status === 429) {
-      const delay = Math.min(Math.pow(2, attempt) * 4000, 30000); // 8s, 16s, up to 30s backoff
-      console.warn(`Overpass API rate-limited (429). Retrying in ${delay / 1000}s (attempt ${attempt})...`);
+      const delay = Math.min(Math.pow(2, attempt) * 2000, 10000); // 2s, 4s, etc.
+      console.warn(`Overpass API ${url} rate-limited (429). Rotating to next endpoint in ${delay / 1000}s (attempt ${attempt})...`);
       await new Promise(resolve => setTimeout(resolve, delay));
       return overpassFetch(query, attempt + 1);
     }
     
     if (!res.ok) {
-      console.error(`Overpass API failed with status: ${res.status} ${res.statusText}`);
+      console.error(`Overpass API ${url} failed with status: ${res.status} ${res.statusText}`);
+      if (attempt <= 5) {
+        return overpassFetch(query, attempt + 1);
+      }
       return [];
     }
     
     const data = await res.json();
+    currentEndpointIdx = activeIdx; // Remember successful endpoint index globally
     return data.elements ?? [];
   } catch (err: any) {
-    console.error(`Overpass API request failed:`, err.message || err);
-    if (attempt <= 3) {
-      console.log(`Retrying failed request in 5s (attempt ${attempt})...`);
-      await new Promise(resolve => setTimeout(resolve, 5000));
+    console.error(`Overpass API request to ${url} failed:`, err.message || err);
+    if (attempt <= 5) {
+      const delay = 1000;
+      console.log(`Rotating and retrying next endpoint in ${delay / 1000}s (attempt ${attempt})...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
       return overpassFetch(query, attempt + 1);
     }
     return [];
@@ -91,8 +112,9 @@ async function fetchDistricts(regionOsmId: number): Promise<SeedDistrict[]> {
   const areaId = 3600000000 + regionOsmId;
   const districts: SeedDistrict[] = [];
   
-  for (const level of ["5", "6"]) {
-    const q = `[out:json][timeout:60];area(id:${areaId})->.r;relation(area.r)["boundary"="administrative"]["admin_level"="${level}"];out tags center;`;
+  // Search levels 5, 6, 7, 8 in sequence to support markaz, kisms, subcounties, and villages
+  for (const level of ["5", "6", "7", "8"]) {
+    const q = `[out:json][timeout:30];area(id:${areaId})->.r;relation(area.r)["boundary"="administrative"]["admin_level"="${level}"];out tags center;`;
     const elements = await overpassFetch(q);
     
     if (elements.length >= 2) {
@@ -106,7 +128,7 @@ async function fetchDistricts(regionOsmId: number): Promise<SeedDistrict[]> {
           lon: el.center ? String(el.center.lon) : "0",
         });
       }
-      break;
+      break; // Found valid subdivisions, exit level search loop
     }
   }
   
