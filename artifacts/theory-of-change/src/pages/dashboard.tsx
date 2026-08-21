@@ -289,6 +289,7 @@ export default function Dashboard() {
 
   const ungrouped = (theories ?? []).filter(t => t.portfolioId == null);
   const totalTheories = theories?.length ?? 0;
+  const isLimitReached = user?.orgLimit !== undefined && user?.orgLimit !== null && totalTheories >= user.orgLimit;
 
   return (
     <div className="w-full max-w-5xl mx-auto p-8 animate-in fade-in duration-500">
@@ -297,13 +298,23 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">{t("dashboard.title")}</h1>
           <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
+          {user?.orgLimit !== undefined && user?.orgLimit !== null && (
+            <p className="text-xs text-muted-foreground mt-2 font-semibold">
+              Interventions Limit: <span className="text-foreground">{totalTheories}</span> / <span className="text-foreground">{user.orgLimit === null ? "∞" : user.orgLimit}</span> used
+              {isLimitReached && <span className="text-destructive ml-2 font-bold">(Limit reached - contact admin)</span>}
+            </p>
+          )}
         </div>
         {permissions.canEdit && <div className="flex gap-2">
           <Button variant="outline" onClick={() => setIsCreatePortfolioOpen(true)} className="font-semibold">
             <FolderPlus className="w-4 h-4 mr-2" />
             {t("dashboard.newPortfolio")}
           </Button>
-          <Button onClick={() => setIsCreateTheoryOpen(true)} className="shadow-md font-semibold">
+          <Button 
+            onClick={() => setIsCreateTheoryOpen(true)} 
+            disabled={isLimitReached} 
+            className="shadow-md font-semibold"
+          >
             <Plus className="w-4 h-4 mr-2" />
             {t("dashboard.createTheory")}
           </Button>
@@ -332,7 +343,12 @@ export default function Dashboard() {
             {t("dashboard.emptyText")}
           </p>
           {permissions.canEdit && (
-            <Button onClick={() => setIsCreateTheoryOpen(true)} size="lg" className="shadow-md">
+            <Button 
+              onClick={() => setIsCreateTheoryOpen(true)} 
+              disabled={isLimitReached} 
+              size="lg" 
+              className="shadow-md"
+            >
               {t("dashboard.createFirst")}
             </Button>
           )}

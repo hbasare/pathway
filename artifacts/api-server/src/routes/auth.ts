@@ -119,6 +119,7 @@ router.get("/auth/me", async (req, res) => {
     orgId: activeOrgId,
     orgName: org?.name ?? "",
     orgLogoData: org?.logoData ?? null,
+    orgLimit: org?.interventionLimit ?? null,
     email: user.email,
     mustChangePassword: user.mustChangePassword,
     assignedTheoryIds,

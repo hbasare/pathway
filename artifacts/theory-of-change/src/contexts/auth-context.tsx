@@ -8,6 +8,7 @@ export interface AuthUser {
   orgId: number | null;
   orgName: string;
   orgLogoData?: string | null;
+  orgLimit?: number | null;
   assignedTheoryIds: number[];
   mustChangePassword?: boolean;
   email?: string | null;
