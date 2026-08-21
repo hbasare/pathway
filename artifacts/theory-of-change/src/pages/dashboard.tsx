@@ -243,10 +243,6 @@ export default function Dashboard() {
   const [isCreatePortfolioOpen, setIsCreatePortfolioOpen] = useState(false);
   const [editingPortfolio, setEditingPortfolio] = useState<Portfolio | null>(null);
 
-  if (user?.role === "system_admin" && !user.orgId) {
-    return <MasterConsoleDashboard />;
-  }
-
   const deletePortfolioMutation = useDeletePortfolio({
     mutation: {
       onSuccess: () => {
@@ -267,6 +263,10 @@ export default function Dashboard() {
       onError: () => toast({ title: t("theory.deleteFailed"), variant: "destructive" }),
     },
   });
+
+  if (user?.role === "system_admin" && !user.orgId) {
+    return <MasterConsoleDashboard />;
+  }
 
   const handleDeletePortfolio = (portfolio: Portfolio) => {
     if (window.confirm(t("dashboard.portfolioDeleteConfirm", { name: portfolio.name }))) {
