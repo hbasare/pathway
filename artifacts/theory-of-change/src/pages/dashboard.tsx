@@ -1,6 +1,6 @@
 import { Link } from "wouter";
-import { Layers, Plus, ArrowRight, FolderOpen, Pencil, Trash2, MoreHorizontal, FolderPlus, TableProperties } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Layers, Plus, ArrowRight, FolderOpen, Pencil, Trash2, MoreHorizontal, FolderPlus, TableProperties, ChevronDown, ChevronRight, Users } from "lucide-react";
+import { useState, useEffect, Fragment } from "react";
 import {
   useListTheories,
   useListPortfolios,
@@ -39,6 +39,7 @@ function MasterConsoleDashboard() {
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false);
   const [isEditOrgOpen, setIsEditOrgOpen] = useState(false);
   const [editingOrg, setEditingOrg] = useState<{ id: number; name: string } | null>(null);
+  const [expandedOrgId, setExpandedOrgId] = useState<number | null>(null);
   const { refetch } = useAuth();
 
   const loadData = async () => {
@@ -150,40 +151,113 @@ function MasterConsoleDashboard() {
                 const orgTheories = theoriesList.filter(t => t.orgId === org.id).length;
 
                 return (
-                  <tr key={org.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="p-4 pl-6 font-mono text-xs text-muted-foreground">#{org.id}</td>
-                    <td className="p-4 font-semibold text-foreground">
-                      <div className="flex items-center gap-2">
-                        <span>{org.name}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setEditingOrg(org);
-                            setIsEditOrgOpen(true);
-                          }}
-                          className="h-6 w-6 text-muted-foreground hover:text-foreground animate-in fade-in duration-200"
+                  <Fragment key={org.id}>
+                    <tr className="hover:bg-muted/20 transition-colors">
+                      <td className="p-4 pl-6 font-mono text-xs text-muted-foreground">#{org.id}</td>
+                      <td className="p-4 font-semibold text-foreground">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setExpandedOrgId(expandedOrgId === org.id ? null : org.id)}
+                            className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            {expandedOrgId === org.id ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </Button>
+                          <span>{org.name}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setEditingOrg(org);
+                              setIsEditOrgOpen(true);
+                            }}
+                            className="h-6 w-6 text-muted-foreground hover:text-foreground animate-in fade-in duration-200"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </td>
+                      <td className="p-4 text-muted-foreground">
+                        <button
+                          onClick={() => setExpandedOrgId(expandedOrgId === org.id ? null : org.id)}
+                          className="hover:text-foreground hover:underline font-medium text-left flex items-center gap-1.5"
                         >
-                          <Pencil className="w-3.5 h-3.5" />
+                          <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                          <span>{orgUsers} users</span>
+                        </button>
+                      </td>
+                      <td className="p-4 text-muted-foreground">{orgPorts} portfolios</td>
+                      <td className="p-4 text-muted-foreground">
+                        {orgTheories} / {org.interventionLimit === null ? "∞" : org.interventionLimit}
+                      </td>
+                      <td className="p-4 pr-6 text-right">
+                        <Button
+                          size="sm"
+                          onClick={() => handleSwitchTenant(org.id)}
+                          className="shadow-sm gap-1.5 font-semibold"
+                        >
+                          <span>Switch Context</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </Button>
-                      </div>
-                    </td>
-                    <td className="p-4 text-muted-foreground">{orgUsers} users</td>
-                    <td className="p-4 text-muted-foreground">{orgPorts} portfolios</td>
-                    <td className="p-4 text-muted-foreground">
-                      {orgTheories} / {org.interventionLimit === null ? "∞" : org.interventionLimit}
-                    </td>
-                    <td className="p-4 pr-6 text-right">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSwitchTenant(org.id)}
-                        className="shadow-sm gap-1.5 font-semibold"
-                      >
-                        <span>Switch Context</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Button>
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                    {expandedOrgId === org.id && (
+                      <tr className="bg-muted/5">
+                        <td colSpan={6} className="p-4 pl-12 pr-6">
+                          <div className="border border-border rounded-xl bg-card overflow-hidden shadow-inner animate-in slide-in-from-top-1 duration-200">
+                            <div className="p-4 bg-muted/20 border-b border-border flex justify-between items-center">
+                              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                                Users in {org.name}
+                              </span>
+                            </div>
+                            {usersList.filter(u => u.orgId === org.id).length === 0 ? (
+                              <div className="p-6 text-center text-sm text-muted-foreground">
+                                No users registered in this organization.
+                              </div>
+                            ) : (
+                              <table className="w-full text-left border-collapse text-xs">
+                                <thead>
+                                  <tr className="border-b border-border text-muted-foreground font-semibold bg-muted/10">
+                                    <th className="p-2.5 pl-4">ID</th>
+                                    <th className="p-2.5">Display Name</th>
+                                    <th className="p-2.5">Username</th>
+                                    <th className="p-2.5">Role</th>
+                                    <th className="p-2.5">Email</th>
+                                    <th className="p-2.5 pr-4">Created At</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-border/60">
+                                  {usersList
+                                    .filter(u => u.orgId === org.id)
+                                    .map((u) => (
+                                      <tr key={u.id} className="hover:bg-muted/30">
+                                        <td className="p-2.5 pl-4 font-mono text-muted-foreground">#{u.id}</td>
+                                        <td className="p-2.5 font-medium text-foreground">{u.displayName}</td>
+                                        <td className="p-2.5 text-muted-foreground">@{u.username}</td>
+                                        <td className="p-2.5">
+                                          <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold bg-primary/10 text-primary uppercase">
+                                            {u.role}
+                                          </span>
+                                        </td>
+                                        <td className="p-2.5 text-muted-foreground">{u.email || "-"}</td>
+                                        <td className="p-2.5 pr-4 text-muted-foreground">
+                                          {new Date(u.createdAt).toLocaleDateString()}
+                                        </td>
+                                      </tr>
+                                    ))}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>
