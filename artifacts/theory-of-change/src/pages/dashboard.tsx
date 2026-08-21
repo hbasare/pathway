@@ -298,7 +298,7 @@ export default function Dashboard() {
         <div>
           <h1 className="text-3xl font-display font-bold text-foreground tracking-tight">{t("dashboard.title")}</h1>
           <p className="text-muted-foreground mt-1">{t("dashboard.subtitle")}</p>
-          {user?.orgLimit !== undefined && user?.orgLimit !== null && (
+          {user?.orgLimit !== undefined && (
             <p className="text-xs text-muted-foreground mt-2 font-semibold">
               Interventions Limit: <span className="text-foreground">{totalTheories}</span> / <span className="text-foreground">{user.orgLimit === null ? "∞" : user.orgLimit}</span> used
               {isLimitReached && <span className="text-destructive ml-2 font-bold">(Limit reached - contact admin)</span>}
