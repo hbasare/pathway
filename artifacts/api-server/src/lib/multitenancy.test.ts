@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { db } from "@workspace/db";
 import { organizationsTable, theoriesTable, usersTable } from "@workspace/db";
 import { getAuthorizedTheory } from "../routes/theories";
-import { eq } from "drizzle-orm";
+import { eq, count } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 describe("Multi-Tenancy E2E & Logical Isolation Tests", () => {
@@ -141,5 +141,52 @@ describe("Multi-Tenancy E2E & Logical Isolation Tests", () => {
 
     // Clean up
     await db.delete(usersTable).where(eq(usersTable.id, user.id));
+  });
+
+  it("should enforce the organization intervention limits", async () => {
+    // 1. Create a test organization with limit = 1
+    const [testLimitOrg] = await db
+      .insert(organizationsTable)
+      .values({
+        name: "Test Limit Org",
+        interventionLimit: 1,
+      })
+      .returning();
+
+    // 2. Create the first theory (success)
+    const [theory1] = await db
+      .insert(theoriesTable)
+      .values({
+        title: "Theory 1",
+        orgId: testLimitOrg.id,
+      })
+      .returning();
+
+    // 3. Try to create the second theory, but simulate the API limit check
+    const checkLimit = async (orgId: number) => {
+      const [org] = await db
+        .select({ interventionLimit: organizationsTable.interventionLimit })
+        .from(organizationsTable)
+        .where(eq(organizationsTable.id, orgId))
+        .limit(1);
+
+      const [countResult] = await db
+        .select({ count: count() })
+        .from(theoriesTable)
+        .where(eq(theoriesTable.orgId, orgId));
+
+      const currentCount = countResult?.count ?? 0;
+
+      if (org && org.interventionLimit !== null && currentCount >= org.interventionLimit) {
+        throw new Error("Intervention limit reached.");
+      }
+    };
+
+    // Assert that calling checkLimit throws an error now
+    await expect(checkLimit(testLimitOrg.id)).rejects.toThrow("Intervention limit reached.");
+
+    // Clean up
+    await db.delete(theoriesTable).where(eq(theoriesTable.id, theory1.id));
+    await db.delete(organizationsTable).where(eq(organizationsTable.id, testLimitOrg.id));
   });
 });

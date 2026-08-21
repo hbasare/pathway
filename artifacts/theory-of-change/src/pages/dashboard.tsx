@@ -170,7 +170,9 @@ function MasterConsoleDashboard() {
                     </td>
                     <td className="p-4 text-muted-foreground">{orgUsers} users</td>
                     <td className="p-4 text-muted-foreground">{orgPorts} portfolios</td>
-                    <td className="p-4 text-muted-foreground">{orgTheories} interventions</td>
+                    <td className="p-4 text-muted-foreground">
+                      {orgTheories} / {org.interventionLimit === null ? "∞" : org.interventionLimit}
+                    </td>
                     <td className="p-4 pr-6 text-right">
                       <Button
                         size="sm"

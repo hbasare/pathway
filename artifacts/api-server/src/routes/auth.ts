@@ -326,15 +326,19 @@ router.get("/admin/organizations", requireSystemAdmin, async (_req, res) => {
 
 // ── Admin: Create a new organization ─────────────────────────────────────────
 router.post("/admin/organizations", requireSystemAdmin, async (req, res) => {
-  const { name } = req.body as { name?: string };
+  const { name, interventionLimit } = req.body as { name?: string; interventionLimit?: number | null };
   if (!name?.trim()) {
     res.status(400).json({ error: "Organization name is required" });
     return;
   }
   try {
+    const limit = interventionLimit === undefined ? 10 : (interventionLimit === null ? null : Number(interventionLimit));
     const [org] = await db
       .insert(organizationsTable)
-      .values({ name: name.trim() })
+      .values({ 
+        name: name.trim(),
+        interventionLimit: limit
+      })
       .returning();
     res.status(201).json(org);
   } catch (err: any) {
@@ -342,18 +346,23 @@ router.post("/admin/organizations", requireSystemAdmin, async (req, res) => {
   }
 });
 
-// ── Admin: Update organization name ──────────────────────────────────────────
+// ── Admin: Update organization name & limits ─────────────────────────────────
 router.patch("/admin/organizations/:id", requireSystemAdmin, async (req, res) => {
   const id = Number(req.params.id);
-  const { name } = req.body as { name?: string };
+  const { name, interventionLimit } = req.body as { name?: string; interventionLimit?: number | null };
   if (!name?.trim()) {
     res.status(400).json({ error: "Organization name is required" });
     return;
   }
   try {
+    const limit = interventionLimit === undefined ? undefined : (interventionLimit === null ? null : Number(interventionLimit));
+    const updateObj: Record<string, any> = { name: name.trim() };
+    if (limit !== undefined) {
+      updateObj.interventionLimit = limit;
+    }
     const [org] = await db
       .update(organizationsTable)
-      .set({ name: name.trim() })
+      .set(updateObj)
       .where(eq(organizationsTable.id, id))
       .returning();
     if (!org) {
@@ -365,6 +374,7 @@ router.patch("/admin/organizations/:id", requireSystemAdmin, async (req, res) =>
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // ── Admin: Switch active organization context ────────────────────────────────
 router.post("/admin/switch-tenant", requireSystemAdmin, async (req, res) => {
