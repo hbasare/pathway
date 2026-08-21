@@ -6,8 +6,10 @@ export const organizationsTable = pgTable("organizations", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   logoData: text("logo_data"),
+  interventionLimit: integer("intervention_limit").default(10),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
+
 
 export const insertOrganizationSchema = createInsertSchema(organizationsTable).omit({ id: true, createdAt: true });
 export type InsertOrganization = z.infer<typeof insertOrganizationSchema>;

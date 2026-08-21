@@ -17,11 +17,12 @@ import {
   insertTheoryNoteUpdateSchema,
   insertTheoryRiskAnalysisSchema,
   insertIndicatorScYearSchema,
+  organizationsTable,
 } from "@workspace/db";
-import { eq, and, desc } from "drizzle-orm";
-import { requireManager } from "../middleware/auth";
+import { eq, and, desc, count } from "drizzle-orm";
 import { logChange } from "../lib/changelog";
 import { changeLogTable } from "@workspace/db";
+import { requireManager } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -52,6 +53,30 @@ router.post("/theories", async (req, res) => {
     res.status(400).json({ error: "Organization context is required to create an intervention" });
     return;
   }
+
+  // 1. Fetch organization details to get their limit
+  const [org] = await db
+    .select({ interventionLimit: organizationsTable.interventionLimit })
+    .from(organizationsTable)
+    .where(eq(organizationsTable.id, orgId))
+    .limit(1);
+
+  // 2. Count existing interventions (theories) created by this organization
+  const [countResult] = await db
+    .select({ count: count() })
+    .from(theoriesTable)
+    .where(eq(theoriesTable.orgId, orgId));
+
+  const currentCount = countResult?.count ?? 0;
+
+  // 3. Enforce the limit if it is not null
+  if (org && org.interventionLimit !== null && currentCount >= org.interventionLimit) {
+    res.status(403).json({
+      error: `Intervention limit reached. Your organization is restricted to a maximum of ${org.interventionLimit} interventions.`
+    });
+    return;
+  }
+
   const parsed = insertTheorySchema.safeParse({ ...req.body, orgId });
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues });
@@ -61,6 +86,7 @@ router.post("/theories", async (req, res) => {
   await logChange(req, { theoryId: theory.id, orgId, action: "create", entityType: "theory", entityLabel: theory.title ?? "", summary: `Created intervention "${theory.title ?? ""}"` });
   res.status(201).json(theory);
 });
+
 
 router.get("/theories/:id", async (req, res) => {
   const id = Number(req.params.id);
